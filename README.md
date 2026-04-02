@@ -34,9 +34,18 @@
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (или Docker Engine + Compose v2).
 
+### Перед запуском: порты
+
+1. Посмотрите, что уже слушает Docker: **`docker ps`** (колонка PORTS).
+2. Если порт из `.env` занят **вне** Docker (например, локальный Vite другого проекта на 5173), задайте другой **`FABRIC_FRONTEND_PORT`** в `.env`.
+3. В PowerShell проверка порта, например:  
+   `Get-NetTCPConnection -LocalPort 17300 -ErrorAction SilentlyContinue`
+
+По умолчанию для этого репозитория на **хосте** используется **17300** (внутри контейнера dev-сервер Vite всё равно на **5173** — это нормально).
+
 ### Запуск
 
-1. Скопируйте переменные окружения (по желанию смените порт):
+1. Скопируйте переменные окружения (при конфликте порта отредактируйте `.env`):
 
    ```bash
    copy .env.example .env
@@ -50,7 +59,7 @@
    docker compose up --build
    ```
 
-3. Откройте в браузере: **http://localhost:5173** (или порт из `FABRIC_FRONTEND_PORT` в `.env`).
+3. Откройте в браузере: **http://localhost:17300** (или значение `FABRIC_FRONTEND_PORT` из `.env`).
 
 4. Остановка: `Ctrl+C` в терминале или `docker compose down`.
 
@@ -64,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Откройте URL из вывода Vite (обычно http://localhost:5173).
+Откройте URL из вывода Vite (локально обычно http://localhost:5173; в Docker смотрите проброшенный порт в `.env`).
 
 ### Backend
 

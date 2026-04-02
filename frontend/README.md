@@ -4,5 +4,5 @@
 
 Кратко:
 
-- Docker (из корня): `docker compose up --build` → http://localhost:5173
+- Docker (из корня): `docker compose up --build` → http://localhost:17300 (порт в `.env`: `FABRIC_FRONTEND_PORT`)
 - Локально: `npm install` → `npm run dev`

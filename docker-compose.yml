@@ -9,7 +9,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "${FABRIC_FRONTEND_PORT:-5173}:5173"
+      # Хост: по умолчанию 17300 — не пересекается с типичным Vite 5173 других проектов.
+      - "${FABRIC_FRONTEND_PORT:-17300}:5173"
     volumes:
       - ./frontend:/app
       - fabric_awnings_frontend_node_modules:/app/node_modules
