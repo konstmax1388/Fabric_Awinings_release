@@ -20,9 +20,9 @@
 |----|--------|--------|------------|
 | S1-1 | Инициализация **Vite + React** | DONE | `frontend/`, TypeScript |
 | S1-2 | **Tailwind**, шрифты (Google Fonts) | DONE | Tailwind v4 + токены в `index.css` |
-| S1-3 | **Django + DRF**, структура API | TODO | |
-| S1-4 | Маршрутизация frontend + CORS/API base URL | TODO | |
-| S1-5 | **Docker Compose** (изолированное имя проекта, порты из `.env`) | DONE | `docker-compose.yml`, `Dockerfile.dev`, HMR + polling |
+| S1-3 | **Django + DRF**, структура API | DONE | `backend/`, `GET /api/health/`, SQLite dev |
+| S1-4 | Маршрутизация frontend + CORS/API base URL | DONE | `react-router-dom`, `VITE_API_URL`, `fetchHealth` |
+| S1-5 | **Docker Compose** (изолированное имя проекта, порты из `.env`) | DONE | `api` + `frontend`, том `node_modules` |
 
 ---
 
@@ -30,8 +30,8 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| H-1 … H-11 | Вёрстка **11 блоков** лендинга по порядку | TODO | [functional-requirements.md](docs/functional-requirements.md) §2.1.1 |
-| H-A | Адаптив **mobile first** | TODO | [typography.md](docs/typography.md), [design.md](docs/design.md) §2.5 |
+| H-1 … H-11 | Вёрстка **11 блоков** лендинга по порядку | DONE | `SiteHeader`, `HeroSection` … `MapFormSection`, `SiteFooter`; заглушки страниц `/catalog`, `/portfolio`, `/contacts`, `/blog` |
+| H-A | Адаптив **mobile first** | DONE | брейкпоинты `md`/`lg`, бургер-меню, `min-h-[44px]` на CTA |
 
 ---
 

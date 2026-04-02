@@ -53,13 +53,14 @@
 
    В PowerShell: `Copy-Item .env.example .env`
 
-2. Соберите и поднимите frontend:
+2. Соберите и поднимите **frontend + API** (Django):
 
    ```bash
    docker compose up --build
    ```
 
-3. Откройте в браузере: **http://localhost:17300** (или значение `FABRIC_FRONTEND_PORT` из `.env`).
+3. Откройте в браузере: **http://localhost:17300** (или `FABRIC_FRONTEND_PORT`).  
+   Проверка API: **http://localhost:18000/api/health/** (или `FABRIC_API_PORT`).
 
 4. Остановка: `Ctrl+C` в терминале или `docker compose down`.
 
@@ -75,9 +76,21 @@ npm run dev
 
 Откройте URL из вывода Vite (локально обычно http://localhost:5173; в Docker смотрите проброшенный порт в `.env`).
 
-### Backend
+### Backend (Django + DRF)
 
-Сервис **Django + DRF** в compose будет добавлен на следующем этапе; сейчас в Docker только frontend.
+Сервис **`api`** в `docker-compose.yml`: **Django 5**, **Django REST Framework**, **django-cors-headers**. Эндпоинт **`GET /api/health/`** — проверка связи (на главной отображается строка «API: подключено»).
+
+Локально без Docker:
+
+```bash
+cd backend
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+.\.venv\Scripts\python manage.py migrate
+.\.venv\Scripts\python manage.py runserver 0.0.0.0:8000
+```
+
+При локальном frontend задайте в `frontend/.env`: `VITE_API_URL=http://localhost:8000`.
 
 ## Лицензия
 
