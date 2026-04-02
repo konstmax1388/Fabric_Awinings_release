@@ -30,3 +30,11 @@
 
 - [requirements.md](./requirements.md) — процесс, Docker, продакшен-хостинг  
 - [functional-requirements.md](./functional-requirements.md) — функционал и админка  
+
+---
+
+## Статус реализации (код)
+
+- **Этап 1** — в работе: Vite/React/Tailwind, **Django + DRF** (`backend/`), **CORS**, `docker compose` (`api` + `frontend`), **React Router**, `VITE_API_URL`, `GET /api/health/`.
+- **Этап 2** — главная: **11 блоков** в `frontend/src` (`SiteHeader` … `SiteFooter`), страницы-заглушки `/catalog`, `/portfolio`, `/contacts`, `/blog`.
+- **Этап 3+** — не начаты (см. [BACKLOG.md](../BACKLOG.md)).
