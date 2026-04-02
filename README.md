@@ -64,6 +64,8 @@
 
 4. Остановка: `Ctrl+C` в терминале или `docker compose down`.
 
+**Если Vite пишет, что не находит пакет (например `react-router-dom`):** при старте контейнера выполняется **`npm ci`** — зависимости подтягиваются в том `node_modules` по актуальному `package-lock.json`. Сделайте **`docker compose up --build`**. Если ошибка осталась: **`docker compose down -v`** (удалит том с `node_modules` этого проекта) и снова **`docker compose up --build`**.
+
 Имя проекта Compose задаётся в **`.env`** (`COMPOSE_PROJECT_NAME=fabric-awnings`), чтобы контейнеры и тома не пересекались с другими проектами. Том **`fabric_awnings_frontend_node_modules`** хранит `node_modules` внутри Docker — не затирается биндингом `./frontend:/app`.
 
 ### Локально без Docker
