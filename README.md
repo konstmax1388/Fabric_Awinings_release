@@ -26,9 +26,49 @@
 
 План работ и открытые задачи — **[BACKLOG.md](BACKLOG.md)**.
 
-## Разработка
+## Разработка в Docker (hot reload)
 
-Исходный код приложения (frontend/backend) появится после старта реализации по ТЗ. Окружение разработки: **Docker** с изоляцией от других проектов на ПК (см. [docs/requirements.md](docs/requirements.md)).
+Стек: **Vite + React + TypeScript + Tailwind** в каталоге `frontend/`. Контейнер монтирует исходники: правки в `frontend/src` сразу видны в браузере (**HMR**). Для файлового watch на Windows в Docker включён **polling**.
+
+### Требования
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (или Docker Engine + Compose v2).
+
+### Запуск
+
+1. Скопируйте переменные окружения (по желанию смените порт):
+
+   ```bash
+   copy .env.example .env
+   ```
+
+   В PowerShell: `Copy-Item .env.example .env`
+
+2. Соберите и поднимите frontend:
+
+   ```bash
+   docker compose up --build
+   ```
+
+3. Откройте в браузере: **http://localhost:5173** (или порт из `FABRIC_FRONTEND_PORT` в `.env`).
+
+4. Остановка: `Ctrl+C` в терминале или `docker compose down`.
+
+Имя проекта Compose задаётся в **`.env`** (`COMPOSE_PROJECT_NAME=fabric-awnings`), чтобы контейнеры и тома не пересекались с другими проектами. Том **`fabric_awnings_frontend_node_modules`** хранит `node_modules` внутри Docker — не затирается биндингом `./frontend:/app`.
+
+### Локально без Docker
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Откройте URL из вывода Vite (обычно http://localhost:5173).
+
+### Backend
+
+Сервис **Django + DRF** в compose будет добавлен на следующем этапе; сейчас в Docker только frontend.
 
 ## Лицензия
 

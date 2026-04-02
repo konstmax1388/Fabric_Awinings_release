@@ -23,6 +23,7 @@ build/
 *.pem
 
 # Build / IDE
+frontend/dist/
 dist-ssr/
 *.local
 .idea/

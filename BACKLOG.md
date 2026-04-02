@@ -18,11 +18,11 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| S1-1 | Инициализация **Vite + React** | TODO | [development-phases.md](docs/development-phases.md) |
-| S1-2 | **Tailwind**, шрифты (Google Fonts) | TODO | [typography.md](docs/typography.md), [design.md](docs/design.md) |
+| S1-1 | Инициализация **Vite + React** | DONE | `frontend/`, TypeScript |
+| S1-2 | **Tailwind**, шрифты (Google Fonts) | DONE | Tailwind v4 + токены в `index.css` |
 | S1-3 | **Django + DRF**, структура API | TODO | |
 | S1-4 | Маршрутизация frontend + CORS/API base URL | TODO | |
-| S1-5 | **Docker Compose** (изолированное имя проекта, порты из `.env`) | TODO | [requirements.md](docs/requirements.md) §3 |
+| S1-5 | **Docker Compose** (изолированное имя проекта, порты из `.env`) | DONE | `docker-compose.yml`, `Dockerfile.dev`, HMR + polling |
 
 ---
 
