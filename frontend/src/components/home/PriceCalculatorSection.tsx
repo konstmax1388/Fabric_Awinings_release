@@ -1,4 +1,6 @@
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 
 const materials = [
   { id: 'pvc', label: 'ПВХ 650 г/м²', pricePerM2: 3200 },
@@ -32,6 +34,7 @@ export function PriceCalculatorSection() {
   const [width, setWidth] = useState(2)
   const [materialId, setMaterialId] = useState(materials[0].id)
   const [opts, setOpts] = useState<Set<string>>(new Set())
+  const reduce = useReducedMotion()
 
   const price = useMemo(
     () => calcPrice(length, width, materialId, opts),
@@ -48,7 +51,14 @@ export function PriceCalculatorSection() {
   }
 
   return (
-    <section id="calculator" className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 md:px-6 md:py-24">
+    <motion.section
+      id="calculator"
+      className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 md:px-6 md:py-24"
+      initial={reduce ? false : fadeUpHidden}
+      whileInView={reduce ? undefined : fadeUpVisible}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={easeOutSoft}
+    >
       <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
         Калькулятор стоимости
       </h2>
@@ -56,7 +66,13 @@ export function PriceCalculatorSection() {
         Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера.
       </p>
 
-      <div className="mt-10 rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-10">
+      <motion.div
+        className="mt-10 rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-10"
+        initial={reduce ? false : { opacity: 0, y: 12 }}
+        whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ ...easeOutSoft, delay: 0.05 }}
+      >
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -123,25 +139,35 @@ export function PriceCalculatorSection() {
 
           <div className="flex flex-col justify-center rounded-2xl bg-bg-base p-8">
             <p className="font-body text-sm text-text-muted">Ориентировочная стоимость</p>
-            <p
-              className="mt-2 font-body text-3xl font-bold tracking-tight text-accent transition-all duration-300 ease-out md:text-4xl"
-              key={price}
-            >
-              {price.toLocaleString('ru-RU')} ₽
-            </p>
+            <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.p
+                  key={price}
+                  className="font-body text-3xl font-bold tracking-tight text-accent md:text-4xl"
+                  initial={reduce ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? undefined : { opacity: 0, y: -6 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {price.toLocaleString('ru-RU')} ₽
+                </motion.p>
+              </AnimatePresence>
+            </div>
             <p className="mt-4 font-body text-sm text-text-subtle">
               Не публичная оферта. Итоговая цена — в коммерческом предложении.
             </p>
-            <button
+            <motion.button
               type="button"
-              className="mt-8 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:scale-[1.02] hover:bg-[#c65f00] md:w-auto md:self-start md:px-10"
+              className="mt-8 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] md:w-auto md:self-start md:px-10"
               style={{ letterSpacing: '0.02em' }}
+              whileHover={reduce ? undefined : { scale: 1.02 }}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
             >
               Отправить заявку
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   )
 }

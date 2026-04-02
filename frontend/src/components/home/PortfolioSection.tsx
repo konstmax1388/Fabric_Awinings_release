@@ -1,5 +1,7 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
 const categories = ['Все', 'Транспорт', 'Склады', 'Террасы']
 
@@ -34,9 +36,16 @@ export function PortfolioSection() {
   const [filter, setFilter] = useState('Все')
   const filtered =
     filter === 'Все' ? projects : projects.filter((p) => p.category === filter)
+  const reduce = useReducedMotion()
 
   return (
-    <section className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+    <motion.section
+      className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
+      initial={reduce ? false : fadeUpHidden}
+      whileInView={reduce ? undefined : fadeUpVisible}
+      viewport={{ once: true, amount: 0.08 }}
+      transition={easeOutSoft}
+    >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
@@ -64,11 +73,28 @@ export function PortfolioSection() {
         </div>
       </div>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <motion.div
+        key={filter}
+        className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
         {filtered.map((p) => (
-          <article
+          <motion.article
             key={p.id}
-            className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] transition hover:-translate-y-1 hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.12)]"
+            variants={staggerItem}
+            whileHover={
+              reduce
+                ? undefined
+                : {
+                    scale: 1.03,
+                    y: -4,
+                    boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
+                  }
+            }
+            transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+            className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
           >
             <div className="grid grid-cols-2 gap-0.5 bg-border">
               <img src={p.before} alt={`${p.title} — до`} className="aspect-[4/3] object-cover" />
@@ -80,19 +106,21 @@ export function PortfolioSection() {
               </p>
               <h3 className="mt-1 font-heading text-lg font-semibold text-text">{p.title}</h3>
             </div>
-          </article>
+          </motion.article>
         ))}
-      </div>
+      </motion.div>
 
       <div className="mt-10 text-center">
-        <Link
-          to="/portfolio"
-          className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(232,122,0,0.08)]"
-          style={{ letterSpacing: '0.02em' }}
-        >
-          Все проекты
-        </Link>
+        <motion.span whileHover={reduce ? undefined : { scale: 1.02 }} className="inline-block">
+          <Link
+            to="/portfolio"
+            className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
+            style={{ letterSpacing: '0.02em' }}
+          >
+            Все проекты
+          </Link>
+        </motion.span>
       </div>
-    </section>
+    </motion.section>
   )
 }

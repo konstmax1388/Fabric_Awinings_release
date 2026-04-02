@@ -39,9 +39,9 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| A-1 | **Framer Motion:** fade-up, scroll, stagger | TODO | [animations.md](docs/animations.md) |
-| A-2 | Hover-карточки, Primary, иконки МП; CTA-пульс; счётчики | TODO | |
-| A-3 | Бургер-трансформация | TODO | [components.md](docs/components.md) §3.9 |
+| A-1 | **Framer Motion:** fade-up, scroll, stagger | DONE | `motion-presets.ts`, секции главной |
+| A-2 | Hover-карточки, Primary, иконки МП; CTA-пульс; счётчики | DONE | `WhyUsSection` + `AnimatedCounter`, `Hero`/`Header`/`MarketplaceLinks` |
+| A-3 | Бургер-трансформация | DONE | `SiteHeader` (`motion.span` + `AnimatePresence`) |
 
 ---
 

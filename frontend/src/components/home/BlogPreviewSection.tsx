@@ -1,4 +1,6 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
 const posts = [
   {
@@ -25,9 +27,17 @@ const posts = [
 ]
 
 export function BlogPreviewSection() {
+  const reduce = useReducedMotion()
+
   return (
     <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
-      <div className="mx-auto max-w-[1280px] px-4 md:px-6">
+      <motion.div
+        className="mx-auto max-w-[1280px] px-4 md:px-6"
+        initial={reduce ? false : fadeUpHidden}
+        whileInView={reduce ? undefined : fadeUpVisible}
+        viewport={{ once: true, amount: 0.08 }}
+        transition={easeOutSoft}
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
@@ -37,19 +47,35 @@ export function BlogPreviewSection() {
               Полезные материалы для заказчиков и эксплуатации тентов.
             </p>
           </div>
-          <Link
-            to="/blog"
-            className="font-body font-medium text-accent hover:underline"
-          >
-            Все статьи →
-          </Link>
+          <motion.span whileHover={reduce ? undefined : { x: 4 }} className="inline-block">
+            <Link to="/blog" className="font-body font-medium text-accent hover:underline">
+              Все статьи →
+            </Link>
+          </motion.span>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <motion.div
+          className="mt-10 grid gap-6 md:grid-cols-3"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+        >
           {posts.map((post) => (
-            <article
+            <motion.article
               key={post.slug}
-              className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] transition hover:-translate-y-1"
+              variants={staggerItem}
+              whileHover={
+                reduce
+                  ? undefined
+                  : {
+                      scale: 1.03,
+                      y: -4,
+                      boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
+                    }
+              }
+              transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+              className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
             >
               <div className="aspect-[16/10] overflow-hidden">
                 <img src={post.img} alt="" className="h-full w-full object-cover" />
@@ -69,10 +95,10 @@ export function BlogPreviewSection() {
                   Читать далее
                 </Link>
               </div>
-            </article>
+            </motion.article>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }

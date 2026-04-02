@@ -9,9 +9,30 @@ export const SITE = {
   legal: 'ООО «Фабрика Тентов», ИНН 0000000000',
 } as const
 
+/** Логотипы: `public/marketplaces/*.svg` (источник — Wikimedia Commons, файлы брендов). */
 export const MARKETPLACES = [
-  { id: 'wb', label: 'Wildberries', href: 'https://www.wildberries.ru/' },
-  { id: 'ozon', label: 'OZON', href: 'https://www.ozon.ru/' },
-  { id: 'ym', label: 'Яндекс Маркет', href: 'https://market.yandex.ru/' },
-  { id: 'avito', label: 'Авито', href: 'https://www.avito.ru/' },
+  {
+    id: 'wb',
+    label: 'Wildberries',
+    href: 'https://www.wildberries.ru/',
+    logoSrc: '/marketplaces/wildberries.svg',
+  },
+  {
+    id: 'ozon',
+    label: 'OZON',
+    href: 'https://www.ozon.ru/',
+    logoSrc: '/marketplaces/ozon.svg',
+  },
+  {
+    id: 'ym',
+    label: 'Яндекс Маркет',
+    href: 'https://market.yandex.ru/',
+    logoSrc: '/marketplaces/yandex-market.svg',
+  },
+  {
+    id: 'avito',
+    label: 'Авито',
+    href: 'https://www.avito.ru/',
+    logoSrc: '/marketplaces/avito.svg',
+  },
 ] as const

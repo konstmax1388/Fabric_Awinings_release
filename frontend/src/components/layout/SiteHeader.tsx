@@ -1,6 +1,8 @@
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { SITE, MARKETPLACES } from '../../config/site'
+import { PulsingCTA } from '../motion/PulsingCTA'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -10,6 +12,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const reduce = useReducedMotion()
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-light bg-bg-base/95 backdrop-blur-md">
@@ -44,13 +47,22 @@ export function SiteHeader() {
           >
             {SITE.phone}
           </a>
-          <Link
-            to="/#calculator"
-            className="inline-flex h-11 items-center justify-center rounded-[40px] bg-accent px-6 font-body text-sm font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:scale-[1.02] hover:bg-[#c65f00] md:h-14 md:px-8 md:text-base"
-            style={{ letterSpacing: '0.02em' }}
-          >
-            Заказать расчёт
-          </Link>
+          <PulsingCTA>
+            <motion.span
+              whileHover={reduce ? undefined : { scale: 1.02 }}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
+              className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.25)]"
+              style={{ borderRadius: 40 }}
+            >
+              <Link
+                to="/#calculator"
+                className="inline-flex h-11 items-center justify-center rounded-[40px] bg-accent px-6 font-body text-sm font-medium text-surface hover:bg-[#c65f00] md:h-14 md:px-8 md:text-base"
+                style={{ letterSpacing: '0.02em' }}
+              >
+                Заказать расчёт
+              </Link>
+            </motion.span>
+          </PulsingCTA>
         </div>
 
         <button
@@ -60,84 +72,94 @@ export function SiteHeader() {
           aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
           onClick={() => setOpen((v) => !v)}
         >
-          <span
-            className={`block h-0.5 w-6 origin-center rounded bg-text transition ${
-              open ? 'translate-y-2 rotate-45' : ''
-            }`}
+          <motion.span
+            className="block h-0.5 w-6 origin-center rounded bg-text"
+            animate={open ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           />
-          <span
-            className={`block h-0.5 w-6 rounded bg-text transition ${open ? 'scale-0 opacity-0' : ''}`}
+          <motion.span
+            className="block h-0.5 w-6 rounded bg-text"
+            animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+            transition={{ duration: 0.2 }}
           />
-          <span
-            className={`block h-0.5 w-6 origin-center rounded bg-text transition ${
-              open ? '-translate-y-2 -rotate-45' : ''
-            }`}
+          <motion.span
+            className="block h-0.5 w-6 origin-center rounded bg-text"
+            animate={open ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           />
         </button>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 top-[73px] z-40 flex flex-col bg-surface shadow-[-8px_0_24px_rgba(0,0,0,0.08)] md:hidden">
-          <nav className="flex flex-col gap-1 p-6" aria-label="Мобильное меню">
-            <NavLink
-              to="/"
-              end
-              className="py-3 font-body text-lg font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Главная
-            </NavLink>
-            <NavLink
-              to="/catalog"
-              className="py-3 font-body text-lg font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Каталог
-            </NavLink>
-            <NavLink
-              to="/portfolio"
-              className="py-3 font-body text-lg font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Портфолио
-            </NavLink>
-            <NavLink
-              to="/contacts"
-              className="py-3 font-body text-lg font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Контакты
-            </NavLink>
-            <a href={SITE.phoneHref} className="py-3 font-body text-lg text-accent">
-              {SITE.phone}
-            </a>
-            <div className="mt-4 border-t border-border pt-4">
-              <p className="mb-2 text-sm text-text-muted">Маркетплейсы</p>
-              <div className="flex gap-3">
-                {MARKETPLACES.map((m) => (
-                  <a
-                    key={m.id}
-                    href={m.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-text-muted hover:text-accent"
-                  >
-                    {m.label}
-                  </a>
-                ))}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 top-[73px] z-40 flex max-w-full flex-col bg-surface shadow-[-8px_0_24px_rgba(0,0,0,0.08)] md:hidden"
+            initial={reduce ? undefined : { x: '100%', opacity: 0.9 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={reduce ? undefined : { x: '100%', opacity: 0.9 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+          >
+            <nav className="flex flex-col gap-1 p-6" aria-label="Мобильное меню">
+              <NavLink
+                to="/"
+                end
+                className="py-3 font-body text-lg font-medium"
+                onClick={() => setOpen(false)}
+              >
+                Главная
+              </NavLink>
+              <NavLink
+                to="/catalog"
+                className="py-3 font-body text-lg font-medium"
+                onClick={() => setOpen(false)}
+              >
+                Каталог
+              </NavLink>
+              <NavLink
+                to="/portfolio"
+                className="py-3 font-body text-lg font-medium"
+                onClick={() => setOpen(false)}
+              >
+                Портфолио
+              </NavLink>
+              <NavLink
+                to="/contacts"
+                className="py-3 font-body text-lg font-medium"
+                onClick={() => setOpen(false)}
+              >
+                Контакты
+              </NavLink>
+              <a href={SITE.phoneHref} className="py-3 font-body text-lg text-accent">
+                {SITE.phone}
+              </a>
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="mb-2 text-sm text-text-muted">Маркетплейсы</p>
+                <div className="flex flex-col gap-2">
+                  {MARKETPLACES.map((m) => (
+                    <a
+                      key={m.id}
+                      href={m.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-text-muted hover:text-accent"
+                    >
+                      {m.label}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-            <Link
-              to="/#calculator"
-              className="mt-6 inline-flex h-14 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
-              style={{ letterSpacing: '0.02em' }}
-              onClick={() => setOpen(false)}
-            >
-              Заказать расчёт
-            </Link>
-          </nav>
-        </div>
-      )}
+              <Link
+                to="/#calculator"
+                className="mt-6 inline-flex h-14 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
+                style={{ letterSpacing: '0.02em' }}
+                onClick={() => setOpen(false)}
+              >
+                Заказать расчёт
+              </Link>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   )
 }

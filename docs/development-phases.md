@@ -35,6 +35,7 @@
 
 ## Статус реализации (код)
 
-- **Этап 1** — в работе: Vite/React/Tailwind, **Django + DRF** (`backend/`), **CORS**, `docker compose` (`api` + `frontend`), **React Router**, `VITE_API_URL`, `GET /api/health/`.
+- **Этап 1** — сделано: Vite/React/Tailwind, **Django + DRF** (`backend/`), **CORS**, `docker compose` (`api` + `frontend`), **React Router**, `VITE_API_URL`, `GET /api/health/`.
 - **Этап 2** — главная: **11 блоков** в `frontend/src` (`SiteHeader` … `SiteFooter`), страницы-заглушки `/catalog`, `/portfolio`, `/contacts`, `/blog`.
-- **Этап 3+** — не начаты (см. [BACKLOG.md](../BACKLOG.md)).
+- **Этап 3** — **Framer Motion** на главной: пресеты в `frontend/src/lib/motion-presets.ts`, `AnimatedCounter` / `PulsingCTA`, fade-up + stagger по секциям, hover карточек, слайд отзывов, анимация смены цены в калькуляторе, бургер и мобильное меню в `SiteHeader` (см. [BACKLOG.md](../BACKLOG.md)).
+- **Этап 4+** — каталог и карточка товара — в плане (см. BACKLOG).
