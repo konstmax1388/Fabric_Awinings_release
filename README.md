@@ -5,7 +5,8 @@
 ## Репозиторий
 
 - **GitHub:** [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings)
-- **Ветки:** `main` — основная разработка; `release` — релизная линия.
+- **Клонирование:** `git clone https://github.com/konstmax1388/Fabric_Awinings.git`
+- **Ветки:** `main` — основная разработка; `release` — релизная линия (`origin/main`, `origin/release`).
 
 ## Документация
 
