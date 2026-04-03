@@ -16,6 +16,7 @@
 | Требования, процесс, хостинг, Git | [docs/requirements.md](docs/requirements.md) |
 | Функционал (frontend, админка, интеграции) | [docs/functional-requirements.md](docs/functional-requirements.md) |
 | Этапы разработки (Vite/React, Django, …) | [docs/development-phases.md](docs/development-phases.md) |
+| Снимок контекста (стек, API, корзина) | [docs/project-context.md](docs/project-context.md) |
 | Деливераблы и критерии приёмки | [docs/deliverables-and-acceptance.md](docs/deliverables-and-acceptance.md) |
 | Дизайн и чек-лист | [docs/design.md](docs/design.md) |
 | Компоненты UI | [docs/components.md](docs/components.md) |

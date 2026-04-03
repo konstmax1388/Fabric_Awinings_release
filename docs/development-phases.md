@@ -38,20 +38,27 @@
 - **Этап 1** — сделано: Vite/React/Tailwind, **Django + DRF** (`backend/`), **CORS**, `docker compose` (`api` + `frontend`), **React Router**, `VITE_API_URL`, `GET /api/health/`.
 - **Этап 2** — главная: **11 блоков** в `frontend/src` (`SiteHeader` … `SiteFooter`), страницы-заглушки `/catalog`, `/portfolio`, `/contacts`, `/blog`.
 - **Этап 3** — **Framer Motion** на главной: пресеты в `frontend/src/lib/motion-presets.ts`, `AnimatedCounter` / `PulsingCTA`, fade-up + stagger по секциям, hover карточек, анимация смены цены в калькуляторе, бургер и мобильное меню в `SiteHeader` (см. [BACKLOG.md](../BACKLOG.md)).
-- **Этап 4** — каталог: `frontend/src/pages/CatalogPage.tsx`, мок-товары `frontend/src/data/products.ts`, фильтр категории (`?category=`), сортировка, пагинация (`?page=`), карточка `ProductCard`, страница товара `ProductPage` + маршрут `/catalog/:slug`, галерея `ProductGallery`, похожие товары.
+- **Этап 4** — каталог: `CatalogPage` / `ProductPage` — данные с **`GET /api/products/`** (фильтр `?category=`, сортировка, пагинация `?page=`); карточка `ProductCard`, галерея `ProductGallery`, похожие через API; моки в `data/products.ts` остаются справочником типов.
 - **Этап 5** — маркетплейсы: у товара поле `marketplaceLinks`; `MarketplaceLinks` с `hrefById` и `linkKeys`; глобальные URL — `GLOBAL_MARKETPLACE_URLS` в `site.ts` (шапка/футер + текстовые ссылки в футере).
-- **Этап 6** — калькулятор: формула и материалы в `frontend/src/lib/calculator.ts`, заявка через `submitCalculatorLead` в `frontend/src/lib/leads.ts` (заглушка до API), форма имя/телефон/комментарий в `PriceCalculatorSection`.
+- **Этап 6** — калькулятор: `lib/calculator.ts`, отправка заявки **`POST /api/leads/calculator/`** через `submitCalculatorLead` → `lib/leads.ts` / `lib/api.ts`, форма в `PriceCalculatorSection`.
 - **Этап 7** — Django REST: модели и миграции в `backend/api/`, `GET/POST` эндпоинты (`/api/products/`, портфолио, отзывы, блог, заявки), JWT (`/api/auth/token/`, `/api/auth/me/`), фильтры и пагинация каталога; зависимости в `backend/requirements.txt`.
 - **Этап 8** — админка Django: регистрация моделей и inline изображений товара в `backend/api/admin.py`; демо-данные — `python manage.py seed_demo` (опция `--purge`).
 - **Этап 9** — SEO: `react-helmet-async` (обёртка в `App.tsx`, мета и JSON-LD на главной/каталоге/товаре/блоге/контактах), `frontend/public/robots.txt` и `sitemap.xml` (заглушка домена для продакшена), `VITE_SITE_URL` в `.env.example`.
-- **Этап 10** — качество: автотесты API `pytest` в `backend/tests/` (`pytest.ini`); ручная проверка после `docker compose up`: миграции в `Dockerfile.dev`, затем `seed_demo`, сценарии каталог → карточка → корзина → заявка, калькулятор, блог/портфолио/отзывы на главной.
+- **Этап 10** — качество: `pytest` в `backend/tests/`; ручные сценарии после `docker compose up` (см. чек-лист ниже).
+
+### Маршрутизация и корзина (важно для отладки)
+
+- В **`App.tsx`** layout **`AppShell`**: `CartProvider` → `<Outlet />` — все страницы внутри **`RouterProvider`**, иначе `Link` вне контекста ломает SPA.
+- Корзина: страница **`/cart`** (`CartPage`, `components/cart/CartView.tsx`), оформление заказа **`POST /api/leads/cart/`**.
 
 ### Чек-лист ручного теста (этап 10)
 
 1. `docker compose up --build`, дождаться API и Vite.
 2. `docker compose exec api python manage.py seed_demo` (если каталог пустой).
-3. Главная: блоки «подборка», портфолио, отзывы, превью блога заполняются с API; строка статуса API.
-4. Каталог: фильтр категории, сортировка, пагинация; карточка товара и «похожие».
-5. Корзина: оформление — номер заказа и текст с сервера.
-6. Калькулятор: отправка формы — запись в админке или ответ 201.
-7. Сборка фронта: `npm run build` в `frontend/`.
+3. Главная: подборка, портфолио, отзывы, превью блога с API.
+4. Каталог: фильтр, сортировка, пагинация; карточка товара и «похожие».
+5. **`/cart`**: состав, оформление — номер заказа и подтверждение с сервера.
+6. Калькулятор: отправка — 201 и запись в админке.
+7. `npm run build` в `frontend/`.
+
+**Снимок контекста для ИИ/команды:** [project-context.md](./project-context.md).

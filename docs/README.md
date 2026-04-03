@@ -2,10 +2,13 @@
 
 Каталог накапливающейся документации по сайту. Требования и решения дополняются по мере согласования.
 
+**Снимок текущего стека, URL и важных решений (для продолжения работ / контекста ИИ):** [project-context.md](./project-context.md).
+
 ## Содержание
 
 | Документ | Назначение |
 |----------|------------|
+| [project-context.md](./project-context.md) | Снимок реализации: backend/frontend, `/cart`, AppShell, команды, ограничения |
 | [requirements.md](./requirements.md) | Техническое задание, ограничения, договорённости по процессу |
 | [functional-requirements.md](./functional-requirements.md) | Цели, **frontend**, **админка**, **интеграции** (МП, Яндекс Карты, аналитика, email, капча) |
 | [typography.md](./typography.md) | Шрифты: Google Fonts, Tailwind, Figma, адаптив Mobile First |
