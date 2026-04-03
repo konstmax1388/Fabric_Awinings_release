@@ -1,43 +1,29 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import {
+  CALC_MATERIALS,
+  CALC_OPTIONS,
+  calcTentPrice,
+  type CalcMaterialId,
+} from '../../lib/calculator'
+import { submitCalculatorLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
-
-const materials = [
-  { id: 'pvc', label: 'ПВХ 650 г/м²', pricePerM2: 3200 },
-  { id: 'canvas', label: 'Ткань акрил', pricePerM2: 4100 },
-  { id: 'mesh', label: 'Сетка теневая', pricePerM2: 2800 },
-]
-
-const options = [
-  { id: 'eyelets', label: 'Люверсы по периметру', price: 1200 },
-  { id: 'seams', label: 'Усиленные швы', price: 2500 },
-  { id: 'pockets', label: 'Карманы под стойки', price: 1800 },
-]
-
-function calcPrice(
-  length: number,
-  width: number,
-  materialId: string,
-  selectedOpts: Set<string>,
-) {
-  const mat = materials.find((m) => m.id === materialId) ?? materials[0]
-  const area = Math.max(0, length) * Math.max(0, width)
-  let total = area * mat.pricePerM2
-  options.forEach((o) => {
-    if (selectedOpts.has(o.id)) total += o.price
-  })
-  return Math.round(total)
-}
 
 export function PriceCalculatorSection() {
   const [length, setLength] = useState(3)
   const [width, setWidth] = useState(2)
-  const [materialId, setMaterialId] = useState(materials[0].id)
+  const [materialId, setMaterialId] = useState<CalcMaterialId>(CALC_MATERIALS[0].id)
   const [opts, setOpts] = useState<Set<string>>(new Set())
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [comment, setComment] = useState('')
+  const [sending, setSending] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const reduce = useReducedMotion()
 
   const price = useMemo(
-    () => calcPrice(length, width, materialId, opts),
+    () => calcTentPrice(length, width, materialId, opts),
     [length, width, materialId, opts],
   )
 
@@ -48,6 +34,45 @@ export function PriceCalculatorSection() {
       else next.add(id)
       return next
     })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    const n = name.trim()
+    const ph = phone.trim()
+    if (n.length < 2) {
+      setError('Укажите имя')
+      return
+    }
+    if (ph.length < 10) {
+      setError('Укажите телефон')
+      return
+    }
+    const mat = CALC_MATERIALS.find((m) => m.id === materialId) ?? CALC_MATERIALS[0]
+    const optionLabels = CALC_OPTIONS.filter((o) => opts.has(o.id)).map((o) => o.label)
+    setSending(true)
+    try {
+      const { ok } = await submitCalculatorLead({
+        name: n,
+        phone: ph,
+        comment: comment.trim() || undefined,
+        lengthM: length,
+        widthM: width,
+        materialId,
+        materialLabel: mat.label,
+        options: optionLabels,
+        estimatedPriceRub: price,
+      })
+      if (ok) {
+        setDone(true)
+        setComment('')
+      } else setError('Не удалось отправить. Позвоните нам или напишите на почту.')
+    } catch {
+      setError('Ошибка сети. Попробуйте позже.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -63,7 +88,8 @@ export function PriceCalculatorSection() {
         Калькулятор стоимости
       </h2>
       <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
-        Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера.
+        Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера. Заявка уходит в
+        обработку (позже — на сервер).
       </p>
 
       <motion.div
@@ -73,7 +99,7 @@ export function PriceCalculatorSection() {
         viewport={{ once: true, amount: 0.15 }}
         transition={{ ...easeOutSoft, delay: 0.05 }}
       >
-        <div className="grid gap-8 lg:grid-cols-2">
+        <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
@@ -103,10 +129,10 @@ export function PriceCalculatorSection() {
               <span className="mb-2 block font-body text-sm font-medium text-text">Материал</span>
               <select
                 value={materialId}
-                onChange={(e) => setMaterialId(e.target.value)}
+                onChange={(e) => setMaterialId(e.target.value as CalcMaterialId)}
                 className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
               >
-                {materials.map((m) => (
+                {CALC_MATERIALS.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}
                   </option>
@@ -116,7 +142,7 @@ export function PriceCalculatorSection() {
             <div>
               <span className="mb-3 block font-body text-sm font-medium text-text">Опции</span>
               <div className="flex flex-col gap-3">
-                {options.map((o) => (
+                {CALC_OPTIONS.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-light px-4 py-3 transition hover:border-accent/40"
@@ -137,7 +163,7 @@ export function PriceCalculatorSection() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-center rounded-2xl bg-bg-base p-8">
+          <div className="flex flex-col justify-center rounded-2xl bg-bg-base p-6 md:p-8">
             <p className="font-body text-sm text-text-muted">Ориентировочная стоимость</p>
             <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
               <AnimatePresence mode="popLayout" initial={false}>
@@ -156,17 +182,67 @@ export function PriceCalculatorSection() {
             <p className="mt-4 font-body text-sm text-text-subtle">
               Не публичная оферта. Итоговая цена — в коммерческом предложении.
             </p>
-            <motion.button
-              type="button"
-              className="mt-8 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] md:w-auto md:self-start md:px-10"
-              style={{ letterSpacing: '0.02em' }}
-              whileHover={reduce ? undefined : { scale: 1.02 }}
-              whileTap={reduce ? undefined : { scale: 0.98 }}
-            >
-              Отправить заявку
-            </motion.button>
+
+            {done ? (
+              <p className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3 font-body text-sm text-text">
+                Спасибо! Заявка принята. Перезвоним в рабочее время и уточним детали расчёта.
+              </p>
+            ) : (
+              <>
+                <label className="mt-6 block">
+                  <span className="mb-2 block font-body text-sm font-medium text-text">Имя</span>
+                  <input
+                    type="text"
+                    name="calc-name"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Как к вам обращаться"
+                    className="h-12 w-full rounded-2xl border border-border bg-surface px-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                  />
+                </label>
+                <label className="mt-3 block">
+                  <span className="mb-2 block font-body text-sm font-medium text-text">Телефон</span>
+                  <input
+                    type="tel"
+                    name="calc-phone"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+7"
+                    className="h-12 w-full rounded-2xl border border-border bg-surface px-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                  />
+                </label>
+                <label className="mt-3 block">
+                  <span className="mb-2 block font-body text-sm font-medium text-text">Комментарий</span>
+                  <textarea
+                    name="calc-comment"
+                    rows={2}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Объект, сроки"
+                    className="w-full rounded-2xl border border-border bg-surface px-4 py-3 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                  />
+                </label>
+                {error && (
+                  <p className="mt-3 font-body text-sm text-red-600" role="alert">
+                    {error}
+                  </p>
+                )}
+                <motion.button
+                  type="submit"
+                  disabled={sending}
+                  className="mt-6 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] disabled:opacity-60 md:w-auto md:self-start md:px-10"
+                  style={{ letterSpacing: '0.02em' }}
+                  whileHover={reduce || sending ? undefined : { scale: 1.02 }}
+                  whileTap={reduce || sending ? undefined : { scale: 0.98 }}
+                >
+                  {sending ? 'Отправка…' : 'Отправить заявку'}
+                </motion.button>
+              </>
+            )}
           </div>
-        </div>
+        </form>
       </motion.div>
     </motion.section>
   )

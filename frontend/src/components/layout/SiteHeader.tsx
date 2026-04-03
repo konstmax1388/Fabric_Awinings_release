@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { SITE, MARKETPLACES } from '../../config/site'
+import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, SITE } from '../../config/site'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 
@@ -40,7 +40,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-4 lg:flex">
-          <MarketplaceLinks />
+          <MarketplaceLinks hrefById={GLOBAL_MARKETPLACE_URLS} />
           <a
             href={SITE.phoneHref}
             className="font-body text-sm font-medium text-text-muted hover:text-accent md:text-base"

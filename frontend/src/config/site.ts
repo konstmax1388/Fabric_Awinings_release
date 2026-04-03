@@ -36,3 +36,8 @@ export const MARKETPLACES = [
     logoSrc: '/marketplaces/avito.svg',
   },
 ] as const
+
+export type MarketplaceId = (typeof MARKETPLACES)[number]['id']
+
+/** Глобальные URL витрин (подмена из админки / env); пустой объект — как в MARKETPLACES */
+export const GLOBAL_MARKETPLACE_URLS: Partial<Record<MarketplaceId, string>> = {}

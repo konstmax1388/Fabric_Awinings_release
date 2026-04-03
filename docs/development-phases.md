@@ -37,5 +37,8 @@
 
 - **Этап 1** — сделано: Vite/React/Tailwind, **Django + DRF** (`backend/`), **CORS**, `docker compose` (`api` + `frontend`), **React Router**, `VITE_API_URL`, `GET /api/health/`.
 - **Этап 2** — главная: **11 блоков** в `frontend/src` (`SiteHeader` … `SiteFooter`), страницы-заглушки `/catalog`, `/portfolio`, `/contacts`, `/blog`.
-- **Этап 3** — **Framer Motion** на главной: пресеты в `frontend/src/lib/motion-presets.ts`, `AnimatedCounter` / `PulsingCTA`, fade-up + stagger по секциям, hover карточек, слайд отзывов, анимация смены цены в калькуляторе, бургер и мобильное меню в `SiteHeader` (см. [BACKLOG.md](../BACKLOG.md)).
-- **Этап 4+** — каталог и карточка товара — в плане (см. BACKLOG).
+- **Этап 3** — **Framer Motion** на главной: пресеты в `frontend/src/lib/motion-presets.ts`, `AnimatedCounter` / `PulsingCTA`, fade-up + stagger по секциям, hover карточек, анимация смены цены в калькуляторе, бургер и мобильное меню в `SiteHeader` (см. [BACKLOG.md](../BACKLOG.md)).
+- **Этап 4** — каталог: `frontend/src/pages/CatalogPage.tsx`, мок-товары `frontend/src/data/products.ts`, фильтр категории (`?category=`), сортировка, пагинация (`?page=`), карточка `ProductCard`, страница товара `ProductPage` + маршрут `/catalog/:slug`, галерея `ProductGallery`, похожие товары.
+- **Этап 5** — маркетплейсы: у товара поле `marketplaceLinks`; `MarketplaceLinks` с `hrefById` и `linkKeys`; глобальные URL — `GLOBAL_MARKETPLACE_URLS` в `site.ts` (шапка/футер + текстовые ссылки в футере).
+- **Этап 6** — калькулятор: формула и материалы в `frontend/src/lib/calculator.ts`, заявка через `submitCalculatorLead` в `frontend/src/lib/leads.ts` (заглушка до API), форма имя/телефон/комментарий в `PriceCalculatorSection`.
+- **Этап 7+** — backend, админка, SEO — по плану (см. BACKLOG).

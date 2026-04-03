@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { SITE, MARKETPLACES } from '../../config/site'
+import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, SITE } from '../../config/site'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 
 export function SiteFooter() {
@@ -46,7 +46,7 @@ export function SiteFooter() {
           <div>
             <p className="font-body text-sm font-semibold text-text">Маркетплейсы</p>
             <div className="mt-4">
-              <MarketplaceLinks />
+              <MarketplaceLinks hrefById={GLOBAL_MARKETPLACE_URLS} />
             </div>
             <p className="mt-6 font-body text-sm font-semibold text-text">Соцсети</p>
             <ul className="mt-2 flex flex-col gap-1 font-body text-sm text-text-muted">
@@ -86,7 +86,7 @@ export function SiteFooter() {
             {MARKETPLACES.map((m) => (
               <a
                 key={m.id}
-                href={m.href}
+                href={GLOBAL_MARKETPLACE_URLS[m.id] ?? m.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-accent"

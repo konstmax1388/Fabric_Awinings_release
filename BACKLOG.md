@@ -49,10 +49,10 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| C-1 | Каталог: сетка, фильтры, сортировка, пагинация / infinite scroll | TODO | |
-| C-2 | Карточка товара: галерея, МП, похожие | TODO | |
-| C-3 | Интеграция ссылок МП (футер + товар) | TODO | |
-| C-4 | Калькулятор: формула, live-цена, заявка | TODO | |
+| C-1 | Каталог: сетка, фильтры, сортировка, пагинация / infinite scroll | DONE | `CatalogPage`, `catalog-utils`, мок `products.ts` |
+| C-2 | Карточка товара: галерея, МП, похожие | DONE | `ProductPage`, `ProductGallery`, `ProductCard` |
+| C-3 | Интеграция ссылок МП (футер + товар) | DONE | `GLOBAL_MARKETPLACE_URLS`, `hrefById` / `linkKeys` |
+| C-4 | Калькулятор: формула, live-цена, заявка | DONE | `lib/calculator.ts`, `lib/leads.ts`, форма в `PriceCalculatorSection` |
 
 ---
 
