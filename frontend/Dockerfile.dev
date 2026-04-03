@@ -7,7 +7,7 @@ RUN npm ci
 
 COPY . .
 
-EXPOSE 5173
+EXPOSE 17300
 
-# Том `node_modules` перекрывает слой образа: при новых зависимостях без этого снова был бы старый набор пакетов.
-CMD ["sh", "-c", "npm ci && exec npm run dev -- --host 0.0.0.0 --port 5173"]
+# Порт совпадает с vite.config (на хосте в compose всё равно маппится FABRIC_FRONTEND_PORT:17300 → 17300).
+CMD ["sh", "-c", "npm ci && exec npm run dev -- --host 0.0.0.0 --port 17300"]

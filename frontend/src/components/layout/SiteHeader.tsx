@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, SITE } from '../../config/site'
+import { useCart } from '../../hooks/useCart'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 
@@ -9,6 +10,38 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-body text-base font-medium tracking-wide transition-colors hover:text-accent ${
     isActive ? 'text-accent' : 'text-text'
   }`
+
+function CartHeaderLink({ className = '' }: { className?: string }) {
+  const { totalQty } = useCart()
+  return (
+    <NavLink
+      to="/cart"
+      className={({ isActive }) =>
+        `relative flex h-11 w-11 items-center justify-center rounded-xl text-text hover:bg-[#F5F0E8] ${
+          isActive ? 'bg-[#F5F0E8] text-accent' : ''
+        } ${className}`
+      }
+      aria-label={`Корзина${totalQty ? `, ${totalQty} поз.` : ''}`}
+    >
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="9" cy="20" r="1" fill="currentColor" />
+        <circle cx="17" cy="20" r="1" fill="currentColor" />
+      </svg>
+      {totalQty > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 font-body text-[10px] font-bold text-surface">
+          {totalQty > 99 ? '99+' : totalQty}
+        </span>
+      )}
+    </NavLink>
+  )
+}
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
@@ -39,55 +72,57 @@ export function SiteHeader() {
           </NavLink>
         </nav>
 
-        <div className="hidden items-center gap-4 lg:flex">
-          <MarketplaceLinks hrefById={GLOBAL_MARKETPLACE_URLS} />
-          <a
-            href={SITE.phoneHref}
-            className="font-body text-sm font-medium text-text-muted hover:text-accent md:text-base"
-          >
-            {SITE.phone}
-          </a>
-          <PulsingCTA>
-            <motion.span
-              whileHover={reduce ? undefined : { scale: 1.02 }}
-              whileTap={reduce ? undefined : { scale: 0.98 }}
-              className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.25)]"
-              style={{ borderRadius: 40 }}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <CartHeaderLink />
+          <div className="hidden items-center gap-4 lg:flex">
+            <MarketplaceLinks hrefById={GLOBAL_MARKETPLACE_URLS} />
+            <a
+              href={SITE.phoneHref}
+              className="font-body text-sm font-medium text-text-muted hover:text-accent md:text-base"
             >
-              <Link
-                to="/#calculator"
-                className="inline-flex h-11 items-center justify-center rounded-[40px] bg-accent px-6 font-body text-sm font-medium text-surface hover:bg-[#c65f00] md:h-14 md:px-8 md:text-base"
-                style={{ letterSpacing: '0.02em' }}
+              {SITE.phone}
+            </a>
+            <PulsingCTA>
+              <motion.span
+                whileHover={reduce ? undefined : { scale: 1.02 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.25)]"
+                style={{ borderRadius: 40 }}
               >
-                Заказать расчёт
-              </Link>
-            </motion.span>
-          </PulsingCTA>
+                <Link
+                  to="/#calculator"
+                  className="inline-flex h-11 items-center justify-center rounded-[40px] bg-accent px-6 font-body text-sm font-medium text-surface hover:bg-[#c65f00] md:h-14 md:px-8 md:text-base"
+                  style={{ letterSpacing: '0.02em' }}
+                >
+                  Заказать расчёт
+                </Link>
+              </motion.span>
+            </PulsingCTA>
+          </div>
+          <button
+            type="button"
+            className="relative flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl md:hidden"
+            aria-expanded={open}
+            aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <motion.span
+              className="block h-0.5 w-6 origin-center rounded bg-text"
+              animate={open ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+            <motion.span
+              className="block h-0.5 w-6 rounded bg-text"
+              animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.span
+              className="block h-0.5 w-6 origin-center rounded bg-text"
+              animate={open ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="relative flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl md:hidden"
-          aria-expanded={open}
-          aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <motion.span
-            className="block h-0.5 w-6 origin-center rounded bg-text"
-            animate={open ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          />
-          <motion.span
-            className="block h-0.5 w-6 rounded bg-text"
-            animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.2 }}
-          />
-          <motion.span
-            className="block h-0.5 w-6 origin-center rounded bg-text"
-            animate={open ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          />
-        </button>
       </div>
 
       <AnimatePresence>
@@ -129,6 +164,13 @@ export function SiteHeader() {
               >
                 Контакты
               </NavLink>
+              <NavLink
+                to="/cart"
+                className="py-3 font-body text-lg font-medium"
+                onClick={() => setOpen(false)}
+              >
+                Корзина
+              </NavLink>
               <a href={SITE.phoneHref} className="py-3 font-body text-lg text-accent">
                 {SITE.phone}
               </a>
@@ -138,7 +180,7 @@ export function SiteHeader() {
                   {MARKETPLACES.map((m) => (
                     <a
                       key={m.id}
-                      href={m.href}
+                      href={GLOBAL_MARKETPLACE_URLS[m.id] ?? m.href}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-text-muted hover:text-accent"

@@ -41,7 +41,7 @@
 3. В PowerShell проверка порта, например:  
    `Get-NetTCPConnection -LocalPort 17300 -ErrorAction SilentlyContinue`
 
-По умолчанию для этого репозитория на **хосте** используется **17300** (внутри контейнера dev-сервер Vite всё равно на **5173** — это нормально).
+По умолчанию **и локально (`npm run dev`), и в Docker** dev-сервер слушает **17300** — не открывайте **5173** для этого репозитория (часто там другой проект).
 
 ### Запуск
 
@@ -76,7 +76,7 @@ npm install
 npm run dev
 ```
 
-Откройте URL из вывода Vite (локально обычно http://localhost:5173; в Docker смотрите проброшенный порт в `.env`).
+Откройте **http://localhost:17300** (или `FABRIC_FRONTEND_PORT` из `.env`).
 
 ### Backend (Django + DRF)
 

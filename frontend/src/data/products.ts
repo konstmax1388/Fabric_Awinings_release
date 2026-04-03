@@ -2,6 +2,15 @@ import type { MarketplaceId } from '../config/site'
 
 export type ProductCategory = 'truck' | 'warehouse' | 'cafe' | 'events'
 
+/** Тизеры на карточке (в админке — чекбоксы / теги) */
+export type ProductTeaser = 'recommended' | 'bestseller' | 'new'
+
+export const TEASER_LABELS: Record<ProductTeaser, string> = {
+  recommended: 'Рекомендуем',
+  bestseller: 'Хит продаж',
+  new: 'Новинка',
+}
+
 export type Product = {
   id: string
   slug: string
@@ -15,6 +24,10 @@ export type Product = {
   /** Индивидуальные витрины; пусто — в карточке МП не показываем или только общие из конфига */
   marketplaceLinks: Partial<Record<MarketplaceId, string>>
   updatedAt: string
+  /** Показывать в блоке на главной (поле в админке) */
+  showOnHome: boolean
+  /** Тизеры: рекомендуем / хит / новинка */
+  teasers: ProductTeaser[]
 }
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
@@ -45,6 +58,8 @@ export const MOCK_PRODUCTS: Product[] = [
       ozon: 'https://www.ozon.ru/search/?text=тент%20фура',
     },
     updatedAt: '2026-03-15',
+    showOnHome: true,
+    teasers: ['bestseller', 'recommended'],
   },
   {
     id: 'p2',
@@ -61,6 +76,8 @@ export const MOCK_PRODUCTS: Product[] = [
     priceFrom: 38000,
     marketplaceLinks: { ym: 'https://market.yandex.ru/search?text=тент%20фура' },
     updatedAt: '2026-02-20',
+    showOnHome: false,
+    teasers: ['new'],
   },
   {
     id: 'p3',
@@ -79,6 +96,8 @@ export const MOCK_PRODUCTS: Product[] = [
       avito: 'https://www.avito.ru/moskva?q=навес%20склад',
     },
     updatedAt: '2026-03-28',
+    showOnHome: false,
+    teasers: ['recommended'],
   },
   {
     id: 'p4',
@@ -95,6 +114,8 @@ export const MOCK_PRODUCTS: Product[] = [
     priceFrom: 1200000,
     marketplaceLinks: {},
     updatedAt: '2026-01-10',
+    showOnHome: false,
+    teasers: [],
   },
   {
     id: 'p5',
@@ -115,6 +136,8 @@ export const MOCK_PRODUCTS: Product[] = [
       ym: 'https://market.yandex.ru/',
     },
     updatedAt: '2026-03-22',
+    showOnHome: true,
+    teasers: ['recommended'],
   },
   {
     id: 'p6',
@@ -131,6 +154,8 @@ export const MOCK_PRODUCTS: Product[] = [
     priceFrom: 95000,
     marketplaceLinks: { avito: 'https://www.avito.ru/' },
     updatedAt: '2026-02-01',
+    showOnHome: false,
+    teasers: ['bestseller'],
   },
   {
     id: 'p7',
@@ -149,6 +174,8 @@ export const MOCK_PRODUCTS: Product[] = [
       ozon: 'https://www.ozon.ru/',
     },
     updatedAt: '2026-03-05',
+    showOnHome: true,
+    teasers: ['new', 'recommended'],
   },
   {
     id: 'p8',
@@ -165,6 +192,8 @@ export const MOCK_PRODUCTS: Product[] = [
     priceFrom: 450000,
     marketplaceLinks: {},
     updatedAt: '2025-12-18',
+    showOnHome: false,
+    teasers: [],
   },
   {
     id: 'p9',
@@ -183,6 +212,8 @@ export const MOCK_PRODUCTS: Product[] = [
       wb: 'https://www.wildberries.ru/',
     },
     updatedAt: '2026-03-30',
+    showOnHome: true,
+    teasers: ['new'],
   },
   {
     id: 'p10',
@@ -199,6 +230,8 @@ export const MOCK_PRODUCTS: Product[] = [
     priceFrom: 156000,
     marketplaceLinks: { avito: 'https://www.avito.ru/moskva?q=тент%20стройка' },
     updatedAt: '2026-02-14',
+    showOnHome: false,
+    teasers: [],
   },
   {
     id: 'p11',
@@ -218,6 +251,8 @@ export const MOCK_PRODUCTS: Product[] = [
       ozon: 'https://www.ozon.ru/',
     },
     updatedAt: '2026-03-12',
+    showOnHome: false,
+    teasers: ['recommended', 'new'],
   },
   {
     id: 'p12',
@@ -239,8 +274,15 @@ export const MOCK_PRODUCTS: Product[] = [
       avito: 'https://www.avito.ru/',
     },
     updatedAt: '2026-03-25',
+    showOnHome: true,
+    teasers: ['bestseller'],
   },
 ]
+
+/** Товары с флагом «на главной» (аналог фильтра в админке) */
+export function getHomeFeaturedProducts(): Product[] {
+  return MOCK_PRODUCTS.filter((p) => p.showOnHome)
+}
 
 export function getProductBySlug(slug: string): Product | undefined {
   return MOCK_PRODUCTS.find((p) => p.slug === slug)

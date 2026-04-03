@@ -1,18 +1,121 @@
+import { Helmet } from 'react-helmet-async'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Link, useParams } from 'react-router-dom'
+import { startTransition, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { publicSiteUrl } from '../config/publicSite'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { ProductGallery } from '../components/catalog/ProductGallery'
+import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { MARKETPLACES } from '../config/site'
-import { CATEGORY_LABELS, getProductBySlug, getRelatedProducts } from '../data/products'
+import { CATEGORY_LABELS, type Product } from '../data/products'
+import { useCart } from '../hooks/useCart'
+import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../lib/motion-presets'
 
+function ProductCartControls({ product }: { product: Product }) {
+  const navigate = useNavigate()
+  const { addProduct } = useCart()
+  const [qty, setQty] = useState(1)
+
+  return (
+    <div className="mt-8 flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 rounded-2xl border border-border px-2 py-1">
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-lg hover:border-accent"
+          onClick={() => setQty((q) => Math.max(1, q - 1))}
+          aria-label="Меньше"
+        >
+          −
+        </button>
+        <span className="min-w-[2rem] text-center font-body text-base tabular-nums">{qty}</span>
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-lg hover:border-accent"
+          onClick={() => setQty((q) => Math.min(99, q + 1))}
+          aria-label="Больше"
+        >
+          +
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          addProduct(product, qty)
+          navigate('/cart')
+        }}
+        className="inline-flex h-12 min-h-[44px] flex-1 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] hover:bg-[#c65f00] sm:flex-none sm:px-10"
+      >
+        В корзину
+      </button>
+    </div>
+  )
+}
+
 export function ProductPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
-  const product = slug ? getProductBySlug(slug) : undefined
+  const [product, setProduct] = useState<Product | null | undefined>(undefined)
+  const [related, setRelated] = useState<Product[]>([])
+  const site = publicSiteUrl()
+  const productJsonLd = useMemo(() => {
+    if (product === undefined || product === null) return ''
+    const img = product.images[0]
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.title,
+      description: product.excerpt || product.description,
+      image: img ? [img] : undefined,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'RUB',
+        price: product.priceFrom,
+        availability: 'https://schema.org/InStock',
+      },
+    })
+  }, [product])
+
+  useEffect(() => {
+    if (!slug) {
+      startTransition(() => {
+        setProduct(null)
+        setRelated([])
+      })
+      return
+    }
+    let cancelled = false
+    startTransition(() => setProduct(undefined))
+    fetchProductBySlug(slug).then((p) => {
+      if (cancelled) return
+      setProduct(p)
+      if (p) {
+        fetchRelatedProducts(p.category, p.slug, 6).then((r) => {
+          if (!cancelled) setRelated(r)
+        })
+      } else {
+        setRelated([])
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  if (product === undefined) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto max-w-[1280px] px-4 py-20 md:px-6">
+          <p className="font-body text-text-muted">Загрузка…</p>
+        </main>
+        <SiteFooter />
+      </>
+    )
+  }
 
   if (!product) {
     return (
@@ -35,11 +138,19 @@ export function ProductPage() {
     )
   }
 
-  const related = getRelatedProducts(product, 3)
   const allMpKeys = MARKETPLACES.map((m) => m.id)
 
   return (
     <>
+      <Helmet>
+        <title>{product.title} — каталог — Фабрика Тентов</title>
+        <meta
+          name="description"
+          content={(product.excerpt || product.description || '').slice(0, 160)}
+        />
+        <link rel="canonical" href={`${site}/catalog/${encodeURIComponent(product.slug)}`} />
+        <script type="application/ld+json">{productJsonLd}</script>
+      </Helmet>
       <SiteHeader />
       <main className="mx-auto max-w-[1280px] px-4 py-10 md:px-6 md:py-14">
         <motion.div
@@ -64,6 +175,7 @@ export function ProductPage() {
 
             <div>
               <p className="font-body text-sm text-accent">{CATEGORY_LABELS[product.category]}</p>
+              <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />
               <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-5xl">
                 {product.title}
               </h1>
@@ -73,6 +185,8 @@ export function ProductPage() {
               <p className="mt-6 font-body text-base leading-relaxed text-text-muted">
                 {product.description}
               </p>
+
+              <ProductCartControls key={product.slug} product={product} />
 
               <div className="mt-8 rounded-2xl border border-border-light bg-bg-base p-5">
                 <p className="font-body text-sm font-semibold text-text">Купить на маркетплейсах</p>

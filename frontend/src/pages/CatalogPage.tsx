@@ -1,22 +1,17 @@
+import { Helmet } from 'react-helmet-async'
 import { motion, useReducedMotion } from 'framer-motion'
-import { useCallback, useMemo } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
-import {
-  CATEGORY_LABELS,
-  MOCK_PRODUCTS,
-  type ProductCategory,
-} from '../data/products'
+import { CATEGORY_LABELS, type Product, type ProductCategory } from '../data/products'
 import {
   PAGE_SIZE,
   SORT_LABELS,
-  filterProducts,
-  paginate,
-  sortProducts,
   type CatalogSortId,
 } from '../lib/catalog-utils'
+import { fetchProductsPage, type Paginated } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
 
 const CATEGORIES: ProductCategory[] = ['truck', 'warehouse', 'cafe', 'events']
@@ -44,6 +39,32 @@ export function CatalogPage() {
   const sort = parseSort(search.get('sort'))
   const page = parsePage(search.get('page'))
 
+  const [data, setData] = useState<Paginated<Product> | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    startTransition(() => {
+      setLoading(true)
+      setError(null)
+    })
+    fetchProductsPage({ page, category, sort, pageSize: PAGE_SIZE }).then((res) => {
+      if (cancelled) return
+      if (!res) {
+        setData(null)
+        setError('Не удалось загрузить каталог. Попробуйте обновить страницу позже.')
+      } else {
+        setData(res)
+        setError(null)
+      }
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [page, category, sort])
+
   const setParams = useCallback(
     (patch: { category?: ProductCategory | null; sort?: CatalogSortId; page?: number }) => {
       const next = new URLSearchParams(search)
@@ -64,15 +85,28 @@ export function CatalogPage() {
     [search, setSearch],
   )
 
-  const filtered = useMemo(() => filterProducts(MOCK_PRODUCTS, category), [category])
-  const sorted = useMemo(() => sortProducts(filtered, sort), [filtered, sort])
-  const { slice, totalPages, page: currentPage, total } = useMemo(
-    () => paginate(sorted, page, PAGE_SIZE),
-    [sorted, page],
-  )
+  const total = data?.count ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const slice = data?.results ?? []
+
+  useEffect(() => {
+    if (data && page > totalPages && totalPages >= 1) {
+      setParams({ page: totalPages })
+    }
+  }, [data, page, totalPages, setParams])
+
+  const showPager = useMemo(() => totalPages > 1 && !loading && !error, [totalPages, loading, error])
 
   return (
     <>
+      <Helmet>
+        <title>Каталог — Фабрика Тентов</title>
+        <meta
+          name="description"
+          content="Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от»."
+        />
+      </Helmet>
       <SiteHeader />
       <main className="mx-auto max-w-[1280px] px-4 py-10 md:px-6 md:py-14">
         <motion.div
@@ -91,7 +125,7 @@ export function CatalogPage() {
             Каталог
           </h1>
           <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
-            Тенты, навесы и шатры. Фильтры и сортировка — мок-данные до подключения API.
+            Тенты, навесы и шатры для транспорта, складов, общепита и мероприятий.
           </p>
         </motion.div>
 
@@ -129,7 +163,11 @@ export function CatalogPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-body text-sm text-text-muted">
-                Показано {slice.length} из {total}
+                {loading
+                  ? 'Загрузка…'
+                  : error
+                    ? error
+                    : `Показано ${slice.length} из ${total}`}
               </p>
               <label className="flex items-center gap-2 font-body text-sm text-text">
                 <span className="text-text-muted">Сортировка</span>
@@ -137,6 +175,7 @@ export function CatalogPage() {
                   value={sort}
                   onChange={(e) => setParams({ sort: e.target.value as CatalogSortId, page: 1 })}
                   className="h-11 rounded-xl border border-border bg-surface px-3 font-body text-text outline-none focus:border-accent"
+                  disabled={loading}
                 >
                   {(Object.keys(SORT_LABELS) as CatalogSortId[]).map((id) => (
                     <option key={id} value={id}>
@@ -146,6 +185,12 @@ export function CatalogPage() {
                 </select>
               </label>
             </div>
+
+            {error && (
+              <p className="mt-6 font-body text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
 
             <motion.div
               className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
@@ -161,7 +206,11 @@ export function CatalogPage() {
               ))}
             </motion.div>
 
-            {totalPages > 1 && (
+            {!loading && !error && slice.length === 0 && (
+              <p className="mt-10 font-body text-text-muted">В этой категории пока нет позиций.</p>
+            )}
+
+            {showPager && (
               <nav
                 className="mt-10 flex flex-wrap items-center justify-center gap-2"
                 aria-label="Страницы каталога"

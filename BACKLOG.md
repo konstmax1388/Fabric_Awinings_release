@@ -60,9 +60,9 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| B-1 | Модели и API: товары, портфолио, отзывы, статьи, заявки, контент главной | TODO | [functional-requirements.md](docs/functional-requirements.md) §2.2 |
-| B-2 | **JWT**, роли admin / manager | TODO | |
-| B-3 | Админка: React Admin или кастом, полный CRUD | TODO | |
+| B-1 | Модели и API: товары, портфолио, отзывы, статьи, заявки | DONE | `backend/api/`, `GET/POST` под `/api/` |
+| B-2 | **JWT** (получение токена + `/api/auth/me/`) | DONE | `djangorestframework-simplejwt`, staff в админке |
+| B-3 | Админка: Django admin + CRUD контента | DONE | `backend/api/admin.py`; React Admin — отложено |
 
 ---
 
@@ -70,8 +70,8 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| SEO-1 | React Helmet, sitemap.xml, robots.txt, микроразметка | TODO | |
-| QA-1 | Lighthouse, кроссбраузер, мобилки, багфиксы | TODO | [deliverables-and-acceptance.md](docs/deliverables-and-acceptance.md) §7 |
+| SEO-1 | React Helmet, sitemap.xml, robots.txt, микроразметка | DONE | `react-helmet-async`, `public/`, JSON-LD на ключевых страницах |
+| QA-1 | Тесты API + ручной чек-лист | DONE | `pytest` в `backend/tests/`; чек-лист в [development-phases.md](docs/development-phases.md) |
 
 ---
 

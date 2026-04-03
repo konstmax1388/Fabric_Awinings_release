@@ -1,33 +1,38 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { fetchBlogPosts, type BlogListItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
-
-const posts = [
-  {
-    slug: 'kak-vybrat-material',
-    title: 'Как выбрать материал для тента: ПВХ или ткань',
-    excerpt: 'Сравниваем срок службы, уход и применение для транспорта и стационарных навесов.',
-    date: '28.03.2026',
-    img: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=80',
-  },
-  {
-    slug: 'zamer-svoimi-rukami',
-    title: 'Замер тента своими руками: чек-лист',
-    excerpt: 'Что снять с объекта, чтобы мы подготовили КП без выезда.',
-    date: '15.03.2026',
-    img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80',
-  },
-  {
-    slug: 'ustanovka-zimoj',
-    title: 'Монтаж зимой: когда это возможно',
-    excerpt: 'Температура, ветер и крепления — что учитываем при зимнем монтаже.',
-    date: '02.03.2026',
-    img: 'https://images.unsplash.com/photo-1519003722824-cd6e866ed77c?w=600&q=80',
-  },
-]
 
 export function BlogPreviewSection() {
   const reduce = useReducedMotion()
+  const [posts, setPosts] = useState<BlogListItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchBlogPosts().then((list) => {
+      if (!cancelled) {
+        setPosts(list.slice(0, 3))
+        setLoading(false)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
+        <div className="mx-auto max-w-[1280px] px-4 md:px-6">
+          <p className="font-body text-text-muted">Загрузка блога…</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (posts.length === 0) return null
 
   return (
     <section className="bg-[#F5F0E8]/40 py-12 md:py-24">

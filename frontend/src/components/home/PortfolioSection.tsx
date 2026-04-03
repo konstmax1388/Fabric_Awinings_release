@@ -1,42 +1,32 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { fetchPortfolio, type PortfolioItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
 const categories = ['Все', 'Транспорт', 'Склады', 'Террасы']
 
-const projects = [
-  {
-    id: '1',
-    title: 'Тент на фуру 20 т',
-    category: 'Транспорт',
-    date: '12.03.2025',
-    before: 'https://images.unsplash.com/photo-1519003722824-cd6e866ed77c?w=400&q=80',
-    after: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80',
-  },
-  {
-    id: '2',
-    title: 'Навес для склада',
-    category: 'Склады',
-    date: '02.02.2025',
-    before: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&q=80',
-    after: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80',
-  },
-  {
-    id: '3',
-    title: 'Терраса кафе',
-    category: 'Террасы',
-    date: '18.01.2025',
-    before: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=80',
-    after: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80',
-  },
-]
-
 export function PortfolioSection() {
   const [filter, setFilter] = useState('Все')
+  const [projects, setProjects] = useState<PortfolioItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const reduce = useReducedMotion()
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPortfolio().then((list) => {
+      if (!cancelled) {
+        setProjects(list)
+        setLoading(false)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const filtered =
     filter === 'Все' ? projects : projects.filter((p) => p.category === filter)
-  const reduce = useReducedMotion()
 
   return (
     <motion.section
@@ -73,42 +63,50 @@ export function PortfolioSection() {
         </div>
       </div>
 
-      <motion.div
-        key={filter}
-        className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        {filtered.map((p) => (
-          <motion.article
-            key={p.id}
-            variants={staggerItem}
-            whileHover={
-              reduce
-                ? undefined
-                : {
-                    scale: 1.03,
-                    y: -4,
-                    boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
-                  }
-            }
-            transition={{ type: 'spring', stiffness: 400, damping: 26 }}
-            className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
-          >
-            <div className="grid grid-cols-2 gap-0.5 bg-border">
-              <img src={p.before} alt={`${p.title} — до`} className="aspect-[4/3] object-cover" />
-              <img src={p.after} alt={`${p.title} — после`} className="aspect-[4/3] object-cover" />
-            </div>
-            <div className="p-4">
-              <p className="font-body text-xs text-text-subtle">
-                {p.category} · {p.date}
-              </p>
-              <h3 className="mt-1 font-heading text-lg font-semibold text-text">{p.title}</h3>
-            </div>
-          </motion.article>
-        ))}
-      </motion.div>
+      {loading ? (
+        <p className="mt-10 font-body text-text-muted">Загрузка портфолио…</p>
+      ) : (
+        <motion.div
+          key={filter}
+          className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          {filtered.map((p) => (
+            <motion.article
+              key={p.id}
+              variants={staggerItem}
+              whileHover={
+                reduce
+                  ? undefined
+                  : {
+                      scale: 1.03,
+                      y: -4,
+                      boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
+                    }
+              }
+              transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+              className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+            >
+              <div className="grid grid-cols-2 gap-0.5 bg-border">
+                <img src={p.before} alt={`${p.title} — до`} className="aspect-[4/3] object-cover" />
+                <img src={p.after} alt={`${p.title} — после`} className="aspect-[4/3] object-cover" />
+              </div>
+              <div className="p-4">
+                <p className="font-body text-xs text-text-subtle">
+                  {p.category} · {p.date}
+                </p>
+                <h3 className="mt-1 font-heading text-lg font-semibold text-text">{p.title}</h3>
+              </div>
+            </motion.article>
+          ))}
+        </motion.div>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <p className="mt-10 font-body text-text-muted">Нет проектов в выбранной категории.</p>
+      )}
 
       <div className="mt-10 text-center">
         <motion.span whileHover={reduce ? undefined : { scale: 1.02 }} className="inline-block">

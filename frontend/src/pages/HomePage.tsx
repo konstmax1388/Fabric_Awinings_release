@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
+import { useEffect, useMemo } from 'react'
+import { publicSiteUrl } from '../config/publicSite'
 import { BlogPreviewSection } from '../components/home/BlogPreviewSection'
 import { HeroSection } from '../components/home/HeroSection'
 import { MapFormSection } from '../components/home/MapFormSection'
@@ -6,18 +8,25 @@ import { PortfolioSection } from '../components/home/PortfolioSection'
 import { PriceCalculatorSection } from '../components/home/PriceCalculatorSection'
 import { ProblemSolutionSection } from '../components/home/ProblemSolutionSection'
 import { ReviewsSection } from '../components/home/ReviewsSection'
+import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection'
 import { TentTypesSection } from '../components/home/TentTypesSection'
 import { WhyUsSection } from '../components/home/WhyUsSection'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
-import { fetchHealth } from '../lib/api'
 
 export function HomePage() {
-  const [apiOk, setApiOk] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    fetchHealth().then((d) => setApiOk(!!d?.status))
-  }, [])
+  const site = publicSiteUrl()
+  const orgJsonLd = useMemo(
+    () =>
+      JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'LocalBusiness',
+        name: 'Фабрика Тентов',
+        url: site,
+        description: 'Тенты, навесы, шатры и террасы под ключ.',
+      }),
+    [site],
+  )
 
   useEffect(() => {
     if (window.location.hash === '#calculator') {
@@ -29,18 +38,23 @@ export function HomePage() {
 
   return (
     <>
+      <Helmet>
+        <title>Фабрика Тентов — тенты, навесы, шатры</title>
+        <meta
+          name="description"
+          content="Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, калькулятор, заявка онлайн."
+        />
+        <link rel="canonical" href={`${site}/`} />
+        <script type="application/ld+json">{orgJsonLd}</script>
+      </Helmet>
       <SiteHeader />
       <main>
         <div className="px-0 pt-4 md:pt-6">
           <HeroSection />
         </div>
-        {apiOk !== null && (
-          <p className="mx-auto max-w-[1280px] px-4 py-2 text-center font-body text-xs text-text-subtle md:px-6">
-            API: {apiOk ? 'подключено' : 'недоступно (проверьте контейнер api и VITE_API_URL)'}
-          </p>
-        )}
         <ProblemSolutionSection />
         <TentTypesSection />
+        <FeaturedProductsSection />
         <PriceCalculatorSection />
         <PortfolioSection />
         <WhyUsSection />

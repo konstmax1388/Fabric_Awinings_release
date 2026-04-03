@@ -41,4 +41,17 @@
 - **Этап 4** — каталог: `frontend/src/pages/CatalogPage.tsx`, мок-товары `frontend/src/data/products.ts`, фильтр категории (`?category=`), сортировка, пагинация (`?page=`), карточка `ProductCard`, страница товара `ProductPage` + маршрут `/catalog/:slug`, галерея `ProductGallery`, похожие товары.
 - **Этап 5** — маркетплейсы: у товара поле `marketplaceLinks`; `MarketplaceLinks` с `hrefById` и `linkKeys`; глобальные URL — `GLOBAL_MARKETPLACE_URLS` в `site.ts` (шапка/футер + текстовые ссылки в футере).
 - **Этап 6** — калькулятор: формула и материалы в `frontend/src/lib/calculator.ts`, заявка через `submitCalculatorLead` в `frontend/src/lib/leads.ts` (заглушка до API), форма имя/телефон/комментарий в `PriceCalculatorSection`.
-- **Этап 7+** — backend, админка, SEO — по плану (см. BACKLOG).
+- **Этап 7** — Django REST: модели и миграции в `backend/api/`, `GET/POST` эндпоинты (`/api/products/`, портфолио, отзывы, блог, заявки), JWT (`/api/auth/token/`, `/api/auth/me/`), фильтры и пагинация каталога; зависимости в `backend/requirements.txt`.
+- **Этап 8** — админка Django: регистрация моделей и inline изображений товара в `backend/api/admin.py`; демо-данные — `python manage.py seed_demo` (опция `--purge`).
+- **Этап 9** — SEO: `react-helmet-async` (обёртка в `App.tsx`, мета и JSON-LD на главной/каталоге/товаре/блоге/контактах), `frontend/public/robots.txt` и `sitemap.xml` (заглушка домена для продакшена), `VITE_SITE_URL` в `.env.example`.
+- **Этап 10** — качество: автотесты API `pytest` в `backend/tests/` (`pytest.ini`); ручная проверка после `docker compose up`: миграции в `Dockerfile.dev`, затем `seed_demo`, сценарии каталог → карточка → корзина → заявка, калькулятор, блог/портфолио/отзывы на главной.
+
+### Чек-лист ручного теста (этап 10)
+
+1. `docker compose up --build`, дождаться API и Vite.
+2. `docker compose exec api python manage.py seed_demo` (если каталог пустой).
+3. Главная: блоки «подборка», портфолио, отзывы, превью блога заполняются с API; строка статуса API.
+4. Каталог: фильтр категории, сортировка, пагинация; карточка товара и «похожие».
+5. Корзина: оформление — номер заказа и текст с сервера.
+6. Калькулятор: отправка формы — запись в админке или ответ 201.
+7. Сборка фронта: `npm run build` в `frontend/`.

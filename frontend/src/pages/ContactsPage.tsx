@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { SITE } from '../config/site'
 import { SiteFooter } from '../components/layout/SiteFooter'
@@ -7,6 +8,10 @@ import { MapFormSection } from '../components/home/MapFormSection'
 export function ContactsPage() {
   return (
     <>
+      <Helmet>
+        <title>Контакты — Фабрика Тентов</title>
+        <meta name="description" content={`Телефон, email и адрес: ${SITE.address}`} />
+      </Helmet>
       <SiteHeader />
       <main className="mx-auto max-w-[1280px] px-4 py-12 md:px-6">
         <h1 className="font-heading text-4xl font-bold text-text md:text-5xl">Контакты</h1>
