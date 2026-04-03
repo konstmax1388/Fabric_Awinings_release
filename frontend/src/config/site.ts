@@ -9,7 +9,7 @@ export const SITE = {
   legal: 'ООО «Фабрика Тентов», ИНН 0000000000',
 } as const
 
-/** Логотипы: `public/marketplaces/*.svg` (источник — Wikimedia Commons, файлы брендов). */
+/** Логотипы в `public/marketplaces/` (SVG с Commons; Ozon — свой WebP). */
 export const MARKETPLACES = [
   {
     id: 'wb',
@@ -21,7 +21,7 @@ export const MARKETPLACES = [
     id: 'ozon',
     label: 'OZON',
     href: 'https://www.ozon.ru/',
-    logoSrc: '/marketplaces/ozon.svg',
+    logoSrc: '/marketplaces/ozon.webp',
   },
   {
     id: 'ym',
