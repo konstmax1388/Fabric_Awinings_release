@@ -9,6 +9,7 @@
 | Документ | Назначение |
 |----------|------------|
 | [project-context.md](./project-context.md) | Снимок реализации: backend/frontend, `/cart`, AppShell, команды, ограничения |
+| [bitrix24-ecommerce-plan.md](./bitrix24-ecommerce-plan.md) | **План и требования:** магазин на сайте + Битрикс24, СДЭК, эквайринг, ЛК (без реализации) |
 | [requirements.md](./requirements.md) | Техническое задание, ограничения, договорённости по процессу |
 | [functional-requirements.md](./functional-requirements.md) | Цели, **frontend**, **админка**, **интеграции** (МП, Яндекс Карты, аналитика, email, капча) |
 | [typography.md](./typography.md) | Шрифты: Google Fonts, Tailwind, Figma, адаптив Mobile First |
