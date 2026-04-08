@@ -11,13 +11,16 @@
 | [project-context.md](./project-context.md) | Снимок реализации: backend/frontend, `/cart`, AppShell, команды, ограничения |
 | [bitrix24-ecommerce-plan.md](./bitrix24-ecommerce-plan.md) | **План и требования:** магазин на сайте + Битрикс24, СДЭК, эквайринг, ЛК (без реализации) |
 | [from-scaffold-to-bitrix.md](./from-scaffold-to-bitrix.md) | Каркас React+Django как «шаблон» vs Битрикс24 / 1С-Битрикс: УС — что совместимо |
-| [requirements.md](./requirements.md) | Техническое задание, ограничения, договорённости по процессу |
-| [functional-requirements.md](./functional-requirements.md) | Цели, **frontend**, **админка**, **интеграции** (МП, Яндекс Карты, аналитика, email, капча) |
+| [requirements.md](./requirements.md) | Техническое задание (**ТЗ 2.0**), ограничения, договорённости по процессу |
+| [tz-2-0-alignment.md](./tz-2-0-alignment.md) | **ТЗ 2.0:** что изменилось относительно v1, расхождения с кодом |
+| [rollout-two-phase-plan.md](./rollout-two-phase-plan.md) | **Два больших этапа:** магазин + Б24 (пошагово), затем имп товаров (Б24 / WB / Ozon); чек-лист нехватки данных |
+| [excel-catalog-import.md](./excel-catalog-import.md) | Импорт каталога из таблицы заказчика (`.xlsx`), маппинг колонок |
+| [functional-requirements.md](./functional-requirements.md) | Цели, **frontend**, **админка**, **интеграции** (Б24, СДЭК, эквайринг, МП, …) |
 | [typography.md](./typography.md) | Шрифты: Google Fonts, Tailwind, Figma, адаптив Mobile First |
 | [design.md](./design.md) | **Дизайн:** бриф (§1) + глобальные стили (§2) |
 | [components.md](./components.md) | **Компоненты:** Primary/Secondary/иконка, Input, карточки товара/портфолио/отзыва, иконки МП, бургер |
 | [animations.md](./animations.md) | **Анимации (ТЗ §5):** fade-up, stagger, hover, CTA-пульс, счётчики, бургер; реализация Framer Motion |
-| [development-phases.md](./development-phases.md) | **Этапы разработки** (1–10): Vite/React, Tailwind, Django/DRF, анимации, каталог, МП, калькулятор, API, админка, SEO, тесты |
+| [development-phases.md](./development-phases.md) | **Этапы по ТЗ 2.0** (1–12): магазин, ЛК, Б24, СДЭК, эквайринг, Celery, React Admin, SEO, тесты + статус кода |
 | [deliverables-and-acceptance.md](./deliverables-and-acceptance.md) | **Деливераблы** (код, деплой, админка, доки) и **критерии приёмки** (функционал, Lighthouse, анимации, безопасность) |
 
 ## Как вести документы

@@ -56,3 +56,13 @@ coverage/
 db.sqlite3
 media/
 staticfiles/
+
+# Локальные выгрузки из ТЗ/Excel (могут содержать секреты или дубликаты бинарников)
+docs/_tz*_plain.txt
+docs/_content_xlsx.json
+docs/_tz20_extract.txt
+docs/_xlsx_sample.txt
+
+# Временный lock-файл Microsoft Office при открытом документе
+~$*.docx
+~$*.xlsx

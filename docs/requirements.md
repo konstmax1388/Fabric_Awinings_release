@@ -10,15 +10,15 @@
 |------|----------|
 | Название | **Сайт «Фабрика Тентов»** |
 | Тематика | Производство **тентов на заказ** |
-| Версия ТЗ | 1.0 |
+| Версия ТЗ | **2.0** (финальная, `ТЗ2.0.docx`) |
 | Дата ТЗ | апрель 2026 |
-| Тип проекта | **Landing page** + **каталог** + **админка** |
+| Тип проекта | **Интернет-магазин** (каталог, корзина, оформление, ЛК) **+ лендинг**; интеграции **Битрикс24**, **СДЭК**, **эквайринг** |
 | Концепция | **№2 «Лёгкая архитектура»** — продающая, универсальная |
 | Стек (план) | **Frontend:** Vite, React, Tailwind, Framer Motion, React Helmet. **Backend:** Django, DRF, JWT. **Админка:** React Admin или кастом. Порядок работ — **[development-phases.md](./development-phases.md)**. |
 | Репозиторий Git | [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings) |
 | Ветки | **`main`** — основная линия разработки; **`release`** — релизная ветка |
 
-Цели, задачи и пользовательский frontend (лендинг, каталог, товар, портфолио, контакты, блог) — в **[functional-requirements.md](./functional-requirements.md)**.
+Цели, задачи и функционал (в т.ч. магазин и интеграции по ТЗ 2.0) — в **[functional-requirements.md](./functional-requirements.md)**. Сводка изменений ТЗ 2.0 и расхождения с кодом — **[tz-2-0-alignment.md](./tz-2-0-alignment.md)**. Импорт таблицы товаров Excel — **[excel-catalog-import.md](./excel-catalog-import.md)**.
 
 ---
 
@@ -162,6 +162,7 @@
 | 2026-04-02 | Этапы разработки 1–10: Vite/React/Tailwind/шрифты, Django+DRF+маршрутизация, 11 блоков главной, Framer Motion, каталог+товар, МП, калькулятор, backend+JWT, админка, Helmet+sitemap+robots+микроразметка, тесты → `docs/development-phases.md`. |
 | 2026-04-02 | Деливераблы (§6): репозиторий, сайт/инструкция деплоя, доступ в админку, sitemap+robots, доки админа и разработчика; локально admin/admin. Приёмка (§7): функционал, Lighthouse ≥80/90/90/80, анимации, защита форм и авторизация админки → `docs/deliverables-and-acceptance.md`. |
 | 2026-04-02 | Git: `https://github.com/konstmax1388/Fabric_Awinings`, ветки `main` и `release`. |
+| 2026-04-02 | **ТЗ 2.0** (`ТЗ2.0.docx`): интернет-магазин + лендинг; каталог/остатки/заказы из **Битрикс24**; **СДЭК** + Яндекс.Карты; **эквайринг** (карты, СБП); ЛК; Celery/Redis; React Admin; админка — overlay по товарам (видимость, порядок, SEO). Доки: `tz-2-0-alignment.md`, `excel-catalog-import.md`, обновлены `functional-requirements.md`, `development-phases.md`. |
 | 2026-04-02 | Цель дизайна: современный «воздушный» продающий UI; ощущения — надёжность, качество, открытость, современность, забота о клиенте → `docs/design.md` §1. |
 | 2026-04-02 | Глобальные стили (§2): палитра + белый/границы; типографика desktop/mobile, цена #E87A00, кнопки `letter-spacing: 0.02em`; скругления 8/40/16/24px; тени карточка/hover/Primary; сетка 1280/12 col/gutter 24, десктоп 1920 / моб. 390 → `design.md`. |
 | 2026-04-02 | Глобальные компоненты (§3): Primary/Secondary/icon button, Input+focus/error, карточка товара/портфолио/отзыва, иконки МП, бургер+drawer → `docs/components.md`. |

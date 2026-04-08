@@ -15,7 +15,8 @@
 | Оглавление документации | [docs/README.md](docs/README.md) |
 | Требования, процесс, хостинг, Git | [docs/requirements.md](docs/requirements.md) |
 | Функционал (frontend, админка, интеграции) | [docs/functional-requirements.md](docs/functional-requirements.md) |
-| Этапы разработки (Vite/React, Django, …) | [docs/development-phases.md](docs/development-phases.md) |
+| Этапы (ТЗ 2.0: 12 этапов, статус кода) | [docs/development-phases.md](docs/development-phases.md) |
+| Сводка ТЗ 2.0 и импорт Excel | [docs/tz-2-0-alignment.md](docs/tz-2-0-alignment.md), [docs/excel-catalog-import.md](docs/excel-catalog-import.md) |
 | Снимок контекста (стек, API, корзина) | [docs/project-context.md](docs/project-context.md) |
 | Деливераблы и критерии приёмки | [docs/deliverables-and-acceptance.md](docs/deliverables-and-acceptance.md) |
 | Дизайн и чек-лист | [docs/design.md](docs/design.md) |
