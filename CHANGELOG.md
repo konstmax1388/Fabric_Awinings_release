@@ -1,0 +1,35 @@
+# Changelog
+
+Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
+**Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
+
+## [2.0.1a] — 2026-04-02
+
+### Добавлено
+
+- Файл **`VERSION`** в корне репозитория; модуль **`backend/config/version.py`**; в шапке **django-unfold** справа отображается номер версии (цвет бейджа: dev/prod по `DJANGO_DEBUG`).
+- **Защита форм и лидов:** поле-приманка `website` (пустое у легитимного клиента), **rate limit** по IP на `POST /api/leads/calculator/`, `callback/`, `cart/` (40/час); отдельный лимит на **`POST /api/auth/register/`** (20/час).
+- **Валидация контактов на API:** нормализация телефона РФ (`+7` + 10 цифр), проверка имени и длины комментария, email в заказе; опциональный телефон в профиле/адресе.
+- **Фронт:** общий модуль `frontend/src/lib/formValidation.ts` — маска `+7 (___) ___-__-__`, проверки имени/email/комментария; формы checkout, калькулятор, обратный звонок, карта/контакты, регистрация, профиль, адреса; у заявки с карты передаётся `leadSource: other`.
+- **`LocMemCache`** в настройках Django для работы throttling.
+
+### Изменено
+
+- Бейдж окружения Unfold («Разработка» / «Продакшен») заменён на отображение **версии** из `VERSION` (см. `unfold_environment_callback` в `config/settings.py`).
+- Версия **`frontend/package.json`** выровнена с релизной линией в формате semver: `2.0.1-a` (соответствует метке **2.0.1a** в `VERSION`).
+
+### Технические улучшения (ранее в той же ветке разработки)
+
+- **Code splitting:** ленивая загрузка маршрутов (`React.lazy` + `Suspense` в `App.tsx`).
+- **SEO:** динамический **`GET /sitemap.xml`** на бэкенде (`api/views_seo.py`), тесты в `tests/test_seo_and_images.py`.
+- **Изображения:** варианты/оптимизация для витрины (`optimizedImage`, компонент `OptimizedImage`), связанные тесты.
+
+### Документация
+
+- Обновлены **`docs/next-steps.md`**, **`docs/development-phases.md`**, **`docs/project-context.md`**, **`BACKLOG.md`**, **`docs/technical-debt.md`** (часть пунктов техдолга закрыта или уточнена).
+
+---
+
+## [0.1.0] и ранее — без тегов в репозитории
+
+Начальная история коммитов на **GitHub** (`main`): каркас Vite + React + Django + DRF, каталог, корзина, заявки, админка Unfold, docker-compose. Детальный статус по этапам ТЗ — **[docs/development-phases.md](docs/development-phases.md)**.

@@ -1,4 +1,4 @@
-# Fabric Awinings / Фабрика Тентов
+# Fabric Awnings / Фабрика Тентов
 
 Сайт производства **тентов на заказ**: лендинг, каталог, админка. Концепция — «лёгкая архитектура», продающий современный интерфейс.
 
@@ -18,6 +18,8 @@
 | Этапы (ТЗ 2.0: 12 этапов, статус кода) | [docs/development-phases.md](docs/development-phases.md) |
 | Сводка ТЗ 2.0 и импорт Excel | [docs/tz-2-0-alignment.md](docs/tz-2-0-alignment.md), [docs/excel-catalog-import.md](docs/excel-catalog-import.md) |
 | Снимок контекста (стек, API, корзина) | [docs/project-context.md](docs/project-context.md) |
+| Что делать дальше (приоритеты и долг) | [docs/next-steps.md](docs/next-steps.md) |
+| Журнал изменений (версии) | [CHANGELOG.md](CHANGELOG.md) |
 | Деливераблы и критерии приёмки | [docs/deliverables-and-acceptance.md](docs/deliverables-and-acceptance.md) |
 | Дизайн и чек-лист | [docs/design.md](docs/design.md) |
 | Компоненты UI | [docs/components.md](docs/components.md) |
@@ -84,6 +86,13 @@ npm run dev
 
 Сервис **`api`** в `docker-compose.yml`: **Django 5**, **Django REST Framework**, **django-cors-headers**. Эндпоинт **`GET /api/health/`** — проверка связи (на главной отображается строка «API: подключено»).
 
+При старте контейнера **`api`** выполняется **`migrate`** (см. `backend/docker-entrypoint.dev.sh`). Если после `git pull` админка падает с **`no such column`** или **`no such table`**, схема БД отстаёт от кода — примените миграции и перезапустите API:
+
+```bash
+docker compose exec api python manage.py migrate --noinput
+docker compose restart api
+```
+
 Локально без Docker:
 
 ```bash
@@ -91,10 +100,13 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 .\.venv\Scripts\python manage.py migrate
-.\.venv\Scripts\python manage.py runserver 0.0.0.0:8000
+# Порт 18000 — как у `FABRIC_API_PORT` в Docker; тогда Vite (17300) проксирует /admin без .env
+.\.venv\Scripts\python manage.py runserver 0.0.0.0:18000
 ```
 
-При локальном frontend задайте в `frontend/.env`: `VITE_API_URL=http://localhost:8000`.
+Если Django слушает **другой** порт (например 8000), в **`frontend/.env`** задайте `VITE_API_URL=http://localhost:8000` (это же значение используется как цель прокси для `/admin` и `/media`).
+
+**502 на http://localhost:17300/admin/** — почти всегда значит: не запущен Django или порт не совпадает с `VITE_API_URL` / `VITE_PROXY_TARGET` (по умолчанию ожидается **http://127.0.0.1:18000**). Проверка: откройте **http://localhost:18000/api/health/** (или ваш порт API).
 
 ## Лицензия
 

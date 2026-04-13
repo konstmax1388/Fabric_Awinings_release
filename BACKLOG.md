@@ -11,6 +11,19 @@
 | D-1 | Зафиксировать ТЗ и дизайн в `docs/` | DONE | Текущее состояние репозитория |
 | D-2 | Корневой `README.md` + `BACKLOG.md` | DONE | Этот файл и README в корне |
 | D-3 | Первый коммит в Git, ветки `main` / `release` | DONE | Инициализация репозитория в корне проекта |
+| D-4 | **CHANGELOG.md** + синхронизация `next-steps` / `development-phases` / `project-context` | DONE | 2026-04-02, версия **2.0.1a** |
+| D-5 | Ведение версий: файл **`VERSION`**, теги `git tag v…`, `git push origin main --tags` | TODO | Процесс на стороне команды; текущая версия в `VERSION` |
+
+---
+
+## Эпик: Качество витрины и безопасность форм
+
+| ID | Задача | Статус | Примечание |
+|----|--------|--------|------------|
+| Q-1 | Маски и валидация телефона/имени/email на формах | DONE | `frontend/src/lib/formValidation.ts`, см. [CHANGELOG.md](CHANGELOG.md) |
+| Q-2 | Антиспам: honeypot `website`, throttle лидов и регистрации | DONE | `api/validators.py`, `api/throttles.py`, тесты в `test_api.py` |
+| Q-3 | Версия в админке Unfold (чтение `VERSION`) | DONE | `backend/config/version.py` |
+| Q-4 | Капча на формах при необходимости | TODO | После метрик спама |
 
 ---
 
@@ -70,7 +83,9 @@
 
 | ID | Задача | Статус | Примечание |
 |----|--------|--------|------------|
-| SEO-1 | React Helmet, sitemap.xml, robots.txt, микроразметка | DONE | `react-helmet-async`, `public/`, JSON-LD на ключевых страницах |
+| SEO-1 | React Helmet, robots.txt, микроразметка | DONE | `react-helmet-async`, `public/robots.txt`, JSON-LD на ключевых страницах |
+| SEO-2 | Динамический **sitemap.xml** (slug товаров и страницы) | DONE | `GET /sitemap.xml` в Django (`api/views_seo.py`), тесты `test_seo_and_images.py` |
+| PERF-1 | Code splitting маршрутов (`React.lazy`) | DONE | `frontend/src/App.tsx` |
 | QA-1 | Тесты API + ручной чек-лист | DONE | `pytest` в `backend/tests/`; чек-лист в [development-phases.md](docs/development-phases.md) |
 
 ---

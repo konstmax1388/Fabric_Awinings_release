@@ -14,7 +14,18 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.utils.translation import gettext_lazy as _
+
+from .unfold_sidebar import build_unfold_sidebar
+from .version import APP_VERSION
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def unfold_environment_callback(request):
+    """Бейдж справа в шапке Unfold: номер версии; цвет намекает на окружение (DEBUG)."""
+    dev = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
+    return [APP_VERSION, "warning" if dev else "success"]
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -29,7 +40,10 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api"
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "django.contrib.admin",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -58,7 +72,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -75,6 +89,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Прод: MySQL 8.0.45 (utf8mb4) — см. docs/requirements.md §5. Пока без переключения по env: добавить ENGINE mysql + mysqlclient при деплое.
 
 DATABASES = {
     'default': {
@@ -117,6 +132,20 @@ _cors = os.environ.get(
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
 
+# Вход в Django Admin через прокси Vite (http://localhost:17300/admin → API)
+_csrf = os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "http://localhost:17300,http://127.0.0.1:17300",
+)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "fabric-awnings",
+    }
+}
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -132,6 +161,10 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_THROTTLE_RATES": {
+        "lead_submit": "40/hour",
+        "auth_register": "20/hour",
+    },
 }
 
 SIMPLE_JWT = {
@@ -148,7 +181,101 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+# В продакшене при DEBUG=False файлы из /media/ отдаёт веб-сервер (nginx и т.п.), не Django.
+
+_public_site = os.environ.get("DJANGO_PUBLIC_SITE_URL", "http://localhost:17300").rstrip("/")
+# Канонический origin витрины (sitemap.xml, абсолютные ссылки). Синхронизируйте с VITE_SITE_URL на фронте.
+PUBLIC_SITE_URL = _public_site
+
+# Astrum «Заявки с сайта» → Битрикс24: https://app-5.astrum.agency/documentation
+ASTRUM_CRM_API_URL = os.environ.get(
+    "ASTRUM_CRM_API_URL", "https://app-5.astrum.agency/api/order"
+).strip()
+ASTRUM_CRM_API_KEY = (os.environ.get("ASTRUM_CRM_API_KEY") or "").strip()
+_assigned_default_raw = (os.environ.get("ASTRUM_CRM_ASSIGNED_DEFAULT") or "").strip()
+ASTRUM_CRM_ASSIGNED_DEFAULT: int | None = (
+    int(_assigned_default_raw) if _assigned_default_raw.isdigit() else None
+)
+ASTRUM_CRM_CONTACT_BEHAVIOR = (
+    os.environ.get("ASTRUM_CRM_CONTACT_BEHAVIOR", "SELECT_EXISTING") or "SELECT_EXISTING"
+).strip()
+ASTRUM_CRM_ENTITY_BEHAVIOR = (
+    os.environ.get("ASTRUM_CRM_ENTITY_BEHAVIOR", "CREATE_ANYWAY") or "CREATE_ANYWAY"
+).strip()
+ASTRUM_CRM_DEAL_TITLE_PREFIX = (
+    os.environ.get("ASTRUM_CRM_DEAL_TITLE_PREFIX") or "Заказ с сайта"
+).strip()
+try:
+    ASTRUM_CRM_TIMEOUT = max(5, min(120, int(os.environ.get("ASTRUM_CRM_TIMEOUT", "15"))))
+except ValueError:
+    ASTRUM_CRM_TIMEOUT = 15
+
+# Битрикс24 REST (входящий вебхук): https://www.bitrix24.ru/rest/help/
+BITRIX24_WEBHOOK_BASE = (os.environ.get("BITRIX24_WEBHOOK_BASE") or "").strip().rstrip("/")
+_iblock_prod = (os.environ.get("BITRIX24_CATALOG_PRODUCT_IBLOCK_ID") or "").strip()
+BITRIX24_CATALOG_PRODUCT_IBLOCK_ID: int | None = (
+    int(_iblock_prod) if _iblock_prod.isdigit() else None
+)
+_iblock_offer = (os.environ.get("BITRIX24_CATALOG_OFFER_IBLOCK_ID") or "").strip()
+BITRIX24_CATALOG_OFFER_IBLOCK_ID: int | None = (
+    int(_iblock_offer) if _iblock_offer.isdigit() else None
+)
+
+
+def unfold_admin_file_dropzone_script(request):
+    from django.templatetags.static import static
+
+    return static("admin/js/file_dropzone.js")
+
+
+def unfold_admin_fabric_css(request):
+    from django.templatetags.static import static
+
+    return static("admin/css/fabric_admin.css")
+
+
+UNFOLD = {
+    "SITE_TITLE": _("Фабрика Тентов — панель"),
+    "SITE_HEADER": _("Фабрика Тентов"),
+    "SITE_SUBHEADER": _("Товары и контент — в меню слева. Настройки витрины и главной — отдельными страницами по блокам."),
+    "SITE_URL": f"{_public_site}/" if _public_site else "/",
+    "SITE_SYMBOL": "storefront",
+    "SHOW_HISTORY": True,
+    "SHOW_BACK_BUTTON": True,
+    "ENVIRONMENT": "config.settings.unfold_environment_callback",
+    "COLORS": {
+        "primary": {
+            "50": "oklch(97.5% 0.02 70)",
+            "100": "oklch(94% 0.04 65)",
+            "200": "oklch(88% 0.08 60)",
+            "300": "oklch(80% 0.12 55)",
+            "400": "oklch(72% 0.16 50)",
+            "500": "oklch(64% 0.18 48)",
+            "600": "oklch(56% 0.17 46)",
+            "700": "oklch(48% 0.15 44)",
+            "800": "oklch(40% 0.12 42)",
+            "900": "oklch(32% 0.09 40)",
+            "950": "oklch(24% 0.06 38)",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": build_unfold_sidebar(),
+    },
+    "DASHBOARD_CALLBACK": "config.admin_dashboard.admin_dashboard_callback",
+    "STYLES": [
+        unfold_admin_fabric_css,
+    ],
+    # Подсказки и drag-and-drop для полей файла (переопределение шаблонов unfold/widgets/*).
+    "SCRIPTS": [
+        unfold_admin_file_dropzone_script,
+    ],
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -14,7 +14,7 @@
 | Дата ТЗ | апрель 2026 |
 | Тип проекта | **Интернет-магазин** (каталог, корзина, оформление, ЛК) **+ лендинг**; интеграции **Битрикс24**, **СДЭК**, **эквайринг** |
 | Концепция | **№2 «Лёгкая архитектура»** — продающая, универсальная |
-| Стек (план) | **Frontend:** Vite, React, Tailwind, Framer Motion, React Helmet. **Backend:** Django, DRF, JWT. **Админка:** React Admin или кастом. Порядок работ — **[development-phases.md](./development-phases.md)**. |
+| Стек (план) | **Frontend:** Vite, React, TypeScript, Tailwind, Framer Motion, react-helmet-async. **Backend:** Django 5.2 LTS, DRF, JWT, django-filter. **Прод:** **MySQL 8.0.45**, Celery + Redis (очереди по ТЗ 2.0). **Админка:** React Admin (цель) / сейчас Django admin. Порядок — **[development-phases.md](./development-phases.md)**. |
 | Репозиторий Git | [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings) |
 | Ветки | **`main`** — основная линия разработки; **`release`** — релизная ветка |
 
@@ -93,7 +93,7 @@
 
 | Компонент | Версия |
 |-----------|--------|
-| MySQL | `8.0.43-0ubuntu0.24.04` |
+| MySQL | **8.0.45** (целевая версия на проде для Django; пакет на хосте может иметь суффикс дистрибутива) |
 | phpMyAdmin | `4:5.2.1+dfsg-3` |
 
 ### 5.5. Системные службы и безопасность
@@ -105,7 +105,7 @@
 | PHP 8.3 | Apache module, PHP-FPM, common |
 | Fail2ban | `1.0.2-3ubuntu0.1` |
 
-**Ориентир для приложения:** целевая версия PHP на проде — **8.3**; СУБД — **MySQL 8.0**. Точная схема «Nginx → Apache / PHP-FPM» на площадке уточняется у хостера или по мере деплоя.
+**Ориентир для приложения:** целевая версия PHP на проде — **8.3**; СУБД — **MySQL 8.0.45** (общая с хостингом; backend этого репозитория — **Django**, подключение к MySQL с **`utf8mb4`**). Точная схема «Nginx → Apache / PHP-FPM» на площадке уточняется у хостера или по мере деплоя.
 
 ---
 
@@ -162,7 +162,10 @@
 | 2026-04-02 | Этапы разработки 1–10: Vite/React/Tailwind/шрифты, Django+DRF+маршрутизация, 11 блоков главной, Framer Motion, каталог+товар, МП, калькулятор, backend+JWT, админка, Helmet+sitemap+robots+микроразметка, тесты → `docs/development-phases.md`. |
 | 2026-04-02 | Деливераблы (§6): репозиторий, сайт/инструкция деплоя, доступ в админку, sitemap+robots, доки админа и разработчика; локально admin/admin. Приёмка (§7): функционал, Lighthouse ≥80/90/90/80, анимации, защита форм и авторизация админки → `docs/deliverables-and-acceptance.md`. |
 | 2026-04-02 | Git: `https://github.com/konstmax1388/Fabric_Awinings`, ветки `main` и `release`. |
+| 2026-04-02 | Версионирование: файл **`VERSION`** в корне репозитория, **`CHANGELOG.md`**, бейдж версии в Django admin (Unfold); публикация: `git push origin main`, теги релизов `v…`. |
 | 2026-04-02 | **ТЗ 2.0** (`ТЗ2.0.docx`): интернет-магазин + лендинг; каталог/остатки/заказы из **Битрикс24**; **СДЭК** + Яндекс.Карты; **эквайринг** (карты, СБП); ЛК; Celery/Redis; React Admin; админка — overlay по товарам (видимость, порядок, SEO). Доки: `tz-2-0-alignment.md`, `excel-catalog-import.md`, обновлены `functional-requirements.md`, `development-phases.md`. |
+| 2026-04-02 | Аудит: обновлены npm-зависимости фронта (React 19.2.5, Vite 8.0.7, react-router 7.14, typescript-eslint 8.58.x, `@eslint/js` 9.x в паре с ESLint 9); `backend/requirements.txt` — Django 5.2.13+, pytest 9.x, django-filter 25.2; правки доков (опечатка «Awinings»→«Awnings», «импорт»), `next-steps.md`, `vite.config` chunkSizeWarningLimit. |
+| 2026-04-02 | **Прод СУБД:** вместо PostgreSQL из ТЗ зафиксировано **MySQL 8.0.45** на хостинге; обновлены `requirements.md` §5, `tz-2-0-alignment.md`, `rollout-two-phase-plan.md`, `next-steps.md`, `development-phases.md`, правило `.cursor/rules/delivery-without-breakage.mdc`. |
 | 2026-04-02 | Цель дизайна: современный «воздушный» продающий UI; ощущения — надёжность, качество, открытость, современность, забота о клиенте → `docs/design.md` §1. |
 | 2026-04-02 | Глобальные стили (§2): палитра + белый/границы; типографика desktop/mobile, цена #E87A00, кнопки `letter-spacing: 0.02em`; скругления 8/40/16/24px; тени карточка/hover/Primary; сетка 1280/12 col/gutter 24, десктоп 1920 / моб. 390 → `design.md`. |
 | 2026-04-02 | Глобальные компоненты (§3): Primary/Secondary/icon button, Input+focus/error, карточка товара/портфолио/отзыва, иконки МП, бургер+drawer → `docs/components.md`. |
