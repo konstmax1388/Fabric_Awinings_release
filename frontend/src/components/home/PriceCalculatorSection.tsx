@@ -6,10 +6,22 @@ import {
   calcTentPrice,
   type CalcMaterialId,
 } from '../../lib/calculator'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import {
+  COMMENT_MAX_LEN,
+  formatRuPhoneMask,
+  isCompleteRuPhone,
+  nationalDigitsFromInput,
+  personNameError,
+  phoneForApi,
+} from '../../lib/formValidation'
 import { submitCalculatorLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 
 export function PriceCalculatorSection() {
+  const { home } = useSiteSettings()
+  const c = home?.calculator ?? {}
+
   const [length, setLength] = useState(3)
   const [width, setWidth] = useState(2)
   const [materialId, setMaterialId] = useState<CalcMaterialId>(CALC_MATERIALS[0].id)
@@ -40,13 +52,17 @@ export function PriceCalculatorSection() {
     e.preventDefault()
     setError(null)
     const n = name.trim()
-    const ph = phone.trim()
-    if (n.length < 2) {
-      setError('Укажите имя')
+    const ne = personNameError(name)
+    if (ne) {
+      setError(ne)
       return
     }
-    if (ph.length < 10) {
-      setError('Укажите телефон')
+    if (!isCompleteRuPhone(phone)) {
+      setError('Введите полный номер телефона')
+      return
+    }
+    if (comment.trim().length > COMMENT_MAX_LEN) {
+      setError(`Комментарий не длиннее ${COMMENT_MAX_LEN} символов`)
       return
     }
     const mat = CALC_MATERIALS.find((m) => m.id === materialId) ?? CALC_MATERIALS[0]
@@ -55,7 +71,7 @@ export function PriceCalculatorSection() {
     try {
       const { ok } = await submitCalculatorLead({
         name: n,
-        phone: ph,
+        phone: phoneForApi(phone),
         comment: comment.trim() || undefined,
         lengthM: length,
         widthM: width,
@@ -75,6 +91,29 @@ export function PriceCalculatorSection() {
     }
   }
 
+  const heading = c.heading ?? 'Калькулятор стоимости'
+  const subheading =
+    c.subheading ??
+    'Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера. Заявку обработает менеджер.'
+  const lengthLabel = c.lengthLabel ?? 'Длина, м'
+  const widthLabel = c.widthLabel ?? 'Ширина, м'
+  const materialLabel = c.materialLabel ?? 'Материал'
+  const optionsLabel = c.optionsLabel ?? 'Опции'
+  const estimateLabel = c.estimateLabel ?? 'Ориентировочная стоимость'
+  const estimateNote =
+    c.estimateNote ?? 'Не публичная оферта. Итоговая цена — в коммерческом предложении.'
+  const nameLabel = c.nameLabel ?? 'Имя'
+  const phoneLabel = c.phoneLabel ?? 'Телефон'
+  const commentLabel = c.commentLabel ?? 'Комментарий'
+  const namePlaceholder = c.namePlaceholder ?? 'Как к вам обращаться'
+  const phonePlaceholder = c.phonePlaceholder ?? '+7'
+  const commentPlaceholder = c.commentPlaceholder ?? 'Объект, сроки'
+  const submitButton = c.submitButton ?? 'Отправить заявку'
+  const submitting = c.submitting ?? 'Отправка…'
+  const successMessage =
+    c.successMessage ??
+    'Спасибо! Заявка принята. Перезвоним в рабочее время и уточним детали расчёта.'
+
   return (
     <motion.section
       id="calculator"
@@ -84,12 +123,8 @@ export function PriceCalculatorSection() {
       viewport={{ once: true, amount: 0.1 }}
       transition={easeOutSoft}
     >
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-        Калькулятор стоимости
-      </h2>
-      <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
-        Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера. Заявку обработает менеджер.
-      </p>
+      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+      <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
 
       <motion.div
         className="mt-10 rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-10"
@@ -102,7 +137,7 @@ export function PriceCalculatorSection() {
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block font-body text-sm font-medium text-text">Длина, м</span>
+                <span className="mb-2 block font-body text-sm font-medium text-text">{lengthLabel}</span>
                 <input
                   type="number"
                   min={0}
@@ -113,7 +148,7 @@ export function PriceCalculatorSection() {
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block font-body text-sm font-medium text-text">Ширина, м</span>
+                <span className="mb-2 block font-body text-sm font-medium text-text">{widthLabel}</span>
                 <input
                   type="number"
                   min={0}
@@ -125,7 +160,7 @@ export function PriceCalculatorSection() {
               </label>
             </div>
             <label className="block">
-              <span className="mb-2 block font-body text-sm font-medium text-text">Материал</span>
+              <span className="mb-2 block font-body text-sm font-medium text-text">{materialLabel}</span>
               <select
                 value={materialId}
                 onChange={(e) => setMaterialId(e.target.value as CalcMaterialId)}
@@ -139,7 +174,7 @@ export function PriceCalculatorSection() {
               </select>
             </label>
             <div>
-              <span className="mb-3 block font-body text-sm font-medium text-text">Опции</span>
+              <span className="mb-3 block font-body text-sm font-medium text-text">{optionsLabel}</span>
               <div className="flex flex-col gap-3">
                 {CALC_OPTIONS.map((o) => (
                   <label
@@ -163,7 +198,7 @@ export function PriceCalculatorSection() {
           </div>
 
           <div className="flex flex-col justify-center rounded-2xl bg-bg-base p-6 md:p-8">
-            <p className="font-body text-sm text-text-muted">Ориентировочная стоимость</p>
+            <p className="font-body text-sm text-text-muted">{estimateLabel}</p>
             <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.p
@@ -178,48 +213,50 @@ export function PriceCalculatorSection() {
                 </motion.p>
               </AnimatePresence>
             </div>
-            <p className="mt-4 font-body text-sm text-text-subtle">
-              Не публичная оферта. Итоговая цена — в коммерческом предложении.
-            </p>
+            <p className="mt-4 font-body text-sm text-text-subtle">{estimateNote}</p>
 
             {done ? (
               <p className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3 font-body text-sm text-text">
-                Спасибо! Заявка принята. Перезвоним в рабочее время и уточним детали расчёта.
+                {successMessage}
               </p>
             ) : (
               <>
                 <label className="mt-6 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">Имя</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">{nameLabel}</span>
                   <input
                     type="text"
                     name="calc-name"
                     autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Как к вам обращаться"
+                    placeholder={namePlaceholder}
                     className="h-12 w-full rounded-2xl border border-border bg-surface px-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                   />
                 </label>
                 <label className="mt-3 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">Телефон</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">{phoneLabel}</span>
                   <input
                     type="tel"
+                    inputMode="tel"
                     name="calc-phone"
                     autoComplete="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+7"
+                    onChange={(e) =>
+                      setPhone(formatRuPhoneMask(nationalDigitsFromInput(e.target.value)))
+                    }
+                    placeholder={phonePlaceholder}
                     className="h-12 w-full rounded-2xl border border-border bg-surface px-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                   />
                 </label>
                 <label className="mt-3 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">Комментарий</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">{commentLabel}</span>
                   <textarea
                     name="calc-comment"
                     rows={2}
+                    maxLength={COMMENT_MAX_LEN}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Объект, сроки"
+                    placeholder={commentPlaceholder}
                     className="w-full rounded-2xl border border-border bg-surface px-4 py-3 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                   />
                 </label>
@@ -236,7 +273,7 @@ export function PriceCalculatorSection() {
                   whileHover={reduce || sending ? undefined : { scale: 1.02 }}
                   whileTap={reduce || sending ? undefined : { scale: 0.98 }}
                 >
-                  {sending ? 'Отправка…' : 'Отправить заявку'}
+                  {sending ? submitting : submitButton}
                 </motion.button>
               </>
             )}

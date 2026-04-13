@@ -8,13 +8,42 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    # Миграции при старте: CMD образа → backend/docker-entrypoint.dev.sh
+    # Если админка: OperationalError «no such column» / «no such table»:
+    #   docker compose exec api python manage.py migrate --noinput
+    # и перезапуск: docker compose restart api
     ports:
       - "${FABRIC_API_PORT:-18000}:8000"
     volumes:
       - ./backend:/app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
     environment:
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,0.0.0.0
       DJANGO_CORS_ALLOWED_ORIGINS: ${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:17300,http://127.0.0.1:17300}
+      # Только при DJANGO_DEBUG=true (по умолчанию в dev): вход в /admin/
+      DJANGO_DEV_ADMIN_USERNAME: ${DJANGO_DEV_ADMIN_USERNAME:-dev}
+      DJANGO_DEV_ADMIN_PASSWORD: ${DJANGO_DEV_ADMIN_PASSWORD:-devdev}
+      # Ссылка «на сайт» в шапке Unfold (с хоста браузера)
+      DJANGO_PUBLIC_SITE_URL: ${DJANGO_PUBLIC_SITE_URL:-http://localhost:17300}
+      # Опционально: заказы корзины → Битрикс24 через Astrum (docs/astrum-bitrix-crm.md)
+      ASTRUM_CRM_API_KEY: ${ASTRUM_CRM_API_KEY:-}
+      ASTRUM_CRM_ASSIGNED_DEFAULT: ${ASTRUM_CRM_ASSIGNED_DEFAULT:-}
+      ASTRUM_CRM_API_URL: ${ASTRUM_CRM_API_URL:-https://app-5.astrum.agency/api/order}
+      ASTRUM_CRM_CONTACT_BEHAVIOR: ${ASTRUM_CRM_CONTACT_BEHAVIOR:-SELECT_EXISTING}
+      ASTRUM_CRM_ENTITY_BEHAVIOR: ${ASTRUM_CRM_ENTITY_BEHAVIOR:-CREATE_ANYWAY}
+      ASTRUM_CRM_DEAL_TITLE_PREFIX: ${ASTRUM_CRM_DEAL_TITLE_PREFIX:-Заказ с сайта}
+      ASTRUM_CRM_TIMEOUT: ${ASTRUM_CRM_TIMEOUT:-15}
 
   frontend:
     build:
@@ -30,8 +59,11 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
       VITE_API_URL: ${VITE_API_URL:-http://localhost:18000}
+      # Прокси Vite → Django внутри сети compose (браузер по-прежнему ходит на localhost:18000 к API)
+      VITE_PROXY_TARGET: http://api:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     stdin_open: true
     tty: true
 

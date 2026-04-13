@@ -5,23 +5,28 @@ export const SITE = {
   phone: '+7 (800) 000-00-00',
   phoneHref: 'tel:+78000000000',
   email: 'hello@fabric-awnings.example',
-  address: 'г. Москва, производственная зона (адрес уточняется)',
+  address: '',
   legal: 'ООО «Фабрика Тентов», ИНН 0000000000',
+  /** Подзаголовок /catalog, если в API пусто */
+  catalogIntro:
+    'Тенты, навесы и шатры для транспорта, складов, общепита и мероприятий.',
 } as const
 
-/** Логотипы в `public/marketplaces/` (SVG с Commons; Ozon — свой WebP). */
+/** Логотипы в `public/marketplaces/`; микро-иконки для шапки — `public/marketplaces/icons/` (см. icons/SPECS.txt). */
 export const MARKETPLACES = [
   {
     id: 'wb',
     label: 'Wildberries',
     href: 'https://www.wildberries.ru/',
     logoSrc: '/marketplaces/wildberries.svg',
+    iconSrc: '/marketplaces/icons/wildberries-sign-logo.svg',
   },
   {
     id: 'ozon',
     label: 'OZON',
     href: 'https://www.ozon.ru/',
     logoSrc: '/marketplaces/ozon.webp',
+    iconSrc: '/marketplaces/icons/ozon-icon-logo.svg',
   },
   {
     id: 'ym',

@@ -1,11 +1,22 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchBlogPosts, type BlogListItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { OptimizedImage } from '../ui/OptimizedImage'
 
 export function BlogPreviewSection() {
   const reduce = useReducedMotion()
+  const { home } = useSiteSettings()
+  const bl = home?.blog
+  const heading = bl?.heading ?? 'Блог'
+  const subheading =
+    bl?.subheading ?? 'Полезные материалы для заказчиков и эксплуатации тентов.'
+  const allLink = bl?.allLink ?? 'Все статьи →'
+  const readMore = bl?.readMore ?? 'Читать далее'
+  const loadingText = bl?.loading ?? 'Загрузка блога…'
+
   const [posts, setPosts] = useState<BlogListItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -26,7 +37,7 @@ export function BlogPreviewSection() {
     return (
       <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
         <div className="mx-auto max-w-[1280px] px-4 md:px-6">
-          <p className="font-body text-text-muted">Загрузка блога…</p>
+          <p className="font-body text-text-muted">{loadingText}</p>
         </div>
       </section>
     )
@@ -45,16 +56,12 @@ export function BlogPreviewSection() {
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-              Блог
-            </h2>
-            <p className="mt-3 font-body text-text-muted md:text-lg">
-              Полезные материалы для заказчиков и эксплуатации тентов.
-            </p>
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+            <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
           </div>
           <motion.span whileHover={reduce ? undefined : { x: 4 }} className="inline-block">
             <Link to="/blog" className="font-body font-medium text-accent hover:underline">
-              Все статьи →
+              {allLink}
             </Link>
           </motion.span>
         </div>
@@ -83,21 +90,29 @@ export function BlogPreviewSection() {
               className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
             >
               <div className="aspect-[16/10] overflow-hidden">
-                <img src={post.img} alt="" className="h-full w-full object-cover" />
+                {post.img ? (
+                  <OptimizedImage
+                    src={post.img}
+                    alt=""
+                    widths={[480, 640, 800]}
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-border-light/40" />
+                )}
               </div>
               <div className="p-5">
                 <time className="font-body text-xs text-text-subtle" dateTime={post.date}>
                   {post.date}
                 </time>
                 <h3 className="mt-2 font-heading text-xl font-semibold text-text">{post.title}</h3>
-                <p className="mt-2 font-body text-sm leading-relaxed text-text-muted">
-                  {post.excerpt}
-                </p>
+                <p className="mt-2 font-body text-sm leading-relaxed text-text-muted">{post.excerpt}</p>
                 <Link
                   to={`/blog/${post.slug}`}
                   className="mt-4 inline-block font-body text-sm font-medium text-accent hover:underline"
                 >
-                  Читать далее
+                  {readMore}
                 </Link>
               </div>
             </motion.article>

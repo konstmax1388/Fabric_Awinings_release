@@ -1,6 +1,5 @@
 import { Helmet } from 'react-helmet-async'
 import { useEffect, useMemo } from 'react'
-import { publicSiteUrl } from '../config/publicSite'
 import { BlogPreviewSection } from '../components/home/BlogPreviewSection'
 import { HeroSection } from '../components/home/HeroSection'
 import { MapFormSection } from '../components/home/MapFormSection'
@@ -13,37 +12,45 @@ import { TentTypesSection } from '../components/home/TentTypesSection'
 import { WhyUsSection } from '../components/home/WhyUsSection'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { publicSiteUrl } from '../config/publicSite'
+import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function HomePage() {
   const site = publicSiteUrl()
+  const { home, siteName, calculatorEnabled } = useSiteSettings()
+  const meta = home?.meta
+
   const orgJsonLd = useMemo(
     () =>
       JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'LocalBusiness',
-        name: 'Фабрика Тентов',
+        name: meta?.orgName ?? siteName,
         url: site,
-        description: 'Тенты, навесы, шатры и террасы под ключ.',
+        description: meta?.orgDescription ?? 'Тенты, навесы, шатры и террасы под ключ.',
       }),
-    [site],
+    [site, meta?.orgName, meta?.orgDescription, siteName],
   )
 
   useEffect(() => {
+    if (!calculatorEnabled) return
     if (window.location.hash === '#calculator') {
       window.setTimeout(() => {
         document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
     }
-  }, [])
+  }, [calculatorEnabled])
+
+  const pageTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
+  const pageDesc =
+    meta?.description ??
+    'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, калькулятор, заявка онлайн.'
 
   return (
     <>
       <Helmet>
-        <title>Фабрика Тентов — тенты, навесы, шатры</title>
-        <meta
-          name="description"
-          content="Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, калькулятор, заявка онлайн."
-        />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
         <link rel="canonical" href={`${site}/`} />
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>
@@ -55,7 +62,7 @@ export function HomePage() {
         <ProblemSolutionSection />
         <TentTypesSection />
         <FeaturedProductsSection />
-        <PriceCalculatorSection />
+        {calculatorEnabled ? <PriceCalculatorSection /> : null}
         <PortfolioSection />
         <WhyUsSection />
         <ReviewsSection />

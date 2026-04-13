@@ -26,6 +26,7 @@
 | [components.md](./components.md) | **Компоненты:** Primary/Secondary/иконка, Input, карточки товара/портфолио/отзыва, иконки МП, бургер |
 | [animations.md](./animations.md) | **Анимации (ТЗ §5):** fade-up, stagger, hover, CTA-пульс, счётчики, бургер; реализация Framer Motion |
 | [development-phases.md](./development-phases.md) | **Этапы по ТЗ 2.0** (1–12): магазин, ЛК, Б24, СДЭК, эквайринг, Celery, React Admin, SEO, тесты + статус кода |
+| [admin-react-admin-migration-analysis.md](./admin-react-admin-migration-analysis.md) | **Спецификация v1.0:** staff-панель на React Admin + `/api/staff/v1/`, нормативные решения, фазы, приёмка, оценка трудозатрат |
 | [deliverables-and-acceptance.md](./deliverables-and-acceptance.md) | **Деливераблы** (код, деплой, админка, доки) и **критерии приёмки** (функционал, Lighthouse, анимации, безопасность) |
 
 ## Как вести документы

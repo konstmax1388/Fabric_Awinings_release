@@ -4,6 +4,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchBlogPosts, type BlogListItem } from '../lib/api'
 import { Helmet } from 'react-helmet-async'
+import { OptimizedImage } from '../components/ui/OptimizedImage'
 
 export function BlogPage() {
   const [posts, setPosts] = useState<BlogListItem[]>([])
@@ -46,9 +47,11 @@ export function BlogPage() {
                 className="flex flex-col gap-4 border-b border-border-light pb-8 sm:flex-row"
               >
                 {post.img ? (
-                  <img
+                  <OptimizedImage
                     src={post.img}
                     alt=""
+                    widths={[480, 640, 800]}
+                    sizes="(max-width: 640px) 100vw, 192px"
                     className="h-40 w-full shrink-0 rounded-2xl object-cover sm:h-32 sm:w-48"
                   />
                 ) : null}

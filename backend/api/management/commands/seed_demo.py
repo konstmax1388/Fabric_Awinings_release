@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from ...models import BlogPost, PortfolioProject, Product, ProductImage, Review
+from ...models import BlogPost, PortfolioProject, Product, ProductCategory, ProductImage, Review
 from ...seed_catalog import BLOG_POSTS, PORTFOLIO, PRODUCTS, REVIEWS
+from ...seed_media import copy_url_to_image_field
 
 
 class Command(BaseCommand):
@@ -28,7 +29,9 @@ class Command(BaseCommand):
 
             for row in PRODUCTS:
                 images = row["images"]
-                defaults = {k: v for k, v in row.items() if k not in ("slug", "images")}
+                cat = ProductCategory.objects.get(slug=row["category"])
+                defaults = {k: v for k, v in row.items() if k not in ("slug", "images", "category")}
+                defaults["category"] = cat
                 prod, created = Product.objects.update_or_create(
                     slug=row["slug"],
                     defaults=defaults | {"is_published": True},
@@ -37,23 +40,37 @@ class Command(BaseCommand):
                     prod.images_rel.all().delete()
                 if not prod.images_rel.exists():
                     for i, url in enumerate(images):
-                        ProductImage.objects.create(
-                            product=prod, url=url, sort_order=i * 10
+                        pi = ProductImage(product=prod, sort_order=i * 10)
+                        copy_url_to_image_field(
+                            pi,
+                            "image",
+                            url,
+                            basename=f"{prod.slug}_{i}",
                         )
                 self.stdout.write(f"product {'+' if created else '~'} {prod.slug}")
 
             for row in PORTFOLIO:
-                PortfolioProject.objects.update_or_create(
+                obj, _ = PortfolioProject.objects.update_or_create(
                     slug=row["slug"],
                     defaults={
                         "title": row["title"],
                         "category": row["category"],
-                        "before_image": row["before_image"],
-                        "after_image": row["after_image"],
                         "completed_on": row.get("completed_on"),
                         "sort_order": row.get("sort_order", 0),
                         "is_published": True,
                     },
+                )
+                copy_url_to_image_field(
+                    obj,
+                    "before_image_file",
+                    row["before_image"],
+                    basename=f"{row['slug']}_before",
+                )
+                copy_url_to_image_field(
+                    obj,
+                    "after_image_file",
+                    row["after_image"],
+                    basename=f"{row['slug']}_after",
                 )
                 self.stdout.write(f"portfolio ~ {row['slug']}")
 
@@ -61,28 +78,38 @@ class Command(BaseCommand):
                 if purge:
                     Review.objects.all().delete()
                 for r in REVIEWS:
-                    Review.objects.create(
+                    rev = Review.objects.create(
                         name=r["name"],
                         text=r["text"],
                         rating=r["rating"],
-                        photo_url=r.get("photo_url", ""),
                         video_url=r.get("video_url", ""),
                         sort_order=r.get("sort_order", 0),
                         is_published=True,
                     )
+                    copy_url_to_image_field(
+                        rev,
+                        "photo_file",
+                        r.get("photo_url", ""),
+                        basename=f"review_{rev.pk}",
+                    )
                 self.stdout.write(f"reviews + {len(REVIEWS)}")
 
             for row in BLOG_POSTS:
-                BlogPost.objects.update_or_create(
+                post, _ = BlogPost.objects.update_or_create(
                     slug=row["slug"],
                     defaults={
                         "title": row["title"],
                         "excerpt": row["excerpt"],
                         "body": row["body"],
-                        "cover_image_url": row.get("cover_image_url", ""),
                         "published_at": row.get("published_at"),
                         "is_published": True,
                     },
+                )
+                copy_url_to_image_field(
+                    post,
+                    "cover_image",
+                    row.get("cover_image_url", ""),
+                    basename=row["slug"],
                 )
                 self.stdout.write(f"blog ~ {row['slug']}")
 

@@ -12,7 +12,7 @@ export function CartPage() {
         <meta name="description" content="Состав заказа и оформление заявки." />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[60vh] max-w-[1280px] flex-col px-4 py-10 md:px-6 md:py-14">
+      <main className="mx-auto flex min-h-[60vh] max-w-[1280px] flex-col px-4 py-8 md:px-6 md:py-12">
         <nav className="font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
@@ -20,7 +20,7 @@ export function CartPage() {
           <span className="mx-2">/</span>
           <span className="text-text">Корзина</span>
         </nav>
-        <div className="mt-6 flex flex-1 flex-col">
+        <div className="mt-5 flex flex-1 flex-col md:mt-8">
           <CartView />
         </div>
       </main>

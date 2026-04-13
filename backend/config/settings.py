@@ -34,6 +34,16 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 
+# Капча на /admin/login/: в проде (DEBUG=False) по умолчанию включена; при DEBUG=True — выкл.,
+# пока не задать DJANGO_ADMIN_CAPTCHA=true (удобно для локальной разработки).
+_admin_captcha_env = (os.environ.get("DJANGO_ADMIN_CAPTCHA") or "").strip().lower()
+if _admin_captcha_env in ("1", "true", "yes"):
+    ADMIN_LOGIN_CAPTCHA = True
+elif _admin_captcha_env in ("0", "false", "no"):
+    ADMIN_LOGIN_CAPTCHA = False
+else:
+    ADMIN_LOGIN_CAPTCHA = not DEBUG
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api").split(",")
 
 
@@ -49,6 +59,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'captcha',
     'django_filters',
     'rest_framework',
     'rest_framework_simplejwt',

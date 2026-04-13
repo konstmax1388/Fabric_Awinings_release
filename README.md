@@ -93,6 +93,8 @@ docker compose exec api python manage.py migrate --noinput
 docker compose restart api
 ```
 
+**Админка `/admin/` или прокси с Vite отдаёт 502:** обычно контейнер **`api`** не поднялся или падает в цикле. После изменения **`backend/requirements.txt`** (например, добавили **django-simple-captcha**) обязательно пересоберите образ API: **`docker compose build api`** или **`docker compose up --build`**. Если не помогло: **`docker compose logs api`** (ищите `ModuleNotFoundError`, `ImportError`, ошибки миграций `captcha`). Прямая проверка без прокси: **http://localhost:18000/api/health/** — если не открывается, чините API, а не фронт.
+
 Локально без Docker:
 
 ```bash

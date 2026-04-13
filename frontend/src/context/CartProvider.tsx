@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { CartLine } from '../cart/cartTypes'
 import { CartContext } from '../cart/cartContext'
-import type { Product } from '../data/products'
+import type { Product, ProductVariantRow } from '../data/products'
 
 const STORAGE_KEY = 'fabric-awnings-cart-v1'
+
+function lineIdFor(productId: string, variantId?: string): string {
+  return variantId ? `${productId}::v${variantId}` : productId
+}
 
 function sanitizeCartLines(raw: unknown): CartLine[] {
   if (!Array.isArray(raw)) return []
@@ -17,6 +21,15 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
     const qty = typeof r.qty === 'number' ? r.qty : Number(r.qty)
     const priceFrom = typeof r.priceFrom === 'number' ? r.priceFrom : Number(r.priceFrom)
     const image = typeof r.image === 'string' ? r.image : ''
+    const variantId =
+      typeof r.variantId === 'string' && r.variantId.trim() ? r.variantId.trim() : undefined
+    const lineId =
+      typeof r.lineId === 'string' && r.lineId.trim()
+        ? r.lineId.trim()
+        : lineIdFor(
+            typeof productId === 'string' ? productId : '',
+            variantId,
+          )
     if (
       typeof productId !== 'string' ||
       typeof slug !== 'string' ||
@@ -29,7 +42,9 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
       continue
     }
     out.push({
+      lineId,
       productId,
+      variantId,
       slug,
       title,
       priceFrom,
@@ -62,10 +77,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items])
 
-  const addProduct = useCallback((product: Product, qty = 1) => {
+  const addProduct = useCallback((product: Product, qty = 1, variant?: ProductVariantRow) => {
     const q = Math.min(99, Math.max(1, Math.floor(qty)))
+    const lid = lineIdFor(product.id, variant?.id)
+    const title = variant?.label
+      ? `${product.title} (${variant.label})`
+      : product.title
+    const priceFrom = variant ? variant.priceFrom : product.priceFrom
+    const image = variant?.images?.[0] ?? product.images[0] ?? ''
     setItems((prev) => {
-      const i = prev.findIndex((l) => l.productId === product.id)
+      const i = prev.findIndex((l) => l.lineId === lid)
       if (i >= 0) {
         const next = [...prev]
         next[i] = { ...next[i], qty: Math.min(99, next[i].qty + q) }
@@ -74,24 +95,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [
         ...prev,
         {
+          lineId: lid,
           productId: product.id,
+          variantId: variant?.id,
           slug: product.slug,
-          title: product.title,
-          priceFrom: product.priceFrom,
-          image: product.images[0] ?? '',
+          title,
+          priceFrom,
+          image,
           qty: q,
         },
       ]
     })
   }, [])
 
-  const removeLine = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((l) => l.productId !== productId))
+  const removeLine = useCallback((lineId: string) => {
+    setItems((prev) => prev.filter((l) => l.lineId !== lineId))
   }, [])
 
-  const setQty = useCallback((productId: string, qty: number) => {
+  const setQty = useCallback((lineId: string, qty: number) => {
     const q = Math.min(99, Math.max(1, Math.floor(qty)))
-    setItems((prev) => prev.map((l) => (l.productId === productId ? { ...l, qty: q } : l)))
+    setItems((prev) => prev.map((l) => (l.lineId === lineId ? { ...l, qty: q } : l)))
   }, [])
 
   const clear = useCallback(() => setItems([]), [])

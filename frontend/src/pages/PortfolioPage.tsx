@@ -6,6 +6,7 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchPortfolio, type PortfolioItem } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
 import { Helmet } from 'react-helmet-async'
+import { OptimizedImage } from '../components/ui/OptimizedImage'
 
 export function PortfolioPage() {
   const reduce = useReducedMotion()
@@ -60,8 +61,20 @@ export function PortfolioPage() {
                 className="overflow-hidden rounded-2xl border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
               >
                 <div className="grid grid-cols-2 gap-0.5 bg-border">
-                  <img src={p.before} alt={`${p.title} — до`} className="aspect-[4/3] object-cover" />
-                  <img src={p.after} alt={`${p.title} — после`} className="aspect-[4/3] object-cover" />
+                  <OptimizedImage
+                    src={p.before}
+                    alt={`${p.title} — до`}
+                    widths={[480, 640, 800]}
+                    sizes="(max-width: 768px) 50vw, 200px"
+                    className="aspect-[4/3] object-cover"
+                  />
+                  <OptimizedImage
+                    src={p.after}
+                    alt={`${p.title} — после`}
+                    widths={[480, 640, 800]}
+                    sizes="(max-width: 768px) 50vw, 200px"
+                    className="aspect-[4/3] object-cover"
+                  />
                 </div>
                 <div className="p-4">
                   <p className="font-body text-xs text-text-subtle">

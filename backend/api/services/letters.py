@@ -7,11 +7,13 @@ def build_cart_letters(
     customer: dict,
     lines: list[dict],
     total_approx: int,
+    delivery: dict | None = None,
 ) -> tuple[str, str]:
     name = customer.get("name", "").strip()
     phone = customer.get("phone", "").strip()
     email = (customer.get("email") or "").strip()
     comment = (customer.get("comment") or "").strip()
+    delivery = delivery or {}
 
     line_blocks = []
     for line in lines:
@@ -42,6 +44,18 @@ def build_cart_letters(
         hdr.append(f"Email: {email}")
     if comment:
         hdr.append(f"Комментарий: {comment}")
+    city = (delivery.get("city") or "").strip()
+    addr = (delivery.get("address") or "").strip()
+    d_comment = (delivery.get("comment") or "").strip()
+    if city or addr or d_comment:
+        hdr.append("")
+        hdr.append("ДОСТАВКА (черновик)")
+        if city:
+            hdr.append(f"Город: {city}")
+        if addr:
+            hdr.append(f"Адрес: {addr}")
+        if d_comment:
+            hdr.append(f"Комментарий к доставке: {d_comment}")
     hdr.extend(
         [
             "",

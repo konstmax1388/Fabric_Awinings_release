@@ -1,0 +1,169 @@
+{% load i18n unfold admin_extras %}
+{% trans "Подменю" as fabric_sidebar_submenu_aria %}
+
+{% if sidebar_navigation %}
+    <div id="nav-sidebar-apps" class="h-0 grow overflow-auto" data-simplebar>
+        {% for group in sidebar_navigation %}
+            {% if group.items %}
+                {% has_nav_item_active_deep group.items as has_active %}
+
+                <div class="hidden mb-1.5 has-[ol]:has-[li]:block" {% if group.collapsible %}x-data="{navigationOpen: {% if has_active %}true{% else %}false{% endif %}}"{% endif %}>
+                    {% if group.separator %}
+                        <hr class="border-t border-base-200 mx-6 my-2 dark:border-base-800" />
+                    {% endif %}
+
+                    {% if group.title %}
+                        <h2 class="font-semibold flex flex-row group items-center mb-1 mx-3 py-1.5 px-3 select-none text-font-important-light text-sm dark:text-font-important-dark {% if group.collapsible %}cursor-pointer hover:text-primary-600 dark:hover:text-primary-500{% endif %}" {% if group.collapsible %}x-on:click="navigationOpen = !navigationOpen"{% endif %}>
+                            {{ group.title }}
+
+                            {% include "unfold/helpers/app_list_badge.html" with item=group %}
+
+                            {% if group.collapsible %}
+                                <span class="material-symbols-outlined ml-auto transition-transform duration-150 group-hover:text-primary-600 dark:group-hover:text-primary-500" x-bind:class="{'rotate-90': navigationOpen}">
+                                    chevron_right
+                                </span>
+                            {% endif %}
+                        </h2>
+                    {% endif %}
+
+                    <div
+                        class="fabric-nav-panel mx-3 mb-2 rounded-default border border-base-200 bg-white py-1 shadow-sm last:mb-0 dark:border-base-700 dark:bg-base-900 dark:shadow-black/30"
+                        {% if group.collapsible %}x-show="navigationOpen"{% endif %}
+                    >
+                        <ol class="flex flex-col gap-px px-2">
+                            {% for item in group.items %}
+                                {% if item.has_permission %}
+                                    <li class="relative list-none">
+                                        {% if item.items %}
+                                            {% nav_item_or_descendant_active item as branch_active %}
+                                            <div
+                                                class="relative"
+                                                x-data="{ subOpen: {% if branch_active %}true{% else %}false{% endif %} }"
+                                                x-on:mouseenter="subOpen = true"
+                                                x-on:mouseleave="subOpen = false"
+                                            >
+                                                <div class="fabric-nav-row fabric-nav-row--parent flex min-h-[38px] items-center gap-1 -mx-2 rounded-default px-2 py-1.5 text-font-default-light transition-colors duration-150 ease-out dark:text-font-default-dark {% if branch_active %}active bg-base-100 font-medium text-primary-600 dark:bg-white/[.06] dark:text-primary-500{% endif %}">
+                                                    <a
+                                                        href="{% if item.link_callback %}{{ item.link_callback }}{% else %}{{ item.link }}{% endif %}"
+                                                        class="flex min-w-0 flex-1 items-center gap-2 hover:text-primary-600 dark:hover:text-primary-400 {% if branch_active %}text-primary-600 dark:text-primary-500{% else %}text-inherit{% endif %}"
+                                                    >
+                                                        {% if item.icon %}
+                                                            <span class="material-symbols-outlined md-18 w-[18px] shrink-0 text-[20px] leading-none">
+                                                                {{ item.icon }}
+                                                            </span>
+                                                        {% endif %}
+
+                                                        <span class="min-w-0 flex-1 truncate">{{ item.title|safe }}</span>
+
+                                                        {% include "unfold/helpers/app_list_badge.html" with item=item %}
+                                                    </a>
+
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-default text-base-500 outline-none ring-primary-500/40 hover:text-primary-600 focus-visible:ring-2 dark:text-base-400 dark:hover:text-primary-400"
+                                                        x-on:click.stop="subOpen = !subOpen"
+                                                        x-bind:aria-expanded="subOpen ? 'true' : 'false'"
+                                                        aria-label="{{ fabric_sidebar_submenu_aria }}"
+                                                    >
+                                                        <span class="relative inline-flex h-5 w-5 items-center justify-center" aria-hidden="true">
+                                                            <span class="material-symbols-outlined absolute text-[18px] leading-none transition-opacity duration-150" x-show="!subOpen" x-transition.opacity>chevron_right</span>
+                                                            <span class="material-symbols-outlined absolute text-[18px] leading-none transition-opacity duration-150" x-show="subOpen" x-transition.opacity>expand_more</span>
+                                                        </span>
+                                                    </button>
+                                                </div>
+
+                                                <div
+                                                    class="fabric-nav-flyout absolute left-full top-0 z-[280] -ml-px min-h-full pl-1"
+                                                    x-show="subOpen"
+                                                    x-cloak
+                                                >
+                                                    <ul class="fabric-nav-flyout-list min-w-[13.5rem] max-w-[min(18rem,calc(100vw-20rem))] space-y-px rounded-default border border-base-200 bg-white py-1 shadow-lg dark:border-base-700 dark:bg-base-900 dark:shadow-black/40">
+                                                        {% for sub in item.items %}
+                                                            {% if sub.has_permission %}
+                                                                <li class="list-none">
+                                                                    <a
+                                                                        href="{% if sub.link_callback %}{{ sub.link_callback }}{% else %}{{ sub.link }}{% endif %}"
+                                                                        class="fabric-nav-row flex min-h-[36px] items-center gap-2 px-3 py-1.5 text-sm text-font-default-light transition-colors duration-150 dark:text-font-default-dark hover:bg-base-50 hover:text-primary-600 dark:hover:bg-white/[.04] dark:hover:text-primary-400 {% if sub.active %}bg-base-100 font-medium text-primary-600 dark:bg-white/[.06] dark:text-primary-500{% endif %}"
+                                                                    >
+                                                                        {% if sub.icon %}
+                                                                            <span class="material-symbols-outlined w-4 shrink-0 text-[16px] leading-none opacity-80">
+                                                                                {{ sub.icon }}
+                                                                            </span>
+                                                                        {% endif %}
+
+                                                                        <span class="min-w-0 flex-1 leading-snug">{{ sub.title|safe }}</span>
+
+                                                                        {% include "unfold/helpers/app_list_badge.html" with item=sub %}
+                                                                    </a>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <a href="{% if item.link_callback %}{{ item.link_callback }}{% else %}{{ item.link }}{% endif %}" class="fabric-nav-row flex min-h-[38px] items-center gap-2 -mx-2 rounded-default px-2 py-1.5 text-font-default-light transition-colors duration-150 ease-out dark:text-font-default-dark hover:text-primary-600 dark:hover:text-primary-400 {% if item.active %}bg-base-100 font-medium text-primary-600 dark:bg-white/[.06] dark:text-primary-500 active{% endif %}">
+                                                {% if item.icon %}
+                                                    <span class="material-symbols-outlined md-18 w-[18px] shrink-0 text-[20px] leading-none">
+                                                        {{ item.icon }}
+                                                    </span>
+                                                {% endif %}
+
+                                                <span class="min-w-0 flex-1 truncate">{{ item.title|safe }}</span>
+
+                                                {% include "unfold/helpers/app_list_badge.html" with item=item %}
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if sidebar_show_all_applications and app_list|length > 0 %}
+        <div class="mt-auto" x-data="{ openAllApplications: false }">
+            <a class="cursor-pointer flex items-center h-[64px] px-6 py-3 text-sm dark:text-font-default-dark hover:text-primary-600 dark:hover:text-primary-500" x-on:click="openAllApplications = !openAllApplications">
+                <span class="material-symbols-outlined md-18 mr-3">
+                    apps
+                </span>
+
+                <span>
+                    {% trans "All applications" %}
+                </span>
+            </a>
+
+            <div class="absolute bottom-0 left-0 right-0 top-0 z-50 md:left-72" x-cloak x-show="openAllApplications">
+                <div class="absolute bg-base-900/80 backdrop-blur-xs bottom-0 left-0 right-0 top-0 z-10 w-screen"></div>
+
+                <div class="bg-white flex flex-col h-full overflow-x-hidden overflow-y-auto py-5 px-8 relative text-sm w-80 z-20 dark:bg-base-900 dark:border-r dark:border-base-800" x-on:click.outside="openAllApplications = false" x-on:keydown.escape.window="openAllApplications = false" data-simplebar>
+                    {% for app in app_list %}
+                        <div class="mb-6 last:mb-0">
+                            <h2 class="mb-4 font-semibold text-font-important-light truncate dark:text-font-important-dark">
+                                {{ app.name }}
+                            </h2>
+
+                            <ul>
+                                {% for model in app.models %}
+                                    <li class="block mb-4 last:mb-0">
+                                        <a href="{{ model.admin_url }}" class="block truncate hover:text-primary-600 dark:hover:text-primary-500">
+                                            {{ model.name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% else %}
+    <p>
+        {% trans "You don’t have permission to view or edit anything." as error_message %}
+        {% include "unfold/helpers/messages/error.html" with error=error_message %}
+    </p>
+{% endif %}

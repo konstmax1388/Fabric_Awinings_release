@@ -5,11 +5,22 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Pillow / django-simple-captcha: отрисовка текста на картинке в slim-образе без этих пакетов часто падает → 500/падение воркера → прокси отдаёт 502.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libfreetype6 \
+    libpng16-16 \
+    libjpeg62-turbo \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c "from PIL import Image; assert Image"
 
 COPY . .
 
+RUN chmod +x docker-entrypoint.dev.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+# CMD (не ENTRYPOINT): чтобы `docker compose run api python manage.py …` не проходил через этот скрипт.
+CMD ["sh", "/app/docker-entrypoint.dev.sh"]

@@ -1,9 +1,26 @@
 import type { MarketplaceId } from '../config/site'
 
-export type ProductCategory = 'truck' | 'warehouse' | 'cafe' | 'events'
+/** Слаг категории с бэкенда (?category= в каталоге) */
+export type ProductCategory = string
 
 /** Тизеры на карточке (в админке — чекбоксы / теги) */
 export type ProductTeaser = 'recommended' | 'bestseller' | 'new'
+
+/** Торговое предложение на карточке (как варианты на WB) */
+export type ProductVariantRow = {
+  id: string
+  label: string
+  priceFrom: number
+  images: string[]
+  wbUrl?: string
+  isDefault?: boolean
+}
+
+export type ProductSpecificationRow = {
+  groupName: string
+  name: string
+  value: string
+}
 
 export const TEASER_LABELS: Record<ProductTeaser, string> = {
   recommended: 'Рекомендуем',
@@ -18,8 +35,10 @@ export type Product = {
   excerpt: string
   description: string
   category: ProductCategory
+  /** Подпись категории с API (для карточки товара) */
+  categoryTitle?: string
   images: string[]
-  /** От «…», ₽/м² или фикс — для сортировки и карточки */
+  /** Цена в каталоге, ₽ — для сортировки и карточки */
   priceFrom: number
   /** Индивидуальные витрины; пусто — в карточке МП не показываем или только общие из конфига */
   marketplaceLinks: Partial<Record<MarketplaceId, string>>
@@ -28,9 +47,15 @@ export type Product = {
   showOnHome: boolean
   /** Тизеры: рекомендуем / хит / новинка */
   teasers: ProductTeaser[]
+  /** Безопасный HTML с бэкенда; если есть — показываем вместо plain description */
+  descriptionHtml?: string
+  variants?: ProductVariantRow[]
+  specifications?: ProductSpecificationRow[]
+  defaultVariantId?: string | null
 }
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+/** Подписи для демо-моков и блока «Виды тентов» (картинки по слагу) */
+export const CATEGORY_LABELS: Record<string, string> = {
   truck: 'Для транспорта',
   warehouse: 'Ангары и склады',
   cafe: 'Кафе и террасы',

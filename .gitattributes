@@ -1,0 +1,2 @@
+# Shell-скрипты для Linux-контейнеров (CRLF ломает shebang / set -e)
+*.sh text eol=lf

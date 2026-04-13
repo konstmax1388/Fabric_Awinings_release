@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchReviews, type ReviewItem } from '../../lib/api'
 import {
   easeOutSoft,
@@ -8,6 +9,7 @@ import {
   staggerContainer,
   staggerItem,
 } from '../../lib/motion-presets'
+import { OptimizedImage } from '../ui/OptimizedImage'
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -23,6 +25,13 @@ function Stars({ rating }: { rating: number }) {
 
 export function ReviewsSection() {
   const reduce = useReducedMotion()
+  const { home } = useSiteSettings()
+  const rv = home?.reviews
+  const heading = rv?.heading ?? 'Отзывы клиентов'
+  const subheading = rv?.subheading ?? 'Реальные заказчики B2B и частные лица.'
+  const loadingText = rv?.loading ?? 'Загрузка отзывов…'
+  const videoCaption = rv?.videoCaption ?? 'Видеоотзыв'
+
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -47,15 +56,11 @@ export function ReviewsSection() {
       viewport={{ once: true, amount: 0.08 }}
       transition={easeOutSoft}
     >
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-        Отзывы клиентов
-      </h2>
-      <p className="mt-3 font-body text-text-muted md:text-lg">
-        Реальные заказчики B2B и частные лица.
-      </p>
+      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+      <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
 
       {loading ? (
-        <p className="mt-10 font-body text-text-muted">Загрузка отзывов…</p>
+        <p className="mt-10 font-body text-text-muted">{loadingText}</p>
       ) : (
         <motion.div
           className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -80,9 +85,11 @@ export function ReviewsSection() {
               className="flex h-full flex-col rounded-2xl border border-border-light bg-[#F5F0E8] p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:bg-surface md:p-6"
             >
               <div className="flex items-start gap-3">
-                <img
+                <OptimizedImage
                   src={r.photo}
                   alt=""
+                  widths={[64, 128, 160]}
+                  sizes="64px"
                   className="h-14 w-14 shrink-0 rounded-full object-cover md:h-16 md:w-16"
                 />
                 <div className="min-w-0 flex-1">
@@ -103,7 +110,7 @@ export function ReviewsSection() {
                     </span>
                   </div>
                   <p className="absolute bottom-1.5 left-2 font-body text-[11px] text-text-muted">
-                    Видеоотзыв
+                    {videoCaption}
                   </p>
                 </div>
               )}

@@ -4,6 +4,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchBlogPost, type BlogDetail } from '../lib/api'
 import { Helmet } from 'react-helmet-async'
+import { OptimizedImage } from '../components/ui/OptimizedImage'
 
 export function BlogPostPage() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -66,7 +67,14 @@ export function BlogPostPage() {
           <time className="font-body text-sm text-text-subtle">{post.date}</time>
           <h1 className="mt-2 font-heading text-3xl font-bold text-text md:text-4xl">{post.title}</h1>
           {post.img ? (
-            <img src={post.img} alt="" className="mt-8 w-full rounded-2xl object-cover" />
+            <OptimizedImage
+              src={post.img}
+              alt=""
+              priority
+              widths={[640, 960, 1200]}
+              sizes="(max-width: 768px) 100vw, 720px"
+              className="mt-8 w-full rounded-2xl object-cover"
+            />
           ) : null}
           <div
             className="mt-8 space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"

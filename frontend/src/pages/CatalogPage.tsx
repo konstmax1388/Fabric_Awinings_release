@@ -3,22 +3,22 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/catalog/ProductCard'
+import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
-import { CATEGORY_LABELS, type Product, type ProductCategory } from '../data/products'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import type { Product, ProductCategory } from '../data/products'
 import {
   PAGE_SIZE,
   SORT_LABELS,
   type CatalogSortId,
 } from '../lib/catalog-utils'
-import { fetchProductsPage, type Paginated } from '../lib/api'
+import { fetchProductCategories, fetchProductsPage, type Paginated, type ProductCategoryRow } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
 
-const CATEGORIES: ProductCategory[] = ['truck', 'warehouse', 'cafe', 'events']
-
 function parseCategory(raw: string | null): ProductCategory | null {
-  if (!raw) return null
-  return CATEGORIES.includes(raw as ProductCategory) ? (raw as ProductCategory) : null
+  if (!raw || !/^[a-z0-9-]{1,64}$/i.test(raw)) return null
+  return raw
 }
 
 function parseSort(raw: string | null): CatalogSortId {
@@ -34,6 +34,7 @@ function parsePage(raw: string | null): number {
 export function CatalogPage() {
   const [search, setSearch] = useSearchParams()
   const reduce = useReducedMotion()
+  const { catalogIntro } = useSiteSettings()
 
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
@@ -42,6 +43,17 @@ export function CatalogPage() {
   const [data, setData] = useState<Paginated<Product> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [categoryRows, setCategoryRows] = useState<ProductCategoryRow[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchProductCategories().then((rows) => {
+      if (!cancelled) setCategoryRows(rows ?? [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -124,9 +136,7 @@ export function CatalogPage() {
           <h1 className="mt-4 font-heading text-4xl font-bold tracking-tight text-text md:text-5xl">
             Каталог
           </h1>
-          <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
-            Тенты, навесы и шатры для транспорта, складов, общепита и мероприятий.
-          </p>
+          <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{catalogIntro}</p>
         </motion.div>
 
         <div className="mt-10 flex flex-col gap-10 lg:flex-row">
@@ -144,19 +154,32 @@ export function CatalogPage() {
                   Все
                 </button>
               </li>
-              {CATEGORIES.map((c) => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    onClick={() => setParams({ category: c, page: 1 })}
-                    className={`w-full rounded-xl px-3 py-2 text-left transition hover:bg-[#F5F0E8] ${
-                      category === c ? 'bg-[#F5F0E8] font-medium text-text' : 'text-text-muted'
-                    }`}
-                  >
-                    {CATEGORY_LABELS[c]}
-                  </button>
-                </li>
-              ))}
+              {categoryRows === null ? (
+                <li className="px-3 py-2 font-body text-sm text-text-muted">Категории…</li>
+              ) : (
+                categoryRows.map((c) => (
+                  <li key={c.slug}>
+                    <button
+                      type="button"
+                      onClick={() => setParams({ category: c.slug, page: 1 })}
+                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-[#F5F0E8] ${
+                        category === c.slug ? 'bg-[#F5F0E8] font-medium text-text' : 'text-text-muted'
+                      }`}
+                    >
+                      {c.imageUrl ? (
+                        <OptimizedImage
+                          src={c.imageUrl}
+                          alt=""
+                          widths={[64, 128, 160]}
+                          sizes="36px"
+                          className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : null}
+                      <span className="min-w-0 flex-1">{c.title}</span>
+                    </button>
+                  </li>
+                ))
+              )}
             </ul>
           </aside>
 

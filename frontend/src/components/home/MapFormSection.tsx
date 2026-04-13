@@ -1,13 +1,86 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { type FormEvent, useState } from 'react'
 import { SITE } from '../../config/site'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import {
+  COMMENT_MAX_LEN,
+  formatRuPhoneMask,
+  isCompleteRuPhone,
+  nationalDigitsFromInput,
+  personNameError,
+  phoneForApi,
+} from '../../lib/formValidation'
+import { submitCallbackLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
-/** Яндекс.Карты: координаты-заглушка (Москва). Заменить на реальные из админки. */
-const MAP_IFRAME_SRC =
+const FALLBACK_MAP_SRC =
   'https://yandex.ru/map-widget/v1/?ll=37.620393%2C55.753960&z=16&pt=37.620393%2C55.753960%2Cpm2rdm'
 
 export function MapFormSection({ showHeading = true }: { showHeading?: boolean }) {
   const reduce = useReducedMotion()
+  const { home, address } = useSiteSettings()
+  const mf = home?.mapForm ?? {}
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [comment, setComment] = useState('')
+  const [sending, setSending] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const heading = mf.heading ?? 'Контакты и заявка'
+  const subheading =
+    mf.subheading ?? 'Оставьте заявку — свяжемся в рабочее время.'
+  const mapSrc = mf.mapIframeSrc?.trim() || FALLBACK_MAP_SRC
+  const mapTitle = mf.mapTitle ?? 'Карта — расположение производства'
+  const formNameLabel = mf.formNameLabel ?? 'Имя'
+  const formPhoneLabel = mf.formPhoneLabel ?? 'Телефон'
+  const formCommentLabel = mf.formCommentLabel ?? 'Комментарий'
+  const namePlaceholder = mf.namePlaceholder ?? 'Как к вам обращаться'
+  const phonePlaceholder = mf.phonePlaceholder ?? '+7'
+  const commentPlaceholder = mf.commentPlaceholder ?? 'Задача, размеры, сроки'
+  const submitButton = mf.submitButton ?? 'Отправить'
+  const submitting = mf.submitting ?? 'Отправка…'
+  const successMessage =
+    mf.successMessage ?? 'Спасибо! Заявка принята. Перезвоним в рабочее время.'
+
+  const addressLine = address?.trim() || SITE.address
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    const ne = personNameError(name)
+    if (ne) {
+      setError(ne)
+      return
+    }
+    if (!isCompleteRuPhone(phone)) {
+      setError('Введите полный номер телефона')
+      return
+    }
+    if (comment.trim().length > COMMENT_MAX_LEN) {
+      setError(`Комментарий не длиннее ${COMMENT_MAX_LEN} символов`)
+      return
+    }
+    setSending(true)
+    try {
+      const { ok } = await submitCallbackLead({
+        name: name.trim(),
+        phone: phoneForApi(phone),
+        comment: comment.trim() || undefined,
+        source: 'other',
+      })
+      if (ok) {
+        setDone(true)
+        setName('')
+        setPhone('')
+        setComment('')
+      } else setError('Не удалось отправить. Позвоните нам или напишите на почту.')
+    } catch {
+      setError('Ошибка сети. Попробуйте позже.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <motion.section
@@ -19,12 +92,8 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
     >
       {showHeading && (
         <>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-            Контакты и заявка
-          </h2>
-          <p className="mt-3 font-body text-text-muted md:text-lg">
-            Приезжайте на производство или оставьте заявку — перезвоним в рабочее время.
-          </p>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+          <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
         </>
       )}
 
@@ -44,61 +113,79 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
           className="overflow-hidden rounded-[24px] border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
         >
           <iframe
-            title="Карта — расположение производства"
-            src={MAP_IFRAME_SRC}
+            title={mapTitle}
+            src={mapSrc}
             width="100%"
             height="400"
             className="min-h-[320px] w-full border-0 md:min-h-[400px]"
             allowFullScreen
           />
-          <div className="border-t border-border-light p-4 font-body text-sm text-text-muted">
-            {SITE.address}
-          </div>
+          <div className="border-t border-border-light p-4 font-body text-sm text-text-muted">{addressLine}</div>
         </motion.div>
 
         <motion.form
           variants={staggerItem}
           className="rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-8"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleSubmit}
         >
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-text">Имя</span>
-            <input
-              type="text"
-              name="name"
-              required
-              placeholder="Как к вам обращаться"
-              className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
-            />
-          </label>
-          <label className="mt-4 block">
-            <span className="mb-2 block text-sm font-medium text-text">Телефон</span>
-            <input
-              type="tel"
-              name="phone"
-              required
-              placeholder="+7"
-              className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
-            />
-          </label>
-          <label className="mt-4 block">
-            <span className="mb-2 block text-sm font-medium text-text">Комментарий</span>
-            <textarea
-              name="comment"
-              rows={4}
-              placeholder="Задача, размеры, сроки"
-              className="w-full rounded-2xl border border-border bg-surface px-5 py-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
-            />
-          </label>
-          <motion.button
-            type="submit"
-            className="mt-6 w-full rounded-[40px] bg-accent py-4 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] md:w-auto md:px-12"
-            style={{ letterSpacing: '0.02em' }}
-            whileHover={reduce ? undefined : { scale: 1.02 }}
-            whileTap={reduce ? undefined : { scale: 0.98 }}
-          >
-            Отправить
-          </motion.button>
+          {done ? (
+            <p className="font-body text-text md:text-lg">{successMessage}</p>
+          ) : (
+            <>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-text">{formNameLabel}</span>
+                <input
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder={namePlaceholder}
+                  className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                />
+              </label>
+              <label className="mt-4 block">
+                <span className="mb-2 block text-sm font-medium text-text">{formPhoneLabel}</span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  name="phone"
+                  autoComplete="tel"
+                  required
+                  placeholder={phonePlaceholder ?? '+7 (900) 000-00-00'}
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(formatRuPhoneMask(nationalDigitsFromInput(e.target.value)))
+                  }
+                  className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                />
+              </label>
+              <label className="mt-4 block">
+                <span className="mb-2 block text-sm font-medium text-text">{formCommentLabel}</span>
+                <textarea
+                  name="comment"
+                  rows={4}
+                  maxLength={COMMENT_MAX_LEN}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder={commentPlaceholder}
+                  className="w-full rounded-2xl border border-border bg-surface px-5 py-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
+                />
+              </label>
+              {error ? <p className="mt-3 font-body text-sm text-red-600">{error}</p> : null}
+              <motion.button
+                type="submit"
+                disabled={sending}
+                className="mt-6 w-full rounded-[40px] bg-accent py-4 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] disabled:opacity-60 md:w-auto md:px-12"
+                style={{ letterSpacing: '0.02em' }}
+                whileHover={reduce || sending ? undefined : { scale: 1.02 }}
+                whileTap={reduce || sending ? undefined : { scale: 0.98 }}
+              >
+                {sending ? submitting : submitButton}
+              </motion.button>
+            </>
+          )}
         </motion.form>
       </motion.div>
     </motion.section>

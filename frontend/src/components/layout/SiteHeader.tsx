@@ -1,10 +1,11 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, SITE } from '../../config/site'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
 import { useCart } from '../../hooks/useCart'
-import { PulsingCTA } from '../motion/PulsingCTA'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
+import { OptimizedImage } from '../ui/OptimizedImage'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-body text-base font-medium tracking-wide transition-colors hover:text-accent ${
@@ -45,16 +46,47 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const [logoBroken, setLogoBroken] = useState(false)
   const reduce = useReducedMotion()
+  const {
+    enabledMarketplaces,
+    globalMarketplaceUrls,
+    siteName,
+    logoUrl,
+    phone,
+    phoneHref,
+    home,
+  } = useSiteSettings()
+  const buyOnLabel = home?.ui?.buyOnMarketplaces ?? 'Купить на'
+  const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
+  const mergedMpUrls: Partial<Record<(typeof MARKETPLACES)[number]['id'], string>> = {
+    ...GLOBAL_MARKETPLACE_URLS,
+    ...globalMarketplaceUrls,
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-light bg-bg-base/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-4 py-4 md:px-6">
         <Link
           to="/"
-          className="font-heading text-xl font-semibold tracking-tight text-text md:text-2xl"
+          className="flex min-w-0 max-w-[min(100%,220px)] items-center gap-2 md:max-w-[280px]"
+          aria-label={siteName}
         >
-          {SITE.name}
+          {!logoBroken ? (
+            <OptimizedImage
+              src={logoUrl}
+              alt=""
+              priority
+              widths={[160, 320, 480]}
+              sizes="(max-width: 768px) 160px, 200px"
+              className="h-8 w-auto max-h-10 max-w-full object-contain object-left md:h-10"
+              onError={() => setLogoBroken(true)}
+            />
+          ) : (
+            <span className="font-heading text-xl font-semibold tracking-tight text-text md:text-2xl">
+              {siteName}
+            </span>
+          )}
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="Основное меню">
@@ -73,31 +105,29 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <NavLink
+            to="/account"
+            className={({ isActive }) =>
+              `hidden h-11 items-center rounded-xl px-3 font-body text-sm font-medium text-text hover:bg-[#F5F0E8] md:inline-flex ${
+                isActive ? 'bg-[#F5F0E8] text-accent' : ''
+              }`
+            }
+          >
+            Кабинет
+          </NavLink>
           <CartHeaderLink />
-          <div className="hidden items-center gap-4 lg:flex">
-            <MarketplaceLinks hrefById={GLOBAL_MARKETPLACE_URLS} />
+          <div className="hidden items-center gap-2.5 md:flex">
+            <span className="hidden shrink-0 font-body text-[11px] font-medium text-text-muted xl:inline">
+              {buyOnLabel}
+            </span>
+            <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
+            <span className="hidden h-8 w-px bg-border-light xl:block" aria-hidden />
             <a
-              href={SITE.phoneHref}
-              className="font-body text-sm font-medium text-text-muted hover:text-accent md:text-base"
+              href={phoneHref}
+              className="font-body text-sm font-medium text-text-muted hover:text-accent lg:text-base"
             >
-              {SITE.phone}
+              {phone}
             </a>
-            <PulsingCTA>
-              <motion.span
-                whileHover={reduce ? undefined : { scale: 1.02 }}
-                whileTap={reduce ? undefined : { scale: 0.98 }}
-                className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.25)]"
-                style={{ borderRadius: 40 }}
-              >
-                <Link
-                  to="/#calculator"
-                  className="inline-flex h-11 items-center justify-center rounded-[40px] bg-accent px-6 font-body text-sm font-medium text-surface hover:bg-[#c65f00] md:h-14 md:px-8 md:text-base"
-                  style={{ letterSpacing: '0.02em' }}
-                >
-                  Заказать расчёт
-                </Link>
-              </motion.span>
-            </PulsingCTA>
           </div>
           <button
             type="button"
@@ -171,33 +201,20 @@ export function SiteHeader() {
               >
                 Корзина
               </NavLink>
-              <a href={SITE.phoneHref} className="py-3 font-body text-lg text-accent">
-                {SITE.phone}
-              </a>
-              <div className="mt-4 border-t border-border pt-4">
-                <p className="mb-2 text-sm text-text-muted">Маркетплейсы</p>
-                <div className="flex flex-col gap-2">
-                  {MARKETPLACES.map((m) => (
-                    <a
-                      key={m.id}
-                      href={GLOBAL_MARKETPLACE_URLS[m.id] ?? m.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-text-muted hover:text-accent"
-                    >
-                      {m.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <Link
-                to="/#calculator"
-                className="mt-6 inline-flex h-14 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
-                style={{ letterSpacing: '0.02em' }}
+              <NavLink
+                to="/account"
+                className="py-3 font-body text-lg font-medium"
                 onClick={() => setOpen(false)}
               >
-                Заказать расчёт
-              </Link>
+                Личный кабинет
+              </NavLink>
+              <a href={phoneHref} className="py-3 font-body text-lg text-accent">
+                {phone}
+              </a>
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="mb-2 text-sm text-text-muted">{buyOnMobileLabel}</p>
+                <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
+              </div>
             </nav>
           </motion.div>
         )}

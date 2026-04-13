@@ -4,24 +4,37 @@ import { startTransition, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { publicSiteUrl } from '../config/publicSite'
 import { ProductCard } from '../components/catalog/ProductCard'
+import { ProductDetailsDrawer } from '../components/catalog/ProductDetailsDrawer'
 import { ProductGallery } from '../components/catalog/ProductGallery'
 import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { useSiteSettings } from '../context/SiteSettingsContext'
 import { MARKETPLACES } from '../config/site'
-import { CATEGORY_LABELS, type Product } from '../data/products'
+import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
 import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../lib/motion-presets'
+import { productPageGridClass } from '../lib/productPhotoAspect'
 
-function ProductCartControls({ product }: { product: Product }) {
+function categoryLabel(p: Product): string {
+  return p.categoryTitle ?? CATEGORY_LABELS[p.category] ?? p.category
+}
+
+function ProductCartControls({
+  product,
+  variant,
+}: {
+  product: Product
+  variant: ProductVariantRow | null
+}) {
   const navigate = useNavigate()
   const { addProduct } = useCart()
   const [qty, setQty] = useState(1)
 
   return (
-    <div className="mt-8 flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2 rounded-2xl border border-border px-2 py-1">
         <button
           type="button"
@@ -44,7 +57,7 @@ function ProductCartControls({ product }: { product: Product }) {
       <button
         type="button"
         onClick={() => {
-          addProduct(product, qty)
+          addProduct(product, qty, variant ?? undefined)
           navigate('/cart')
         }}
         className="inline-flex h-12 min-h-[44px] flex-1 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] hover:bg-[#c65f00] sm:flex-none sm:px-10"
@@ -55,15 +68,64 @@ function ProductCartControls({ product }: { product: Product }) {
   )
 }
 
+function groupSpecifications(rows: NonNullable<Product['specifications']>) {
+  const map = new Map<string, typeof rows>()
+  for (const row of rows) {
+    const g = row.groupName.trim() || 'Характеристики'
+    const list = map.get(g) ?? []
+    list.push(row)
+    map.set(g, list)
+  }
+  return map
+}
+
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
+  const { enabledMarketplaces, calculatorEnabled, productPhotoAspect } = useSiteSettings()
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const site = publicSiteUrl()
+
+  useEffect(() => {
+    if (!product) {
+      setSelectedVariantId(null)
+      return
+    }
+    const def =
+      product.defaultVariantId ??
+      product.variants?.find((v) => v.isDefault)?.id ??
+      product.variants?.[0]?.id ??
+      null
+    setSelectedVariantId(def)
+  }, [product])
+
+  const selectedVariant = useMemo((): ProductVariantRow | null => {
+    if (!product?.variants?.length) return null
+    const v = product.variants.find((x) => x.id === selectedVariantId)
+    return v ?? product.variants[0] ?? null
+  }, [product, selectedVariantId])
+
+  const galleryImages = useMemo(() => {
+    if (!product) return []
+    if (selectedVariant?.images?.length) return selectedVariant.images
+    return product.images
+  }, [product, selectedVariant])
+
+  const displayPrice = selectedVariant?.priceFrom ?? product?.priceFrom ?? 0
+
+  const marketplaceMerged = useMemo(() => {
+    if (!product) return {}
+    const m = { ...product.marketplaceLinks }
+    if (selectedVariant?.wbUrl) m.wb = selectedVariant.wbUrl
+    return m
+  }, [product, selectedVariant])
+
   const productJsonLd = useMemo(() => {
     if (product === undefined || product === null) return ''
-    const img = product.images[0]
+    const img = galleryImages[0] || product.images[0]
     return JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -73,11 +135,32 @@ export function ProductPage() {
       offers: {
         '@type': 'Offer',
         priceCurrency: 'RUB',
-        price: product.priceFrom,
+        price: displayPrice,
         availability: 'https://schema.org/InStock',
       },
     })
+  }, [product, galleryImages, displayPrice])
+
+  const displayMpKeys = useMemo(
+    () => enabledMarketplaces.filter((id) => MARKETPLACES.some((m) => m.id === id)),
+    [enabledMarketplaces],
+  )
+
+  const specSectionsForDrawer = useMemo(() => {
+    const specs = product?.specifications
+    if (!specs?.length) return null
+    const specGroups = groupSpecifications(specs)
+    if (specGroups.size === 0) return null
+    return [...specGroups.entries()].map(([groupName, rows]) => ({ groupName, rows }))
   }, [product])
+
+  const hasDetailsPanelContent = useMemo(() => {
+    if (product === undefined || product === null) return false
+    const hasSpecs = Boolean(specSectionsForDrawer && specSectionsForDrawer.length > 0)
+    const hasHtml = Boolean(product.descriptionHtml?.trim())
+    const hasPlain = Boolean(product.description?.trim())
+    return hasSpecs || hasHtml || hasPlain
+  }, [product, specSectionsForDrawer])
 
   useEffect(() => {
     if (!slug) {
@@ -138,8 +221,6 @@ export function ProductPage() {
     )
   }
 
-  const allMpKeys = MARKETPLACES.map((m) => m.id)
-
   return (
     <>
       <Helmet>
@@ -158,52 +239,124 @@ export function ProductPage() {
           animate={reduce ? undefined : fadeUpVisible}
           transition={easeOutSoft}
         >
-          <nav className="font-body text-sm text-text-muted">
-            <Link to="/" className="hover:text-accent">
+          <nav
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted"
+            aria-label="Навигация"
+          >
+            <Link to="/" className="rounded-md px-1 hover:text-accent">
               Главная
             </Link>
-            <span className="mx-2">/</span>
-            <Link to="/catalog" className="hover:text-accent">
+            <span className="text-text-subtle" aria-hidden>
+              /
+            </span>
+            <Link to="/catalog" className="rounded-md px-1 hover:text-accent">
               Каталог
             </Link>
-            <span className="mx-2">/</span>
-            <span className="line-clamp-1 text-text">{product.title}</span>
+            <span className="text-text-subtle" aria-hidden>
+              /
+            </span>
+            <span className="line-clamp-2 max-w-[min(100%,28rem)] text-text">{product.title}</span>
           </nav>
 
-          <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-12">
-            <ProductGallery images={product.images} title={product.title} />
+          <div className={productPageGridClass(productPhotoAspect)}>
+            <ProductGallery
+              images={galleryImages}
+              title={product.title}
+              aspect={productPhotoAspect}
+            />
 
-            <div>
-              <p className="font-body text-sm text-accent">{CATEGORY_LABELS[product.category]}</p>
-              <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />
-              <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-5xl">
-                {product.title}
-              </h1>
-              <p className="mt-4 font-body text-2xl font-semibold text-text md:text-3xl">
-                от {product.priceFrom.toLocaleString('ru-RU')} ₽
-              </p>
-              <p className="mt-6 font-body text-base leading-relaxed text-text-muted">
-                {product.description}
-              </p>
-
-              <ProductCartControls key={product.slug} product={product} />
-
-              <div className="mt-8 rounded-2xl border border-border-light bg-bg-base p-5">
-                <p className="font-body text-sm font-semibold text-text">Купить на маркетплейсах</p>
-                <p className="mt-1 font-body text-xs text-text-muted">
-                  Ссылки на витрины товара; где не указано — общая витрина бренда.
-                </p>
-                <div className="mt-4">
-                  <MarketplaceLinks hrefById={product.marketplaceLinks} linkKeys={allMpKeys} />
+            <div className="space-y-8 lg:sticky lg:top-28">
+              <div>
+                <p className="font-body text-sm font-medium text-accent">{categoryLabel(product)}</p>
+                <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />
+                <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                  {product.title}
+                </h1>
+                <div className="mt-5 inline-flex items-baseline gap-2 rounded-2xl bg-accent/10 px-4 py-2.5">
+                  <span className="font-body text-sm font-medium text-text-muted">Цена</span>
+                  <span className="font-heading text-2xl font-bold tabular-nums text-accent md:text-3xl">
+                    {displayPrice.toLocaleString('ru-RU')} ₽
+                  </span>
                 </div>
               </div>
 
-              <Link
-                to="/#calculator"
-                className="mt-8 inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
-              >
-                Рассчитать по размерам
-              </Link>
+              {product.variants && product.variants.length > 1 && (
+                <div>
+                  <p className="font-body text-xs font-semibold uppercase tracking-wide text-text-subtle">
+                    Вариант
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {product.variants.map((v) => {
+                      const active = v.id === (selectedVariant?.id ?? '')
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setSelectedVariantId(v.id)}
+                          className={`rounded-xl border px-3.5 py-2 font-body text-sm font-medium transition ${
+                            active
+                              ? 'border-accent bg-accent/12 text-text shadow-sm ring-2 ring-accent/20'
+                              : 'border-border-light bg-surface text-text-muted hover:border-accent/40 hover:bg-bg-base'
+                          }`}
+                        >
+                          {v.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {product.excerpt?.trim() ? (
+                <p className="font-body text-base leading-relaxed text-text-muted md:text-[1.05rem]">
+                  {product.excerpt.trim()}
+                </p>
+              ) : null}
+
+              {hasDetailsPanelContent ? (
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen(true)}
+                  className="group flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-accent/35 bg-gradient-to-br from-bg-base to-surface px-5 py-4 text-left shadow-[0_8px_28px_-12px_rgba(232,122,0,0.18)] transition hover:border-accent/60 hover:shadow-[0_12px_32px_-10px_rgba(232,122,0,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 md:max-w-xl"
+                >
+                  <span className="font-heading text-base font-semibold text-text md:text-lg">
+                    Характеристики и описание
+                  </span>
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent transition group-hover:bg-accent/20"
+                    aria-hidden
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+              ) : null}
+
+              <ProductCartControls
+                key={`${product.slug}-${selectedVariant?.id ?? 'x'}`}
+                product={product}
+                variant={selectedVariant}
+              />
+
+              <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)] md:p-6">
+                <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
+                <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">
+                  Переход к покупке на выбранной площадке — в новой вкладке.
+                </p>
+                <div className="mt-4">
+                  <MarketplaceLinks hrefById={marketplaceMerged} linkKeys={displayMpKeys} />
+                </div>
+              </div>
+
+              {calculatorEnabled ? (
+                <Link
+                  to="/#calculator"
+                  className="inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(232,122,0,0.08)] sm:w-auto"
+                >
+                  Рассчитать по размерам
+                </Link>
+              ) : null}
             </div>
           </div>
         </motion.div>
@@ -211,7 +364,7 @@ export function ProductPage() {
         {related.length > 0 && (
           <section className="mt-16 border-t border-border-light pt-14">
             <h2 className="font-heading text-2xl font-bold text-text md:text-3xl">Похожие позиции</h2>
-            <p className="mt-2 font-body text-text-muted">Та же категория: {CATEGORY_LABELS[product.category]}</p>
+            <p className="mt-2 font-body text-text-muted">Та же категория: {categoryLabel(product)}</p>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
@@ -220,6 +373,16 @@ export function ProductPage() {
           </section>
         )}
       </main>
+
+      <ProductDetailsDrawer
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        title={product.title}
+        specSections={specSectionsForDrawer}
+        descriptionHtml={product.descriptionHtml?.trim() ? product.descriptionHtml : null}
+        descriptionPlain={product.description ?? ''}
+      />
+
       <SiteFooter />
     </>
   )

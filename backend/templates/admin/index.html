@@ -1,0 +1,221 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_("Django site admin") }}
+{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+    {% if dashboard_site %}
+        <div class="mb-8 flex flex-col gap-6">
+            <div class="rounded-default border border-base-200 bg-base-50 p-4 shadow-xs dark:border-base-700 dark:bg-base-800">
+                <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-font-important-light dark:text-font-important-dark">
+                    {% trans "Информация о сайте" %}
+                </h2>
+                <div class="grid gap-3 text-sm md:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Название" %}</span>
+                        <div class="font-medium text-font-important-light dark:text-font-important-dark">{{ dashboard_site.name }}</div>
+                    </div>
+                    {% if dashboard_site.tagline %}
+                        <div class="md:col-span-2">
+                            <span class="text-base-500 dark:text-base-400">{% trans "Слоган" %}</span>
+                            <div class="text-font-default-light dark:text-font-default-dark">{{ dashboard_site.tagline }}</div>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Телефон на сайте" %}</span>
+                        <div class="font-mono text-font-default-light dark:text-font-default-dark">{{ dashboard_site.phone|default:"—" }}</div>
+                    </div>
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Email в контактах" %}</span>
+                        <div class="font-mono text-font-default-light dark:text-font-default-dark">{{ dashboard_site.email|default:"—" }}</div>
+                    </div>
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Публичный URL" %}</span>
+                        {% if dashboard_site.public_url %}
+                            <div class="truncate">
+                                <a href="{{ dashboard_site.public_url }}/" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline dark:text-primary-500">
+                                    {{ dashboard_site.public_url }}/
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-font-default-light dark:text-font-default-dark">—</div>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-base-500 dark:text-base-400">{% trans "Калькулятор на главной" %}:</span>
+                        {% if dashboard_site.calculator_on %}
+                            <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">{% trans "Включён" %}</span>
+                        {% else %}
+                            <span class="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium dark:bg-base-700">{% trans "Выключен" %}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-base-500 dark:text-base-400">{% trans "SMTP (уведомления)" %}:</span>
+                        {% if dashboard_site.smtp_on %}
+                            <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">{% trans "Вкл." %}</span>
+                            {% if dashboard_site.smtp_from %}
+                                <span class="text-base-500 dark:text-base-400">{% trans "отправка с" %}</span>
+                                <span class="font-mono text-xs text-font-default-light dark:text-font-default-dark">{{ dashboard_site.smtp_from }}</span>
+                            {% else %}
+                                <span class="text-xs text-amber-800 dark:text-amber-200">{% trans "укажите «Отправитель (From)» или email в контактах" %}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">{% trans "Выкл." %}</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Получателей заявок (email)" %}</span>
+                        <div class="font-medium text-font-important-light dark:text-font-important-dark">{{ dashboard_site.recipient_n }}</div>
+                    </div>
+                    <div>
+                        <span class="text-base-500 dark:text-base-400">{% trans "Профилей покупателей" %}</span>
+                        <div class="font-medium text-font-important-light dark:text-font-important-dark">{{ dashboard_customers_n }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if dashboard_stat_cards %}
+                <div>
+                    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-font-important-light dark:text-font-important-dark">
+                        {% trans "Сводка магазина" %}
+                    </h2>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {% for card in dashboard_stat_cards %}
+                            <a
+                                href="{{ card.url }}"
+                                class="flex flex-col rounded-default border border-base-200 bg-white p-4 shadow-xs transition hover:border-primary-300 hover:shadow-md dark:border-base-700 dark:bg-base-900 dark:hover:border-primary-600"
+                            >
+                                <div class="mb-2 flex items-center gap-2 text-primary-600 dark:text-primary-500">
+                                    {% if card.icon %}
+                                        <span class="material-symbols-outlined text-[22px]">{{ card.icon }}</span>
+                                    {% endif %}
+                                    <span class="text-xs font-medium uppercase tracking-wide text-base-500 dark:text-base-400">{{ card.label }}</span>
+                                </div>
+                                <div class="text-3xl font-bold tabular-nums text-font-important-light dark:text-font-important-dark">{{ card.value }}</div>
+                                {% if card.hint %}
+                                    <p class="mt-2 text-xs leading-snug text-base-500 dark:text-base-400">{{ card.hint }}</p>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if dashboard_quick_links %}
+                <div>
+                    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-font-important-light dark:text-font-important-dark">
+                        {% trans "Быстрые переходы" %}
+                    </h2>
+                    <div class="flex flex-wrap gap-2">
+                        {% for link in dashboard_quick_links %}
+                            <a
+                                href="{{ link.url }}"
+                                class="inline-flex items-center gap-2 rounded-default border border-base-200 bg-white px-3 py-2 text-sm font-medium text-font-default-light shadow-xs transition hover:border-primary-400 hover:text-primary-600 dark:border-base-700 dark:bg-base-900 dark:text-font-default-dark dark:hover:border-primary-500 dark:hover:text-primary-400"
+                            >
+                                {% if link.icon %}
+                                    <span class="material-symbols-outlined text-[18px] text-primary-600 dark:text-primary-500">{{ link.icon }}</span>
+                                {% endif %}
+                                {{ link.title }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <div class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-700 dark:bg-base-900">
+                    <div class="border-b border-base-200 px-4 py-3 dark:border-base-700">
+                        <h3 class="text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Последние заказы" %}</h3>
+                    </div>
+                    <div class="overflow-x-auto p-2">
+                        {% if dashboard_recent_orders %}
+                            <table class="w-full min-w-[320px] text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-base-100 text-xs text-base-500 dark:border-base-800 dark:text-base-400">
+                                        <th class="p-2 font-medium">{% trans "№" %}</th>
+                                        <th class="p-2 font-medium">{% trans "Клиент" %}</th>
+                                        <th class="p-2 font-medium text-right">{% trans "Сумма" %}</th>
+                                        <th class="p-2 font-medium">{% trans "Статус" %}</th>
+                                        <th class="p-2 font-medium">{% trans "Дата" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in dashboard_recent_orders %}
+                                        <tr class="border-b border-base-50 last:border-0 dark:border-base-800/80">
+                                            <td class="p-2">
+                                                <a href="{{ row.change_url }}" class="font-mono text-primary-600 hover:underline dark:text-primary-500">{{ row.order_ref }}</a>
+                                            </td>
+                                            <td class="p-2">
+                                                <div class="max-w-[140px] truncate" title="{{ row.customer_name }}">{{ row.customer_name }}</div>
+                                                <div class="text-xs text-base-500">{{ row.customer_phone }}</div>
+                                            </td>
+                                            <td class="p-2 text-right tabular-nums">{{ row.total_approx }} ₽</td>
+                                            <td class="p-2 text-xs">{{ row.status_label }}</td>
+                                            <td class="p-2 whitespace-nowrap text-xs text-base-500">{{ row.created_at|date:"d.m.Y H:i" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p class="p-4 text-sm text-base-500">{% trans "Заказов пока нет." %}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    {% if dashboard_site.calculator_on %}
+                    <div class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-700 dark:bg-base-900">
+                        <div class="border-b border-base-200 px-4 py-3 dark:border-base-700">
+                            <h3 class="text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Заявки калькулятора" %}</h3>
+                        </div>
+                        <ul class="divide-y divide-base-100 dark:divide-base-800">
+                            {% for row in dashboard_recent_calc %}
+                                <li class="flex items-center justify-between gap-2 px-4 py-2 text-sm">
+                                    <div>
+                                        <a href="{{ row.change_url }}" class="font-medium text-primary-600 hover:underline dark:text-primary-500">{{ row.name }}</a>
+                                        <div class="text-xs text-base-500">{{ row.phone }}</div>
+                                    </div>
+                                    <span class="shrink-0 text-xs text-base-500">{{ row.created_at|date:"d.m.Y" }}</span>
+                                </li>
+                            {% empty %}
+                                <li class="px-4 py-3 text-sm text-base-500">{% trans "Пока нет заявок." %}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    <div class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-700 dark:bg-base-900">
+                        <div class="border-b border-base-200 px-4 py-3 dark:border-base-700">
+                            <h3 class="text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Обратный звонок" %}</h3>
+                        </div>
+                        <ul class="divide-y divide-base-100 dark:divide-base-800">
+                            {% for row in dashboard_recent_cb %}
+                                <li class="flex items-center justify-between gap-2 px-4 py-2 text-sm">
+                                    <div>
+                                        <a href="{{ row.change_url }}" class="font-medium text-primary-600 hover:underline dark:text-primary-500">{{ row.name }}</a>
+                                        <div class="text-xs text-base-500">{{ row.phone }}</div>
+                                    </div>
+                                    <span class="shrink-0 text-xs text-base-500">{{ row.created_at|date:"d.m.Y" }}</span>
+                                </li>
+                            {% empty %}
+                                <li class="px-4 py-3 text-sm text-base-500">{% trans "Пока нет заявок." %}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="flex flex-col gap-8 lg:flex-row">
+        <div class="grow">
+            {% include "unfold/helpers/app_list_default.html" %}
+        </div>
+        {% include "unfold/helpers/history.html" %}
+    </div>
+{% endblock %}
