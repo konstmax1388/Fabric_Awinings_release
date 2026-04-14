@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 17301,
       strictPort: true,
+      /** Удобный старт: открыть сразу панель, а не корень без /staff/ */
+      open: '/staff/',
       proxy: {
         '/api': { target: proxyTarget, changeOrigin: true },
         '/media': { target: proxyTarget, changeOrigin: true },
