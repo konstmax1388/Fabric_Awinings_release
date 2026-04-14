@@ -11,6 +11,7 @@
 1. Зафиксировать релиз **2.0.2a** в GitHub и прогнать smoke на хостинге.
 2. Поэтапный переход на React Admin по плану: [react-admin-transition-plan.md](./react-admin-transition-plan.md).
 3. Подготовить install-пакет под Beget по чеклисту: [beget-install-package-checklist.md](./beget-install-package-checklist.md).
+4. По хостингу Beget: дождаться ответа поддержки по окружению **Python 3.12+ / MySQL 8.0+** (текущий сервер: Python 3.10.12, MySQL 5.7 — блокер прямого запуска текущего backend).
 
 ## Ближайшие приоритеты (этап 1 магазина)
 
@@ -32,5 +33,5 @@
 
 ## Зависимости
 
-- **Python:** версии зафиксированы в `backend/requirements.txt` (Django 5.2.x, pytest 9.x). Обновление до **Django 6** — отдельная задача с чтением release notes. На проде БД — **MySQL 8.0.45** (`utf8mb4`); при переносе с SQLite проверить миграции и типы полей.
+- **Python:** версии зафиксированы в `backend/requirements.txt` (**Django 6.x**, pytest 9.x). Требуется **Python 3.12+**. На проде БД — **MySQL 8.0.45** (`utf8mb4`); при переносе с SQLite проверить миграции и типы полей.
 - **Node:** после `git pull` в `frontend/` выполнять `npm ci` (или `npm install`), затем `npm run build` и `npm run lint`.
