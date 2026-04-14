@@ -3,6 +3,17 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [2.0.4a] — 2026-04-14
+
+### Добавлено
+
+- **Staff API (фаза 2):** CRUD `portfolio-projects`, `reviews`, `blog-posts`; список + правка `email-templates` (без create/delete); **`POST /api/staff/v1/uploads/`** — загрузка изображений для привязки по `relativePath`.
+- **staff-ui:** разделы Портфолио, Отзывы, Блог, Шаблоны писем (список/создание/редактирование), загрузка картинок через компонент `StaffImageUploadInput`; поиск по спискам (query `search`).
+
+### Изменено
+
+- `staff-ui`: расширен `dataProvider` (create/update/delete, поиск, сортировка по ресурсам).
+
 ## [2.0.3a] — 2026-04-14
 
 ### Добавлено

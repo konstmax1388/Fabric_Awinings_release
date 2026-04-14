@@ -4,11 +4,11 @@
 
 ## Недавно сделано (сводка)
 
-См. **[CHANGELOG.md](../CHANGELOG.md)** — актуальный релиз **2.0.3a** (2026-04-14): старт перехода на React Admin — **Staff API** (`/api/staff/v1/`), пакет **`staff-ui/`** (дашборд + заявки «обратный звонок»), OpenAPI `/api/schema/`. Предыдущий релиз **2.0.2a**: checkout СДЭК/Ozon Pay, контакты/карта, документация. **Git:** публикация — `git push origin main` (и при релизе — тег `git tag -a v2.0.3a`).
+См. **[CHANGELOG.md](../CHANGELOG.md)** — актуальный релиз **2.0.4a** (2026-04-14): Staff API + **staff-ui** — контент (портфолио, отзывы, блог, шаблоны писем), загрузка изображений. Предыдущий **2.0.3a**: каркас Staff API и дашборд. **Git:** `git push origin main` (при релизе — тег `git tag -a v2.0.4a`).
 
 ## Текущий фокус (апрель 2026)
 
-1. Зафиксировать релиз **2.0.3a** в GitHub; прогнать smoke **staff-ui** (`npm run dev` в `staff-ui/`, порт **17301**) и витрину на хостинге после обновления окружения.
+1. Зафиксировать релиз **2.0.4a** в GitHub; прогнать smoke **staff-ui** (`npm run dev` в `staff-ui/`, порт **17301**) и витрину на хостинге после обновления окружения.
 2. Продолжить переход на React Admin (фазы 2+): контент, каталог, настройки — [react-admin-transition-plan.md](./react-admin-transition-plan.md).
 3. Подготовить install-пакет под Beget по чеклисту: [beget-install-package-checklist.md](./beget-install-package-checklist.md).
 4. По хостингу Beget: дождаться ответа поддержки по окружению **Python 3.12+ / MySQL 8.0+** (текущий сервер: Python 3.10.12, MySQL 5.7 — блокер прямого запуска текущего backend).
