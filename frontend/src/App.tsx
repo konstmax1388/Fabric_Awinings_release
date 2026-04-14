@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-rou
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartProvider'
 import { BrandingFavicon } from './components/layout/BrandingFavicon'
+import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RequireAuth } from './pages/account/RequireAuth'
 
@@ -56,6 +57,7 @@ function AppShell() {
       <BrandingFavicon />
       <AuthProvider>
         <CartProvider>
+          <ScrollToTopButton />
           <Suspense fallback={<RouteFallback />}>
             <Outlet />
           </Suspense>

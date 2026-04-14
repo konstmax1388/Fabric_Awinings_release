@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
@@ -10,6 +10,11 @@ import { OptimizedImage } from '../ui/OptimizedImage'
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-body text-base font-medium tracking-wide transition-colors hover:text-accent ${
     isActive ? 'text-accent' : 'text-text'
+  }`
+
+const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `block rounded-2xl px-4 py-3.5 font-body text-[17px] font-semibold tracking-wide transition-colors ${
+    isActive ? 'bg-accent/12 text-accent ring-1 ring-accent/25' : 'text-text hover:bg-[#EDE6DB]'
   }`
 
 function CartHeaderLink({ className = '' }: { className?: string }) {
@@ -63,6 +68,24 @@ export function SiteHeader() {
     ...GLOBAL_MARKETPLACE_URLS,
     ...globalMarketplaceUrls,
   }
+
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-light bg-bg-base/95 backdrop-blur-md">
@@ -156,68 +179,81 @@ export function SiteHeader() {
       </div>
 
       <AnimatePresence>
-        {open && (
-          <motion.div
-            className="fixed inset-0 top-[73px] z-40 flex max-w-full flex-col bg-surface shadow-[-8px_0_24px_rgba(0,0,0,0.08)] md:hidden"
-            initial={reduce ? undefined : { x: '100%', opacity: 0.9 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={reduce ? undefined : { x: '100%', opacity: 0.9 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          >
-            <nav className="flex flex-col gap-1 p-6" aria-label="Мобильное меню">
-              <NavLink
-                to="/"
-                end
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Главная
-              </NavLink>
-              <NavLink
-                to="/catalog"
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Каталог
-              </NavLink>
-              <NavLink
-                to="/portfolio"
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Портфолио
-              </NavLink>
-              <NavLink
-                to="/contacts"
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Контакты
-              </NavLink>
-              <NavLink
-                to="/cart"
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Корзина
-              </NavLink>
-              <NavLink
-                to="/account"
-                className="py-3 font-body text-lg font-medium"
-                onClick={() => setOpen(false)}
-              >
-                Личный кабинет
-              </NavLink>
-              <a href={phoneHref} className="py-3 font-body text-lg text-accent">
-                {phone}
-              </a>
-              <div className="mt-4 border-t border-border pt-4">
-                <p className="mb-2 text-sm text-text-muted">{buyOnMobileLabel}</p>
-                <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
+        {open ? (
+          <>
+            <motion.button
+              type="button"
+              key="mobile-menu-backdrop"
+              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#1a1a1a]/50 backdrop-blur-[3px] md:hidden"
+              initial={reduce ? undefined : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduce ? undefined : { opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Закрыть меню"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              key="mobile-menu-panel"
+              className="fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100vw,400px)] flex-col md:hidden"
+              initial={reduce ? undefined : { x: '100%' }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={reduce ? undefined : { x: '100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+            >
+              <div className="flex h-full min-h-0 flex-col border-l border-border-light bg-bg-base shadow-[-16px_0_48px_rgba(0,0,0,0.14)]">
+                <div className="shrink-0 border-b border-border-light/80 bg-surface/90 px-5 py-4">
+                  <p className="font-heading text-lg font-semibold text-text">Меню</p>
+                  <p className="mt-0.5 font-body text-xs text-text-muted">Разделы сайта и контакты</p>
+                </div>
+                <nav
+                  className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-4 py-5"
+                  aria-label="Мобильное меню"
+                >
+                  <NavLink to="/" end className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Главная
+                  </NavLink>
+                  <NavLink to="/catalog" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Каталог
+                  </NavLink>
+                  <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Портфолио
+                  </NavLink>
+                  <NavLink to="/contacts" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Контакты
+                  </NavLink>
+                  <NavLink to="/cart" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Корзина
+                  </NavLink>
+                  <NavLink to="/account" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Личный кабинет
+                  </NavLink>
+                  <a
+                    href={phoneHref}
+                    className="mt-1 flex items-center gap-3 rounded-2xl border border-border-light bg-surface px-4 py-4 font-body text-lg font-semibold text-accent shadow-sm ring-1 ring-border-light/60"
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent" aria-hidden>
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                    </span>
+                    <span className="min-w-0 break-words">{phone}</span>
+                  </a>
+                  <div className="mt-4 rounded-2xl border border-border-light bg-surface/80 p-4 shadow-inner">
+                    <p className="mb-3 font-body text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      {buyOnMobileLabel}
+                    </p>
+                    <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
+                  </div>
+                </nav>
               </div>
-            </nav>
-          </motion.div>
-        )}
+            </motion.div>
+          </>
+        ) : null}
       </AnimatePresence>
     </header>
   )

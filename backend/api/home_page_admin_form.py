@@ -309,6 +309,11 @@ class HomePageContentAdminForm(forms.ModelForm):
     map_iframe_src = forms.CharField(
         label=_("URL встраивания карты (iframe src)"),
         required=True,
+        help_text=_(
+            "Яндекс: URL iframe (map-widget) или целиком тег <script> конструктора "
+            "(api-maps.yandex.ru/services/constructor/… — как в «Поделиться»). "
+            "Для iframe: в ll/pt долгота,широта, запятая как %2C."
+        ),
         widget=forms.Textarea(attrs={"rows": 2, "class": _W}),
     )
     map_title = _req_txt(_("Title у iframe (доступность)"))

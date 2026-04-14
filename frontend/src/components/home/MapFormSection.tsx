@@ -1,7 +1,10 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { type FormEvent, useState } from 'react'
+import { ContactsContentBlock } from '../contacts/ContactsContentBlock'
 import { SITE } from '../../config/site'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { constructorMapHeightPx, parseMapEmbed } from '../../lib/yandexMapEmbed'
+import { YandexConstructorMap } from './YandexConstructorMap'
 import {
   COMMENT_MAX_LEN,
   formatRuPhoneMask,
@@ -13,13 +16,10 @@ import {
 import { submitCallbackLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
-const FALLBACK_MAP_SRC =
-  'https://yandex.ru/map-widget/v1/?ll=37.620393%2C55.753960&z=16&pt=37.620393%2C55.753960%2Cpm2rdm'
-
 export function MapFormSection({ showHeading = true }: { showHeading?: boolean }) {
   const reduce = useReducedMotion()
-  const { home, address } = useSiteSettings()
-  const mf = home?.mapForm ?? {}
+  const { home, address, mapForm } = useSiteSettings()
+  const mf = { ...home?.mapForm, ...(mapForm ?? {}) }
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [comment, setComment] = useState('')
@@ -27,10 +27,9 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const heading = mf.heading ?? 'Контакты и заявка'
-  const subheading =
-    mf.subheading ?? 'Оставьте заявку — свяжемся в рабочее время.'
-  const mapSrc = mf.mapIframeSrc?.trim() || FALLBACK_MAP_SRC
+  const mapEmbed = parseMapEmbed(mf.mapIframeSrc)
+  const constructorMinH =
+    mapEmbed.kind === 'constructor' ? constructorMapHeightPx(mapEmbed.scriptSrc) : undefined
   const mapTitle = mf.mapTitle ?? 'Карта — расположение производства'
   const formNameLabel = mf.formNameLabel ?? 'Имя'
   const formPhoneLabel = mf.formPhoneLabel ?? 'Телефон'
@@ -90,12 +89,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
       viewport={{ once: true, amount: 0.06 }}
       transition={easeOutSoft}
     >
-      {showHeading && (
-        <>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-          <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
-        </>
-      )}
+      {showHeading ? <ContactsContentBlock titleAs="h2" /> : null}
 
       <motion.div
         className={`grid gap-8 lg:grid-cols-2 lg:gap-12 ${showHeading ? 'mt-10' : ''}`}
@@ -112,14 +106,22 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           className="overflow-hidden rounded-[24px] border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
         >
-          <iframe
-            title={mapTitle}
-            src={mapSrc}
-            width="100%"
-            height="400"
-            className="min-h-[320px] w-full border-0 md:min-h-[400px]"
-            allowFullScreen
-          />
+          {mapEmbed.kind === 'constructor' ? (
+            <YandexConstructorMap
+              scriptSrc={mapEmbed.scriptSrc}
+              title={mapTitle}
+              minHeightPx={constructorMinH}
+            />
+          ) : (
+            <iframe
+              title={mapTitle}
+              src={mapEmbed.src}
+              width="100%"
+              height="400"
+              className="min-h-[320px] w-full border-0 md:min-h-[400px]"
+              allowFullScreen
+            />
+          )}
           <div className="border-t border-border-light p-4 font-body text-sm text-text-muted">{addressLine}</div>
         </motion.div>
 

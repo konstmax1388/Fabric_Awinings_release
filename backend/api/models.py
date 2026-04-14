@@ -71,6 +71,12 @@ class Product(models.Model):
         db_index=True,
         help_text="Для массового сопоставления с каталогом: тот же XML_ID, что в Битрикс24 (команда sync_bitrix_catalog_ids).",
     )
+    ozon_sku = models.BigIntegerField(
+        "Ozon SKU (товар)",
+        null=True,
+        blank=True,
+        help_text="SKU в каталоге Ozon для createOrder при доставке Ozon Логистика; если задан у варианта — используется он.",
+    )
 
     class Meta:
         ordering = ["sort_order", "-updated_at", "id"]
@@ -117,6 +123,12 @@ class ProductVariant(models.Model):
         default="",
         db_index=True,
         help_text="Сопоставление с торговым предложением в Б24; иначе можно использовать артикул WB (см. команду sync_bitrix_catalog_ids).",
+    )
+    ozon_sku = models.BigIntegerField(
+        "Ozon SKU (вариант)",
+        null=True,
+        blank=True,
+        help_text="SKU в Ozon для этого предложения (приоритет над SKU товара).",
     )
 
     class Meta:
@@ -344,16 +356,28 @@ class CartOrder(models.Model):
         FAILED = "failed", "Ошибка оплаты"
         REFUNDED = "refunded", "Возврат"
 
-    order_ref = models.CharField(max_length=40, unique=True, db_index=True)
-    customer_name = models.CharField(max_length=120)
-    customer_phone = models.CharField(max_length=40)
-    customer_email = models.EmailField(blank=True)
-    customer_comment = models.TextField(blank=True)
-    lines = models.JSONField(default=list)
-    total_approx = models.PositiveIntegerField(default=0)
-    manager_letter = models.TextField(blank=True)
-    client_ack = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    order_ref = models.CharField("Номер заказа", max_length=40, unique=True, db_index=True)
+    customer_name = models.CharField("Имя покупателя", max_length=120)
+    customer_phone = models.CharField("Телефон", max_length=40)
+    customer_email = models.EmailField("Email", blank=True)
+    customer_comment = models.TextField("Комментарий покупателя", blank=True)
+    lines = models.JSONField(
+        "Позиции заказа (данные с сайта)",
+        default=list,
+        help_text=(
+            "Список товарных строк из корзины. В каждой позиции: наименование (title), количество (qty), "
+            "ориентировочная цена (priceFrom), ссылка на карточку в каталоге (slug), "
+            "идентификаторы товара и варианта на сайте (productId, variantId)."
+        ),
+    )
+    total_approx = models.PositiveIntegerField(
+        "Сумма заказа (ориентир)",
+        default=0,
+        help_text="Приблизительная сумма в рублях, как передал сайт при оформлении.",
+    )
+    manager_letter = models.TextField("Текст письма менеджеру", blank=True)
+    client_ack = models.TextField("Текст для клиента (подтверждение)", blank=True)
+    created_at = models.DateTimeField("Дата создания", auto_now_add=True)
 
     user = models.ForeignKey(
         "auth.User",
@@ -393,7 +417,37 @@ class CartOrder(models.Model):
     bitrix_sync_error = models.TextField("Ошибка синхронизации Б24", blank=True)
     bitrix_sync_attempts = models.PositiveSmallIntegerField("Попыток отправки в Б24", default=0)
 
-    delivery_provider = models.CharField("Доставка (код)", max_length=32, blank=True)
+    class DeliveryMethod(models.TextChoices):
+        PICKUP = "pickup", "Самовывоз со склада"
+        CDEK = "cdek", "СДЭК (ПВЗ / курьер)"
+        OZON_LOGISTICS = "ozon_logistics", "Логистика Ozon"
+
+    class PaymentMethod(models.TextChoices):
+        CASH_PICKUP = "cash_pickup", "Наличные при самовывозе"
+        COD_CDEK = "cod_cdek", "Наложенный платёж (СДЭК)"
+        CARD_ONLINE = "card_online", "Онлайн-оплата (эквайринг Ozon Pay)"
+
+    delivery_method = models.CharField(
+        "Способ доставки",
+        max_length=32,
+        choices=DeliveryMethod.choices,
+        default=DeliveryMethod.PICKUP,
+        db_index=True,
+    )
+    payment_method = models.CharField(
+        "Способ оплаты",
+        max_length=32,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CASH_PICKUP,
+        db_index=True,
+    )
+    acquiring_payload = models.JSONField(
+        "Данные эквайринга (ссылка на оплату, id заказа Ozon Pay и т.д.)",
+        default=dict,
+        blank=True,
+    )
+
+    delivery_provider = models.CharField("Доставка (код, legacy)", max_length=32, blank=True)
     delivery_snapshot = models.JSONField("Снимок доставки (ПВЗ, тариф)", default=dict, blank=True)
     cdek_tracking = models.CharField("Трек СДЭК", max_length=64, blank=True)
 
@@ -530,6 +584,90 @@ class SiteSettings(models.Model):
         default="← На главную",
     )
 
+    # Блок карты + формы на главной (перекрывает mapForm из «Главная страница», если заполнено)
+    map_heading = models.CharField(
+        "Карта на главной: заголовок блока",
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Пусто — берётся из контента главной (JSON).",
+    )
+    map_subheading = models.TextField(
+        "Карта на главной: подзаголовок",
+        blank=True,
+        default="",
+    )
+    map_iframe_src = models.TextField(
+        "Карта: URL iframe (Яндекс/Google и т.д.)",
+        blank=True,
+        default="",
+        help_text=(
+            "Только полный src из iframe (не ссылку yandex.ru/maps/…). "
+            "Яндекс.Карты: в ll и pt — долгота,широта; в URL запятую пишите как %2C, например "
+            "…?ll=41.124649%2C56.925095&z=16&pt=41.124649%2C56.925095%2Cpm2rdm. "
+            "Если в адресе вместо запятой оказался символ @ (%41) — метка уедет не туда."
+        ),
+    )
+    map_title = models.CharField(
+        "Карта: title у iframe (доступность)",
+        max_length=200,
+        blank=True,
+        default="",
+    )
+    map_form_name_label = models.CharField(
+        "Форма: подпись «имя»",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_form_phone_label = models.CharField(
+        "Форма: подпись «телефон»",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_form_comment_label = models.CharField(
+        "Форма: подпись «комментарий»",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_name_placeholder = models.CharField(
+        "Плейсхолдер: имя",
+        max_length=120,
+        blank=True,
+        default="",
+    )
+    map_phone_placeholder = models.CharField(
+        "Плейсхолдер: телефон",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_comment_placeholder = models.CharField(
+        "Плейсхолдер: комментарий",
+        max_length=200,
+        blank=True,
+        default="",
+    )
+    map_submit_button = models.CharField(
+        "Текст кнопки отправки",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_submitting = models.CharField(
+        "Текст при отправке",
+        max_length=80,
+        blank=True,
+        default="",
+    )
+    map_success_message = models.TextField(
+        "Сообщение после успешной отправки",
+        blank=True,
+        default="",
+    )
+
     notification_recipients = models.TextField(
         "Получатели заявок (email)",
         blank=True,
@@ -648,6 +786,144 @@ class SiteSettings(models.Model):
         null=True,
         blank=True,
         help_text="Пусто — BITRIX24_CATALOG_OFFER_IBLOCK_ID из .env.",
+    )
+
+    # --- Оформление заказа: самовывоз / СДЭК / Ozon (доставка и эквайринг) ---
+    checkout_pickup_enabled = models.BooleanField(
+        "Самовывоз: показывать на сайте",
+        default=True,
+        help_text="Покупатель может выбрать получение со склада; адрес и режим — поля ниже.",
+    )
+    pickup_point_title = models.CharField(
+        "Самовывоз: название точки",
+        max_length=200,
+        default="Склад",
+        help_text="Например: «Склад», «Производство».",
+    )
+    pickup_point_address = models.TextField(
+        "Самовывоз: полный адрес",
+        blank=True,
+        default="",
+        help_text="Показывается на шаге оформления и в письме клиенту.",
+    )
+    pickup_point_hours = models.CharField(
+        "Самовывоз: режим работы выдачи",
+        max_length=255,
+        blank=True,
+        default="",
+    )
+    pickup_point_note = models.TextField(
+        "Самовывоз: как проехать / комментарий",
+        blank=True,
+        default="",
+    )
+    pickup_point_lat = models.DecimalField(
+        "Самовывоз: широта (опционально, для карты)",
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
+    pickup_point_lng = models.DecimalField(
+        "Самовывоз: долгота (опционально)",
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
+
+    cdek_enabled = models.BooleanField(
+        "СДЭК: включить на сайте",
+        default=False,
+        help_text="Доставка СДЭК; учётная запись API — ниже. Виджет ПВЗ подключается на фронте (см. docs).",
+    )
+    cdek_test_mode = models.BooleanField(
+        "СДЭК: тестовый контур (api.edu.cdek.ru)",
+        default=True,
+        help_text="Выкл. — боевой https://api.cdek.ru и боевые ключи.",
+    )
+    cdek_account = models.CharField(
+        "СДЭК: Account (client_id для OAuth)",
+        max_length=128,
+        blank=True,
+        default="",
+    )
+    cdek_secure_password = models.CharField(
+        "СДЭК: Secure password (client_secret)",
+        max_length=256,
+        blank=True,
+        default="",
+        help_text="Не публикуйте. Можно задать CDEK_SECURE в .env — приоритет над полем (см. docs).",
+    )
+    cdek_widget_script_url = models.URLField(
+        "СДЭК: URL скрипта виджета",
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Пусто — по умолчанию v3 с jsDelivr: @cdek-it/widget@3. Иначе свой URL (см. wiki cdek-it/widget).",
+    )
+    cdek_yandex_map_api_key = models.CharField(
+        "СДЭК: ключ API Яндекс.Карт (виджет)",
+        max_length=128,
+        blank=True,
+        default="",
+        help_text="Ключ JavaScript API Яндекс.Карт (виджет СДЭК v3). В кабинете разработчика Яндекса задайте HTTP Referrer вашего сайта.",
+    )
+    cdek_widget_sender_city = models.CharField(
+        "СДЭК: город отправления (виджет)",
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Город или адрес отправления для виджета (параметр from). Пусто — первая часть адреса самовывоза до запятой, иначе «Москва».",
+    )
+    cdek_manual_pvz_enabled = models.BooleanField(
+        "СДЭК: разрешить ручной ввод ПВЗ",
+        default=True,
+        help_text="Если выключено, на витрине покупатель сможет выбрать ПВЗ только через виджет (без ручного кода).",
+    )
+
+    ozon_logistics_enabled = models.BooleanField(
+        "Логистика Ozon: показывать способ доставки",
+        default=False,
+        help_text="Доступна только онлайн-оплата через Ozon Pay (если эквайринг включён). Подключение кабинета — по инструкции Ozon.",
+    )
+    ozon_logistics_buyer_note = models.TextField(
+        "Логистика Ozon: текст для покупателя",
+        blank=True,
+        default="",
+        help_text="Кратко опишите условия; ссылка на справку Ozon при необходимости.",
+    )
+
+    ozon_pay_enabled = models.BooleanField(
+        "Ozon Pay Checkout: включить онлайн-оплату",
+        default=False,
+        help_text="Интеграция по API Ozon Acquiring (Ozon Pay Checkout). Ключи — ниже.",
+    )
+    ozon_pay_sandbox = models.BooleanField(
+        "Ozon Pay: песочница / тест",
+        default=True,
+        help_text="Пока нет боевого доступа оставьте включённым.",
+    )
+    ozon_pay_client_id = models.CharField(
+        "Ozon Pay: accessKey (идентификатор токена)",
+        max_length=256,
+        blank=True,
+        default="",
+        help_text="Из кабинета эквайринга. Env: OZON_PAY_ACCESS_KEY.",
+    )
+    ozon_pay_client_secret = models.CharField(
+        "Ozon Pay: secretKey (секрет токена)",
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Для подписи запросов createOrder. Env: OZON_PAY_SECRET_KEY или OZON_PAY_CLIENT_SECRET.",
+    )
+    ozon_pay_webhook_secret = models.CharField(
+        "Ozon Pay: notificationSecretKey (уведомления)",
+        max_length=256,
+        blank=True,
+        default="",
+        help_text="Секрет для проверки requestSign в POST /api/webhooks/ozon-pay/. Env: OZON_PAY_WEBHOOK_SECRET.",
     )
 
     class Meta:

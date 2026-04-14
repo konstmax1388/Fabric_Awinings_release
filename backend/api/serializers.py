@@ -312,6 +312,18 @@ class CartLineInputSerializer(serializers.Serializer):
     title = serializers.CharField()
     priceFrom = serializers.IntegerField(min_value=0)
     qty = serializers.IntegerField(min_value=1, max_value=99)
+    image = serializers.CharField(required=False, allow_blank=True, default="", max_length=2048)
+    ozonSku = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+
+    def validate_image(self, value: str) -> str:
+        s = (value or "").strip()
+        if not s:
+            return ""
+        if len(s) > 2048:
+            return ""
+        if s.startswith("/") or s.startswith("http://") or s.startswith("https://"):
+            return s
+        return ""
 
 
 class CartOrderCreateSerializer(serializers.Serializer):
@@ -319,6 +331,50 @@ class CartOrderCreateSerializer(serializers.Serializer):
     lines = CartLineInputSerializer(many=True)
     totalApprox = serializers.IntegerField(min_value=0)
     delivery = serializers.DictField(required=False, default=dict)
+    deliveryMethod = serializers.ChoiceField(
+        choices=CartOrder.DeliveryMethod.choices,
+        default=CartOrder.DeliveryMethod.PICKUP,
+    )
+    paymentMethod = serializers.ChoiceField(
+        choices=CartOrder.PaymentMethod.choices,
+        default=CartOrder.PaymentMethod.CASH_PICKUP,
+    )
+
+    def validate(self, attrs):
+        from .models import SiteSettings
+        from .services.checkout_rules import delivery_options_public, validate_delivery_and_payment
+
+        s = SiteSettings.get_solo()
+        if not delivery_options_public(s):
+            raise serializers.ValidationError(
+                "Оформление заказа недоступно: в настройках сайта не включён ни один способ доставки."
+            )
+        validate_delivery_and_payment(
+            attrs.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP),
+            attrs.get("paymentMethod", CartOrder.PaymentMethod.CASH_PICKUP),
+            s,
+        )
+        dm = attrs.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
+        delivery = attrs.get("delivery") or {}
+        if dm == CartOrder.DeliveryMethod.CDEK and isinstance(delivery, dict):
+            cdek = delivery.get("cdek") or {}
+            mode = ""
+            pvz_code = ""
+            if isinstance(cdek, dict):
+                mode = str(cdek.get("mode") or "").strip().lower()
+                pvz_code = str(cdek.get("pvzCode") or "").strip()
+            if mode != "door":
+                if pvz_code:
+                    pass
+                elif s.cdek_manual_pvz_enabled:
+                    raise serializers.ValidationError(
+                        "Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную."
+                    )
+                else:
+                    raise serializers.ValidationError(
+                        "Для доставки в ПВЗ выберите пункт на карте СДЭК (ручной ввод ПВЗ отключён в настройках сайта)."
+                    )
+        return attrs
 
     def validate_customer(self, value):
         if not isinstance(value, dict):
@@ -344,8 +400,11 @@ class CartOrderCreateSerializer(serializers.Serializer):
         }
 
     def create(self, validated_data):
+        from .models import SiteSettings
+        from .services.delivery_snapshot import sanitize_checkout_delivery
         from .services.letters import build_cart_letters
         from .services.order_ref import generate_order_ref
+        from .services.ozon_acquiring import try_begin_ozon_pay
 
         request = self.context.get("request")
         user = None
@@ -358,19 +417,55 @@ class CartOrderCreateSerializer(serializers.Serializer):
         customer = validated_data["customer"]
         lines_plain = [dict(x) for x in validated_data["lines"]]
         total = validated_data["totalApprox"]
-        delivery = validated_data.get("delivery") or {}
-        if isinstance(delivery, dict):
-            delivery_plain = {
-                k: (str(v).strip() if v is not None else "")
-                for k, v in delivery.items()
-                if k in ("city", "address", "comment")
-            }
-        else:
-            delivery_plain = {}
+        dm = validated_data.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
+        pm = validated_data.get("paymentMethod", CartOrder.PaymentMethod.CASH_PICKUP)
+        delivery_snapshot = sanitize_checkout_delivery(validated_data.get("delivery") or {})
 
+        settings = SiteSettings.get_solo()
+        acquiring: dict = {}
+        if pm == CartOrder.PaymentMethod.CARD_ONLINE:
+            acquiring = try_begin_ozon_pay(
+                order_ref=ref,
+                total_approx=total,
+                settings=settings,
+                delivery_method=dm,
+                cart_lines=lines_plain,
+                receipt_email=(customer.get("email") or "").strip(),
+                fiscalization_phone=(customer.get("phone") or "").strip(),
+            )
+            pay_url = acquiring.get("redirectUrl") if isinstance(acquiring, dict) else None
+            if not (isinstance(pay_url, str) and pay_url.strip()):
+                msg = ""
+                if isinstance(acquiring, dict):
+                    msg = str(acquiring.get("message") or acquiring.get("httpError") or "").strip()
+                raise serializers.ValidationError(
+                    msg or "Не удалось инициализировать онлайн-оплату Ozon Pay. Проверьте настройки эквайринга."
+                )
+
+        if pm == CartOrder.PaymentMethod.CARD_ONLINE:
+            pay_status = CartOrder.PaymentStatus.PENDING
+        else:
+            pay_status = CartOrder.PaymentStatus.NOT_REQUIRED
+
+        dm_label = CartOrder.DeliveryMethod(dm).label
+        pm_label = CartOrder.PaymentMethod(pm).label
         manager_letter, client_ack = build_cart_letters(
-            ref, customer, lines_plain, total, delivery=delivery_plain
+            ref,
+            customer,
+            lines_plain,
+            total,
+            delivery=delivery_snapshot,
+            delivery_method_label=str(dm_label),
+            payment_method_label=str(pm_label),
         )
+        if pm == CartOrder.PaymentMethod.CARD_ONLINE:
+            pay_url = acquiring.get("redirectUrl") if isinstance(acquiring, dict) else None
+            extra = (acquiring or {}).get("message") if isinstance(acquiring, dict) else None
+            if pay_url:
+                client_ack = f"{client_ack}\n\nОплатить заказ онлайн: {pay_url}\n"
+            elif extra:
+                client_ack = f"{client_ack}\n\n{extra}\n"
+
         return CartOrder.objects.create(
             order_ref=ref,
             user=user,
@@ -382,7 +477,13 @@ class CartOrderCreateSerializer(serializers.Serializer):
             total_approx=total,
             manager_letter=manager_letter,
             client_ack=client_ack,
-            delivery_snapshot=delivery_plain,
+            delivery_method=dm,
+            payment_method=pm,
+            payment_status=pay_status,
+            payment_provider="ozon_pay" if pm == CartOrder.PaymentMethod.CARD_ONLINE else "",
+            delivery_provider=str(dm),
+            delivery_snapshot=delivery_snapshot,
+            acquiring_payload=acquiring if isinstance(acquiring, dict) else {},
         )
 
 
@@ -390,10 +491,18 @@ class CartOrderResponseSerializer(serializers.ModelSerializer):
     orderRef = serializers.CharField(source="order_ref")
     clientAck = serializers.CharField(source="client_ack")
     fulfillmentStatus = serializers.CharField(source="fulfillment_status", read_only=True)
+    paymentRedirectUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = CartOrder
-        fields = ("orderRef", "clientAck", "fulfillmentStatus")
+        fields = ("orderRef", "clientAck", "fulfillmentStatus", "paymentRedirectUrl")
+
+    def get_paymentRedirectUrl(self, obj: CartOrder) -> str | None:
+        raw = obj.acquiring_payload
+        if not isinstance(raw, dict):
+            return None
+        url = raw.get("redirectUrl")
+        return url if isinstance(url, str) and url.strip() else None
 
 
 class SiteSettingsPublicSerializer(serializers.ModelSerializer):
@@ -417,6 +526,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     calculatorEnabled = serializers.BooleanField(source="show_calculator", read_only=True)
     productPhotoAspect = serializers.CharField(source="product_photo_aspect", read_only=True)
     catalogIntro = serializers.CharField(source="catalog_intro", read_only=True)
+    checkout = serializers.SerializerMethodField()
+    mapForm = serializers.SerializerMethodField()
 
     class Meta:
         model = SiteSettings
@@ -444,6 +555,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "calculatorEnabled",
             "productPhotoAspect",
             "catalogIntro",
+            "checkout",
+            "mapForm",
         )
 
     def _absolute_media(self, request, f) -> str | None:
@@ -483,6 +596,92 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         if obj.global_url_avito:
             m["avito"] = obj.global_url_avito
         return m
+
+    def get_mapForm(self, obj: SiteSettings) -> dict[str, str] | None:
+        """Перекрытия для блока карты на главной; пустые поля не включаются (берутся из home-content)."""
+
+        def add(key: str, raw: str | None) -> None:
+            if isinstance(raw, str) and raw.strip():
+                out[key] = raw.strip()
+
+        out: dict[str, str] = {}
+        add("heading", obj.map_heading)
+        add("subheading", obj.map_subheading)
+        add("mapIframeSrc", obj.map_iframe_src)
+        add("mapTitle", obj.map_title)
+        add("formNameLabel", obj.map_form_name_label)
+        add("formPhoneLabel", obj.map_form_phone_label)
+        add("formCommentLabel", obj.map_form_comment_label)
+        add("namePlaceholder", obj.map_name_placeholder)
+        add("phonePlaceholder", obj.map_phone_placeholder)
+        add("commentPlaceholder", obj.map_comment_placeholder)
+        add("submitButton", obj.map_submit_button)
+        add("submitting", obj.map_submitting)
+        add("successMessage", obj.map_success_message)
+        return out or None
+
+    def get_checkout(self, obj: SiteSettings) -> dict:
+        import os
+
+        from django.urls import reverse
+
+        from .services.cdek_runtime import cdek_api_base_url
+        from .services.checkout_rules import allowed_payment_methods, delivery_options_public
+
+        def widget_sender_city() -> str:
+            s = (obj.cdek_widget_sender_city or "").strip()
+            if s:
+                return s
+            addr = (obj.pickup_point_address or "").strip()
+            if addr:
+                part = addr.split(",")[0].strip()
+                if part:
+                    return part
+            return "Москва"
+
+        weight = int(os.environ.get("CDEK_WIDGET_DEFAULT_WEIGHT_G", "3000"))
+        default_goods = [{"width": 20, "height": 20, "length": 30, "weight": weight}]
+        widget_script = (obj.cdek_widget_script_url or "").strip() or "https://cdn.jsdelivr.net/npm/@cdek-it/widget@3"
+        req = self.context.get("request")
+        widget_service_url = ""
+        if req is not None:
+            widget_service_url = req.build_absolute_uri(reverse("cdek-widget-service"))
+
+        deliveries = delivery_options_public(obj)
+        matrix = {d["id"]: allowed_payment_methods(d["id"], obj) for d in deliveries}
+        payment_labels = {c.value: str(c.label) for c in CartOrder.PaymentMethod}
+        return {
+            "deliveryOptions": deliveries,
+            "paymentMatrix": matrix,
+            "paymentLabels": payment_labels,
+            "pickup": {
+                "title": obj.pickup_point_title,
+                "address": obj.pickup_point_address,
+                "hours": obj.pickup_point_hours,
+                "note": obj.pickup_point_note,
+                "lat": float(obj.pickup_point_lat) if obj.pickup_point_lat is not None else None,
+                "lng": float(obj.pickup_point_lng) if obj.pickup_point_lng is not None else None,
+            },
+            "cdek": {
+                "enabled": obj.cdek_enabled,
+                "testMode": obj.cdek_test_mode,
+                "apiBaseUrl": cdek_api_base_url(obj),
+                "widgetScriptUrl": widget_script,
+                "yandexMapApiKey": (obj.cdek_yandex_map_api_key or "").strip(),
+                "widgetServiceUrl": widget_service_url,
+                "widgetSenderCity": widget_sender_city(),
+                "manualPvzEnabled": obj.cdek_manual_pvz_enabled,
+                "widgetGoods": default_goods,
+            },
+            "ozonLogistics": {
+                "enabled": obj.ozon_logistics_enabled,
+                "buyerNote": obj.ozon_logistics_buyer_note,
+            },
+            "ozonPay": {
+                "enabled": obj.ozon_pay_enabled,
+                "sandbox": obj.ozon_pay_sandbox,
+            },
+        }
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -526,6 +725,8 @@ class CustomerOrderListSerializer(serializers.ModelSerializer):
     orderRef = serializers.CharField(source="order_ref")
     createdAt = serializers.DateTimeField(source="created_at", format="%Y-%m-%dT%H:%M:%S%z")
     totalApprox = serializers.IntegerField(source="total_approx")
+    fulfillmentStatusLabel = serializers.SerializerMethodField()
+    paymentStatusLabel = serializers.SerializerMethodField()
 
     class Meta:
         model = CartOrder
@@ -533,10 +734,18 @@ class CustomerOrderListSerializer(serializers.ModelSerializer):
             "orderRef",
             "createdAt",
             "fulfillment_status",
+            "fulfillmentStatusLabel",
             "payment_status",
+            "paymentStatusLabel",
             "totalApprox",
             "lines",
         )
+
+    def get_fulfillmentStatusLabel(self, obj: CartOrder) -> str:
+        return obj.get_fulfillment_status_display()
+
+    def get_paymentStatusLabel(self, obj: CartOrder) -> str:
+        return obj.get_payment_status_display()
 
 
 class CustomerOrderDetailSerializer(CustomerOrderListSerializer):

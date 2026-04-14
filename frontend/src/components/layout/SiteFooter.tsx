@@ -25,14 +25,29 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border-light bg-bg-base">
       <div className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-          <div>
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,2.1fr)_minmax(0,0.72fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="min-w-0 lg:pr-2">
             <p className="font-heading text-xl font-semibold text-text">{siteName}</p>
-            <p className="mt-3 max-w-xs font-body text-sm leading-relaxed text-text-muted">
-              {siteTagline}. {footerNote}
-            </p>
+            {siteTagline.trim() ? (
+              <div className="relative mt-5 max-w-none pl-4 sm:pl-5">
+                <span
+                  className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-accent shadow-[2px_0_12px_rgba(232,122,0,0.35)]"
+                  aria-hidden
+                />
+                <p className="font-heading text-xl font-semibold leading-snug tracking-tight text-text sm:text-2xl md:text-[1.75rem] md:leading-tight">
+                  {siteTagline.trim()}
+                </p>
+              </div>
+            ) : null}
+            {footerNote.trim() ? (
+              <p
+                className={`max-w-none font-body text-sm leading-relaxed text-text-muted md:max-w-xl lg:max-w-2xl ${siteTagline.trim() ? 'mt-4' : 'mt-3'}`}
+              >
+                {footerNote.trim()}
+              </p>
+            ) : null}
           </div>
-          <div>
+          <div className="min-w-0 lg:max-w-[200px]">
             <p className="font-body text-sm font-semibold text-text">Навигация</p>
             <ul className="mt-4 flex flex-col gap-2 font-body text-sm text-text-muted">
               <li>

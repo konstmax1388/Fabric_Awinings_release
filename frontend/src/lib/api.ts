@@ -1,5 +1,10 @@
 import type { MarketplaceId } from '../config/site'
 import type { HomePayload } from '../types/homePage'
+import {
+  DEFAULT_CHECKOUT_PUBLIC,
+  type CheckoutDeliveryOption,
+  type CheckoutPublicConfig,
+} from '../types/checkoutPublic'
 import { parseProductPhotoAspect, type ProductPhotoAspect } from './productPhotoAspect'
 import type {
   Product,
@@ -409,6 +414,9 @@ export async function postCallbackLead(body: Record<string, unknown>): Promise<b
 
 const MP_IDS = ['wb', 'ozon', 'ym', 'avito'] as const
 
+/** Перекрытия блока карты на главной из GET /api/site-settings/ (мержится с home.mapForm). */
+export type MapFormSiteOverlay = Partial<NonNullable<HomePayload['mapForm']>>
+
 export type SiteSettingsDto = {
   enabledMarketplaces: string[]
   globalMarketplaceUrls: Partial<Record<MarketplaceId, string>>
@@ -433,15 +441,151 @@ export type SiteSettingsDto = {
   calculatorEnabled?: boolean
   productPhotoAspect?: ProductPhotoAspect
   catalogIntro?: string
+  checkout?: CheckoutPublicConfig
+  mapForm?: MapFormSiteOverlay
 }
 
-function str(v: unknown): string | undefined {
-  return typeof v === 'string' && v.trim() ? v : undefined
+function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
+  if (!raw || typeof raw !== 'object') return DEFAULT_CHECKOUT_PUBLIC
+  const o = raw as Record<string, unknown>
+
+  const deliveryRaw = o.deliveryOptions
+  let deliveryOptions: CheckoutDeliveryOption[] = []
+  if (Array.isArray(deliveryRaw)) {
+    for (const x of deliveryRaw) {
+      if (!x || typeof x !== 'object') continue
+      const r = x as Record<string, unknown>
+      const id = typeof r.id === 'string' ? r.id : ''
+      const label = typeof r.label === 'string' ? r.label : ''
+      if (id) deliveryOptions.push({ id, label: label || id })
+    }
+  }
+  if (!deliveryOptions.length) deliveryOptions = DEFAULT_CHECKOUT_PUBLIC.deliveryOptions
+
+  const paymentMatrix: Record<string, string[]> = { ...DEFAULT_CHECKOUT_PUBLIC.paymentMatrix }
+  const pmRaw = o.paymentMatrix
+  if (pmRaw && typeof pmRaw === 'object' && !Array.isArray(pmRaw)) {
+    for (const [k, v] of Object.entries(pmRaw as Record<string, unknown>)) {
+      if (Array.isArray(v)) {
+        const arr = v.filter((x): x is string => typeof x === 'string')
+        if (arr.length) paymentMatrix[k] = arr
+      }
+    }
+  }
+
+  const paymentLabels: Record<string, string> = { ...DEFAULT_CHECKOUT_PUBLIC.paymentLabels }
+  const plRaw = o.paymentLabels
+  if (plRaw && typeof plRaw === 'object' && !Array.isArray(plRaw)) {
+    for (const [k, v] of Object.entries(plRaw as Record<string, unknown>)) {
+      if (typeof v === 'string' && v.trim()) paymentLabels[k] = v.trim()
+    }
+  }
+
+  const pickup = { ...DEFAULT_CHECKOUT_PUBLIC.pickup }
+  const pu = o.pickup
+  if (pu && typeof pu === 'object' && !Array.isArray(pu)) {
+    const p = pu as Record<string, unknown>
+    if (typeof p.title === 'string') pickup.title = p.title
+    if (typeof p.address === 'string') pickup.address = p.address
+    if (typeof p.hours === 'string') pickup.hours = p.hours
+    if (typeof p.note === 'string') pickup.note = p.note
+    if (typeof p.lat === 'number' && Number.isFinite(p.lat)) pickup.lat = p.lat
+    if (typeof p.lng === 'number' && Number.isFinite(p.lng)) pickup.lng = p.lng
+  }
+
+  const cdek = { ...DEFAULT_CHECKOUT_PUBLIC.cdek }
+  const cd = o.cdek
+  if (cd && typeof cd === 'object' && !Array.isArray(cd)) {
+    const c = cd as Record<string, unknown>
+    if (typeof c.enabled === 'boolean') cdek.enabled = c.enabled
+    if (typeof c.testMode === 'boolean') cdek.testMode = c.testMode
+    if (typeof c.apiBaseUrl === 'string' && c.apiBaseUrl.trim()) cdek.apiBaseUrl = c.apiBaseUrl.trim()
+    if (typeof c.widgetScriptUrl === 'string') cdek.widgetScriptUrl = c.widgetScriptUrl.trim()
+    if (typeof c.yandexMapApiKey === 'string') cdek.yandexMapApiKey = c.yandexMapApiKey.trim()
+    if (typeof c.widgetServiceUrl === 'string') cdek.widgetServiceUrl = c.widgetServiceUrl.trim()
+    if (typeof c.manualPvzEnabled === 'boolean') cdek.manualPvzEnabled = c.manualPvzEnabled
+    if (typeof c.widgetSenderCity === 'string' && c.widgetSenderCity.trim())
+      cdek.widgetSenderCity = c.widgetSenderCity.trim()
+    const wg = c.widgetGoods
+    if (Array.isArray(wg) && wg.length) {
+      const parcels: { width: number; height: number; length: number; weight: number }[] = []
+      for (const row of wg) {
+        if (!row || typeof row !== 'object') continue
+        const r = row as Record<string, unknown>
+        const width = typeof r.width === 'number' ? r.width : Number(r.width)
+        const height = typeof r.height === 'number' ? r.height : Number(r.height)
+        const length = typeof r.length === 'number' ? r.length : Number(r.length)
+        const weight = typeof r.weight === 'number' ? r.weight : Number(r.weight)
+        if ([width, height, length, weight].every((n) => Number.isFinite(n))) {
+          parcels.push({ width, height, length, weight })
+        }
+      }
+      if (parcels.length) cdek.widgetGoods = parcels
+    }
+  }
+
+  const ozonLogistics = { ...DEFAULT_CHECKOUT_PUBLIC.ozonLogistics }
+  const ol = o.ozonLogistics
+  if (ol && typeof ol === 'object' && !Array.isArray(ol)) {
+    const z = ol as Record<string, unknown>
+    if (typeof z.enabled === 'boolean') ozonLogistics.enabled = z.enabled
+    if (typeof z.buyerNote === 'string') ozonLogistics.buyerNote = z.buyerNote
+  }
+
+  const ozonPay = { ...DEFAULT_CHECKOUT_PUBLIC.ozonPay }
+  const op = o.ozonPay
+  if (op && typeof op === 'object' && !Array.isArray(op)) {
+    const z = op as Record<string, unknown>
+    if (typeof z.enabled === 'boolean') ozonPay.enabled = z.enabled
+    if (typeof z.sandbox === 'boolean') ozonPay.sandbox = z.sandbox
+  }
+
+  return {
+    deliveryOptions,
+    paymentMatrix,
+    paymentLabels,
+    pickup,
+    cdek,
+    ozonLogistics,
+    ozonPay,
+  }
 }
 
-/** Как str, но сохраняет пустую строку (нужно для полей вроде «режим работы», которые можно очистить). */
+/** Строка с API как есть (включая пустую); иначе undefined — для контактов и брендинга с витрины. */
+function optStr(v: unknown): string | undefined {
+  return typeof v === 'string' ? v : undefined
+}
+
+/** Строка как есть; пустая строка сохраняется (режим работы и т.п.). */
 function strOrEmpty(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined
+}
+
+const MAP_FORM_KEYS = [
+  'heading',
+  'subheading',
+  'mapIframeSrc',
+  'mapTitle',
+  'formNameLabel',
+  'formPhoneLabel',
+  'formCommentLabel',
+  'namePlaceholder',
+  'phonePlaceholder',
+  'commentPlaceholder',
+  'submitButton',
+  'submitting',
+  'successMessage',
+] as const satisfies readonly (keyof NonNullable<HomePayload['mapForm']>)[]
+
+function parseMapFormOverlay(raw: unknown): MapFormSiteOverlay | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const o = raw as Record<string, unknown>
+  const out: MapFormSiteOverlay = {}
+  for (const k of MAP_FORM_KEYS) {
+    const v = o[k]
+    if (typeof v === 'string') out[k] = v
+  }
+  return Object.keys(out).length ? out : undefined
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
@@ -464,28 +608,30 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
     return {
       enabledMarketplaces: enabled,
       globalMarketplaceUrls,
-      siteName: str(data.siteName),
-      siteTagline: str(data.siteTagline),
-      footerNote: str(data.footerNote),
+      siteName: optStr(data.siteName),
+      siteTagline: optStr(data.siteTagline),
+      footerNote: optStr(data.footerNote),
       logoUrl: typeof data.logoUrl === 'string' && data.logoUrl ? data.logoUrl : null,
       faviconUrl: typeof data.faviconUrl === 'string' && data.faviconUrl ? data.faviconUrl : null,
-      phone: str(data.phone),
-      phoneHref: str(data.phoneHref),
-      email: str(data.email),
-      address: str(data.address),
-      legal: str(data.legal),
-      footerVkUrl: str(data.footerVkUrl),
-      footerTelegramUrl: str(data.footerTelegramUrl),
+      phone: optStr(data.phone),
+      phoneHref: optStr(data.phoneHref),
+      email: optStr(data.email),
+      address: optStr(data.address),
+      legal: optStr(data.legal),
+      footerVkUrl: optStr(data.footerVkUrl),
+      footerTelegramUrl: optStr(data.footerTelegramUrl),
       showSocialLinks: typeof data.showSocialLinks === 'boolean' ? data.showSocialLinks : undefined,
-      contactsPageTitle: str(data.contactsPageTitle),
+      contactsPageTitle: optStr(data.contactsPageTitle),
       contactsIntro: strOrEmpty(data.contactsIntro),
       contactsHours: strOrEmpty(data.contactsHours),
-      contactsMetaDescription: str(data.contactsMetaDescription),
-      contactsBackLinkLabel: str(data.contactsBackLinkLabel),
+      contactsMetaDescription: optStr(data.contactsMetaDescription),
+      contactsBackLinkLabel: optStr(data.contactsBackLinkLabel),
       calculatorEnabled:
         typeof data.calculatorEnabled === 'boolean' ? data.calculatorEnabled : undefined,
       productPhotoAspect: parseProductPhotoAspect(data.productPhotoAspect),
       catalogIntro: strOrEmpty(data.catalogIntro),
+      checkout: parseCheckoutPublic(data.checkout),
+      mapForm: parseMapFormOverlay(data.mapForm),
     }
   } catch {
     return null
@@ -632,7 +778,9 @@ export type CustomerOrderRow = {
   orderRef: string
   createdAt: string
   fulfillment_status: string
+  fulfillmentStatusLabel?: string
   payment_status: string
+  paymentStatusLabel?: string
   totalApprox: number
   lines: unknown[]
 }
@@ -755,12 +903,24 @@ export async function postCartOrder(
       title: string
       priceFrom: number
       qty: number
+      image?: string
     }[]
     totalApprox: number
-    delivery?: { city?: string; address?: string; comment?: string }
+    delivery?: Record<string, unknown>
+    deliveryMethod?: string
+    paymentMethod?: string
   },
   opts?: { accessToken?: string | null },
-): Promise<{ orderRef: string; clientAck: string; fulfillmentStatus?: string } | null> {
+): Promise<
+  | {
+      ok: true
+      orderRef: string
+      clientAck: string
+      fulfillmentStatus?: string
+      paymentRedirectUrl?: string | null
+    }
+  | { ok: false; detail: string }
+> {
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -772,14 +932,26 @@ export async function postCartOrder(
       headers,
       body: JSON.stringify(body),
     })
-    if (!r.ok) return null
+    if (!r.ok) {
+      const err = await parseJson<Record<string, unknown>>(r)
+      const detailRaw =
+        (err?.detail as string | undefined) ??
+        (typeof err?.non_field_errors === 'string'
+          ? err.non_field_errors
+          : Array.isArray(err?.non_field_errors)
+            ? String(err?.non_field_errors?.[0] ?? '')
+            : '')
+      return { ok: false, detail: detailRaw?.trim() || 'Не удалось оформить заказ' }
+    }
     const data = await parseJson<{
       orderRef: string
       clientAck: string
       fulfillmentStatus?: string
+      paymentRedirectUrl?: string | null
     }>(r)
-    return data
+    if (!data) return { ok: false, detail: 'Пустой ответ сервера' }
+    return { ok: true, ...data }
   } catch {
-    return null
+    return { ok: false, detail: 'Ошибка сети при оформлении заказа' }
   }
 }

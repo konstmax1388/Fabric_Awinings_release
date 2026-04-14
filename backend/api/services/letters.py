@@ -8,6 +8,9 @@ def build_cart_letters(
     lines: list[dict],
     total_approx: int,
     delivery: dict | None = None,
+    *,
+    delivery_method_label: str = "",
+    payment_method_label: str = "",
 ) -> tuple[str, str]:
     name = customer.get("name", "").strip()
     phone = customer.get("phone", "").strip()
@@ -44,6 +47,24 @@ def build_cart_letters(
         hdr.append(f"Email: {email}")
     if comment:
         hdr.append(f"Комментарий: {comment}")
+    if delivery_method_label or payment_method_label:
+        hdr.append("")
+        hdr.append("ОФОРМЛЕНИЕ НА САЙТЕ")
+        if delivery_method_label:
+            hdr.append(f"Способ доставки: {delivery_method_label}")
+        if payment_method_label:
+            hdr.append(f"Способ оплаты: {payment_method_label}")
+    cdek = delivery.get("cdek")
+    if isinstance(cdek, dict):
+        cc = str(cdek.get("pvzCode") or cdek.get("code") or "").strip()
+        ca = str(cdek.get("address") or cdek.get("name") or "").strip()
+        if cc or ca:
+            hdr.append("")
+            hdr.append("СДЭК (данные с виджета / формы)")
+            if cc:
+                hdr.append(f"Код ПВЗ: {cc}")
+            if ca:
+                hdr.append(f"Пункт: {ca}")
     city = (delivery.get("city") or "").strip()
     addr = (delivery.get("address") or "").strip()
     d_comment = (delivery.get("comment") or "").strip()

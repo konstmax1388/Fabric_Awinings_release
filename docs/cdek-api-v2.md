@@ -62,6 +62,10 @@ CDEK_SECURE=
 
 ---
 
+## Виджет ПВЗ v3 (checkout)
+
+Для [виджета cdek-it/widget 3.x](https://github.com/cdek-it/widget/wiki/%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-3.0) на фронте нужны: URL скрипта (по умолчанию `@cdek-it/widget@3` с jsDelivr), **ключ JavaScript API Яндекс.Карт** и публичный **servicePath** — у нас это `GET/POST /api/cdek-widget/service/` (абсолютный URL отдаётся в `GET /api/site-settings/` → `checkout.cdek.widgetServiceUrl`). Прокси подставляет OAuth к API СДЭК и вызывает `deliverypoints` / `calculator/tarifflist`, как `dist/service.php` в репозитории виджета. Вес посылки по умолчанию для расчёта: переменная окружения `CDEK_WIDGET_DEFAULT_WEIGHT_G` (граммы, по умолчанию 3000).
+
 ## Ссылки
 
 - [apidoc.cdek.ru](https://apidoc.cdek.ru/) — актуальные пути и схемы тел.  

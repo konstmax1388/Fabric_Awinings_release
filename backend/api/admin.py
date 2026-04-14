@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from django import forms
@@ -13,6 +14,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
@@ -105,6 +107,15 @@ def _sitesettings_section_modelform_factory(request, fields: tuple[str, ...]):
                 },
                 render_value=True,
             )
+        if db_field.name in (
+            "cdek_secure_password",
+            "ozon_pay_client_secret",
+            "ozon_pay_webhook_secret",
+        ):
+            kwargs["widget"] = UnfoldAdminPasswordWidget(
+                attrs={"autocomplete": "new-password"},
+                render_value=True,
+            )
         return model_admin.formfield_for_dbfield(db_field, request, **kwargs)
 
     return modelform_factory(
@@ -150,6 +161,7 @@ class ProductVariantInline(TabularInline):
     fields = (
         "label",
         "wb_nm_id",
+        "ozon_sku",
         "bitrix_xml_id",
         "bitrix_catalog_id",
         "price_from",
@@ -273,6 +285,15 @@ class ProductAdmin(ModelAdmin):
                     "Внешний код (XML_ID) — для команды sync_bitrix_catalog_ids; числовой ID — в Astrum уходит как product_id. "
                     "Если вариантов несколько — XML_ID/ID у каждого варианта в таблице ниже; у товара поля — запасной вариант "
                     "для одновариантных позиций. Подробнее: docs/astrum-bitrix-crm.md."
+                ),
+            },
+        ),
+        (
+            _("Ozon: доставка Ozon Логистика"),
+            {
+                "fields": ("ozon_sku",),
+                "description": _(
+                    "Числовой SKU товара в Ozon для поля items[].sku в Acquiring createOrder (если у варианта заполнен свой SKU — он важнее)."
                 ),
             },
         ),
@@ -552,6 +573,12 @@ class CalculatorLeadAdmin(ModelAdmin):
     )
 
 
+def _format_cart_order_rub(n: int | None) -> str:
+    v = int(n or 0)
+    spaced = f"{v:,}".replace(",", " ")
+    return f"{spaced} руб."
+
+
 @admin.register(CallbackLead)
 class CallbackLeadAdmin(ModelAdmin):
     list_display = ("name", "phone", "source", "created_at")
@@ -575,7 +602,7 @@ class CartOrderAdmin(ModelAdmin):
         "order_ref",
         "customer_name",
         "customer_phone",
-        "total_approx",
+        "list_total_rub",
         "fulfillment_status",
         "payment_status",
         "crm_list_column",
@@ -585,8 +612,9 @@ class CartOrderAdmin(ModelAdmin):
     search_fields = ("order_ref", "customer_name", "customer_phone", "customer_email", "bitrix_entity_id")
     readonly_fields = (
         "order_ref",
+        "lines_table",
+        "total_approx_display",
         "lines",
-        "total_approx",
         "manager_letter",
         "client_ack",
         "created_at",
@@ -597,8 +625,19 @@ class CartOrderAdmin(ModelAdmin):
         (
             _("Заказ с сайта"),
             {
-                "fields": ("order_ref", "lines", "total_approx", "created_at"),
-                "description": _("Состав и сумма пришли с витрины; правки — только при явной ошибке."),
+                "fields": ("order_ref", "lines_table", "total_approx_display", "created_at"),
+                "description": _(
+                    "Состав и сумма пришли с витрины. Ниже в свёрнутом блоке «Отладка» — те же позиции сырьём (JSON), "
+                    "как их передаёт сайт (англ. имена полей: title, qty, priceFrom, slug, productId, variantId)."
+                ),
+            },
+        ),
+        (
+            _("Отладка"),
+            {
+                "fields": ("lines",),
+                "classes": ("collapse",),
+                "description": _("Технический формат; обычно достаточно таблицы позиций выше."),
             },
         ),
         (
@@ -615,7 +654,19 @@ class CartOrderAdmin(ModelAdmin):
             _("Обработка заказа"),
             {"fields": ("fulfillment_status", "payment_status", "payment_provider", "payment_external_id")},
         ),
-        (_("Доставка"), {"fields": ("delivery_provider", "delivery_snapshot", "cdek_tracking")}),
+        (
+            _("Доставка и способ оплаты (с сайта)"),
+            {
+                "fields": (
+                    "delivery_method",
+                    "payment_method",
+                    "delivery_provider",
+                    "delivery_snapshot",
+                    "cdek_tracking",
+                    "acquiring_payload",
+                ),
+            },
+        ),
         (
             _("Битрикс24: поля для правки (при необходимости)"),
             {
@@ -628,6 +679,85 @@ class CartOrderAdmin(ModelAdmin):
         ),
         (_("Письма и текст для клиента"), {"fields": ("manager_letter", "client_ack"), "classes": ("collapse",)}),
     )
+
+    @display(description=_("Сумма"), ordering="total_approx")
+    def list_total_rub(self, obj: CartOrder) -> str:
+        return _format_cart_order_rub(obj.total_approx)
+
+    @display(description=_("Сумма заказа"))
+    def total_approx_display(self, obj: CartOrder | None) -> str:
+        if obj is None:
+            return "—"
+        return _format_cart_order_rub(obj.total_approx)
+
+    @display(description=_("Позиции заказа"))
+    def lines_table(self, obj: CartOrder | None) -> str:
+        if obj is None or not obj.pk:
+            return "—"
+        raw = obj.lines
+        rows: list[dict[str, Any]] = raw if isinstance(raw, list) else []
+        if not rows:
+            return format_html(
+                '<p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
+                _("Позиций нет."),
+            )
+        head = format_html(
+            "<thead><tr>"
+            "<th class='px-2 py-1.5 text-left text-xs font-semibold'>{}</th>"
+            "<th class='px-2 py-1.5 text-right text-xs font-semibold'>{}</th>"
+            "<th class='px-2 py-1.5 text-right text-xs font-semibold'>{}</th>"
+            "<th class='px-2 py-1.5 text-left text-xs font-semibold'>{}</th>"
+            "<th class='px-2 py-1.5 text-left text-xs font-semibold'>{}</th>"
+            "<th class='px-2 py-1.5 text-left text-xs font-semibold'>{}</th>"
+            "</tr></thead>",
+            _("Наименование"),
+            _("Кол-во"),
+            _("Цена от"),
+            _("Ссылка (slug)"),
+            _("ID товара"),
+            _("ID варианта"),
+        )
+        body_cells: list[str] = []
+        for item in rows:
+            if not isinstance(item, dict):
+                body_cells.append(
+                    "<tr><td colspan='6' class='px-2 py-1 text-xs text-amber-800'>{}</td></tr>".format(
+                        escape(_("Некорректная строка: {}").format(repr(item)[:200]))
+                    )
+                )
+                continue
+            title = str(item.get("title") or "—").strip() or "—"
+            qty = item.get("qty")
+            qty_s = str(qty) if qty is not None else "—"
+            pf = item.get("priceFrom")
+            if pf is not None:
+                try:
+                    price_s = _format_cart_order_rub(int(pf))
+                except (TypeError, ValueError):
+                    price_s = escape(str(pf))
+            else:
+                price_s = "—"
+            slug = str(item.get("slug") or "—").strip() or "—"
+            pid = str(item.get("productId") or "—").strip() or "—"
+            vid_raw = item.get("variantId")
+            vid = str(vid_raw).strip() if vid_raw not in (None, "") else "—"
+            body_cells.append(
+                "<tr class='border-t border-base-200 dark:border-base-700'>"
+                f"<td class='px-2 py-1.5 text-sm'>{escape(title)}</td>"
+                f"<td class='px-2 py-1.5 text-right text-sm'>{escape(qty_s)}</td>"
+                f"<td class='px-2 py-1.5 text-right text-sm'>{price_s}</td>"
+                f"<td class='px-2 py-1.5 text-xs font-mono'>{escape(slug)}</td>"
+                f"<td class='px-2 py-1.5 text-xs font-mono'>{escape(pid)}</td>"
+                f"<td class='px-2 py-1.5 text-xs font-mono'>{escape(vid)}</td>"
+                "</tr>"
+            )
+        tbody = format_html("<tbody>{}</tbody>", mark_safe("".join(body_cells)))
+        return format_html(
+            '<div class="overflow-x-auto rounded-default border border-base-200 dark:border-base-700">'
+            '<table class="min-w-full border-collapse">{}{}</table></div>',
+            head,
+            tbody,
+        )
 
     @staticmethod
     def _crm_status_style(status: str) -> tuple[str, str]:
@@ -764,6 +894,18 @@ class SiteSettingsAdminForm(forms.ModelForm):
                 render_value=True,
                 attrs={"autocomplete": "new-password"},
             ),
+            "cdek_secure_password": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "ozon_pay_client_secret": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "ozon_pay_webhook_secret": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
         }
 
 
@@ -802,9 +944,30 @@ class SiteSettingsAdmin(ModelAdmin):
         ss_fieldset(
             "contacts",
             {
-                "fields": ("phone_display", "phone_href", "email", "address", "legal"),
+                "fields": (
+                    "phone_display",
+                    "phone_href",
+                    "email",
+                    "address",
+                    "legal",
+                    "map_heading",
+                    "map_subheading",
+                    "map_iframe_src",
+                    "map_title",
+                    "map_form_name_label",
+                    "map_form_phone_label",
+                    "map_form_comment_label",
+                    "map_name_placeholder",
+                    "map_phone_placeholder",
+                    "map_comment_placeholder",
+                    "map_submit_button",
+                    "map_submitting",
+                    "map_success_message",
+                ),
                 "description": _(
-                    "Телефон, почта, адрес и реквизиты: шапка, подвал, страница «Контакты», блок с картой."
+                    "Телефон, почта, адрес и реквизиты: шапка, подвал, страница «Контакты», подпись под картой. "
+                    "Ниже — блок «карта + форма заявки» внизу главной: заполненное поле подменяет подпись из "
+                    "«Главная страница (контент)»; пустое — на сайте берётся из контента главной."
                 ),
             },
         ),
@@ -897,8 +1060,7 @@ class SiteSettingsAdmin(ModelAdmin):
                 ),
                 "description": _(
                     "Заголовок и тексты только для маршрута /contacts. "
-                    "Сами телефон, email и адрес задаются в блоке «Контакты на витрине». "
-                    "Подписи карты и формы внизу страницы — в разделе «Главная страница (контент)»."
+                    "Телефон, email, адрес и настройки карты на главной — в блоке «Контакты на витрине»."
                 ),
             },
         ),
@@ -919,6 +1081,74 @@ class SiteSettingsAdmin(ModelAdmin):
                 "description": _(
                     "Текст под заголовком «Каталог» и формат фото в карточках. "
                     "Портрет 3:4 — рамка как 900×1200; квадрат — 1:1. На сайте фото не обрезается."
+                ),
+            },
+        ),
+        ss_fieldset(
+            "checkout_pickup",
+            {
+                "fields": (
+                    "checkout_pickup_enabled",
+                    "pickup_point_title",
+                    "pickup_point_address",
+                    "pickup_point_hours",
+                    "pickup_point_note",
+                    "pickup_point_lat",
+                    "pickup_point_lng",
+                ),
+                "description": _(
+                    "Самовывоз со склада: данные показываются на оформлении заказа. "
+                    "Наличные при выдаче — без онлайн-эквайринга (или вместе с картой, если включён Ozon Pay)."
+                ),
+            },
+        ),
+        ss_fieldset(
+            "checkout_cdek",
+            {
+                "fields": (
+                    "cdek_enabled",
+                    "cdek_test_mode",
+                    "cdek_account",
+                    "cdek_secure_password",
+                    "cdek_widget_script_url",
+                    "cdek_yandex_map_api_key",
+                    "cdek_widget_sender_city",
+                    "cdek_manual_pvz_enabled",
+                ),
+                "description": _(
+                    "API v2: тест https://api.edu.cdek.ru, бой https://api.cdek.ru (см. docs/cdek-api-v2.md). "
+                    "Секрет можно задать в .env: CDEK_ACCOUNT, CDEK_SECURE, CDEK_API_BASE_URL. "
+                    "Виджет v3: wiki https://github.com/cdek-it/widget/wiki — скрипт по умолчанию @cdek-it/widget@3; "
+                    "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже)."
+                ),
+            },
+        ),
+        ss_fieldset(
+            "checkout_ozon_logistics",
+            {
+                "fields": ("ozon_logistics_enabled", "ozon_logistics_buyer_note"),
+                "description": _(
+                    "Доставка через Ozon Логистику: подключение в кабинете продавца Ozon. "
+                    "На витрине доступна только вместе с онлайн-оплатой (Ozon Pay)."
+                ),
+            },
+        ),
+        ss_fieldset(
+            "checkout_ozon_pay",
+            {
+                "fields": (
+                    "ozon_pay_enabled",
+                    "ozon_pay_sandbox",
+                    "ozon_pay_client_id",
+                    "ozon_pay_client_secret",
+                    "ozon_pay_webhook_secret",
+                ),
+                "description": _(
+                    "Эквайринг Ozon Bank: Ozon Pay Checkout — https://docs.ozon.ru/api/acquiring/ "
+                    "Сервер вызывает POST …/v1/createOrder с подписью requestSign (accessKey + secretKey). "
+                    "Базовый URL API: OZON_PAY_API_BASE_URL в .env. "
+                    "Вебхук POST: /api/webhooks/ozon-pay/ — проверка requestSign по notificationSecretKey. "
+                    "См. docs/ozon-pay-env.md."
                 ),
             },
         ),
@@ -993,6 +1223,11 @@ class SiteSettingsAdmin(ModelAdmin):
                 kwargs={"slug": SS_SECTION_ORDER[0]},
             ),
             "smtp_test_url": reverse("admin:api_sitesettings_smtp_test") if slug == "smtp" else None,
+            "ozon_pay_test_url": (
+                reverse("admin:api_sitesettings_ozon_pay_test")
+                if slug == "checkout_ozon_pay"
+                else None
+            ),
             "bitrix24_test_url": (
                 reverse("admin:api_sitesettings_bitrix24_catalog_test")
                 if slug == "crm_bitrix_catalog"
@@ -1029,6 +1264,11 @@ class SiteSettingsAdmin(ModelAdmin):
                 "smtp-test/",
                 self.admin_site.admin_view(self.smtp_test_view),
                 name="%s_%s_smtp_test" % info,
+            ),
+            path(
+                "ozon-pay-test/",
+                self.admin_site.admin_view(self.ozon_pay_test_view),
+                name="%s_%s_ozon_pay_test" % info,
             ),
             path(
                 "bitrix24-catalog-test/",
@@ -1155,6 +1395,46 @@ class SiteSettingsAdmin(ModelAdmin):
             "default_test_to": default_to,
         }
         return TemplateResponse(request, "admin/api/sitesettings/smtp_test.html", context)
+
+    def ozon_pay_test_view(self, request):
+        import json
+
+        from .services.ozon_pay_admin_test import run_ozon_pay_create_order_test
+
+        test_result = None
+        test_result_raw = ""
+        test_pay_link = ""
+        test_error_message = ""
+
+        if request.method == "POST" and request.POST.get("run_ozon_pay_test"):
+            test_result = run_ozon_pay_create_order_test()
+            if isinstance(test_result, dict):
+                pay_url = test_result.get("redirectUrl")
+                if isinstance(pay_url, str) and pay_url.strip():
+                    test_pay_link = pay_url.strip()
+                    messages.success(request, _("Ozon Pay: payLink получен."))
+                else:
+                    test_error_message = str(test_result.get("message") or "").strip()
+                    if not test_error_message:
+                        test_error_message = _("Ozon Pay не вернул ссылку на оплату (payLink).")
+                    messages.error(request, test_error_message)
+                test_result_raw = json.dumps(test_result, ensure_ascii=False, indent=2)
+            else:
+                test_error_message = _("Некорректный ответ теста Ozon Pay.")
+                messages.error(request, test_error_message)
+
+        s = SiteSettings.get_solo()
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Проверка Ozon Pay"),
+            "opts": self.model._meta,
+            "site_settings": s,
+            "test_result": test_result,
+            "test_result_raw": test_result_raw,
+            "test_pay_link": test_pay_link,
+            "test_error_message": test_error_message,
+        }
+        return TemplateResponse(request, "admin/api/sitesettings/ozon_pay_test.html", context)
 
 
 @admin.register(HomePageContent)

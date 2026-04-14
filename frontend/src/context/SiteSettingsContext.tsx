@@ -2,11 +2,19 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { SITE } from '../config/site'
 import type { MarketplaceId } from '../config/site'
 import type { HomePayload } from '../types/homePage'
-import { fetchHomePageContent, fetchSiteSettings } from '../lib/api'
+import {
+  fetchHomePageContent,
+  fetchSiteSettings,
+  type MapFormSiteOverlay,
+} from '../lib/api'
 import {
   DEFAULT_PRODUCT_PHOTO_ASPECT,
   type ProductPhotoAspect,
 } from '../lib/productPhotoAspect'
+import {
+  DEFAULT_CHECKOUT_PUBLIC,
+  type CheckoutPublicConfig,
+} from '../types/checkoutPublic'
 
 export type SiteSettingsContextValue = {
   enabledMarketplaces: MarketplaceId[]
@@ -32,6 +40,9 @@ export type SiteSettingsContextValue = {
   calculatorEnabled: boolean
   productPhotoAspect: ProductPhotoAspect
   catalogIntro: string
+  checkout: CheckoutPublicConfig
+  /** Перекрытия карты/формы на главной из настроек сайта (поверх home.mapForm). */
+  mapForm: MapFormSiteOverlay | null
   home: HomePayload | null
   loading: boolean
 }
@@ -62,6 +73,8 @@ const initialValue: SiteSettingsContextValue = {
   calculatorEnabled: true,
   productPhotoAspect: DEFAULT_PRODUCT_PHOTO_ASPECT,
   catalogIntro: SITE.catalogIntro,
+  checkout: DEFAULT_CHECKOUT_PUBLIC,
+  mapForm: null,
   home: null,
   loading: true,
 }
@@ -93,6 +106,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [productPhotoAspect, setProductPhotoAspect] =
     useState<ProductPhotoAspect>(DEFAULT_PRODUCT_PHOTO_ASPECT)
   const [catalogIntro, setCatalogIntro] = useState<string>(SITE.catalogIntro)
+  const [checkout, setCheckout] = useState<CheckoutPublicConfig>(DEFAULT_CHECKOUT_PUBLIC)
+  const [mapForm, setMapForm] = useState<MapFormSiteOverlay | null>(null)
   const [home, setHome] = useState<HomePayload | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -103,18 +118,18 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       if (s) {
         if (s.enabledMarketplaces?.length) setEnabled(s.enabledMarketplaces as MarketplaceId[])
         setGlobal(s.globalMarketplaceUrls ?? {})
-        if (s.siteName) setSiteName(s.siteName)
-        if (s.siteTagline) setSiteTagline(s.siteTagline)
-        if (s.footerNote) setFooterNote(s.footerNote)
+        setSiteName(s.siteName ?? SITE.name)
+        setSiteTagline(s.siteTagline ?? SITE.tagline)
+        setFooterNote(s.footerNote ?? 'Производство и монтаж под ключ.')
         if (s.logoUrl) setLogoUrl(s.logoUrl)
         else setLogoUrl('/branding/logo.svg')
         if (s.faviconUrl) setFaviconUrl(s.faviconUrl)
         else setFaviconUrl('/branding/favicon.ico')
-        if (s.phone) setPhone(s.phone)
-        if (s.phoneHref) setPhoneHref(s.phoneHref)
-        if (s.email) setEmail(s.email)
-        if (s.address) setAddress(s.address)
-        if (s.legal) setLegal(s.legal)
+        setPhone(s.phone ?? SITE.phone)
+        setPhoneHref(s.phoneHref ?? SITE.phoneHref)
+        setEmail(s.email ?? SITE.email)
+        setAddress(s.address ?? SITE.address)
+        setLegal(s.legal ?? SITE.legal)
         setFooterVkUrl(s.footerVkUrl ?? '')
         setFooterTelegramUrl(s.footerTelegramUrl ?? '')
         setShowSocialLinks(s.showSocialLinks === true)
@@ -130,6 +145,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             ? String(s.catalogIntro).trim()
             : SITE.catalogIntro,
         )
+        setCheckout(s.checkout ?? DEFAULT_CHECKOUT_PUBLIC)
+        setMapForm(s.mapForm ?? null)
       }
       setHome(h)
       setLoading(false)
@@ -164,6 +181,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       calculatorEnabled,
       productPhotoAspect,
       catalogIntro,
+      checkout,
+      mapForm,
       home,
       loading,
     }),
@@ -191,6 +210,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       calculatorEnabled,
       productPhotoAspect,
       catalogIntro,
+      checkout,
+      mapForm,
       home,
       loading,
     ],

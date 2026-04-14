@@ -4,7 +4,13 @@
 
 ## Недавно сделано (сводка)
 
-См. **[CHANGELOG.md](../CHANGELOG.md)** — **2.0.1a** (2026-04-02): версия в корне `VERSION` + бейдж в админке; маски/валидация форм и антиспам (honeypot, throttle) на лидах и регистрации; динамический `sitemap.xml`; lazy-маршруты и оптимизация картинок на витрине; обновлена документация и беклог. **Git:** репозиторий на GitHub, публикация — `git push origin main` (и при релизе — тег `git tag -a v2.0.1a`).
+См. **[CHANGELOG.md](../CHANGELOG.md)** — актуальный релиз **2.0.2a** (2026-04-14): checkout СДЭК/Ozon Pay доведён до рабочего сценария, добавлены проверки интеграций в админке, обновлены контакты/карта витрины и документация. **Git:** публикация — `git push origin main` (и при релизе — тег `git tag -a v2.0.2a`).
+
+## Текущий фокус (апрель 2026)
+
+1. Зафиксировать релиз **2.0.2a** в GitHub и прогнать smoke на хостинге.
+2. Поэтапный переход на React Admin по плану: [react-admin-transition-plan.md](./react-admin-transition-plan.md).
+3. Подготовить install-пакет под Beget по чеклисту: [beget-install-package-checklist.md](./beget-install-package-checklist.md).
 
 ## Ближайшие приоритеты (этап 1 магазина)
 

@@ -57,9 +57,17 @@ export async function submitCartOrder(payload: {
   customer: CartOrderCustomer
   lines: CartLine[]
   totalApprox: number
-  delivery?: { city?: string; address?: string; comment?: string }
+  delivery?: Record<string, unknown>
+  deliveryMethod?: string
+  paymentMethod?: string
   accessToken?: string | null
-}): Promise<{ ok: boolean; clientAck: string; orderRef: string }> {
+}): Promise<{
+  ok: boolean
+  clientAck: string
+  orderRef: string
+  paymentRedirectUrl?: string | null
+  error?: string
+}> {
   const data = await postCartOrder(
     {
       customer: {
@@ -76,12 +84,21 @@ export async function submitCartOrder(payload: {
         title: l.title,
         priceFrom: l.priceFrom,
         qty: l.qty,
+        image: (l.image ?? '').trim(),
+        ...(l.ozonSku != null && l.ozonSku > 0 ? { ozonSku: l.ozonSku } : {}),
       })),
       totalApprox: payload.totalApprox,
       delivery: payload.delivery,
+      deliveryMethod: payload.deliveryMethod,
+      paymentMethod: payload.paymentMethod,
     },
     { accessToken: payload.accessToken },
   )
-  if (!data) return { ok: false, clientAck: '', orderRef: '' }
-  return { ok: true, clientAck: data.clientAck, orderRef: data.orderRef }
+  if (!data.ok) return { ok: false, clientAck: '', orderRef: '', error: data.detail }
+  return {
+    ok: true,
+    clientAck: data.clientAck,
+    orderRef: data.orderRef,
+    paymentRedirectUrl: data.paymentRedirectUrl ?? null,
+  }
 }

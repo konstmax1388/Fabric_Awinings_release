@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -216,6 +217,235 @@ def test_cart_order_create(client):
     assert data.get("fulfillmentStatus") == "received"
 
 
+@pytest.mark.django_db
+def test_cart_order_rejects_cash_pickup_with_cdek_delivery(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 1,
+            }
+        ],
+        "totalApprox": 1000,
+        "deliveryMethod": "cdek",
+        "paymentMethod": "cash_pickup",
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 400
+    err = r.json()
+    assert "paymentMethod" in err or "non_field_errors" in err
+
+
+@pytest.mark.django_db
+def test_cdek_oauth_token_uses_cache():
+    from django.core.cache import cache
+
+    from api.models import SiteSettings
+    from api.services import cdek_http
+
+    cache.clear()
+    calls = {"n": 0}
+
+    def fake_post_form(url, fields, **kwargs):
+        calls["n"] += 1
+        assert "oauth" in url
+        return {"access_token": "tok_cached", "expires_in": 3600}
+
+    s = SiteSettings.get_solo()
+    s.cdek_test_mode = True
+    s.cdek_account = "acc"
+    s.cdek_secure_password = "sec"
+    s.save()
+
+    with patch.object(cdek_http, "post_form", side_effect=fake_post_form):
+        t1 = cdek_http.fetch_cdek_access_token(s, force_refresh=True)
+        t2 = cdek_http.fetch_cdek_access_token(s, force_refresh=False)
+    assert t1 == t2 == "tok_cached"
+    assert calls["n"] == 1
+
+
+@pytest.mark.django_db
+def test_ozon_pay_lists_missing_api_base_url():
+    from api.models import SiteSettings
+    from api.services.ozon_acquiring import try_begin_ozon_pay
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": ""}, clear=False):
+        out = try_begin_ozon_pay(order_ref="ORD1", total_approx=100, settings=s)
+    assert out.get("missingEnv") == ["OZON_PAY_API_BASE_URL"]
+    assert out.get("liveHttp") is False
+
+
+@pytest.mark.django_db
+def test_ozon_pay_create_order_mocked():
+    from api.models import SiteSettings
+    from api.services import ozon_acquiring as ozon_mod
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        assert "/v1/createOrder" in url
+        assert body.get("requestSign")
+        return {"order": {"payLink": "https://pay.example/o", "id": "oz-id-1"}}
+
+    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": "https://acq.test"}, clear=False):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(order_ref="R1", total_approx=10, settings=s)
+    assert out.get("liveHttp") is True
+    assert out.get("redirectUrl") == "https://pay.example/o"
+    assert out.get("ozonOrderId") == "oz-id-1"
+
+
+@pytest.mark.django_db
+def test_ozon_create_order_with_logistics_sends_items_and_delivery():
+    from api.models import CartOrder, Product, ProductCategory, SiteSettings
+    from api.services import ozon_acquiring as ozon_mod
+
+    cat = ProductCategory.objects.create(title="Cat", slug="cat-oz", sort_order=0)
+    p = Product.objects.create(
+        title="Tent",
+        slug="tent-oz",
+        category=cat,
+        price_from=1000,
+        ozon_sku=999888777,
+    )
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+
+    captured: dict = {}
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        captured["body"] = body
+        return {"order": {"payLink": "https://pay.test/x", "id": "o1"}}
+
+    lines = [
+        {
+            "productId": str(p.id),
+            "variantId": "",
+            "slug": p.slug,
+            "title": p.title,
+            "priceFrom": 1000,
+            "qty": 1,
+            "image": "",
+        }
+    ]
+    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": "https://acq.test"}, clear=False):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(
+                order_ref="Z1",
+                total_approx=1000,
+                settings=s,
+                delivery_method=CartOrder.DeliveryMethod.OZON_LOGISTICS,
+                cart_lines=lines,
+            )
+    assert out.get("redirectUrl") == "https://pay.test/x"
+    assert out.get("ozonLogisticsInOrder") is True
+    b = captured["body"]
+    assert b["mode"] == "MODE_FULL"
+    assert b["deliverySettings"]["isEnabled"] is True
+    assert len(b["items"]) == 1
+    assert b["items"][0]["sku"] == 999888777
+    assert b["amount"]["value"] == "100000"
+
+
+def test_ozon_create_order_signature_matches_documentation():
+    from api.services.ozon_acquiring_sign import request_sign_create_order
+
+    sig = request_sign_create_order(
+        access_key="63fd43a4-f16d-4c3a-9bdf-50f2328781db",
+        secret_key="PnHtbKc0lLiTlo4WITnWB44Qb1kpygRl",
+        expires_at="2025-10-01T20:00:00.000Z",
+        ext_id="MyOrderID-1",
+        fiscalization_type="FISCAL_TYPE_SINGLE",
+        payment_algorithm="PAY_ALGO_SMS",
+        amount_currency_code="643",
+        amount_value="100",
+    )
+    assert sig == "406d29c45ffcb991eb40c3fbce98e714c1ed8963fee0024d7c3ba80dabc407bd"
+
+
+def test_ozon_notification_signature_matches_documentation():
+    from api.services.ozon_acquiring_sign import verify_notification_request_sign
+
+    payload = {
+        "orderID": "69f37767-8a8b-4de1-a601-384387aea8c4",
+        "extOrderID": "",
+        "transactionID": 6981437,
+        "transactionUid": "2f460e52-4a7a-4eaf-94fc-6699f7c91741",
+        "amount": 52569,
+        "currencyCode": "643",
+        "requestSign": "ae3c635dd72ec6b2c7833aa7458d57827895a57d4c35fba0e7dcb48f1d367d5f",
+    }
+    assert verify_notification_request_sign(
+        payload,
+        shop_access_key="1fac5a70-0ec4-4963-a33a-040ea301ea85",
+        notification_secret_key="4qEzUJjBoCXwA6P5NMyrJJUdA6xsnvbV",
+    )
+
+
+@pytest.mark.django_db
+def test_ozon_webhook_rejects_invalid_signature(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save()
+    r = client.post(
+        "/api/webhooks/ozon-pay/",
+        data='{"requestSign":"bad","extOrderID":"x"}',
+        content_type="application/json",
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cart_order_line_stores_image_url(client):
+    from api.models import CartOrder
+
+    img = "https://example.com/product-cover.jpg"
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 1,
+                "image": img,
+            }
+        ],
+        "totalApprox": 1000,
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 201
+    order = CartOrder.objects.get(order_ref=r.json()["orderRef"])
+    assert order.lines and order.lines[0].get("image") == img
+
+
 @patch("api.services.notification_email.send_buyer_order_confirmation_email")
 @pytest.mark.django_db
 def test_cart_order_with_email_triggers_buyer_confirmation(mock_send, client):
@@ -272,9 +502,126 @@ def test_site_settings_public(client):
         "showSocialLinks",
         "productPhotoAspect",
         "catalogIntro",
+        "checkout",
     ):
         assert key in body
     assert body["productPhotoAspect"] in ("portrait_3_4", "square")
+    co = body["checkout"]
+    assert "deliveryOptions" in co
+    assert "paymentMatrix" in co
+    assert "pickup" in co
+    assert "cdek" in co
+    cdek = co["cdek"]
+    for k in (
+        "enabled",
+        "testMode",
+        "apiBaseUrl",
+        "widgetScriptUrl",
+        "yandexMapApiKey",
+        "widgetServiceUrl",
+        "widgetSenderCity",
+        "widgetGoods",
+    ):
+        assert k in cdek
+    assert isinstance(cdek["widgetGoods"], list)
+    assert "ozonLogistics" in co
+    assert "ozonPay" in co
+
+
+@pytest.mark.django_db
+def test_cdek_widget_service_requires_action(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+    r = client.post("/api/cdek-widget/service/", data="{}", content_type="application/json")
+    assert r.status_code == 400
+    assert r.json().get("message")
+
+
+@pytest.mark.django_db
+def test_cdek_widget_service_disabled(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = False
+    s.save(update_fields=["cdek_enabled"])
+    r = client.post(
+        "/api/cdek-widget/service/",
+        data='{"action":"offices"}',
+        content_type="application/json",
+    )
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cdek_widget_service_offices_mocked(client):
+    from unittest.mock import patch
+
+    from api.models import SiteSettings
+    from api.services import cdek_widget_service
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_test_mode = True
+    s.cdek_account = "acc"
+    s.cdek_secure_password = "sec"
+    s.save()
+
+    with (
+        patch.object(cdek_widget_service, "fetch_cdek_access_token", return_value="tok"),
+        patch.object(cdek_widget_service, "get_json", return_value=[{"code": "XXX"}]),
+    ):
+        r = client.post(
+            "/api/cdek-widget/service/",
+            data='{"action":"offices","city_code":44}',
+            content_type="application/json",
+        )
+    assert r.status_code == 200
+    assert r.json() == [{"code": "XXX"}]
+    assert r.headers.get("X-Service-Version") == "3.11.1"
+
+
+@pytest.mark.django_db
+def test_cdek_suggest_cities_disabled(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = False
+    s.save()
+    r = client.get("/api/cdek/suggest-cities/?q=мос")
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cdek_suggest_cities_short_query(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save()
+    r = client.get("/api/cdek/suggest-cities/?q=м")
+    assert r.status_code == 200
+    assert r.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_cdek_suggest_cities_mocked(client):
+    from unittest.mock import patch
+
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save()
+    fake = [
+        {"code": 6, "city": "Иваново", "region": "Ивановская область", "label": "Иваново, Ивановская область"}
+    ]
+    with patch("api.views_cdek_cities.search_cdek_cities", return_value=fake):
+        r = client.get("/api/cdek/suggest-cities/?q=ива")
+    assert r.status_code == 200
+    assert r.json()["results"] == fake
 
 
 @pytest.mark.django_db
@@ -532,3 +879,37 @@ def test_password_deadline_overdue_blocks_orders_not_me_or_change_password(clien
 
     r_orders2 = client.get("/api/orders/", HTTP_AUTHORIZATION=auth)
     assert r_orders2.status_code == 200
+
+
+@pytest.mark.django_db
+def test_customer_order_list_includes_russian_status_labels(client):
+    from django.contrib.auth import get_user_model
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    from api.models import CartOrder
+
+    User = get_user_model()
+    user = User.objects.create_user(
+        username="buyerlabels@example.com",
+        email="buyerlabels@example.com",
+        password="pass12345",
+    )
+    CartOrder.objects.create(
+        order_ref="TEST-LABEL-1",
+        user=user,
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        lines=[],
+        total_approx=0,
+        fulfillment_status=CartOrder.FulfillmentStatus.PROCESSING,
+        payment_status=CartOrder.PaymentStatus.NOT_REQUIRED,
+    )
+    token = str(RefreshToken.for_user(user).access_token)
+    r = client.get("/api/orders/", HTTP_AUTHORIZATION=f"Bearer {token}")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1
+    row = data[0]
+    assert row["fulfillmentStatusLabel"] == "В обработке"
+    assert row["paymentStatusLabel"] == "Оплата не требовалась"
