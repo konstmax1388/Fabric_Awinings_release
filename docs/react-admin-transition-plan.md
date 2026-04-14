@@ -8,11 +8,13 @@
 
 ## Порядок внедрения
 
-1. **Фаза 0–1 (каркас + auth + OpenAPI)**
+1. **Фаза 0–1 (каркас + auth + OpenAPI)** — **в работе / частично готово (2.0.3a)**
    - Поднять `staff-ui/` (Vite + React Admin + MUI).
    - Ввести `POST /api/staff/v1/auth/token/` и refresh.
    - Включить `drf-spectacular` для Staff API.
    - Первый ресурс: `leads/callback` + dashboard overview.
+
+Сделано в **2.0.3a**: каркас `staff-ui/`, Staff JWT, `metrics/overview`, read-only `leads/callback`, схема `/api/schema/`, dev **http://localhost:17301/staff/**.
 
 2. **Фаза 2–4 (контент, каталог, заказы/лиды)**
    - Перенести CRUD для контента и каталога.

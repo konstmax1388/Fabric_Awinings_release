@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'drf_spectacular',
     'api',
 ]
 
@@ -139,14 +140,16 @@ TIME_ZONE = 'Europe/Moscow'
 CORS_ALLOW_CREDENTIALS = True
 _cors = os.environ.get(
     "DJANGO_CORS_ALLOWED_ORIGINS",
-    "http://localhost:17300,http://127.0.0.1:17300",
+    "http://localhost:17300,http://127.0.0.1:17300,"
+    "http://localhost:17301,http://127.0.0.1:17301",
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
 
-# Вход в Django Admin через прокси Vite (http://localhost:17300/admin → API)
+# Вход в Django Admin через прокси Vite (http://localhost:17300/admin → API); staff-ui — порт 17301
 _csrf = os.environ.get(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
-    "http://localhost:17300,http://127.0.0.1:17300",
+    "http://localhost:17300,http://127.0.0.1:17300,"
+    "http://localhost:17301,http://127.0.0.1:17301",
 )
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
 
@@ -175,7 +178,17 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "lead_submit": "40/hour",
         "auth_register": "20/hour",
+        "staff_auth": "30/hour",
     },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Fabric Awnings API",
+    "DESCRIPTION": "Публичное API витрины и Staff API персонала.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 SIMPLE_JWT = {

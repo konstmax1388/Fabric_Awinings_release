@@ -27,6 +27,7 @@ router.register(r"blog", views.BlogPostViewSet, basename="blog")
 router.register(r"addresses", ShippingAddressViewSet, basename="address")
 
 urlpatterns = [
+    path("staff/v1/", include("api.staff_urls")),
     path("health/", views.health, name="health"),
     path("image-variant/", ImageVariantView.as_view(), name="image-variant"),
     path("site-settings/", SiteSettingsPublicView.as_view(), name="site-settings"),

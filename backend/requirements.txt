@@ -9,3 +9,4 @@ django-simple-captcha>=0.6.3,<0.7
 pytest>=9,<10
 pytest-django>=4.12,<5
 Pillow>=11,<12
+drf-spectacular>=0.27,<0.31

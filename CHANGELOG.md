@@ -3,6 +3,20 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [2.0.3a] — 2026-04-14
+
+### Добавлено
+
+- **Staff API** (`/api/staff/v1/`): JWT для пользователей с `is_staff` (`auth/token/`, `auth/token/refresh/`), лимит `staff_auth` на вход.
+- Staff: **`GET /metrics/overview/`** — сводные метрики для дашборда; **`GET /leads/callback/`** и **`GET …/leads/callback/{id}/`** — список и просмотр заявок «обратный звонок» (camelCase в JSON).
+- **OpenAPI**: `drf-spectacular`, эндпоинты **`/api/schema/`** и **`/api/schema/swagger/`**.
+- **staff-ui**: новое SPA (**Vite + React Admin + MUI**), префикс **`/staff/`**, дашборд + список заявок обратного звонка; прокси dev на порт **17301** (см. `staff-ui/README.md`).
+
+### Изменено
+
+- CORS/CSRF по умолчанию дополняются origin **localhost:17301** для staff-ui.
+- Версии: `VERSION` = **2.0.3a**, `staff-ui/package.json` = **2.0.3-a** (витрина **frontend** без изменения номера в этом релизе).
+
 ## [2.0.2a] — 2026-04-14
 
 ### Добавлено

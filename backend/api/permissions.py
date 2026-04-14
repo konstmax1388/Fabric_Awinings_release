@@ -3,6 +3,16 @@
 from rest_framework.permissions import BasePermission
 
 
+class IsStaffUser(BasePermission):
+    """Доступ только для аутентифицированных пользователей с is_staff=True."""
+
+    message = "Требуются права персонала (staff)."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        return bool(user and user.is_authenticated and user.is_staff)
+
+
 class MustNotBePasswordChangeOverdue(BasePermission):
     """Блокирует доступ, если не сменили временный пароль после дедлайна (кроме смены пароля)."""
 
