@@ -1,0 +1,88 @@
+/**
+ * Фабрика Тентов — доработки админки Unfold: читаемость полей, стабильная полоса прокрутки сайдбара.
+ */
+
+/* Стабильная ширина при появлении скроллбара */
+#nav-sidebar-apps {
+  scrollbar-gutter: stable;
+}
+
+/* Сайдбар: hover только смена цвета, без transform/тени (нет «прыжка») */
+#nav-sidebar-apps a.fabric-nav-row {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+#nav-sidebar-apps a.fabric-nav-row:hover {
+  transform: none !important;
+}
+
+/* Активный пункт: полоска слева (и у родителя «Тексты и блоки», если открыт дочерний раздел) */
+#nav-sidebar-apps .fabric-nav-panel a.fabric-nav-row.active,
+#nav-sidebar-apps .fabric-nav-panel .fabric-nav-row--parent.active {
+  box-shadow: inset 3px 0 0 rgb(234 88 12) !important;
+}
+
+html.dark #nav-sidebar-apps .fabric-nav-panel a.fabric-nav-row.active,
+html.dark #nav-sidebar-apps .fabric-nav-panel .fabric-nav-row--parent.active {
+  box-shadow: inset 3px 0 0 rgb(251 146 60) !important;
+}
+
+/* Всплывающее подменю не участвует в потоке — доп. страховка */
+#nav-sidebar-apps .fabric-nav-flyout {
+  pointer-events: auto;
+}
+
+/*
+ * Flyout справа от колонки: иначе SimpleBar (overflow) обрезает панель.
+ * Разрешаем overflow-x у внутренней обёртки контента — вертикальная прокрутка сохраняется.
+ */
+#nav-sidebar-apps.simplebar-scrollable-y .simplebar-content-wrapper,
+#nav-sidebar-apps[data-simplebar] .simplebar-content-wrapper {
+  overflow-x: visible !important;
+}
+
+#nav-sidebar-apps .simplebar-wrapper {
+  overflow: visible !important;
+}
+
+/* Поля ввода в основной колонке — явная «карточка» поля */
+#content-main input[type="text"]:not([disabled]),
+#content-main input[type="email"]:not([disabled]),
+#content-main input[type="url"]:not([disabled]),
+#content-main input[type="number"]:not([disabled]),
+#content-main input[type="password"]:not([disabled]),
+#content-main input[type="search"]:not([disabled]),
+#content-main input[type="tel"]:not([disabled]),
+#content-main textarea:not([disabled]),
+#content-main select:not([disabled]) {
+  background-color: #fff !important;
+  border-color: rgb(212 196 176) !important;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+html.dark #content-main input[type="text"]:not([disabled]),
+html.dark #content-main input[type="email"]:not([disabled]),
+html.dark #content-main input[type="url"]:not([disabled]),
+html.dark #content-main input[type="number"]:not([disabled]),
+html.dark #content-main input[type="password"]:not([disabled]),
+html.dark #content-main input[type="search"]:not([disabled]),
+html.dark #content-main input[type="tel"]:not([disabled]),
+html.dark #content-main textarea:not([disabled]),
+html.dark #content-main select:not([disabled]) {
+  background-color: rgb(15 17 21) !important;
+  border-color: rgb(55 58 64) !important;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+/* Плейсхолдер в зоне файла (disabled) — чуть контрастнее */
+#content-main input[type="text"][disabled].fabric-dropzone-placeholder,
+.admin-file-dropzone-root input[type="text"][disabled] {
+  background-color: rgb(250 248 244) !important;
+  color: rgb(80 72 64) !important;
+}
+
+html.dark .admin-file-dropzone-root input[type="text"][disabled] {
+  background-color: rgb(22 24 28) !important;
+  color: rgb(180 175 168) !important;
+}

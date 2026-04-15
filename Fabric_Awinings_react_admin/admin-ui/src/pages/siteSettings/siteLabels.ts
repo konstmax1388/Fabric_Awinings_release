@@ -1,0 +1,20 @@
+/** Соответствует порядку `SECTION_ORDER` в backend/config/sitesettings_nav.py */
+export const SITE_SETTINGS_SECTION_LABELS: Record<string, string> = {
+  logo: 'Логотип и фавикон',
+  branding: 'Название сайта и тексты подвала',
+  analytics_seo: 'Метрика и SEO (витрина)',
+  contacts: 'Контакты на витрине',
+  smtp: 'Почта: заявки с сайта (SMTP)',
+  crm_astrum: 'Битрикс24: заявки с сайта (Astrum)',
+  crm_bitrix_catalog: 'Битрикс24: REST каталог (синхронизация ID)',
+  social: 'Подвал: соцсети',
+  contacts_page: 'Страница «Контакты»',
+  calculator: 'Калькулятор на главной',
+  catalog: 'Каталог',
+  checkout_pickup: 'Оформление: самовывоз',
+  checkout_cdek: 'Оформление: СДЭК',
+  checkout_ozon_logistics: 'Оформление: логистика Ozon',
+  checkout_ozon_pay: 'Оформление: Ozon Pay',
+  mp_show: 'Маркетплейсы: что показывать',
+  mp_urls: 'Маркетплейсы: общие ссылки',
+}

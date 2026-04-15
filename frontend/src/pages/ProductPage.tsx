@@ -82,7 +82,7 @@ function groupSpecifications(rows: NonNullable<Product['specifications']>) {
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
-  const { enabledMarketplaces, calculatorEnabled, productPhotoAspect } = useSiteSettings()
+  const { enabledMarketplaces, calculatorEnabled, productPhotoAspect, seoDefaults } = useSiteSettings()
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -132,6 +132,11 @@ export function ProductPage() {
       name: product.title,
       description: product.excerpt || product.description,
       image: img ? [img] : undefined,
+      category: categoryLabel(product),
+      areaServed: {
+        '@type': 'AdministrativeArea',
+        name: seoDefaults.region || 'RU',
+      },
       offers: {
         '@type': 'Offer',
         priceCurrency: 'RUB',
@@ -139,7 +144,7 @@ export function ProductPage() {
         availability: 'https://schema.org/InStock',
       },
     })
-  }, [product, galleryImages, displayPrice])
+  }, [product, galleryImages, displayPrice, seoDefaults.region])
 
   const displayMpKeys = useMemo(
     () => enabledMarketplaces.filter((id) => MARKETPLACES.some((m) => m.id === id)),
@@ -221,15 +226,25 @@ export function ProductPage() {
     )
   }
 
+  const seo = product.seo
+  const pageTitle = seo?.pageTitle ?? `${product.title} — каталог`
+  const metaDesc =
+    seo?.metaDescription ?? (product.excerpt || product.description || '').slice(0, 160)
+  const canonicalHref = seo?.canonicalUrl || `${site}/catalog/${encodeURIComponent(product.slug)}`
+  const ogImage = seo?.ogImage || galleryImages[0] || product.images[0]
+
   return (
     <>
       <Helmet>
-        <title>{product.title} — каталог — Фабрика Тентов</title>
-        <meta
-          name="description"
-          content={(product.excerpt || product.description || '').slice(0, 160)}
-        />
-        <link rel="canonical" href={`${site}/catalog/${encodeURIComponent(product.slug)}`} />
+        <title>{pageTitle}</title>
+        <meta name="description" content={metaDesc} />
+        {seo?.robots ? <meta name="robots" content={seo.robots} /> : null}
+        <link rel="canonical" href={canonicalHref} />
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={metaDesc} />
+        <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
+        {ogImage ? <meta property="og:image" content={ogImage} /> : null}
         <script type="application/ld+json">{productJsonLd}</script>
       </Helmet>
       <SiteHeader />

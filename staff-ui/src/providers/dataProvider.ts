@@ -6,10 +6,19 @@ import { staffFetch, staffFetchJson } from './httpStaff'
 /** Имя ресурса RA → path Staff API (kebab-case). */
 const RESOURCE_PATH: Record<string, string> = {
   'callback-leads': 'leads/callback',
+  'calculator-leads': 'leads/calculator',
   'portfolio-projects': 'portfolio-projects',
   reviews: 'reviews',
   'blog-posts': 'blog-posts',
   'email-templates': 'email-templates',
+  orders: 'orders',
+  'product-categories': 'product-categories',
+  products: 'products',
+  'product-variants': 'product-variants',
+  'product-images': 'product-images',
+  'product-specifications': 'product-specifications',
+  users: 'users',
+  groups: 'groups',
 }
 
 function pathFor(resource: string): string {
@@ -27,6 +36,12 @@ const DEFAULT_ORDER: Record<string, string> = {
   'blog-posts': '-published_at',
   'email-templates': 'key',
   'callback-leads': '-created_at',
+  orders: '-created_at',
+  'calculator-leads': '-created_at',
+  products: 'sort_order',
+  'product-categories': 'sort_order',
+  users: '-date_joined',
+  groups: 'name',
 }
 
 const ORDER_MAP: Record<string, Record<string, string>> = {
@@ -55,6 +70,12 @@ const ORDER_MAP: Record<string, Record<string, string>> = {
   },
   'email-templates': { id: 'id', key: 'key' },
   'callback-leads': { id: 'id', createdAt: 'created_at' },
+  orders: { id: 'id', orderRef: 'order_ref', createdAt: 'created_at', totalApprox: 'total_approx' },
+  'calculator-leads': { id: 'id', createdAt: 'created_at', name: 'name' },
+  products: { id: 'id', title: 'title', sortOrder: 'sort_order', slug: 'slug' },
+  'product-categories': { id: 'id', title: 'title', sortOrder: 'sort_order', slug: 'slug' },
+  users: { id: 'id', username: 'username', dateJoined: 'date_joined' },
+  groups: { id: 'id', name: 'name' },
 }
 
 function camelToSnake(field: string): string {
@@ -105,6 +126,16 @@ export const dataProvider = {
   },
 
   getOne: async (resource: string, params: { id: Identifier }) => {
+    if (resource === 'site-settings') {
+      const url = staffApiUrl('/api/staff/v1/site-settings/current/')
+      const data = (await staffFetchJson(url)) as Record<string, unknown>
+      return { data: { ...data, id: 'current' } as RaRecord }
+    }
+    if (resource === 'home-content') {
+      const url = staffApiUrl('/api/staff/v1/home-content/current/')
+      const data = (await staffFetchJson(url)) as Record<string, unknown>
+      return { data: { ...data, id: 'current' } as RaRecord }
+    }
     const path = pathFor(resource)
     const id = encodeURIComponent(String(params.id))
     const url = staffApiUrl(`/api/staff/v1/${path}/${id}/`)
@@ -128,6 +159,15 @@ export const dataProvider = {
   },
 
   update: async (resource: string, params: { id: Identifier; data: Record<string, unknown> }) => {
+    if (resource === 'site-settings') {
+      const url = staffApiUrl('/api/staff/v1/site-settings/current/')
+      const data = (await staffFetchJson(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params.data),
+      })) as Record<string, unknown>
+      return { data: { ...data, id: 'current' } as RaRecord }
+    }
     const path = pathFor(resource)
     const id = encodeURIComponent(String(params.id))
     const url = staffApiUrl(`/api/staff/v1/${path}/${id}/`)

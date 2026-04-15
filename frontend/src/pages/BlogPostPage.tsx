@@ -58,8 +58,15 @@ export function BlogPostPage() {
   return (
     <>
       <Helmet>
-        <title>{post.title} — Блог — Фабрика Тентов</title>
-        <meta name="description" content={post.excerpt} />
+        <title>{post.seo?.pageTitle ?? `${post.title} — блог`}</title>
+        <meta name="description" content={post.seo?.metaDescription ?? post.excerpt} />
+        {post.seo?.robots ? <meta name="robots" content={post.seo.robots} /> : null}
+        {post.seo?.canonicalUrl ? <link rel="canonical" href={post.seo.canonicalUrl} /> : null}
+        {post.seo?.ogImage || post.img ? (
+          <meta property="og:image" content={post.seo?.ogImage || post.img} />
+        ) : null}
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={post.seo?.pageTitle ?? post.title} />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto max-w-[720px] px-4 py-16 md:px-6">

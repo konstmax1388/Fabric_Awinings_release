@@ -1,0 +1,64 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n unfold %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} wb-import{% endblock %}
+
+{% block content %}
+<div id="content-main" class="flex flex-col gap-8 max-w-4xl">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-2xl font-semibold text-font-important-light dark:text-font-important-dark">
+      {% trans "Импорт с Wildberries" %}
+    </h1>
+    <p class="text-sm leading-relaxed text-font-subtle-light dark:text-font-subtle-dark max-w-3xl">
+      {% trans "Создаётся черновик товара на вашем сайте: варианты как на WB, характеристики, описание с абзацами, цена «от». Фотографии загружаются в хранилище сайта (media), а не по чужим ссылкам. Потом всё можно править в карточке товара." %}
+    </p>
+    <ul class="mt-1 list-disc pl-5 text-sm text-font-subtle-light dark:text-font-subtle-dark space-y-1 max-w-3xl">
+      <li>{% trans "Часть nm из группы вариантов на WB может быть устаревшей — такие позиции пропускаются, импорт не падает." %}</li>
+      <li>{% trans "Ссылку лучше копировать с той карточки варианта, который хотите сделать основным (по умолчанию)." %}</li>
+    </ul>
+  </header>
+
+  <form method="post" novalidate class="flex flex-col gap-8">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="rounded-default border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <section class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-800 dark:bg-base-900/80 p-6 flex flex-col gap-6">
+      {% for field in form %}
+        <div class="flex flex-col gap-2 {% if field.errors %}text-red-600 dark:text-red-400{% endif %}">
+          {% if field.field.widget.input_type == "checkbox" %}
+            <label class="inline-flex items-start gap-3 cursor-pointer select-none">
+              {{ field }}
+              <span class="text-sm font-medium text-font-important-light dark:text-font-important-dark pt-0.5">{{ field.label }}</span>
+            </label>
+          {% else %}
+            <label for="{{ field.id_for_label }}" class="text-sm font-medium text-font-important-light dark:text-font-important-dark">
+              {{ field.label }}
+            </label>
+            {{ field }}
+          {% endif %}
+          {% if field.help_text %}
+            <p class="text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark max-w-3xl">{{ field.help_text }}</p>
+          {% endif %}
+          {% if field.errors %}
+            <div class="text-xs text-red-600 dark:text-red-400">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </section>
+
+    {% url 'admin:api_product_changelist' as wb_product_changelist %}
+    <div class="flex flex-wrap items-center gap-3">
+      {% component "unfold/components/button.html" with submit=1 %}
+        {% trans "Запустить импорт" %}
+      {% endcomponent %}
+      {% component "unfold/components/button.html" with href=wb_product_changelist variant="secondary" %}
+        {% trans "Назад к списку товаров" %}
+      {% endcomponent %}
+    </div>
+  </form>
+</div>
+{% endblock %}

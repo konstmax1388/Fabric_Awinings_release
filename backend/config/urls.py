@@ -29,7 +29,12 @@ apply_admin_login_form()
 
 urlpatterns = [
     path("captcha/", include("captcha.urls")),
-    path("admin/", admin.site.urls),
+]
+
+if getattr(settings, "DJANGO_ADMIN_ENABLED", True):
+    urlpatterns.append(path("admin/", admin.site.urls))
+
+urlpatterns += [
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(
         "api/schema/swagger/",

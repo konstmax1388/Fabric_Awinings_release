@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartProvider'
+import { YandexMetrika } from './components/analytics/YandexMetrika'
 import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
@@ -55,6 +56,7 @@ function AppShell() {
   return (
     <SiteSettingsProvider>
       <BrandingFavicon />
+      <YandexMetrika />
       <AuthProvider>
         <CartProvider>
           <ScrollToTopButton />

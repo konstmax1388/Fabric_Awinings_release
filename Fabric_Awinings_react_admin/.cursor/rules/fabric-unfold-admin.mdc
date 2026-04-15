@@ -1,0 +1,32 @@
+---
+description: Django Unfold — сайдбар, активные пункты, шаблоны и CSS админки (Fabric Awnings)
+alwaysApply: true
+---
+
+# Админка Unfold (оболочка и меню)
+
+Тема: **django-unfold**. Кастомные шаблоны — в **`backend/templates/unfold/`** (приоритет через `TEMPLATES["DIRS"]`). Глобальные стили админки — **`backend/api/static/admin/css/fabric_admin.css`**, подключение в **`UNFOLD["STYLES"]`** в `backend/config/settings.py`.
+
+## Вход в админку (капча)
+
+- **django-simple-captcha** на **`/admin/login/`**: форма **`config.admin_captcha.AdminLoginFormWithCaptcha`**, подключение через **`apply_admin_login_form()`** в **`config/urls.py`**. Шаблон — **`backend/templates/admin/login.html`** (копия разметки Unfold + блок `captcha` при наличии поля в форме).
+- Включение: **`ADMIN_LOGIN_CAPTCHA`** в `settings` (прод при `DEBUG=false` по умолчанию **вкл.**; при разработке **выкл.**, пока не задано **`DJANGO_ADMIN_CAPTCHA=true`**). URL картинки: **`/captcha/`** — в Vite dev добавлен прокси в **`frontend/vite.config.ts`**.
+
+## Боковое меню (navigation)
+
+- Конфиг групп и пунктов: **`backend/config/unfold_sidebar.py`**. Списки по блокам: **`config/sitesettings_nav.py`**, **`config/homepage_nav.py`** — не дублировать URL в третьем месте без нужды.
+- **Ссылки в `navigation` для Unfold:** задавать **`reverse_lazy("admin:…", kwargs={…})`** или готовую строку пути. **Не** использовать **`link: callable`** (функция `def link(request): return reverse(...)`), если ожидается подсветка активного пункта: Unfold вычисляет `active` **до** `link_callback`, в `_get_is_active` попадает объект функции → пункт никогда не `active`, **схлопываются** раскрывающиеся группы.
+- Проверка «есть ли активный в дереве» в шаблонах: **`{% has_nav_item_active_deep group.items as has_active %}`**. Для строки с вложенным **`items`**: **`{% nav_item_or_descendant_active item as branch_active %}`** (`backend/api/templatetags/admin_extras.py`) — подсветка родителя и начальное состояние flyout, когда открыт дочерний раздел.
+
+## Шаблоны меню
+
+- Переопределение списка приложений/сайдбара: **`backend/templates/unfold/helpers/app_list.html`**, оболочка навигации — **`navigation.html`**. При смене разметки сохранять: **панели `fabric-nav-panel`**, всплывающее подменю **`fabric-nav-flyout`** (`absolute left-full top-0 z-[280] -ml-px min-h-full pl-1`), строки **`fabric-nav-row`**, для hover без «прыжка» не добавлять transform/лишние отступы на hover (см. `fabric_admin.css`).
+- Новые пункты с подменю — по тому же паттерну (кнопка шеврона отдельно от основной ссылки, если нужен тач).
+
+## Стили
+
+- Точечные правки сайдбара и полей формы — в **`fabric_admin.css`**, селекторы вроде **`#nav-sidebar-apps`**, **`#content-main`**, не размазывать по случайным файлам.
+
+## Связанные правила
+
+- Загрузка файлов/картинок в админке: **`admin-image-file-uploads.mdc`**.

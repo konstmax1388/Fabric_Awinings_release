@@ -5,7 +5,9 @@ import type { HomePayload } from '../types/homePage'
 import {
   fetchHomePageContent,
   fetchSiteSettings,
+  type AnalyticsYandexDto,
   type MapFormSiteOverlay,
+  type SeoDefaultsDto,
 } from '../lib/api'
 import {
   DEFAULT_PRODUCT_PHOTO_ASPECT,
@@ -45,6 +47,8 @@ export type SiteSettingsContextValue = {
   mapForm: MapFormSiteOverlay | null
   home: HomePayload | null
   loading: boolean
+  analyticsYandex: AnalyticsYandexDto
+  seoDefaults: SeoDefaultsDto
 }
 
 const defaultEnabled: MarketplaceId[] = ['wb', 'ozon']
@@ -77,6 +81,14 @@ const initialValue: SiteSettingsContextValue = {
   mapForm: null,
   home: null,
   loading: true,
+  analyticsYandex: { enabled: false, counterId: '' },
+  seoDefaults: {
+    allowIndexing: true,
+    region: 'RU',
+    defaultMetaDescription: '',
+    titleSuffix: '',
+    locale: 'ru_RU',
+  },
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue>(initialValue)
@@ -110,6 +122,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [mapForm, setMapForm] = useState<MapFormSiteOverlay | null>(null)
   const [home, setHome] = useState<HomePayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [analyticsYandex, setAnalyticsYandex] = useState<AnalyticsYandexDto>({
+    enabled: false,
+    counterId: '',
+  })
+  const [seoDefaults, setSeoDefaults] = useState<SeoDefaultsDto>(initialValue.seoDefaults)
 
   useEffect(() => {
     let cancelled = false
@@ -147,6 +164,21 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         )
         setCheckout(s.checkout ?? DEFAULT_CHECKOUT_PUBLIC)
         setMapForm(s.mapForm ?? null)
+        if (s.analyticsYandex) {
+          setAnalyticsYandex({
+            enabled: s.analyticsYandex.enabled === true,
+            counterId: s.analyticsYandex.counterId ?? '',
+          })
+        }
+        if (s.seoDefaults) {
+          setSeoDefaults({
+            allowIndexing: s.seoDefaults.allowIndexing !== false,
+            region: s.seoDefaults.region?.trim() || 'RU',
+            defaultMetaDescription: s.seoDefaults.defaultMetaDescription ?? '',
+            titleSuffix: s.seoDefaults.titleSuffix ?? '',
+            locale: s.seoDefaults.locale?.trim() || 'ru_RU',
+          })
+        }
       }
       setHome(h)
       setLoading(false)
@@ -185,6 +217,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       mapForm,
       home,
       loading,
+      analyticsYandex,
+      seoDefaults,
     }),
     [
       enabledMarketplaces,
@@ -214,6 +248,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       mapForm,
       home,
       loading,
+      analyticsYandex,
+      seoDefaults,
     ],
   )
 

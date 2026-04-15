@@ -22,6 +22,16 @@ export type ProductSpecificationRow = {
   value: string
 }
 
+/** SEO с бэкенда (автогенерация под Яндекс / РФ). */
+export type ProductSeo = {
+  pageTitle: string
+  metaDescription: string
+  canonicalPath: string
+  canonicalUrl: string
+  ogImage: string
+  robots: string
+}
+
 export const TEASER_LABELS: Record<ProductTeaser, string> = {
   recommended: 'Рекомендуем',
   bestseller: 'Хит продаж',
@@ -52,6 +62,7 @@ export type Product = {
   variants?: ProductVariantRow[]
   specifications?: ProductSpecificationRow[]
   defaultVariantId?: string | null
+  seo?: ProductSeo
 }
 
 /** Подписи для демо-моков и блока «Виды тентов» (картинки по слагу) */

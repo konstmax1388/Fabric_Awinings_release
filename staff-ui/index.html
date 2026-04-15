@@ -1,14 +1,14 @@
 <!doctype html>
-<!-- При base: /staff/ пути должны быть относительными, иначе /src/main.tsx уйдёт на корень хоста и даст белый экран -->
+<!-- entry: /src/main.tsx — Vite подставляет base при сборке; в dev грузится с корня dev-сервера -->
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Фабрика Тентов — персонал</title>
+    <title>Фабрика Тентов — админка</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

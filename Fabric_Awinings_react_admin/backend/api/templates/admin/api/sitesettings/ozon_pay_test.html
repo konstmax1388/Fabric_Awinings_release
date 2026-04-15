@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="px-4 py-2 text-sm">
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo;
+  <a href="{% url 'admin:api_sitesettings_section' 'checkout_ozon_pay' %}">{{ opts.verbose_name }}</a>
+  &rsaquo;
+  {% trans "Проверка Ozon Pay" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="mx-auto flex max-w-3xl flex-col gap-6 pb-8">
+  <h1 class="text-2xl font-semibold text-font-important-light dark:text-font-important-dark">
+    {% trans "Проверка Ozon Pay (createOrder)" %}
+  </h1>
+  <p class="text-sm leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">
+    {% trans "Выполняется один тестовый запрос к API эквайринга (как при оформлении заказа с онлайн-оплатой). Заказ в базе не создаётся. Сначала сохраните ключи в разделе «Оформление: Ozon Pay»." %}
+  </p>
+  <p class="text-xs text-font-subtle-light dark:text-font-subtle-dark">
+    {% trans "Сумма теста задаётся переменной окружения OZON_PAY_TEST_AMOUNT_RUB (по умолчанию 10 ₽)." %}
+  </p>
+
+  <dl class="rounded-default border border-base-200 bg-white p-4 text-sm shadow-xs dark:border-base-800 dark:bg-base-900/80">
+    <dt class="font-medium text-font-important-light dark:text-font-important-dark">{% trans "Ozon Pay на сайте" %}</dt>
+    <dd class="mt-1 text-font-subtle-light dark:text-font-subtle-dark">
+      {% if site_settings.ozon_pay_enabled %}
+        {% trans "Включено" %}{% if site_settings.ozon_pay_sandbox %} — {% trans "песочница" %}{% endif %}
+      {% else %}
+        {% trans "Выключено" %}
+      {% endif %}
+    </dd>
+  </dl>
+
+  <form method="post" class="flex flex-col gap-4">
+    {% csrf_token %}
+    <input type="hidden" name="run_ozon_pay_test" value="1" />
+    <div class="flex flex-wrap gap-3">
+      <button
+        type="submit"
+        class="inline-flex items-center rounded-default bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+      >
+        <span class="material-symbols-outlined mr-1 text-[20px]">payments</span>
+        {% trans "Запустить проверку createOrder" %}
+      </button>
+      <a
+        href="{% url 'admin:api_sitesettings_section' 'checkout_ozon_pay' %}"
+        class="inline-flex items-center rounded-default border border-base-200 px-4 py-2 text-sm font-medium hover:bg-base-50 dark:border-base-700 dark:hover:bg-base-800"
+      >
+        {% trans "Назад к настройкам" %}
+      </a>
+    </div>
+  </form>
+
+  {% if test_result is not None %}
+  <div class="rounded-default border border-base-200 bg-white p-4 text-sm shadow-xs dark:border-base-800 dark:bg-base-900/80">
+    <p class="font-medium text-font-important-light dark:text-font-important-dark">{% trans "Результат" %}</p>
+    {% if test_pay_link %}
+    <p class="mt-2 text-green-700 dark:text-green-400">
+      {% trans "Получена ссылка на оплату (payLink). Можно открыть в новой вкладке для проверки." %}
+    </p>
+    <p class="mt-2 break-all font-mono text-xs text-font-default-light dark:text-font-default-dark">
+      <a href="{{ test_pay_link }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline dark:text-primary-400">{{ test_pay_link }}</a>
+    </p>
+    {% elif test_error_message %}
+    <p class="mt-2 text-red-700 dark:text-red-300">{{ test_error_message }}</p>
+    {% endif %}
+    {% if test_result_raw %}
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm font-medium text-font-important-light dark:text-font-important-dark">{% trans "Технические детали ответа" %}</summary>
+      <pre class="mt-2 max-h-96 overflow-auto rounded-default border border-base-200 bg-base-50 p-3 text-xs dark:border-base-700 dark:bg-base-950">{{ test_result_raw }}</pre>
+    </details>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

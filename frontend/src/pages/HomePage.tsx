@@ -17,20 +17,42 @@ import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function HomePage() {
   const site = publicSiteUrl()
-  const { home, siteName, calculatorEnabled } = useSiteSettings()
+  const { home, siteName, calculatorEnabled, phone, address, seoDefaults } = useSiteSettings()
   const meta = home?.meta
 
-  const orgJsonLd = useMemo(
-    () =>
-      JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'LocalBusiness',
-        name: meta?.orgName ?? siteName,
-        url: site,
-        description: meta?.orgDescription ?? 'Тенты, навесы, шатры и террасы под ключ.',
-      }),
-    [site, meta?.orgName, meta?.orgDescription, siteName],
-  )
+  const orgJsonLd = useMemo(() => {
+    const desc =
+      meta?.orgDescription?.trim() ||
+      seoDefaults.defaultMetaDescription?.trim() ||
+      'Тенты, навесы, шатры и террасы под ключ.'
+    const region = seoDefaults.region || 'RU'
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: meta?.orgName ?? siteName,
+      url: site,
+      description: desc,
+      telephone: phone?.trim() || undefined,
+      address:
+        address?.trim() ?
+          {
+            '@type': 'PostalAddress',
+            streetAddress: address.trim(),
+            addressCountry: 'RU',
+            addressRegion: region,
+          }
+        : undefined,
+    })
+  }, [
+    site,
+    meta?.orgName,
+    meta?.orgDescription,
+    siteName,
+    phone,
+    address,
+    seoDefaults.region,
+    seoDefaults.defaultMetaDescription,
+  ])
 
   useEffect(() => {
     if (!calculatorEnabled) return
@@ -43,7 +65,8 @@ export function HomePage() {
 
   const pageTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
   const pageDesc =
-    meta?.description ??
+    meta?.description?.trim() ||
+    seoDefaults.defaultMetaDescription?.trim() ||
     'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, калькулятор, заявка онлайн.'
 
   return (
@@ -51,6 +74,7 @@ export function HomePage() {
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
+        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/`} />
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>

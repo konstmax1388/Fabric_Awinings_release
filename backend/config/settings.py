@@ -44,6 +44,10 @@ elif _admin_captcha_env in ("0", "false", "no"):
 else:
     ADMIN_LOGIN_CAPTCHA = not DEBUG
 
+# Django Admin (Unfold на /admin/): выключить, когда панель только React Admin (отдельный SPA на том же префиксе /admin/ у nginx).
+_django_admin_enabled_env = (os.environ.get("DJANGO_ADMIN_ENABLED") or "true").strip().lower()
+DJANGO_ADMIN_ENABLED = _django_admin_enabled_env not in ("0", "false", "no")
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api").split(",")
 
 
@@ -145,11 +149,12 @@ _cors = os.environ.get(
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
 
-# Вход в Django Admin через прокси Vite (http://localhost:17300/admin → API); staff-ui — порт 17301
+# Вход в Django Admin через прокси Vite (Origin = порт витрины); прямой заход на :18000/admin — тоже в списке.
 _csrf = os.environ.get(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
     "http://localhost:17300,http://127.0.0.1:17300,"
-    "http://localhost:17301,http://127.0.0.1:17301",
+    "http://localhost:17301,http://127.0.0.1:17301,"
+    "http://localhost:18000,http://127.0.0.1:18000",
 )
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
 

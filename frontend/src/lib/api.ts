@@ -9,6 +9,7 @@ import { parseProductPhotoAspect, type ProductPhotoAspect } from './productPhoto
 import type {
   Product,
   ProductCategory,
+  ProductSeo,
   ProductSpecificationRow,
   ProductTeaser,
   ProductVariantRow,
@@ -62,6 +63,24 @@ function parseVariantRow(row: unknown): ProductVariantRow | null {
   return { id, label, priceFrom, images, wbUrl, isDefault }
 }
 
+function parseProductSeo(raw: unknown): ProductSeo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const o = raw as Record<string, unknown>
+  if (typeof o.pageTitle !== 'string' || typeof o.metaDescription !== 'string') return undefined
+  const canonicalPath = typeof o.canonicalPath === 'string' ? o.canonicalPath : ''
+  const canonicalUrl = typeof o.canonicalUrl === 'string' ? o.canonicalUrl : ''
+  const ogImage = typeof o.ogImage === 'string' ? o.ogImage : ''
+  const robots = typeof o.robots === 'string' && o.robots.trim() ? o.robots : 'index, follow'
+  return {
+    pageTitle: o.pageTitle,
+    metaDescription: o.metaDescription,
+    canonicalPath,
+    canonicalUrl,
+    ogImage,
+    robots,
+  }
+}
+
 function parseSpecRow(row: unknown): ProductSpecificationRow | null {
   if (!row || typeof row !== 'object') return null
   const r = row as Record<string, unknown>
@@ -107,6 +126,7 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
       : raw.defaultVariantId === null
         ? null
         : undefined
+  const seo = parseProductSeo(raw.seo)
   return {
     id,
     slug: raw.slug,
@@ -125,6 +145,7 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     variants: variants.length ? variants : undefined,
     specifications: specifications.length ? specifications : undefined,
     defaultVariantId,
+    seo,
   }
 }
 
@@ -340,7 +361,16 @@ export type BlogListItem = {
   img: string
 }
 
-export type BlogDetail = BlogListItem & { body: string }
+export type BlogPostSeo = {
+  pageTitle: string
+  metaDescription: string
+  canonicalPath: string
+  canonicalUrl: string
+  ogImage: string
+  robots: string
+}
+
+export type BlogDetail = BlogListItem & { body: string; seo?: BlogPostSeo }
 
 export async function fetchBlogPosts(): Promise<BlogListItem[]> {
   try {
@@ -373,6 +403,21 @@ export async function fetchBlogPost(slug: string): Promise<BlogDetail | null> {
     if (r.status === 404) return null
     const o = await parseJson<Record<string, unknown>>(r)
     if (!o || typeof o.slug !== 'string') return null
+    const seoRaw = o.seo
+    let seo: BlogPostSeo | undefined
+    if (seoRaw && typeof seoRaw === 'object') {
+      const s = seoRaw as Record<string, unknown>
+      if (typeof s.pageTitle === 'string' && typeof s.metaDescription === 'string') {
+        seo = {
+          pageTitle: s.pageTitle,
+          metaDescription: s.metaDescription,
+          canonicalPath: typeof s.canonicalPath === 'string' ? s.canonicalPath : '',
+          canonicalUrl: typeof s.canonicalUrl === 'string' ? s.canonicalUrl : '',
+          ogImage: typeof s.ogImage === 'string' ? s.ogImage : '',
+          robots: typeof s.robots === 'string' && s.robots.trim() ? s.robots : 'index, follow',
+        }
+      }
+    }
     return {
       slug: o.slug,
       title: typeof o.title === 'string' ? o.title : '',
@@ -380,6 +425,7 @@ export async function fetchBlogPost(slug: string): Promise<BlogDetail | null> {
       date: typeof o.date === 'string' ? o.date : '',
       img: typeof o.img === 'string' ? o.img : '',
       body: typeof o.body === 'string' ? o.body : '',
+      seo,
     }
   } catch {
     return null
@@ -417,6 +463,19 @@ const MP_IDS = ['wb', 'ozon', 'ym', 'avito'] as const
 /** Перекрытия блока карты на главной из GET /api/site-settings/ (мержится с home.mapForm). */
 export type MapFormSiteOverlay = Partial<NonNullable<HomePayload['mapForm']>>
 
+export type AnalyticsYandexDto = {
+  enabled: boolean
+  counterId: string
+}
+
+export type SeoDefaultsDto = {
+  allowIndexing: boolean
+  region: string
+  defaultMetaDescription: string
+  titleSuffix: string
+  locale: string
+}
+
 export type SiteSettingsDto = {
   enabledMarketplaces: string[]
   globalMarketplaceUrls: Partial<Record<MarketplaceId, string>>
@@ -443,6 +502,8 @@ export type SiteSettingsDto = {
   catalogIntro?: string
   checkout?: CheckoutPublicConfig
   mapForm?: MapFormSiteOverlay
+  analyticsYandex?: AnalyticsYandexDto
+  seoDefaults?: SeoDefaultsDto
 }
 
 function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
@@ -632,6 +693,28 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
       catalogIntro: strOrEmpty(data.catalogIntro),
       checkout: parseCheckoutPublic(data.checkout),
       mapForm: parseMapFormOverlay(data.mapForm),
+      analyticsYandex: (() => {
+        const ax = data.analyticsYandex
+        if (!ax || typeof ax !== 'object') return undefined
+        const a = ax as Record<string, unknown>
+        return {
+          enabled: a.enabled === true,
+          counterId: typeof a.counterId === 'string' ? a.counterId : '',
+        }
+      })(),
+      seoDefaults: (() => {
+        const sd = data.seoDefaults
+        if (!sd || typeof sd !== 'object') return undefined
+        const s = sd as Record<string, unknown>
+        return {
+          allowIndexing: s.allowIndexing !== false,
+          region: typeof s.region === 'string' && s.region.trim() ? s.region : 'RU',
+          defaultMetaDescription:
+            typeof s.defaultMetaDescription === 'string' ? s.defaultMetaDescription : '',
+          titleSuffix: typeof s.titleSuffix === 'string' ? s.titleSuffix : '',
+          locale: typeof s.locale === 'string' && s.locale.trim() ? s.locale : 'ru_RU',
+        }
+      })(),
     }
   } catch {
     return null

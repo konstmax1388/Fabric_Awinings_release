@@ -1,0 +1,95 @@
+# Полный стек: API + витрина (Vite) + React Admin на /staff/ (Django Unfold — /admin/ на API)
+# Порты задайте в .env (см. .env.example).
+name: fabric-awnings-react-admin
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${FABRIC_RA_API_PORT:-18100}:8000"
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 120s
+    environment:
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,0.0.0.0
+      # Витрина (FABRIC_FRONTEND_PORT, по умолчанию 17302), React Admin — 17401, прямой вход в Unfold — 18100.
+      # CSRF должен совпадать с Origin браузера (иначе POST /admin/login/ с 17302 → 403).
+      DJANGO_CORS_ALLOWED_ORIGINS: ${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:17302,http://127.0.0.1:17302,http://localhost:17401,http://127.0.0.1:17401,http://localhost:18100,http://127.0.0.1:18100}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:17302,http://127.0.0.1:17302,http://localhost:17401,http://127.0.0.1:17401,http://localhost:18100,http://127.0.0.1:18100}
+      # Классическая Unfold на этом же порту (…/admin/). По умолчанию true — иначе ссылка из футера на :18100/admin редиректит на React и совпадает с «Панель менеджера». В production задайте DJANGO_ADMIN_ENABLED=false.
+      DJANGO_ADMIN_ENABLED: ${DJANGO_ADMIN_ENABLED:-true}
+      DJANGO_ADMIN_REDIRECT_URL: ${DJANGO_ADMIN_REDIRECT_URL:-http://localhost:17401/staff/}
+      DJANGO_PUBLIC_SITE_URL: ${DJANGO_PUBLIC_SITE_URL:-http://localhost:17302}
+      DJANGO_DEV_ADMIN_USERNAME: ${DJANGO_DEV_ADMIN_USERNAME:-dev}
+      DJANGO_DEV_ADMIN_PASSWORD: ${DJANGO_DEV_ADMIN_PASSWORD:-devdev}
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${FABRIC_FRONTEND_PORT:-17302}:17300"
+    volumes:
+      - ./frontend:/app
+      - fabric_ra_frontend_node_modules:/app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      # Браузер на хосте ходит на опубликованный порт API (FABRIC_RA_API_PORT); прокси /api в Vite остаётся запасным.
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:18100}
+      VITE_PROXY_TARGET: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+  admin-ui:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${FABRIC_ADMIN_UI_PORT:-17401}:17401"
+    volumes:
+      - ./admin-ui:/app
+      - fabric_ra_admin_node_modules:/app/node_modules
+    environment:
+      DOCKER: "true"
+      BROWSER: "none"
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_PROXY_TARGET: http://api:8000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:17401/staff/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 180s
+    depends_on:
+      api:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+volumes:
+  fabric_ra_frontend_node_modules:
+  fabric_ra_admin_node_modules:

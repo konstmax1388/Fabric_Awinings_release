@@ -1,10 +1,12 @@
-# Staff UI (React Admin)
+# Admin UI (React Admin)
 
-Панель персонала по спецификации [docs/admin-react-admin-migration-analysis.md](../docs/admin-react-admin-migration-analysis.md): отдельный SPA под префиксом **`/staff/`**, бэкенд — **`/api/staff/v1/`**.
+Панель по [docs/admin-react-admin-migration-analysis.md](../docs/admin-react-admin-migration-analysis.md): SPA под **`/admin/`**, API — **`/api/staff/v1/`**.
+
+Автономная разработка панели перенесена в репозиторий **`Fabric_Awinings_react_admin`** (порты 18100 / 17401). Этот каталог в основном репозитории можно синхронизировать с `admin-ui` оттуда.
 
 ## Разработка
 
-1. Запустите Django API (по умолчанию в Docker — порт **18000** на хосте).
+1. Django API (Docker — **18000** или см. новый проект).
 2. В каталоге `staff-ui`:
 
 ```bash
@@ -12,15 +14,7 @@ npm install
 npm run dev
 ```
 
-Откройте **http://localhost:17301/staff/** (обязательно с префиксом **`/staff/`** — иначе при `base: '/staff/'` скрипты не подхватятся и будет белый экран). Vite проксирует `/api` на `VITE_API_ORIGIN`, по умолчанию `http://127.0.0.1:18000`.
-
-Разделы: сводка, портфолио, отзывы, блог, шаблоны писем (только правка), заявки «обратный звонок». Картинки: загрузка через UI → `POST /api/staff/v1/uploads/`, в форму подставляется `relativePath`.
-
-Переменные:
-
-| Переменная | Назначение |
-|------------|------------|
-| `VITE_API_ORIGIN` | Origin бэкенда (пусто = тот же хост, что у dev-сервера; при прокси обычно не нужен) |
+Откройте **http://localhost:17301/admin/**. Прокси: `VITE_PROXY_TARGET` или `VITE_API_ORIGIN`, иначе `http://127.0.0.1:18000`.
 
 ## Сборка
 
@@ -28,8 +22,4 @@ npm run dev
 npm run build
 ```
 
-Артефакты — в `staff-ui/dist/`; в проде отдаются веб-сервером с `location /staff/` на статику и без конфликта с витриной на `/`.
-
-## Тема (бренд)
-
-Акцент и фон по [docs/design.md](../docs/design.md): оранжевый `#E87A00`, фон `#FEFBF5` — при необходимости задайте кастомную тему MUI в `src/App.tsx` (учитывайте совместимость версий MUI с `react-admin`).
+Статика в `dist/` — префикс nginx **`/admin/`**.

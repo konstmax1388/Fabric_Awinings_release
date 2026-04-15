@@ -1,0 +1,5 @@
+# Для продакшена замените домен в Sitemap на реальный (или задайте через хостинг).
+User-agent: *
+Allow: /
+
+Sitemap: https://your-domain.example/sitemap.xml

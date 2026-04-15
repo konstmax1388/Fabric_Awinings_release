@@ -4,6 +4,13 @@
 
 ## Репозиторий
 
+В репозитории **две части** основного стека:
+
+| Каталог | Содержание |
+|---------|------------|
+| Корень (`frontend/`, `backend/`, `docker-compose.yml`, …) | Основной проект «Фабрика Тентов» (витрина, API, `staff-ui`). |
+| [`Fabric_Awinings_react_admin/`](Fabric_Awinings_react_admin/README.md) | Параллельный стек: витрина + API + React Admin под `/staff/` (отдельный `docker-compose`, порты в README внутри каталога). |
+
 - **GitHub:** [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings)
 - **Клонирование:** `git clone https://github.com/konstmax1388/Fabric_Awinings.git`
 - **Ветки:** `main` — основная разработка; `release` — релизная линия (`origin/main`, `origin/release`).
