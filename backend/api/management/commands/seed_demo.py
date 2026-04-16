@@ -85,6 +85,8 @@ class Command(BaseCommand):
                         video_url=r.get("video_url", ""),
                         sort_order=r.get("sort_order", 0),
                         is_published=True,
+                        publication_consent=True,
+                        is_moderated=True,
                     )
                     copy_url_to_image_field(
                         rev,

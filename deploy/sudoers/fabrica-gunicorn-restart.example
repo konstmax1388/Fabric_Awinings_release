@@ -1,0 +1,16 @@
+# Пример sudoers для безопасного перезапуска только Gunicorn (без полного sudo).
+#
+# На сервере под root:
+#   visudo -f /etc/sudoers.d/fabrica-gunicorn-restart
+# Вставьте ОДНУ строку (замените kasatkin_da на пользователя деплоя):
+#
+#   kasatkin_da ALL=(root) NOPASSWD: /bin/systemctl restart fabrika-gunicorn
+#
+# Проверка синтаксиса:
+#   visudo -c -f /etc/sudoers.d/fabrica-gunicorn-restart
+#
+# Проверка от пользователя деплоя (должно быть без запроса пароля):
+#   sudo -n systemctl restart fabrika-gunicorn
+#
+# Если systemctl в другом пути, уточните: command -v systemctl
+# и используйте полный путь в sudoers (часто /usr/bin/systemctl).
