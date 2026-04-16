@@ -15,8 +15,21 @@ import type {
   ProductVariantRow,
 } from '../data/products'
 
+/**
+ * Базовый origin для запросов к API.
+ * - Явный `VITE_API_URL` — для dev / отдельный домен API.
+ * - Прод-сборка без переменной — пустая строка → относительные `/api/...` (тот же хост, что и витрина).
+ * - Локальный dev без `.env` — `http://localhost:18000`.
+ */
 export function apiBase(): string {
-  return (import.meta.env.VITE_API_URL ?? 'http://localhost:18000').replace(/\/$/, '')
+  const raw = import.meta.env.VITE_API_URL
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw.replace(/\/$/, '')
+  }
+  if (import.meta.env.PROD) {
+    return ''
+  }
+  return 'http://localhost:18000'
 }
 
 async function parseJson<T>(r: Response): Promise<T | null> {

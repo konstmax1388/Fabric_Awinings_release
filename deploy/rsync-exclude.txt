@@ -1,12 +1,29 @@
-# Исключения для rsync при выкладке на прод (см. корневой README, раздел про деплой).
-# Использование (с хоста разработки, Linux/macOS/Git Bash):
+# Исключения для rsync при выкладке на прод (только рантайм + сборка, без «музейного» хлама).
+# С хоста разработки (Linux / macOS / Git Bash):
 #   rsync -av --delete --exclude-from=deploy/rsync-exclude.txt ./ user@host:/path/to/app/
+#
+# На уже залитом сервере одноразово: bash deploy/prune-production-tree.sh /path/to/app
 
+# --- Git / IDE / AI (на проде не нужны для работы сайта) ---
+.git/
+.github/
 .cursor/
+
+# --- Документация и дубликаты репозитория ---
 docs/
 Fabric_Awinings_react_admin/
+CHANGELOG.md
+BACKLOG.md
+/README.md
 
-# Зависимости и кэши — на сервере: pip install -r requirements.txt; при фронте — npm ci или только dist
+# --- Офисные / ТЗ в корне (часто кладут рядом с репо; на хостинг не тащить) ---
+*.docx
+*.xlsx
+
+# --- Панель staff-ui (дубликат admin-ui; на прод обычно только admin-ui) ---
+staff-ui/
+
+# --- Зависимости и кэши (на сервере: pip / npm ci по месту) ---
 **/node_modules/
 **/.pytest_cache/
 **/__pycache__/
@@ -47,6 +64,3 @@ docs/_tz*_plain.txt
 docs/_content_xlsx.json
 docs/_tz20_extract.txt
 docs/_xlsx_sample.txt
-
-# Опционально: не тащить историю git при «толстом» rsync (если деплой не через git pull)
-# .git/

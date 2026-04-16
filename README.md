@@ -24,13 +24,18 @@
 
 ### Выкладка на прод (без лишнего)
 
-На сервер не обязательно копировать служебное: **`.cursor/`**, **`docs/`**, тесты, `node_modules`, локальные `.env`. Для **rsync** используйте список исключений **[`deploy/rsync-exclude.txt`](deploy/rsync-exclude.txt)**:
+На сервер не нужны **`.git`**, **`.cursor/`**, **`docs/`**, **`staff-ui/`**, дубликат **`Fabric_Awinings_react_admin/`**, **`CHANGELOG.md`**, офисные **`.docx` / `.xlsx`** в корне, тесты, `node_modules`, локальный **`.env`** с дев-машины.
+
+- **rsync:** **[`deploy/rsync-exclude.txt`](deploy/rsync-exclude.txt)** (уже включает перечисленное).
+- **Уже залито через `git clone`:** один раз на сервере **[`deploy/prune-production-tree.sh`](deploy/prune-production-tree.sh)** — удалит мусор, код для `pip` / `npm run build` сохранит.
 
 ```bash
 rsync -av --delete --exclude-from=deploy/rsync-exclude.txt ./ user@сервер:/path/to/app/
+# или на VPS после клона:
+bash deploy/prune-production-tree.sh /path/to/app
 ```
 
-При деплое через **`git pull`** полный клон тянет и документацию — это только лишний объём на диске; критично не публиковать **секреты** в репозитории и не класть **`.env`** с прод-паролями в Git. Статику витрины и `admin-ui` на прод обычно отдают уже **собранные** `dist/` (сборка в CI или на сервере после `npm ci && npm run build`).
+При **`git pull`** в репозитории может оставаться документация — это лишний объём на диске; критично не публиковать **секреты** в Git и не класть **`.env`** с прод-паролями в репозиторий. Статику витрины и `admin-ui` на прод обычно отдают уже **собранные** `dist/` (сборка в CI или на сервере после `npm ci && npm run build`).
 
 **Прод на VPS (Nginx + Gunicorn + MySQL):** пошагово **[`deploy/PRODUCTION-VPS.md`](deploy/PRODUCTION-VPS.md)**; шаблон переменных — **[`.env.production.example`](.env.production.example)** (скопировать в `.env` только на сервере).
 

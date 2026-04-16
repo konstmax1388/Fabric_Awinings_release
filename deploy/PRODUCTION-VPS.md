@@ -15,13 +15,30 @@ sudo apt install -y python3.12-venv python3-pip nginx mysql-client build-essenti
 
 ## 2. Код
 
+### Что должно остаться на сервере
+
+Для работы сайта нужны по сути: **`backend/`** (Python), **`frontend/`** (или только `frontend/dist`, если сборка на CI), при панели **`/staff/`** — **`admin-ui/`** (или только `admin-ui/dist` + nginx), файл **`.env`**, каталог **`backend/staticfiles/`** после `collectstatic`, **`backend/media/`** для загрузок. Остальное — по желанию для отладки.
+
+**Не выкладывать на хостинг:** `.git`, `.cursor`, `docs/`, `Fabric_Awinings_react_admin/`, `staff-ui/`, `CHANGELOG.md`, офисные **`.docx` / `.xlsx`** в корне, тесты `backend/tests/`, `node_modules`, локальные `.venv`.
+
+### Вариант A: `git clone` на сервере
+
+После клона можно **один раз** почистить дерево (оставит код для `pip` / `npm run build`, уберёт мусор):
+
 ```bash
-cd /var/www/kasatkin_da/data/www
-git clone https://github.com/konstmax1388/Fabric_Awinings_release.git fabrika-tentov.ru
-cd fabrika-tentov.ru
+cd /var/www/kasatkin_da/data/www/fabrika-tentov.ru
+bash deploy/prune-production-tree.sh "$(pwd)"
 ```
 
-Или `rsync` с исключениями: [`rsync-exclude.txt`](rsync-exclude.txt).
+Историю Git при этом **не** удаляем (удобно `git pull`). Если принципиально без `.git` — `bash deploy/prune-production-tree.sh --with-git "$(pwd)"` (дальше обновления только через rsync/архив).
+
+### Вариант B: `rsync` с дев-машины
+
+Не копировать лишнее сразу — файл исключений [`rsync-exclude.txt`](rsync-exclude.txt) (в т.ч. **`.git/`**, документация, офисные файлы):
+
+```bash
+rsync -av --delete --exclude-from=deploy/rsync-exclude.txt ./ user@host:/path/to/fabrika-tentov.ru/
+```
 
 ## 3. Виртуальное окружение и зависимости
 

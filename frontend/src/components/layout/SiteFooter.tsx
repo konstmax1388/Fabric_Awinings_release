@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { getPublicAdminLinks } from '../../config/adminLinks'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, type MarketplaceId } from '../../config/site'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
+import { StaffEntryModal } from './StaffEntryModal'
 
 export function SiteFooter() {
   const {
@@ -21,6 +24,10 @@ export function SiteFooter() {
   const mergedMpUrls = { ...GLOBAL_MARKETPLACE_URLS, ...globalMarketplaceUrls }
   const vkHref = footerVkUrl?.trim() || '#'
   const tgHref = footerTelegramUrl?.trim() || '#'
+
+  const { reactAdminUrl, djangoAdminUrl } = useMemo(() => getPublicAdminLinks(), [])
+  const showStaffLinks = Boolean(reactAdminUrl || djangoAdminUrl)
+  const [staffModalOpen, setStaffModalOpen] = useState(false)
 
   return (
     <footer className="border-t border-border-light bg-bg-base">
@@ -117,6 +124,28 @@ export function SiteFooter() {
             </ul>
           </div>
         </div>
+
+        {showStaffLinks ? (
+          <div className="mt-10 flex justify-center border-t border-border-light pt-8 sm:justify-start">
+            <button
+              type="button"
+              onClick={() => setStaffModalOpen(true)}
+              className="group inline-flex items-center gap-2 font-body text-sm font-medium text-text-muted underline decoration-border underline-offset-4 transition hover:text-accent hover:decoration-accent"
+            >
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full bg-accent/80 transition group-hover:bg-accent"
+                aria-hidden
+              />
+              Вход для сотрудников
+            </button>
+            <StaffEntryModal
+              open={staffModalOpen}
+              onClose={() => setStaffModalOpen(false)}
+              reactAdminUrl={reactAdminUrl}
+              djangoAdminUrl={djangoAdminUrl}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-12 flex flex-col gap-4 border-t border-border-light pt-8 text-sm text-text-subtle md:flex-row md:items-center md:justify-between">
           <p>
