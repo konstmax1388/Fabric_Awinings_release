@@ -4,13 +4,13 @@
 #   visudo -f /etc/sudoers.d/fabrika-gunicorn-restart
 # Вставьте ОДНУ строку (замените kasatkin_da на пользователя деплоя):
 #
-#   kasatkin_da ALL=(root) NOPASSWD: /bin/systemctl restart fabrika-gunicorn
+#   kasatkin_da ALL=(root) NOPASSWD: /usr/bin/systemctl restart fabrika-gunicorn
 #
 # Проверка синтаксиса:
 #   visudo -c -f /etc/sudoers.d/fabrika-gunicorn-restart
 #
 # Проверка от пользователя деплоя (должно быть без запроса пароля):
-#   sudo -n systemctl restart fabrika-gunicorn
+#   sudo -n /usr/bin/systemctl restart fabrika-gunicorn
 #
-# Если systemctl в другом пути, уточните: command -v systemctl
-# и используйте полный путь в sudoers (часто /usr/bin/systemctl).
+# Если `command -v systemctl` показывает другой путь (редко /bin/systemctl),
+# используйте именно его в sudoers.
