@@ -36,6 +36,7 @@ urlpatterns = [
     path("home-content/", HomePageContentPublicView.as_view(), name="home-content"),
     path("leads/calculator/", views.CalculatorLeadCreateView.as_view(), name="lead-calculator"),
     path("leads/callback/", views.CallbackLeadCreateView.as_view(), name="lead-callback"),
+    path("leads/review/", views.ReviewSubmissionCreateView.as_view(), name="lead-review"),
     path("leads/cart/", views.CartOrderCreateView.as_view(), name="lead-cart"),
     path("webhooks/ozon-pay/", OzonPayWebhookView.as_view(), name="webhook-ozon-pay"),
     path("auth/register/", RegisterView.as_view(), name="auth-register"),

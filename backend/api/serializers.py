@@ -204,12 +204,13 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
+    reviewedOn = serializers.DateField(source="reviewed_on", format="%Y-%m-%d", allow_null=True)
     photo = serializers.SerializerMethodField()
     video = serializers.URLField(source="video_url", allow_blank=True, allow_null=True)
 
     class Meta:
         model = Review
-        fields = ("id", "name", "text", "rating", "photo", "video")
+        fields = ("id", "name", "city", "reviewedOn", "text", "rating", "photo", "video")
 
     def get_id(self, obj: Review) -> str:
         return str(obj.pk)
@@ -217,6 +218,53 @@ class ReviewSerializer(serializers.ModelSerializer):
     def get_photo(self, obj: Review) -> str:
         req = self.context.get("request")
         return media_file_absolute(req, obj.photo_file)
+
+
+class ReviewSubmissionCreateSerializer(serializers.ModelSerializer):
+    reviewedOn = serializers.DateField(source="reviewed_on")
+    publicationConsent = serializers.BooleanField(source="publication_consent")
+    website = serializers.CharField(required=False, allow_blank=True, write_only=True, default="")
+
+    class Meta:
+        model = Review
+        fields = ("name", "city", "reviewedOn", "text", "publicationConsent", "website")
+
+    def validate_name(self, value: str) -> str:
+        return clean_person_name(value)
+
+    def validate_city(self, value: str) -> str:
+        city = (value or "").strip()
+        if len(city) < 2 or len(city) > 120:
+            raise serializers.ValidationError("Укажите город")
+        return city
+
+    def validate_text(self, value: str) -> str:
+        text = (value or "").strip()
+        if len(text) < 20:
+            raise serializers.ValidationError("Отзыв слишком короткий")
+        if len(text) > COMMENT_MAX_LEN:
+            raise serializers.ValidationError(f"Слишком длинный отзыв (до {COMMENT_MAX_LEN} символов)")
+        return text
+
+    def validate(self, attrs: dict) -> dict:
+        reject_honeypot(attrs)
+        reviewed_on = attrs.get("reviewed_on")
+        if reviewed_on and reviewed_on > timezone.localdate():
+            raise serializers.ValidationError({"reviewedOn": ["Дата не может быть в будущем"]})
+        if not attrs.get("publication_consent"):
+            raise serializers.ValidationError(
+                {"publicationConsent": ["Нужно согласие на публикацию отзыва"]}
+            )
+        return attrs
+
+    def create(self, validated_data: dict) -> Review:
+        return Review.objects.create(
+            **validated_data,
+            rating=5,
+            is_published=False,
+            is_moderated=False,
+            submitted_from_site=True,
+        )
 
 
 class BlogPostListSerializer(serializers.ModelSerializer):

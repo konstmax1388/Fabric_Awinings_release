@@ -1,4 +1,5 @@
 import HomeWorkIcon from '@mui/icons-material/HomeWork'
+import PlaylistAddCheckCircleIcon from '@mui/icons-material/PlaylistAddCheckCircle'
 import { Box, ListSubheader, Typography } from '@mui/material'
 import { Menu, useSidebarState } from 'react-admin'
 
@@ -62,6 +63,11 @@ export function AdminMenu() {
         Контент
       </ListSubheader>
       <Menu.ResourceItem name="portfolio-projects" />
+      <Menu.Item
+        to="/reviews/moderation"
+        primaryText="Очередь модерации отзывов"
+        leftIcon={<PlaylistAddCheckCircleIcon />}
+      />
       <Menu.ResourceItem name="reviews" />
       <Menu.ResourceItem name="blog-posts" />
       <ListSubheader disableSticky sx={subSx}>

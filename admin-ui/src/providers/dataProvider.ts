@@ -55,7 +55,7 @@ async function staffGetList(
   for (const [k, v] of Object.entries(params.filter ?? {})) {
     if (k === 'search' || v === '' || v === undefined || v === null) continue
     if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
-      qs.set(k, String(v))
+      qs.set(camelToSnake(k), String(v))
     }
   }
 
@@ -215,7 +215,28 @@ export const dataProvider = {
     return { data: { ...data, id: data.id } as RaRecord }
   },
 
-  updateMany: async () => ({ data: [] as Identifier[] }),
+  updateMany: async (
+    resource: string,
+    params: { ids: Identifier[]; data: Record<string, unknown> },
+  ) => {
+    const path = pathFor(resource)
+    const okIds: Identifier[] = []
+    for (const id of params.ids) {
+      try {
+        const enc = encodeURIComponent(String(id))
+        const url = staffApiUrl(`/api/staff/v1/${path}/${enc}/`)
+        await staffFetchJson(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params.data),
+        })
+        okIds.push(id)
+      } catch {
+        /* Частичный отказ допустим: возвращаем только успешно обновлённые id. */
+      }
+    }
+    return { data: okIds }
+  },
 
   delete: async (resource: string, params: { id: Identifier }) => {
     const path = pathFor(resource)

@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { type FormEventHandler, useEffect, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { fetchReviews, type ReviewItem } from '../../lib/api'
+import { fetchReviews, postReviewSubmission, type ReviewItem } from '../../lib/api'
 import {
   easeOutSoft,
   fadeUpHidden,
@@ -34,6 +34,16 @@ export function ReviewsSection() {
 
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [submitOk, setSubmitOk] = useState<string>('')
+  const [submitErr, setSubmitErr] = useState<string>('')
+  const [form, setForm] = useState({
+    name: '',
+    city: '',
+    reviewedOn: '',
+    text: '',
+    publicationConsent: false,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -47,6 +57,28 @@ export function ReviewsSection() {
       cancelled = true
     }
   }, [])
+
+  const onSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault()
+    if (sending) return
+    setSubmitErr('')
+    setSubmitOk('')
+    setSending(true)
+    const ok = await postReviewSubmission({
+      name: form.name.trim(),
+      city: form.city.trim(),
+      reviewedOn: form.reviewedOn,
+      text: form.text.trim(),
+      publicationConsent: form.publicationConsent,
+    })
+    setSending(false)
+    if (!ok) {
+      setSubmitErr('Не удалось отправить отзыв. Проверьте поля и попробуйте еще раз.')
+      return
+    }
+    setForm({ name: '', city: '', reviewedOn: '', text: '', publicationConsent: false })
+    setSubmitOk('Спасибо! Отзыв получен и отправлен менеджеру на модерацию.')
+  }
 
   return (
     <motion.section
@@ -94,6 +126,11 @@ export function ReviewsSection() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-body text-base font-semibold leading-snug text-text">{r.name}</p>
+                  {r.city || r.reviewedOn ? (
+                    <p className="mt-0.5 text-xs text-text-muted">
+                      {[r.city, r.reviewedOn].filter(Boolean).join(' • ')}
+                    </p>
+                  ) : null}
                   <div className="mt-1">
                     <Stars rating={r.rating} />
                   </div>
@@ -118,6 +155,69 @@ export function ReviewsSection() {
           ))}
         </motion.div>
       )}
+      <div className="mt-10 rounded-2xl border border-border-light bg-surface p-5 md:p-6">
+        <h3 className="font-heading text-2xl font-semibold text-text">Оставить отзыв</h3>
+        <p className="mt-2 text-sm text-text-muted">
+          Публикуем только после проверки менеджером и подтверждения согласия.
+        </p>
+        <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
+          <input
+            className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
+            placeholder="Имя"
+            value={form.name}
+            onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))}
+            required
+            minLength={2}
+            maxLength={120}
+          />
+          <input
+            className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
+            placeholder="Город"
+            value={form.city}
+            onChange={(e) => setForm((v) => ({ ...v, city: e.target.value }))}
+            required
+            minLength={2}
+            maxLength={120}
+          />
+          <input
+            className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
+            type="date"
+            value={form.reviewedOn}
+            onChange={(e) => setForm((v) => ({ ...v, reviewedOn: e.target.value }))}
+            required
+          />
+          <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
+            <input
+              id="review-consent"
+              type="checkbox"
+              checked={form.publicationConsent}
+              onChange={(e) => setForm((v) => ({ ...v, publicationConsent: e.target.checked }))}
+              required
+            />
+            <label htmlFor="review-consent">Согласен на публикацию отзыва</label>
+          </div>
+          <textarea
+            className="md:col-span-2 min-h-28 rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
+            placeholder="Текст отзыва"
+            value={form.text}
+            onChange={(e) => setForm((v) => ({ ...v, text: e.target.value }))}
+            required
+            minLength={20}
+            maxLength={4000}
+          />
+          <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={sending}
+              className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-surface disabled:opacity-60"
+            >
+              {sending ? 'Отправка...' : 'Отправить отзыв'}
+            </button>
+            {submitOk ? <p className="text-sm text-emerald-700">{submitOk}</p> : null}
+            {submitErr ? <p className="text-sm text-rose-700">{submitErr}</p> : null}
+          </div>
+        </form>
+      </div>
     </motion.section>
   )
 }

@@ -78,6 +78,7 @@ def test_staff_review_blog_email(client):
             "text": "Отлично",
             "rating": 5,
             "videoUrl": "",
+            "publicationConsent": True,
             "isPublished": True,
             "sortOrder": 0,
         },
@@ -86,6 +87,7 @@ def test_staff_review_blog_email(client):
     )
     assert r.status_code == 201, r.content
     rid = r.json()["id"]
+    assert r.json()["isModerated"] is True
 
     b = client.post(
         "/api/staff/v1/blog-posts/",

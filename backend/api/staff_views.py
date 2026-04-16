@@ -1,6 +1,7 @@
 """ViewSet и вьюхи Staff API (/api/staff/v1/)."""
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
@@ -78,9 +79,10 @@ class ReviewStaffViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewStaffSerializer
     queryset = Review.objects.all()
     pagination_class = StaffPageNumberPagination
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ("name", "text")
-    ordering_fields = ("sort_order", "created_at", "id", "rating")
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ("is_moderated", "is_published", "publication_consent", "submitted_from_site")
+    search_fields = ("name", "city", "text")
+    ordering_fields = ("sort_order", "created_at", "reviewed_on", "id", "rating")
     ordering = ("sort_order", "-created_at")
 
 

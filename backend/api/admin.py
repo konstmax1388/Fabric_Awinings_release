@@ -15,6 +15,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import escape, format_html, format_html_join
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
@@ -379,6 +380,8 @@ class ProductAdmin(ModelAdmin):
                 category = form.cleaned_data["category"]
                 publish = form.cleaned_data["publish"]
                 dry = form.cleaned_data["dry_run"]
+                create_variants = form.cleaned_data["create_variants"]
+                price_source_mode = form.cleaned_data["price_source_mode"]
                 ok = 0
                 for line in lines:
                     try:
@@ -387,6 +390,8 @@ class ProductAdmin(ModelAdmin):
                             category=category,
                             publish=publish,
                             dry_run=dry,
+                            create_variants=create_variants,
+                            price_source_mode=price_source_mode,
                         )
                     except WbImportError as e:
                         messages.error(request, f"{line}: {e}")
@@ -401,7 +406,8 @@ class ProductAdmin(ModelAdmin):
                             request,
                             _(
                                 "Проверка: nm=%(nm)s — %(title)s — вариантов %(nv)d, "
-                                "фото (скачиваемые) ≈%(n)d, характеристик %(ns)d, цена %(price)s ₽"
+                                "фото (скачиваемые) ≈%(n)d, характеристик %(ns)d, "
+                                "цена %(price)s ₽ (источник: %(source)s, режим: %(mode)s)"
                             )
                             % {
                                 "nm": b.seed_nm,
@@ -410,6 +416,8 @@ class ProductAdmin(ModelAdmin):
                                 "n": n_img,
                                 "ns": len(b.specifications),
                                 "price": b.price_from_min,
+                                "source": b.price_from_min_source,
+                                "mode": b.price_source_mode,
                             },
                         )
                     else:
@@ -417,8 +425,16 @@ class ProductAdmin(ModelAdmin):
                         ok += 1
                         messages.success(
                             request,
-                            _("Создан товар «%(title)s» (слаг %(slug)s)")
-                            % {"title": p.title, "slug": p.slug},
+                            _(
+                                "Создан товар «%(title)s» (слаг %(slug)s), "
+                                "цена «от» %(price)s ₽ (режим источника цены: %(mode)s)"
+                            )
+                            % {
+                                "title": p.title,
+                                "slug": p.slug,
+                                "price": p.price_from,
+                                "mode": price_source_mode,
+                            },
                         )
                 if ok and not dry:
                     return redirect("admin:api_product_changelist")
@@ -454,6 +470,11 @@ _WB_CHECK_CLASSES = (
 
 
 class WbBulkImportForm(forms.Form):
+    PRICE_SOURCE_CHOICES = (
+        ("auto", _("auto — сначала salePriceU, затем fallback")),
+        ("salePriceU", _("salePriceU — акцентная цена WB")),
+        ("product", _("product — базовая цена из WB API")),
+    )
     urls = forms.CharField(
         label=_("Ссылки на карточки Wildberries"),
         widget=forms.Textarea(
@@ -488,6 +509,22 @@ class WbBulkImportForm(forms.Form):
         initial=False,
         widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
     )
+    create_variants = forms.BooleanField(
+        label=_("Создавать варианты товара (как на WB)"),
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
+        help_text=_(
+            "Если выключено, создаётся только основной вариант из ссылки (без набора остальных вариантов WB)."
+        ),
+    )
+    price_source_mode = forms.ChoiceField(
+        label=_("Источник цены WB"),
+        choices=PRICE_SOURCE_CHOICES,
+        initial="auto",
+        widget=forms.Select(attrs={"class": _WB_SELECT_CLASSES}),
+        help_text=_("Какое поле цены использовать при импорте и расчёте «цены от»."),
+    )
 
 
 @admin.register(PortfolioProject)
@@ -517,12 +554,29 @@ class PortfolioProjectAdmin(ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(ModelAdmin):
-    list_display = ("name", "rating", "is_published", "sort_order", "created_at")
-    list_filter = ("is_published", "rating")
+    list_display = ("name", "city", "reviewed_on", "is_moderated", "is_published", "sort_order", "created_at")
+    list_filter = ("is_published", "is_moderated", "publication_consent", "rating")
     ordering = ("sort_order", "-created_at")
-    search_fields = ("name", "text")
+    search_fields = ("name", "city", "text")
+    readonly_fields = ("submitted_from_site", "moderated_by", "moderated_at")
+    actions = ("approve_and_publish", "mark_moderated_only")
     fieldsets = (
-        (_("Блок отзывов на главной"), {"fields": ("name", "text", "rating", "is_published", "sort_order")}),
+        (
+            _("Блок отзывов на главной"),
+            {
+                "fields": (
+                    "name",
+                    "city",
+                    "reviewed_on",
+                    "text",
+                    "rating",
+                    "publication_consent",
+                    "is_moderated",
+                    "is_published",
+                    "sort_order",
+                )
+            },
+        ),
         (
             _("Медиа (опционально)"),
             {
@@ -530,7 +584,55 @@ class ReviewAdmin(ModelAdmin):
                 "description": _("Фото — только загрузка файла. Видео — ссылка на ролик (YouTube и т.п.)."),
             },
         ),
+        (
+            _("Модерация"),
+            {
+                "fields": ("submitted_from_site", "moderated_by", "moderated_at"),
+                "description": _("Публикация допускается только после подтверждения менеджером."),
+            },
+        ),
     )
+
+    def save_model(self, request, obj, form, change):
+        if obj.is_published and not obj.is_moderated:
+            obj.is_moderated = True
+        if obj.is_moderated and not obj.moderated_at:
+            obj.moderated_at = timezone.now()
+        if obj.is_moderated and obj.moderated_by_id is None and request.user.is_authenticated:
+            obj.moderated_by = request.user
+        super().save_model(request, obj, form, change)
+
+    @admin.action(description="Подтвердить и опубликовать выбранные")
+    def approve_and_publish(self, request, queryset):
+        now = timezone.now()
+        count = queryset.exclude(publication_consent=False).update(
+            is_moderated=True,
+            is_published=True,
+            moderated_at=now,
+            moderated_by=request.user if request.user.is_authenticated else None,
+        )
+        skipped = queryset.filter(publication_consent=False).count()
+        if skipped:
+            self.message_user(
+                request,
+                _(
+                    "Опубликовано %(count)s. Пропущено без согласия: %(skipped)s."
+                )
+                % {"count": count, "skipped": skipped},
+                level=messages.WARNING,
+            )
+            return
+        self.message_user(request, _("Опубликовано: %(count)s.") % {"count": count}, level=messages.SUCCESS)
+
+    @admin.action(description="Только подтвердить (без публикации)")
+    def mark_moderated_only(self, request, queryset):
+        now = timezone.now()
+        count = queryset.update(
+            is_moderated=True,
+            moderated_at=now,
+            moderated_by=request.user if request.user.is_authenticated else None,
+        )
+        self.message_user(request, _("Подтверждено: %(count)s.") % {"count": count}, level=messages.SUCCESS)
 
 
 @admin.register(BlogPost)

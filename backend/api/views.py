@@ -33,6 +33,7 @@ from .serializers import (
     ProductCategoryPublicSerializer,
     ProductDetailSerializer,
     ProductListSerializer,
+    ReviewSubmissionCreateSerializer,
     ReviewSerializer,
 )
 
@@ -105,6 +106,13 @@ class ReviewViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     queryset = Review.objects.filter(is_published=True).all()
     serializer_class = ReviewSerializer
+
+
+class ReviewSubmissionCreateView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LeadSubmissionThrottle]
+    queryset = Review.objects.all()
+    serializer_class = ReviewSubmissionCreateSerializer
 
 
 class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):

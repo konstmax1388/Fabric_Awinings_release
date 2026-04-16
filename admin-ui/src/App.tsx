@@ -37,6 +37,7 @@ import PortfolioList from './pages/portfolio/PortfolioList'
 import ReviewCreate from './pages/reviews/ReviewCreate'
 import ReviewEdit from './pages/reviews/ReviewEdit'
 import ReviewList from './pages/reviews/ReviewList'
+import ReviewModerationQueue from './pages/reviews/ReviewModerationQueue'
 import StaffDashboard from './pages/StaffDashboard'
 import CustomerProfileCreate from './pages/customers/CustomerProfileCreate'
 import CustomerProfileEdit from './pages/customers/CustomerProfileEdit'
@@ -61,6 +62,7 @@ export default function App() {
       <CustomRoutes>
         <Route path="home-content/sections/:slug" element={<HomeSectionPage />} />
         <Route path="home-content" element={<HomeContentHub />} />
+        <Route path="reviews/moderation" element={<ReviewModerationQueue />} />
       </CustomRoutes>
       <Resource
         name="portfolio-projects"

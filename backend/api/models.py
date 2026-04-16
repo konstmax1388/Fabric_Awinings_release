@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from .slug_utils import ensure_slug_from_title
@@ -228,8 +229,22 @@ class PortfolioProject(models.Model):
 
 class Review(models.Model):
     name = models.CharField("Имя", max_length=120)
+    city = models.CharField("Город", max_length=120, blank=True)
+    reviewed_on = models.DateField("Дата отзыва", null=True, blank=True)
     text = models.TextField("Текст")
     rating = models.PositiveSmallIntegerField("Оценка (1–5)", default=5)
+    publication_consent = models.BooleanField("Согласие на публикацию", default=False)
+    is_moderated = models.BooleanField("Проверено менеджером", default=False, db_index=True)
+    moderated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="moderated_reviews",
+        verbose_name="Кто подтвердил",
+    )
+    moderated_at = models.DateTimeField("Когда подтверждено", null=True, blank=True)
+    submitted_from_site = models.BooleanField("Отправлен с сайта", default=False, db_index=True)
     photo_file = models.ImageField(
         "Фото",
         upload_to="reviews/%Y/%m/",
@@ -238,7 +253,7 @@ class Review(models.Model):
         null=True,
     )
     video_url = models.URLField("Видео (URL)", max_length=2048, blank=True)
-    is_published = models.BooleanField("На сайте", default=True, db_index=True)
+    is_published = models.BooleanField("На сайте", default=False, db_index=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -249,6 +264,13 @@ class Review(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def clean(self):
+        super().clean()
+        if self.is_published and not self.publication_consent:
+            raise ValidationError({"publication_consent": "Без согласия клиента публиковать отзыв нельзя."})
+        if self.is_published and not self.is_moderated:
+            raise ValidationError({"is_moderated": "Сначала подтвердите отзыв менеджером."})
 
 
 class BlogPost(models.Model):

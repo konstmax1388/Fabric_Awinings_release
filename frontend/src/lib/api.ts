@@ -332,6 +332,8 @@ export async function fetchPortfolio(): Promise<PortfolioItem[]> {
 export type ReviewItem = {
   id: string
   name: string
+  city: string
+  reviewedOn: string
   text: string
   rating: number
   photo: string
@@ -354,6 +356,8 @@ export async function fetchReviews(): Promise<ReviewItem[]> {
         return {
           id: String(o.id ?? ''),
           name: o.name,
+          city: typeof o.city === 'string' ? o.city : '',
+          reviewedOn: typeof o.reviewedOn === 'string' ? o.reviewedOn : '',
           text: o.text,
           rating,
           photo: typeof o.photo === 'string' ? o.photo : '',
@@ -464,6 +468,28 @@ export async function postCallbackLead(body: Record<string, unknown>): Promise<b
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
+    })
+    return r.ok
+  } catch {
+    return false
+  }
+}
+
+export type ReviewSubmissionPayload = {
+  name: string
+  city: string
+  reviewedOn: string
+  text: string
+  publicationConsent: boolean
+  website?: string
+}
+
+export async function postReviewSubmission(body: ReviewSubmissionPayload): Promise<boolean> {
+  try {
+    const r = await fetch(`${apiBase()}/api/leads/review/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ ...body, website: body.website ?? '' }),
     })
     return r.ok
   } catch {

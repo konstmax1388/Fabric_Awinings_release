@@ -8,7 +8,6 @@ import {
   List,
   NumberField,
   SearchInput,
-  SelectInput,
   TextField,
   useListContext,
   useNotify,
@@ -17,13 +16,7 @@ import {
   useUpdateMany,
 } from 'react-admin'
 
-const BOOLEAN_FILTER_CHOICES = [
-  { id: '', name: 'Все' },
-  { id: 'true', name: 'Да' },
-  { id: 'false', name: 'Нет' },
-]
-
-function ReviewBulkActions() {
+function ReviewModerationBulkActions() {
   const { selectedIds, data } = useListContext()
   const notify = useNotify()
   const refresh = useRefresh()
@@ -101,48 +94,23 @@ function ReviewBulkActions() {
   )
 }
 
-export default function ReviewList() {
+export default function ReviewModerationQueue() {
   return (
     <List
-      sort={{ field: 'sortOrder', order: 'ASC' }}
-      filterDefaultValues={{ isModerated: 'false', isPublished: 'false' }}
-      filters={[
-        <SearchInput source="search" alwaysOn key="q" />,
-        <SelectInput
-          source="isModerated"
-          label="Подтвержден"
-          choices={BOOLEAN_FILTER_CHOICES}
-          alwaysOn
-          key="isModerated"
-        />,
-        <SelectInput
-          source="isPublished"
-          label="На сайте"
-          choices={BOOLEAN_FILTER_CHOICES}
-          alwaysOn
-          key="isPublished"
-        />,
-        <SelectInput
-          source="submittedFromSite"
-          label="Источник"
-          choices={[
-            { id: '', name: 'Все' },
-            { id: 'true', name: 'С сайта' },
-            { id: 'false', name: 'Внесен менеджером' },
-          ]}
-          key="submittedFromSite"
-        />,
-      ]}
+      resource="reviews"
+      title="Очередь модерации отзывов"
+      sort={{ field: 'createdAt', order: 'DESC' }}
+      filter={{ isModerated: 'false', isPublished: 'false' }}
+      filters={[<SearchInput source="search" alwaysOn key="q" />]}
     >
-      <Datagrid rowClick="edit" bulkActionButtons={<ReviewBulkActions />}>
+      <Datagrid rowClick="edit" bulkActionButtons={<ReviewModerationBulkActions />}>
         <TextField source="name" label="Имя" />
         <TextField source="city" label="Город" />
-        <DateField source="reviewedOn" label="Дата" />
+        <DateField source="reviewedOn" label="Дата отзыва" />
         <TextField source="rating" label="★" />
         <BooleanField source="publicationConsent" label="Согласие" />
         <BooleanField source="isModerated" label="Подтвержден" />
         <BooleanField source="isPublished" label="На сайте" />
-        <TextField source="videoUrl" label="Видео" />
         <NumberField source="sortOrder" label="Порядок" />
       </Datagrid>
     </List>
