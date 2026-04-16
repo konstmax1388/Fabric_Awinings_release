@@ -11,7 +11,7 @@ sudo apt install -y python3.12-venv python3-pip nginx mysql-client build-essenti
   pkg-config default-libmysqlclient-dev nodejs npm
 ```
 
-(Если `nodejs` старый — используйте **nvm** и LTS Node, как в dev.)
+**Важно:** витрина (Vite 8) требует **Node.js 20.19+ или 22.12+**. Системный пакет `nodejs` из apt часто даёт **18.x** — сборка упадёт. Используйте **nvm** (`nvm install 22 && nvm use 22`) или [NodeSource](https://github.com/nodesource/distributions) для **22.x**, затем в `frontend/`: `rm -rf node_modules && npm ci && npm run build`.
 
 ## 2. Код
 
