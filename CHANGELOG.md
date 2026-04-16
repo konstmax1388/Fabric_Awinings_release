@@ -3,6 +3,18 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [2.0.5a] — 2026-04-16
+
+### Добавлено
+
+- **Монорепо:** каталог **`admin-ui/`** (React Admin, Staff API), сервис **`admin-ui`** в **`docker-compose.yml`** (порт по умолчанию **17401**), том **`fabric_awnings_admin_ui_node_modules`**.
+- **CORS/CSRF:** в значения по умолчанию добавлены origin **localhost:17401** / **127.0.0.1:17401** для новой панели.
+- **Документация:** корневой **README** — структура монорепо, ссылка на репозиторий релиза **[Fabric_Awinings_release](https://github.com/konstmax1388/Fabric_Awinings_release)** и команды `git remote add release` / `git push`.
+
+### Изменено
+
+- **`.env.example`:** `FABRIC_ADMIN_UI_PORT`, комментарии к CORS/CSRF с **17401**.
+
 ## [2.0.4a] — 2026-04-14
 
 ### Добавлено

@@ -1,7 +1,7 @@
 {
   "name": "admin-ui",
   "private": true,
-  "version": "2.0.4-a",
+  "version": "2.0.5-a",
   "type": "module",
   "scripts": {
     "dev": "vite",
