@@ -1,10 +1,7 @@
-from datetime import timedelta
-
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
-from django.utils import timezone
 from rest_framework import serializers
 
 from .validators import (
@@ -221,13 +218,14 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewSubmissionCreateSerializer(serializers.ModelSerializer):
-    reviewedOn = serializers.DateField(source="reviewed_on")
+    """Публичная отправка отзыва: дату отзыва задаёт менеджер в админке (reviewed_on)."""
+
     publicationConsent = serializers.BooleanField(source="publication_consent")
     website = serializers.CharField(required=False, allow_blank=True, write_only=True, default="")
 
     class Meta:
         model = Review
-        fields = ("name", "city", "reviewedOn", "text", "publicationConsent", "website")
+        fields = ("name", "city", "text", "publicationConsent", "website")
 
     def validate_name(self, value: str) -> str:
         return clean_person_name(value)
@@ -248,9 +246,6 @@ class ReviewSubmissionCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: dict) -> dict:
         reject_honeypot(attrs)
-        reviewed_on = attrs.get("reviewed_on")
-        if reviewed_on and reviewed_on > timezone.localdate():
-            raise serializers.ValidationError({"reviewedOn": ["Дата не может быть в будущем"]})
         if not attrs.get("publication_consent"):
             raise serializers.ValidationError(
                 {"publicationConsent": ["Нужно согласие на публикацию отзыва"]}

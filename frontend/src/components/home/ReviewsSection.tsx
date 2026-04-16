@@ -40,7 +40,6 @@ export function ReviewsSection() {
   const [form, setForm] = useState({
     name: '',
     city: '',
-    reviewedOn: '',
     text: '',
     publicationConsent: false,
   })
@@ -67,7 +66,6 @@ export function ReviewsSection() {
     const ok = await postReviewSubmission({
       name: form.name.trim(),
       city: form.city.trim(),
-      reviewedOn: form.reviewedOn,
       text: form.text.trim(),
       publicationConsent: form.publicationConsent,
     })
@@ -76,7 +74,7 @@ export function ReviewsSection() {
       setSubmitErr('Не удалось отправить отзыв. Проверьте поля и попробуйте еще раз.')
       return
     }
-    setForm({ name: '', city: '', reviewedOn: '', text: '', publicationConsent: false })
+    setForm({ name: '', city: '', text: '', publicationConsent: false })
     setSubmitOk('Спасибо! Отзыв получен и отправлен менеджеру на модерацию.')
   }
 
@@ -179,14 +177,7 @@ export function ReviewsSection() {
             minLength={2}
             maxLength={120}
           />
-          <input
-            className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            type="date"
-            value={form.reviewedOn}
-            onChange={(e) => setForm((v) => ({ ...v, reviewedOn: e.target.value }))}
-            required
-          />
-          <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
+          <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm md:col-span-2">
             <input
               id="review-consent"
               type="checkbox"

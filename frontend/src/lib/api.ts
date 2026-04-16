@@ -478,7 +478,6 @@ export async function postCallbackLead(body: Record<string, unknown>): Promise<b
 export type ReviewSubmissionPayload = {
   name: string
   city: string
-  reviewedOn: string
   text: string
   publicationConsent: boolean
   website?: string
