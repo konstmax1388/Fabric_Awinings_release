@@ -3,6 +3,14 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [2.0.7a] — 2026-04-16
+
+### Добавлено
+
+- **Прод MySQL:** при заданных `DJANGO_MYSQL_*` в окружении Django использует **MySQL** (иначе SQLite); **`STATIC_ROOT`**, **`backend/requirements-prod.txt`** (mysqlclient, gunicorn).
+- **`backend/conftest.py`:** тесты не подхватывают MySQL из `.env` на машине разработчика.
+- **Деплой:** `.env.production.example`, `deploy/PRODUCTION-VPS.md`, примеры **systemd** и **nginx**.
+
 ## [2.0.6a] — 2026-04-16
 
 ### Добавлено

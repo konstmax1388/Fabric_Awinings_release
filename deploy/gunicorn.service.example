@@ -1,0 +1,18 @@
+[Unit]
+Description=Fabric Awnings Gunicorn
+After=network.target
+
+[Service]
+User=kasatkin_da
+Group=kasatkin_da
+WorkingDirectory=/var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend
+EnvironmentFile=/var/www/kasatkin_da/data/www/fabrika-tentov.ru/.env
+ExecStart=/var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/.venv/bin/gunicorn \
+  --bind 127.0.0.1:8001 \
+  --workers 3 \
+  --timeout 120 \
+  config.wsgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

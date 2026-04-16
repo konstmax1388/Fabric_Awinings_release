@@ -4,7 +4,7 @@
 
 **Снимок текущего стека, URL и важных решений (для продолжения работ / контекста ИИ):** [project-context.md](./project-context.md).  
 **Монорепо:** в корне `backend/`, `frontend/`, `staff-ui/`, `admin-ui/` (React Admin); релиз-репозиторий — см. корневой [README.md](../README.md) (раздел «Репозиторий (монорепо)»).  
-**Прод:** эта папка `docs/` на сервер не обязательна; исключения для rsync — [`deploy/rsync-exclude.txt`](../deploy/rsync-exclude.txt).
+**Прод:** эта папка `docs/` на сервер не обязательна; исключения для rsync — [`deploy/rsync-exclude.txt`](../deploy/rsync-exclude.txt). Выкладка VPS: [`deploy/PRODUCTION-VPS.md`](../deploy/PRODUCTION-VPS.md).
 
 ## Содержание
 

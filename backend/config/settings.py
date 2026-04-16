@@ -105,14 +105,32 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# Прод: MySQL 8.0.45 (utf8mb4) — см. docs/requirements.md §5. Пока без переключения по env: добавить ENGINE mysql + mysqlclient при деплое.
+# Прод: MySQL 8.x (utf8mb4) — задайте DJANGO_MYSQL_* (см. .env.example). Без них — SQLite для dev.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+_mysql_name = (os.environ.get("DJANGO_MYSQL_DATABASE") or "").strip()
+_mysql_user = (os.environ.get("DJANGO_MYSQL_USER") or "").strip()
+if _mysql_name and _mysql_user and "DJANGO_MYSQL_PASSWORD" in os.environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": _mysql_name,
+            "USER": _mysql_user,
+            "PASSWORD": os.environ.get("DJANGO_MYSQL_PASSWORD", ""),
+            "HOST": (os.environ.get("DJANGO_MYSQL_HOST") or "127.0.0.1").strip(),
+            "PORT": (os.environ.get("DJANGO_MYSQL_PORT") or "3306").strip(),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -211,6 +229,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

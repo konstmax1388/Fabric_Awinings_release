@@ -32,6 +32,8 @@ rsync -av --delete --exclude-from=deploy/rsync-exclude.txt ./ user@сервер:
 
 При деплое через **`git pull`** полный клон тянет и документацию — это только лишний объём на диске; критично не публиковать **секреты** в репозитории и не класть **`.env`** с прод-паролями в Git. Статику витрины и `admin-ui` на прод обычно отдают уже **собранные** `dist/` (сборка в CI или на сервере после `npm ci && npm run build`).
 
+**Прод на VPS (Nginx + Gunicorn + MySQL):** пошагово **[`deploy/PRODUCTION-VPS.md`](deploy/PRODUCTION-VPS.md)**; шаблон переменных — **[`.env.production.example`](.env.production.example)** (скопировать в `.env` только на сервере).
+
 ## Документация
 
 | Раздел | Файл |

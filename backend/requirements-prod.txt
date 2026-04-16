@@ -1,0 +1,4 @@
+# Прод (Linux): pip install -r requirements-prod.txt
+-r requirements.txt
+mysqlclient>=2.2,<3
+gunicorn>=23,<24
