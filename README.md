@@ -2,18 +2,25 @@
 
 Сайт производства **тентов на заказ**: лендинг, каталог, админка. Концепция — «лёгкая архитектура», продающий современный интерфейс.
 
-## Репозиторий
+## Репозиторий (монорепо)
 
-В репозитории **две части** основного стека:
+Один репозиторий — три клиентских части + API:
 
 | Каталог | Содержание |
 |---------|------------|
-| Корень (`frontend/`, `backend/`, `docker-compose.yml`, …) | Основной проект «Фабрика Тентов» (витрина, API, `staff-ui`). |
-| [`Fabric_Awinings_react_admin/`](Fabric_Awinings_react_admin/README.md) | Параллельный стек: витрина + API + React Admin под `/staff/` (отдельный `docker-compose`, порты в README внутри каталога). |
+| `backend/` | Django + DRF, Staff API `/api/staff/v1/`, Unfold, медиа |
+| `frontend/` | Витрина (Vite + React) |
+| `staff-ui/` | Панель на React Admin (legacy-порт в dev, см. README в каталоге) |
+| `admin-ui/` | **Новая** панель на React Admin — в Docker: **http://localhost:17401/admin/** (`FABRIC_ADMIN_UI_PORT`) |
 
-- **GitHub:** [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings)
-- **Клонирование:** `git clone https://github.com/konstmax1388/Fabric_Awinings.git`
-- **Ветки:** `main` — основная разработка; `release` — релизная линия (`origin/main`, `origin/release`).
+- **Разработка:** [github.com/konstmax1388/Fabric_Awinings](https://github.com/konstmax1388/Fabric_Awinings) — `git clone https://github.com/konstmax1388/Fabric_Awinings.git`
+- **Релиз / зеркало для деплоя (пустой репозиторий):** [github.com/konstmax1388/Fabric_Awinings_release](https://github.com/konstmax1388/Fabric_Awinings_release)  
+  После коммита в основном репозитории:  
+  `git remote add release https://github.com/konstmax1388/Fabric_Awinings_release.git`  
+  `git push -u release main`  
+  (или отдельная ветка `release`, если заведёте.)
+
+Каталог **`Fabric_Awinings_react_admin/`** в рабочей копии — исторический дубликат для экспериментов; целевой монорепо — корень с `admin-ui/`. Дубликат можно не переносить в `Fabric_Awinings_release` (удалить из индекса или не клонировать вложенную копию).
 
 ## Документация
 
@@ -64,20 +71,21 @@
 
    В PowerShell: `Copy-Item .env.example .env`
 
-2. Соберите и поднимите **frontend + API** (Django):
+2. Соберите и поднимите **API + витрина + admin-ui** (React Admin):
 
    ```bash
    docker compose up --build
    ```
 
-3. Откройте в браузере: **http://localhost:17300** (или `FABRIC_FRONTEND_PORT`).  
-   Проверка API: **http://localhost:18000/api/health/** (или `FABRIC_API_PORT`).
+3. Откройте в браузере: витрина **http://localhost:17300** (или `FABRIC_FRONTEND_PORT`); новая панель **http://localhost:17401/admin/** (или `FABRIC_ADMIN_UI_PORT`).  
+   Проверка API: **http://localhost:18000/api/health/** (или `FABRIC_API_PORT`).  
+   Только API + витрина без React-панели: `docker compose up api frontend`.
 
 4. Остановка: `Ctrl+C` в терминале или `docker compose down`.
 
 **Если Vite пишет, что не находит пакет (например `react-router-dom`):** при старте контейнера выполняется **`npm ci`** — зависимости подтягиваются в том `node_modules` по актуальному `package-lock.json`. Сделайте **`docker compose up --build`**. Если ошибка осталась: **`docker compose down -v`** (удалит том с `node_modules` этого проекта) и снова **`docker compose up --build`**.
 
-Имя проекта Compose задаётся в **`.env`** (`COMPOSE_PROJECT_NAME=fabric-awnings`), чтобы контейнеры и тома не пересекались с другими проектами. Том **`fabric_awnings_frontend_node_modules`** хранит `node_modules` внутри Docker — не затирается биндингом `./frontend:/app`.
+Имя проекта Compose задаётся в **`.env`** (`COMPOSE_PROJECT_NAME=fabric-awnings`), чтобы контейнеры и тома не пересекались с другими проектами. Тома **`fabric_awnings_frontend_node_modules`** и **`fabric_awnings_admin_ui_node_modules`** хранят `node_modules` внутри Docker — не затираются биндингом исходников.
 
 ### Локально без Docker
 

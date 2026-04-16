@@ -30,10 +30,10 @@ services:
       start_period: 90s
     environment:
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,0.0.0.0
-      # 17300 — витрина (frontend), 17301 — staff-ui (Vite), иначе CORS блокирует JWT / staff API
-      DJANGO_CORS_ALLOWED_ORIGINS: ${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:17300,http://127.0.0.1:17300,http://localhost:17301,http://127.0.0.1:17301}
+      # 17300 — витрина, 17301 — staff-ui, 17401 — admin-ui (React Admin), иначе CORS блокирует JWT / staff API
+      DJANGO_CORS_ALLOWED_ORIGINS: ${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:17300,http://127.0.0.1:17300,http://localhost:17301,http://127.0.0.1:17301,http://localhost:17401,http://127.0.0.1:17401}
       # Те же origin для CSRF (вход в /admin/ через прокси Vite с Origin localhost:17300)
-      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:17300,http://127.0.0.1:17300,http://localhost:17301,http://127.0.0.1:17301,http://localhost:18000,http://127.0.0.1:18000}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:17300,http://127.0.0.1:17300,http://localhost:17301,http://127.0.0.1:17301,http://localhost:17401,http://127.0.0.1:17401,http://localhost:18000,http://127.0.0.1:18000}
       # Только при DJANGO_DEBUG=true (по умолчанию в dev): вход в /admin/
       DJANGO_DEV_ADMIN_USERNAME: ${DJANGO_DEV_ADMIN_USERNAME:-dev}
       DJANGO_DEV_ADMIN_PASSWORD: ${DJANGO_DEV_ADMIN_PASSWORD:-devdev}
@@ -70,5 +70,28 @@ services:
     stdin_open: true
     tty: true
 
+  # React Admin (новая панель staff) — http://localhost:17401/admin/
+  admin-ui:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${FABRIC_ADMIN_UI_PORT:-17401}:17401"
+    volumes:
+      - ./admin-ui:/app
+      - fabric_awnings_admin_ui_node_modules:/app/node_modules
+    environment:
+      DOCKER: "true"
+      BROWSER: "none"
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_PROXY_TARGET: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
 volumes:
   fabric_awnings_frontend_node_modules:
+  fabric_awnings_admin_ui_node_modules:
