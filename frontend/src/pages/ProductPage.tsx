@@ -197,7 +197,7 @@ export function ProductPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-[1280px] px-4 py-20 md:px-6">
+        <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
           <p className="font-body text-text-muted">Загрузка…</p>
         </main>
         <SiteFooter />
@@ -209,7 +209,7 @@ export function ProductPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-[1280px] px-4 py-20 md:px-6">
+        <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
           <h1 className="font-heading text-3xl font-bold text-text">Товар не найден</h1>
           <p className="mt-3 font-body text-text-muted">
             Позиция отсутствует в каталоге или ссылка устарела.
@@ -248,7 +248,7 @@ export function ProductPage() {
         <script type="application/ld+json">{productJsonLd}</script>
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto max-w-[1280px] px-4 py-10 md:px-6 md:py-14">
+      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-10 md:px-6 md:py-14">
         <motion.div
           initial={reduce ? false : fadeUpHidden}
           animate={reduce ? undefined : fadeUpVisible}
@@ -280,11 +280,11 @@ export function ProductPage() {
               aspect={productPhotoAspect}
             />
 
-            <div className="space-y-8 lg:sticky lg:top-28">
+            <div className="min-w-0 space-y-8 lg:sticky lg:top-28">
               <div>
                 <p className="font-body text-sm font-medium text-accent">{categoryLabel(product)}</p>
                 <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />
-                <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                <h1 className="mt-2 break-words font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
                   {product.title}
                 </h1>
                 <div className="mt-5 inline-flex items-baseline gap-2 rounded-2xl bg-accent/10 px-4 py-2.5">

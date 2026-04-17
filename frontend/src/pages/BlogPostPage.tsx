@@ -29,7 +29,7 @@ export function BlogPostPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-[720px] px-4 py-16 md:px-6">
+        <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
           <p className="font-body text-text-muted">Загрузка…</p>
         </main>
         <SiteFooter />
@@ -44,7 +44,7 @@ export function BlogPostPage() {
           <title>Статья не найдена — Фабрика Тентов</title>
         </Helmet>
         <SiteHeader />
-        <main className="mx-auto max-w-[720px] px-4 py-16 md:px-6">
+        <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
           <h1 className="font-heading text-3xl font-bold text-text">Статья не найдена</h1>
           <Link to="/blog" className="mt-8 inline-block font-medium text-accent hover:underline">
             ← К списку блога
@@ -69,10 +69,10 @@ export function BlogPostPage() {
         <meta property="og:title" content={post.seo?.pageTitle ?? post.title} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto max-w-[720px] px-4 py-16 md:px-6">
-        <article>
+      <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
+        <article className="min-w-0">
           <time className="font-body text-sm text-text-subtle">{post.date}</time>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-text md:text-4xl">{post.title}</h1>
+          <h1 className="mt-2 break-words font-heading text-3xl font-bold text-text md:text-4xl">{post.title}</h1>
           {post.img ? (
             <OptimizedImage
               src={post.img}
@@ -84,7 +84,7 @@ export function BlogPostPage() {
             />
           ) : null}
           <div
-            className="mt-8 space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
+            className="cms-html mt-8 space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
             dangerouslySetInnerHTML={{ __html: post.body }}
           />
         </article>

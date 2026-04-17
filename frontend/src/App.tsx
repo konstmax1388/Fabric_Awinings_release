@@ -6,6 +6,7 @@ import { CartProvider } from './context/CartProvider'
 import { YandexMetrika } from './components/analytics/YandexMetrika'
 import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
+import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RequireAuth } from './pages/account/RequireAuth'
 
@@ -55,6 +56,7 @@ function RouteFallback() {
 function AppShell() {
   return (
     <SiteSettingsProvider>
+      <ScrollToTopOnRoute />
       <BrandingFavicon />
       <YandexMetrika />
       <AuthProvider>

@@ -77,7 +77,7 @@ export function WhyUsSection() {
   return (
     <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
       <motion.div
-        className="mx-auto max-w-[1280px] px-4 md:px-6"
+        className="mx-auto min-w-0 max-w-[1280px] px-4 md:px-6"
         initial={reduce ? false : fadeUpHidden}
         whileInView={reduce ? undefined : fadeUpVisible}
         viewport={{ once: true, amount: 0.1 }}
@@ -86,9 +86,9 @@ export function WhyUsSection() {
         <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
         <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
 
-        <div className="mt-10 grid grid-cols-3 gap-4 divide-x divide-border-light rounded-2xl bg-surface px-4 py-8 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:gap-8 md:px-10">
+        <div className="mt-10 flex flex-col gap-6 rounded-2xl bg-surface px-4 py-8 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] sm:flex-row sm:items-stretch sm:justify-center sm:gap-0 sm:divide-x sm:divide-border-light md:gap-8 md:px-10">
           {stats.map((s) => (
-            <div key={s.label} className="px-2 text-center md:px-6">
+            <div key={s.label} className="min-w-0 flex-1 px-0 text-center sm:px-4 md:px-6">
               <p className="font-body text-2xl font-bold tabular-nums tracking-tight text-text md:text-4xl lg:text-5xl">
                 <AnimatedCounter value={s.value} suffix={s.suffix} />
               </p>

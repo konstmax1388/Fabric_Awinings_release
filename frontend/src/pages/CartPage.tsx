@@ -12,7 +12,7 @@ export function CartPage() {
         <meta name="description" content="Состав заказа и оформление заявки." />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[60vh] max-w-[1280px] flex-col px-4 py-8 md:px-6 md:py-12">
+      <main className="mx-auto flex min-h-[60vh] min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-8 md:px-6 md:py-12">
         <nav className="font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная

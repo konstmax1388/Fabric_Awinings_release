@@ -108,7 +108,7 @@ export function PickupMapModal({ open, onClose, title, address, lat: latIn, lng:
             role="dialog"
             aria-modal="true"
             aria-labelledby={headingId}
-            className="relative z-[101] m-0 flex max-h-[min(92dvh,820px)] w-full max-w-[min(100vw,720px)] flex-col overflow-hidden rounded-t-3xl border border-border-light bg-surface shadow-2xl sm:m-auto sm:rounded-3xl"
+            className="relative z-[101] m-0 flex max-h-[min(92dvh,820px)] w-full max-w-[min(100dvw,720px)] flex-col overflow-hidden rounded-t-3xl border border-border-light bg-surface shadow-2xl sm:m-auto sm:max-w-[720px] sm:rounded-3xl"
             initial={reduce ? undefined : { opacity: 0, y: 24, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? undefined : { opacity: 0, y: 16, scale: 0.98 }}

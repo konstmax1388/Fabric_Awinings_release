@@ -21,7 +21,7 @@ export function ContactsPage() {
         <meta name="description" content={metaDescription} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto max-w-[1280px] px-4 py-12 md:px-6">
+      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-12 md:px-6">
         <ContactsContentBlock titleAs="h1" />
         <Link to="/" className="mt-8 inline-block font-medium text-accent hover:underline">
           {contactsBackLinkLabel}

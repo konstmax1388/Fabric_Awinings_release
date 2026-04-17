@@ -25,11 +25,17 @@
 html {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
+  max-width: 100%;
+  overflow-x: clip;
   background-color: var(--color-bg-base);
   color: var(--color-text);
   line-height: 1.5;
@@ -37,4 +43,39 @@ body {
 
 #root {
   min-height: 100dvh;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Сетки / flex не сжимают контент без min-width: 0 — типичная причина горизонтального скролла */
+main {
+  min-width: 0;
+}
+
+/* HTML из админки (блог, описание товара): картинки и таблицы не вылезают за экран */
+.cms-html {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.cms-html :is(img, video, iframe, svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+.cms-html pre {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: pre;
+  word-break: normal;
+}
+
+.cms-html table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

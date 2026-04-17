@@ -266,8 +266,8 @@ export function CheckoutPage() {
         <meta name="description" content="Контакты, доставка, подтверждение заказа." />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-h-[60vh] w-full max-w-[1280px] flex-col px-4 py-10 md:px-6 md:py-14">
-        <nav className="font-body text-sm text-text-muted">
+      <main className="mx-auto flex min-h-[60vh] w-full min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-10 md:px-6 md:py-14">
+        <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
           </Link>
@@ -298,7 +298,7 @@ export function CheckoutPage() {
           </div>
         )}
 
-        <div className="mx-auto mt-10 w-full max-w-2xl sm:max-w-3xl lg:max-w-5xl">
+        <div className="mx-auto mt-10 w-full min-w-0 max-w-2xl sm:max-w-3xl lg:max-w-5xl">
           {step === 1 && (
             <form onSubmit={goNextFromContacts} className="flex flex-col">
               <h1 className="font-heading text-2xl font-semibold text-text">Контактные данные</h1>

@@ -44,8 +44,8 @@ export function AccountLoginPage() {
         <title>Вход — Фабрика Тентов</title>
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-h-[60vh] max-w-lg px-4 py-10 md:mx-auto md:max-w-[1280px] md:px-6 md:py-14">
-        <nav className="font-body text-sm text-text-muted">
+      <main className="mx-auto min-h-[60vh] min-w-0 max-w-lg overflow-x-clip px-4 py-10 md:mx-auto md:max-w-[1280px] md:px-6 md:py-14">
+        <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
           </Link>

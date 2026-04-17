@@ -22,7 +22,7 @@ export function AccountLayout() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto min-h-[60vh] max-w-[1280px] px-4 py-10 md:px-6 md:py-14">
+      <main className="mx-auto min-h-[60vh] min-w-0 max-w-[1280px] overflow-x-clip px-4 py-10 md:px-6 md:py-14">
         <nav className="font-body text-sm text-text-muted">
           <NavLink to="/" className="hover:text-accent">
             Главная

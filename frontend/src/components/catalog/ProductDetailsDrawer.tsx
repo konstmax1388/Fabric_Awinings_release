@@ -96,8 +96,10 @@ export function ProductDetailsDrawer({
                         key={`${row.name}-${i}`}
                         className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2.5 first:pt-0"
                       >
-                        <dt className="text-text-muted">{row.name}</dt>
-                        <dd className="max-w-[min(100%,18rem)] text-right font-medium text-text">
+                        <dt className="min-w-0 max-w-[min(100%,14rem)] break-words text-text-muted sm:max-w-none">
+                          {row.name}
+                        </dt>
+                        <dd className="min-w-0 max-w-full break-words text-right font-medium text-text sm:max-w-[min(100%,18rem)]">
                           {row.value}
                         </dd>
                       </div>
@@ -117,7 +119,7 @@ export function ProductDetailsDrawer({
               </p>
               {descriptionHtml ? (
                 <div
-                  className="product-description mt-4 font-body text-base leading-relaxed text-text-muted [&_p]:mb-3 [&_p:last-child]:mb-0 [&_br]:leading-normal"
+                  className="cms-html product-description mt-4 font-body text-base leading-relaxed text-text-muted [&_p]:mb-3 [&_p:last-child]:mb-0 [&_br]:leading-normal"
                   dangerouslySetInnerHTML={{ __html: descriptionHtml }}
                 />
               ) : (

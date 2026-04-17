@@ -79,7 +79,7 @@ export function HomePage() {
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>
       <SiteHeader />
-      <main>
+      <main className="min-w-0 overflow-x-clip">
         <div className="px-0 pt-4 md:pt-6">
           <HeroSection />
         </div>

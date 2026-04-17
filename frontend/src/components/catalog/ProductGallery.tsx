@@ -24,7 +24,7 @@ export function ProductGallery({ images, title, aspect }: Props) {
   const mainFrame = productGalleryMainFrameClass(aspect)
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="overflow-hidden rounded-2xl border border-border-light bg-bg-base shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)]">
         <div className={mainFrame}>
           {safe[active] ? (

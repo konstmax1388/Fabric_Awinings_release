@@ -35,7 +35,7 @@ export function ContactsContentBlock({ titleAs = 'h1' }: Props) {
         </p>
       ) : null}
       {legal.trim() ? <p className="mt-4 font-body text-text-muted">{legal}</p> : null}
-      <ul className="mt-6 space-y-2 font-body text-text">
+      <ul className="mt-6 space-y-2 break-words font-body text-text">
         <li>
           <a href={phoneHref} className="text-accent hover:underline">
             {phone}

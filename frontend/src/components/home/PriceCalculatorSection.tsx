@@ -117,7 +117,7 @@ export function PriceCalculatorSection() {
   return (
     <motion.section
       id="calculator"
-      className="mx-auto max-w-[1280px] scroll-mt-24 px-4 py-12 md:px-6 md:py-24"
+      className="mx-auto min-w-0 max-w-[1280px] scroll-mt-24 px-4 py-12 md:px-6 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.1 }}

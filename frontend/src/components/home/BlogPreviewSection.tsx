@@ -36,7 +36,7 @@ export function BlogPreviewSection() {
   if (loading) {
     return (
       <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
-        <div className="mx-auto max-w-[1280px] px-4 md:px-6">
+        <div className="mx-auto min-w-0 max-w-[1280px] px-4 md:px-6">
           <p className="font-body text-text-muted">{loadingText}</p>
         </div>
       </section>
@@ -48,7 +48,7 @@ export function BlogPreviewSection() {
   return (
     <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
       <motion.div
-        className="mx-auto max-w-[1280px] px-4 md:px-6"
+        className="mx-auto min-w-0 max-w-[1280px] px-4 md:px-6"
         initial={reduce ? false : fadeUpHidden}
         whileInView={reduce ? undefined : fadeUpVisible}
         viewport={{ once: true, amount: 0.08 }}

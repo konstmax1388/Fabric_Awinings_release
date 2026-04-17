@@ -59,14 +59,16 @@ export function ProblemSolutionSection() {
 
   return (
     <motion.section
-      className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
+      className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.12 }}
       transition={easeOutSoft}
     >
       {heading.trim() ? (
-        <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+        <h2 className="break-words font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+          {heading}
+        </h2>
       ) : null}
       {subheading.trim() ? (
         <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>

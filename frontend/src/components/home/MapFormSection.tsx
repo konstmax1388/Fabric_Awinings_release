@@ -83,7 +83,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
 
   return (
     <motion.section
-      className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
+      className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.06 }}
@@ -92,7 +92,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
       {showHeading ? <ContactsContentBlock titleAs="h2" /> : null}
 
       <motion.div
-        className={`grid gap-8 lg:grid-cols-2 lg:gap-12 ${showHeading ? 'mt-10' : ''}`}
+        className={`grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-12 ${showHeading ? 'mt-10' : ''}`}
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
@@ -104,7 +104,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
             reduce ? undefined : { y: -2, boxShadow: '0 16px 32px -12px rgba(0,0,0,0.1)' }
           }
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="overflow-hidden rounded-[24px] border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+          className="min-w-0 overflow-hidden rounded-[24px] border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
         >
           {mapEmbed.kind === 'constructor' ? (
             <YandexConstructorMap
@@ -127,7 +127,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
 
         <motion.form
           variants={staggerItem}
-          className="rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-8"
+          className="min-w-0 rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-8"
           onSubmit={handleSubmit}
         >
           {done ? (

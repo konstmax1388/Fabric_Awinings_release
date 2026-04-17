@@ -35,7 +35,7 @@ export function FeaturedProductsSection() {
 
   if (loading) {
     return (
-      <section className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+      <section className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
         <p className="font-body text-text-muted">{loadingText}</p>
       </section>
     )
@@ -44,7 +44,7 @@ export function FeaturedProductsSection() {
   if (products.length === 0) return null
 
   return (
-    <section className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+    <section className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
       <motion.div
         initial={reduce ? false : fadeUpHidden}
         whileInView={reduce ? undefined : fadeUpVisible}

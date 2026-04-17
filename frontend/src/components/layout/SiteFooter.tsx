@@ -31,7 +31,7 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-border-light bg-bg-base">
-      <div className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 md:py-16">
+      <div className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,2.1fr)_minmax(0,0.72fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="min-w-0 lg:pr-2">
             <p className="font-heading text-xl font-semibold text-text">{siteName}</p>

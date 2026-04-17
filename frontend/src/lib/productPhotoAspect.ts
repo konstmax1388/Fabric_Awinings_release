@@ -34,7 +34,7 @@ export function productGalleryThumbClass(aspect: ProductPhotoAspect, active: boo
 
 /** Сетка страницы товара: колонка с галереей уже в режиме портрета. */
 export function productPageGridClass(aspect: ProductPhotoAspect): string {
-  const base = 'mt-8 grid items-start gap-10 lg:gap-14'
+  const base = 'mt-8 grid min-w-0 items-start gap-10 lg:gap-14'
   if (aspect === 'square') {
     return `${base} lg:grid-cols-2`
   }

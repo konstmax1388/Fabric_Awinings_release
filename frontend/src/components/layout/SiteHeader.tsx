@@ -89,7 +89,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-light bg-bg-base/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-4 py-4 md:px-6">
+      <div className="mx-auto flex min-w-0 max-w-[1280px] items-center justify-between gap-3 px-4 py-4 md:gap-4 md:px-6">
         <Link
           to="/"
           className="flex min-w-0 max-w-[min(100%,220px)] items-center gap-2 md:max-w-[280px]"
@@ -194,7 +194,7 @@ export function SiteHeader() {
             />
             <motion.div
               key="mobile-menu-panel"
-              className="fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100vw,400px)] flex-col md:hidden"
+              className="fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100dvw,400px)] flex-col md:hidden"
               initial={reduce ? undefined : { x: '100%' }}
               animate={{ x: 0, opacity: 1 }}
               exit={reduce ? undefined : { x: '100%' }}

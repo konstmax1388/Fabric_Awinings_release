@@ -33,7 +33,7 @@ export function PortfolioPage() {
         <meta name="description" content="Реализованные проекты: тенты, навесы, террасы." />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto max-w-[1280px] px-4 py-16 md:px-6">
+      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-16 md:px-6">
         <motion.div
           initial={reduce ? false : fadeUpHidden}
           animate={reduce ? undefined : fadeUpVisible}

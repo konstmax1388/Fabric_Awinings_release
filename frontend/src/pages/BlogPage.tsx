@@ -33,7 +33,7 @@ export function BlogPage() {
         />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto max-w-[1280px] px-4 py-16 md:px-6">
+      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-16 md:px-6">
         <h1 className="font-heading text-4xl font-bold text-text md:text-5xl">Блог</h1>
         <p className="mt-4 max-w-xl font-body text-text-muted">Материалы для заказчиков и монтажников.</p>
 
