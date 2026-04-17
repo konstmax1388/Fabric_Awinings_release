@@ -2,7 +2,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 
 const INTRO_SEEN_KEY = 'fabric_intro_seen_v2'
-const INTRO_DURATION_MS = 5600
+const INTRO_DURATION_MS = 7600
+const INTRO_REDUCED_DURATION_MS = 1600
 
 export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   const reduce = useReducedMotion()
@@ -30,7 +31,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (reduce && visible) {
-      const t = window.setTimeout(() => setVisible(false), 1200)
+      const t = window.setTimeout(() => setVisible(false), INTRO_REDUCED_DURATION_MS)
       return () => window.clearTimeout(t)
     }
   }, [reduce])
@@ -39,21 +40,21 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
     if (!visible) return
     const t = window.setTimeout(
       () => setVisible(false),
-      reduce ? 1200 : INTRO_DURATION_MS,
+      reduce ? INTRO_REDUCED_DURATION_MS : INTRO_DURATION_MS,
     )
     return () => window.clearTimeout(t)
   }, [reduce, visible])
 
   useEffect(() => {
     if (!visible || reduce) return
-    const marks = [0, 1700, 3400]
+    const marks = [0, 2600, 5200]
     setStageIdx(0)
     const timers = marks.map((ms, idx) => window.setTimeout(() => setStageIdx(idx), ms))
     return () => timers.forEach((t) => window.clearTimeout(t))
   }, [reduce, visible])
 
   const stageTransition = useMemo(
-    () => ({ duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }),
+    () => ({ duration: 1.15, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }),
     [],
   )
 
@@ -64,9 +65,9 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
         {visible ? (
           <motion.div
             className="fixed inset-0 z-[400] flex items-center justify-center bg-[#0f0f10]"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.5 } }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 1.2, ease: [0.4, 0, 0.2, 1] } }}
             role="dialog"
             aria-label="Загрузка сайта"
           >
@@ -87,7 +88,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.2, ease: 'easeInOut' }}
+                transition={{ duration: 1.7, ease: 'easeInOut' }}
               />
               {/* truck */}
               <motion.rect
@@ -101,7 +102,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 strokeWidth="2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.9, delay: 0.45 }}
+                transition={{ duration: 1.2, delay: 0.55 }}
               />
               <motion.circle
                 cx="205"
@@ -112,7 +113,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 strokeWidth="2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.65 }}
+                transition={{ duration: 0.9, delay: 0.85 }}
               />
               <motion.circle
                 cx="295"
@@ -123,7 +124,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 strokeWidth="2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
+                transition={{ duration: 0.9, delay: 0.95 }}
               />
               {/* terrace */}
               <motion.path
@@ -133,7 +134,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.9, delay: 0.55 }}
+                transition={{ duration: 1.2, delay: 0.75 }}
               />
               {/* hangar */}
               <motion.path
@@ -143,7 +144,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.7 }}
+                transition={{ duration: 1.35, delay: 0.95 }}
               />
               <motion.path
                 d="M180 510 L300 510 L340 455 L505 455 L540 510"
@@ -152,7 +153,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.3, delay: 0.2, ease: 'easeInOut' }}
+                transition={{ duration: 1.75, delay: 0.28, ease: 'easeInOut' }}
               />
               <motion.path
                 d="M730 520 L1050 520 L1080 460 L790 460 Z"
@@ -161,7 +162,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.4, delay: 0.35, ease: 'easeInOut' }}
+                transition={{ duration: 1.85, delay: 0.45, ease: 'easeInOut' }}
               />
 
               <motion.path
@@ -169,7 +170,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="url(#fabricGradient)"
                 initial={{ opacity: 0, y: -36, scaleY: 0.9 }}
                 animate={{ opacity: 0.95, y: 0, scaleY: 1 }}
-                transition={{ duration: 1.15, delay: 0.9, ease: [0.18, 1, 0.3, 1] }}
+                transition={{ duration: 1.5, delay: 1.25, ease: [0.18, 1, 0.3, 1] }}
               />
               <motion.path
                 d="M170 420 C350 300, 650 270, 1040 420"
@@ -178,7 +179,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 fill="none"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 1.45 }}
+                transition={{ duration: 0.75, delay: 2.15 }}
               />
 
               {[
@@ -195,7 +196,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                   fill="#e87a00"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: [0.5, 1.22, 1] }}
-                  transition={{ duration: 0.55, delay: 1.6 + idx * 0.14 }}
+                  transition={{ duration: 0.75, delay: 2.4 + idx * 0.2 }}
                 />
               ))}
 
@@ -212,7 +213,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               className="absolute top-[14vh] flex flex-wrap items-center justify-center gap-2 text-[11px] md:text-xs"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.45, delay: 0.85 }}
+              transition={{ duration: 0.75, delay: 1.45 }}
             >
               <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Транспорт</span>
               <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Террасы</span>
@@ -223,7 +224,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               className="absolute bottom-[10vh] text-center"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 2.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.05, delay: 2.9, ease: [0.22, 1, 0.36, 1] }}
             >
               <p className="font-heading text-3xl font-semibold text-white md:text-4xl">Фабрика Тентов</p>
               <p className="mt-2 font-body text-sm text-white/70 md:text-base">
