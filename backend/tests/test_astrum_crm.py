@@ -20,7 +20,7 @@ def _minimal_order() -> CartOrder:
         order_ref="FAB-TEST-1",
         customer_name="Тест Тестов",
         customer_phone="+79991234567",
-        customer_email="t@example.com",
+        customer_email="buyer@yandex.ru",
         lines=[
             {
                 "productId": "42",
@@ -118,7 +118,7 @@ def test_build_astrum_payload():
         order_ref="FAB-TEST-1",
         customer_name="Тест Тестов",
         customer_phone="+79991234567",
-        customer_email="t@example.com",
+        customer_email="buyer@mail.ru",
         lines=[
             {
                 "productId": str(pr.pk),
@@ -147,13 +147,38 @@ def test_build_astrum_payload():
     assert p["contact_behavior"] == "SELECT_EXISTING"
     assert p["contact"]["name"] == "Тест Тестов"
     assert p["contact"]["phone"] == "+79991234567"
-    assert p["contact"]["email"] == "t@example.com"
+    assert p["contact"]["email"] == "buyer@mail.ru"
     assert "FAB-TEST-1" in p["deal"]["title"]
     assert len(p["deal"]["products"]) == 1
     assert p["deal"]["products"][0]["product_name"] == "Тент тестовый"
     assert p["deal"]["products"][0]["price"] == 15000
     assert p["deal"]["products"][0]["quantity"] == 2
     assert p["deal"]["products"][0]["product_id"] == 42
+
+
+@pytest.mark.django_db
+def test_build_astrum_payload_omits_example_com_email():
+    """Astrum отклоняет example.com и подобные домены — в contact не передаём email."""
+    order = CartOrder.objects.create(
+        order_ref="FAB-TEST-EX",
+        customer_name="Тест",
+        customer_phone="+79991234567",
+        customer_email="user@example.com",
+        lines=[{"title": "Товар", "priceFrom": 100, "qty": 1}],
+        total_approx=100,
+    )
+    cfg = AstrumCrmRuntimeConfig(
+        api_key="k",
+        api_url="https://example.com/api/order",
+        assigned_default=1,
+        contact_behavior="SELECT_EXISTING",
+        entity_behavior="CREATE_ANYWAY",
+        deal_title_prefix="Заказ",
+        timeout=15,
+    )
+    p = build_astrum_payload(order, cfg)
+    assert "email" not in p["contact"]
+    assert p["contact"]["phone"] == "+79991234567"
 
 
 @pytest.mark.django_db

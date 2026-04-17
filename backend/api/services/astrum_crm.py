@@ -17,6 +17,8 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 
 from api.models import CartOrder
 from api.services.bitrix_product_map import resolve_bitrix_catalog_id_for_cart_line
@@ -24,6 +26,42 @@ from api.services.bitrix_product_map import resolve_bitrix_catalog_id_for_cart_l
 logger = logging.getLogger(__name__)
 
 DEFAULT_ASTRUM_API_URL = "https://app-5.astrum.agency/api/order"
+
+# Домены, на которых Astrum (и MX-проверки) дают 400 «does not accept email» — не шлём в contact.email.
+_BLOCKED_CRM_EMAIL_DOMAINS = frozenset(
+    {
+        "example.com",
+        "example.org",
+        "example.net",
+        "example",  # TLD .example (RFC 6761)
+        "invalid",
+        "localhost",
+        "test",
+    }
+)
+_email_validator = EmailValidator()
+
+
+def _email_acceptable_for_astrum_contact(raw: str) -> bool:
+    """True — можно передать email в Astrum; иначе лучше только телефон + имя."""
+    addr = (raw or "").strip()
+    if not addr or len(addr) > 254:
+        return False
+    try:
+        _email_validator(addr)
+    except ValidationError:
+        return False
+    if "@" not in addr:
+        return False
+    _, _, domain = addr.rpartition("@")
+    d = domain.lower().strip()
+    if not d:
+        return False
+    if d in _BLOCKED_CRM_EMAIL_DOMAINS:
+        return False
+    if d.endswith(".example") or d.endswith(".localhost"):
+        return False
+    return True
 
 
 @dataclass(frozen=True)
@@ -135,8 +173,16 @@ def build_astrum_payload(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> dict[
         "name": order.customer_name.strip()[:250],
         "phone": order.customer_phone.strip()[:80],
     }
-    if order.customer_email:
-        contact["email"] = order.customer_email.strip()[:250]
+    ce = (order.customer_email or "").strip()
+    if ce:
+        if _email_acceptable_for_astrum_contact(ce):
+            contact["email"] = ce[:250]
+        else:
+            logger.info(
+                "astrum_crm: заказ %s — email не отправляем в CRM (недопустимый для посредника): %s",
+                order.order_ref,
+                ce[:80],
+            )
 
     return {
         "assigned_default": cfg.assigned_default,
