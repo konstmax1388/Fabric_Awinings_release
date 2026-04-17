@@ -17,6 +17,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   })
   const [ready, setReady] = useState(() => typeof window === 'undefined')
   const [stageIdx, setStageIdx] = useState(0)
+  const [isFinishing, setIsFinishing] = useState(false)
 
   useEffect(() => {
     try {
@@ -38,12 +39,19 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!visible) return
+    setIsFinishing(false)
     const t = window.setTimeout(
-      () => setVisible(false),
+      () => setIsFinishing(true),
       reduce ? INTRO_REDUCED_DURATION_MS : INTRO_DURATION_MS,
     )
     return () => window.clearTimeout(t)
   }, [reduce, visible])
+
+  useEffect(() => {
+    if (!visible || !isFinishing) return
+    const t = window.setTimeout(() => setVisible(false), reduce ? 700 : 1200)
+    return () => window.clearTimeout(t)
+  }, [isFinishing, reduce, visible])
 
   useEffect(() => {
     if (!visible || reduce) return
@@ -60,13 +68,26 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div style={{ visibility: ready ? 'visible' : 'hidden' }}>{children}</div>
+      <motion.div
+        style={{ visibility: ready ? 'visible' : 'hidden' }}
+        initial={false}
+        animate={{ opacity: visible ? (isFinishing ? 1 : 0) : 1 }}
+        transition={{ duration: reduce ? 0.35 : 1.15, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {children}
+      </motion.div>
       <AnimatePresence>
         {visible ? (
           <motion.div
             className="fixed inset-0 z-[400] flex items-center justify-center bg-[#0f0f10]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] } }}
+            animate={{
+              opacity: isFinishing ? 0 : 1,
+              transition: {
+                duration: isFinishing ? (reduce ? 0.55 : 1.15) : 0.95,
+                ease: [0.22, 1, 0.36, 1],
+              },
+            }}
             exit={{ opacity: 0, transition: { duration: 1.2, ease: [0.4, 0, 0.2, 1] } }}
             role="dialog"
             aria-label="Загрузка сайта"
