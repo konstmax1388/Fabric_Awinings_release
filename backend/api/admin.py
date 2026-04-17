@@ -763,7 +763,10 @@ class CalculatorLeadAdmin(ModelAdmin):
 
 
 def _format_cart_order_rub(n: int | None) -> str:
-    v = int(n or 0)
+    try:
+        v = int(n or 0)
+    except (TypeError, ValueError):
+        v = 0
     spaced = f"{v:,}".replace(",", " ")
     return f"{spaced} руб."
 
@@ -868,6 +871,21 @@ class CartOrderAdmin(ModelAdmin):
         ),
         (_("Письма и текст для клиента"), {"fields": ("manager_letter", "client_ack"), "classes": ("collapse",)}),
     )
+
+    def get_queryset(self, request):
+        """На списке не тянем JSON/длинные тексты — легче для БД и обход битого JSON в строках, не нужных в таблице."""
+        qs = super().get_queryset(request).select_related("user")
+        url_name = getattr(request.resolver_match, "url_name", "") or ""
+        if url_name == f"{self.opts.app_label}_{self.opts.model_name}_changelist":
+            return qs.defer(
+                "lines",
+                "manager_letter",
+                "client_ack",
+                "customer_comment",
+                "delivery_snapshot",
+                "acquiring_payload",
+            )
+        return qs
 
     @display(description=_("Сумма"), ordering="total_approx")
     def list_total_rub(self, obj: CartOrder) -> str:
@@ -976,39 +994,46 @@ class CartOrderAdmin(ModelAdmin):
 
     @display(description=_("CRM (Битрикс24)"), ordering="bitrix_sync_status")
     def crm_list_column(self, obj: CartOrder) -> str:
-        label = obj.get_bitrix_sync_status_display()
-        css, icon = self._crm_status_style(obj.bitrix_sync_status)
-        badge = format_html(
-            '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium {}">'
-            '<span class="material-symbols-outlined text-[14px] leading-none">{}</span>{}</span>',
-            css,
-            icon,
-            escape(label),
-        )
-        parts = [badge]
-        eid = (obj.bitrix_entity_id or "").strip()
-        if eid and obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED:
-            parts.append(
-                format_html(
-                    '<div class="mt-1 max-w-[14rem] truncate text-xs text-font-subtle-light dark:text-font-subtle-dark" title="{}">ID: {}</div>',
-                    escape(eid),
-                    escape(eid),
-                )
+        try:
+            label = obj.get_bitrix_sync_status_display()
+            css, icon = self._crm_status_style(obj.bitrix_sync_status)
+            badge = format_html(
+                '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium {}">'
+                '<span class="material-symbols-outlined text-[14px] leading-none">{}</span>{}</span>',
+                css,
+                icon,
+                escape(label) if label is not None else "—",
             )
-        err = (obj.bitrix_sync_error or "").strip()
-        if err and obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.ERROR:
-            short = err.replace("\n", " ")[:120]
-            if len(err) > 120:
-                short += "…"
-            parts.append(
-                format_html(
-                    '<div class="mt-1 max-w-[18rem] text-xs text-red-700 dark:text-red-300" title="{}">{}</div>',
-                    escape(err[:500]),
-                    escape(short),
+            parts = [badge]
+            eid = (obj.bitrix_entity_id or "").strip()
+            if eid and obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED:
+                parts.append(
+                    format_html(
+                        '<div class="mt-1 max-w-[14rem] truncate text-xs text-font-subtle-light dark:text-font-subtle-dark" title="{}">ID: {}</div>',
+                        escape(eid),
+                        escape(eid),
+                    )
                 )
+            err = (obj.bitrix_sync_error or "").strip()
+            if err and obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.ERROR:
+                short = err.replace("\n", " ")[:120]
+                if len(err) > 120:
+                    short += "…"
+                parts.append(
+                    format_html(
+                        '<div class="mt-1 max-w-[18rem] text-xs text-red-700 dark:text-red-300" title="{}">{}</div>',
+                        escape(err[:500]),
+                        escape(short),
+                    )
+                )
+            inner = format_html_join("", "{}", ((p,) for p in parts))
+            return format_html('<div class="leading-tight">{}</div>', inner)
+        except Exception:
+            _logger.exception("CartOrderAdmin.crm_list_column failed for pk=%s", getattr(obj, "pk", None))
+            return format_html(
+                '<span class="text-xs text-red-600">{}</span>',
+                _("Ошибка отображения колонки CRM (см. логи сервера)."),
             )
-        inner = format_html_join("", "{}", ((p,) for p in parts))
-        return format_html('<div class="leading-tight">{}</div>', inner)
 
     @display(description=_("Сводка по CRM"))
     def crm_sync_summary(self, obj: CartOrder | None) -> str:
@@ -1023,7 +1048,7 @@ class CartOrderAdmin(ModelAdmin):
             '<span class="text-sm text-font-subtle-light dark:text-font-subtle-dark">{} {}</span></div>',
             css,
             icon,
-            escape(label),
+            escape(label) if label is not None else "—",
             _("Попыток отправки:"),
             obj.bitrix_sync_attempts or 0,
         )

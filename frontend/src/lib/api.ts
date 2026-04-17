@@ -42,6 +42,23 @@ async function parseJson<T>(r: Response): Promise<T | null> {
   }
 }
 
+async function parseJsonAny<T>(r: Response): Promise<T | null> {
+  try {
+    return (await r.json()) as T
+  } catch {
+    return null
+  }
+}
+
+async function parseTextAny(r: Response): Promise<string> {
+  try {
+    const text = await r.text()
+    return text.trim()
+  } catch {
+    return ''
+  }
+}
+
 function firstApiErrorText(value: unknown): string | null {
   if (typeof value === 'string') {
     const t = value.trim()
@@ -1107,11 +1124,13 @@ export async function postCartOrder(
       body: JSON.stringify(body),
     })
     if (!r.ok) {
-      const err = await parseJson<Record<string, unknown>>(r)
+      const rForText = r.clone()
+      const err = await parseJsonAny<Record<string, unknown>>(r)
       const detailRaw =
         firstApiErrorText(err?.detail) ??
         firstApiErrorText(err?.non_field_errors) ??
         firstApiErrorText(err) ??
+        (await parseTextAny(rForText)) ??
         ''
       return { ok: false, detail: detailRaw || 'Не удалось оформить заказ' }
     }
