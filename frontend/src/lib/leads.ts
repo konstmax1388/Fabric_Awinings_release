@@ -49,7 +49,7 @@ export async function submitCallbackLead(payload: {
 export type CartOrderCustomer = {
   name: string
   phone: string
-  email?: string
+  email: string
   comment?: string
 }
 

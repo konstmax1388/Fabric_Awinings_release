@@ -775,6 +775,10 @@ class SiteSettings(models.Model):
         max_length=32,
         choices=AstrumContactBehavior.choices,
         default=AstrumContactBehavior.SELECT_EXISTING,
+        help_text=(
+            "Рекомендуется «Искать по телефону/email»: CRM сопоставляет контакт с существующим по телефону и email "
+            "из заказа; если не найден — создаёт нового. На сайте при оформлении email обязателен."
+        ),
     )
     astrum_crm_entity_behavior = models.CharField(
         "Поведение со сделкой/лидом",

@@ -196,7 +196,7 @@ def test_calculator_lead_create(client):
 @pytest.mark.django_db
 def test_cart_order_create(client):
     payload = {
-        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "petr@mail.ru"},
         "lines": [
             {
                 "productId": "1",
@@ -215,6 +215,49 @@ def test_cart_order_create(client):
     assert data["orderRef"]
     assert "clientAck" in data
     assert data.get("fulfillmentStatus") == "received"
+    from api.models import CartOrder
+
+    assert CartOrder.objects.get(order_ref=data["orderRef"]).customer_email == "petr@mail.ru"
+
+
+@pytest.mark.django_db
+def test_cart_order_rejects_missing_email(client):
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 1,
+            }
+        ],
+        "totalApprox": 1000,
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 400
+    body = r.json()
+    assert "customer" in body
+
+
+@pytest.mark.django_db
+def test_cart_order_rejects_example_com_email(client):
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "test@example.com"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 1,
+            }
+        ],
+        "totalApprox": 1000,
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 400
 
 
 @pytest.mark.django_db
@@ -226,7 +269,7 @@ def test_cart_order_rejects_cash_pickup_with_cdek_delivery(client):
     s.save(update_fields=["cdek_enabled"])
 
     payload = {
-        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "petr@mail.ru"},
         "lines": [
             {
                 "productId": "1",
@@ -427,7 +470,7 @@ def test_cart_order_line_stores_image_url(client):
 
     img = "https://example.com/product-cover.jpg"
     payload = {
-        "customer": {"name": "Пётр", "phone": "+79997654321"},
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "petr@mail.ru"},
         "lines": [
             {
                 "productId": "1",
@@ -453,7 +496,7 @@ def test_cart_order_with_email_triggers_buyer_confirmation(mock_send, client):
         "customer": {
             "name": "Пётр",
             "phone": "+79997654321",
-            "email": "buyer_confirm_test@example.com",
+            "email": "buyer_confirm_test@mail.ru",
         },
         "lines": [
             {
@@ -712,6 +755,7 @@ def test_cart_order_customer_honeypot_rejected(client):
         "customer": {
             "name": "Тест",
             "phone": "+79991234567",
+            "email": "honeypot-lead@mail.ru",
             "website": "x",
         },
         "lines": [
@@ -777,7 +821,7 @@ def test_cart_order_guest_with_email_creates_user_and_links_order(_mock_send, cl
     from django.contrib.auth import get_user_model
 
     from api.models import CartOrder
-    email = "guest_order@example.com"
+    email = "guest_order@yandex.ru"
     payload = {
         "customer": {"name": "Анна Покупатель", "phone": "+79997654321", "email": email},
         "lines": [
@@ -811,7 +855,7 @@ def test_cart_order_guest_with_email_creates_user_and_links_order(_mock_send, cl
 @pytest.mark.django_db
 def test_cart_order_second_guest_same_email_reuses_user(_mock_send, client):
     from django.contrib.auth import get_user_model
-    email = "repeat@example.com"
+    email = "repeat_guest@mail.ru"
     base = {
         "customer": {"name": "Пётр", "phone": "+79997654321", "email": email},
         "lines": [

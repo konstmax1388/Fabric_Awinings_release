@@ -53,6 +53,35 @@ export function personNameError(name: string): string | null {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/** Домены-заглушки — синхрон с `api.validators.ORDER_EMAIL_BLOCKED_DOMAINS`. */
+const ORDER_EMAIL_BLOCKED_DOMAINS = new Set([
+  'example.com',
+  'example.org',
+  'example.net',
+  'example',
+  'invalid',
+  'localhost',
+  'test',
+])
+
+/** Email при оформлении заказа: обязателен, без example.com и служебных доменов. */
+export function orderEmailError(email: string): string | null {
+  const t = email.trim()
+  if (!t) return 'Укажите email'
+  if (t.length > 254) return 'Email слишком длинный'
+  if (!EMAIL_RE.test(t)) return 'Некорректный email'
+  const at = t.lastIndexOf('@')
+  if (at < 1) return 'Некорректный email'
+  const domain = t.slice(at + 1).toLowerCase()
+  if (ORDER_EMAIL_BLOCKED_DOMAINS.has(domain)) {
+    return 'Укажите настоящий email (адреса вида @example.com для заказа не подходят).'
+  }
+  if (domain.endsWith('.example') || domain.endsWith('.localhost')) {
+    return 'Укажите настоящий email (служебные домены для заказа не подходят).'
+  }
+  return null
+}
+
 /** Пустая строка допустима. */
 export function optionalEmailError(email: string): string | null {
   const t = email.trim()

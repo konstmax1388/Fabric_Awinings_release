@@ -16,7 +16,7 @@ import {
   COMMENT_MAX_LEN,
   formatRuPhoneMask,
   nationalDigitsFromInput,
-  optionalEmailError,
+  orderEmailError,
   personNameError,
   phoneForApi,
   isCompleteRuPhone,
@@ -138,7 +138,7 @@ export function CheckoutPage() {
       setError('Введите полный номер телефона')
       return
     }
-    const ee = optionalEmailError(email)
+    const ee = orderEmailError(email)
     if (ee) {
       setError(ee)
       return
@@ -188,7 +188,7 @@ export function CheckoutPage() {
       setError('Введите полный номер телефона')
       return
     }
-    const ee = optionalEmailError(email)
+    const ee = orderEmailError(email)
     if (ee) {
       setError(ee)
       return
@@ -233,7 +233,7 @@ export function CheckoutPage() {
         customer: {
           name: name.trim(),
           phone: phoneForApi(phone),
-          email: email.trim() || undefined,
+          email: email.trim(),
           comment: comment.trim() || undefined,
         },
         lines: items,
@@ -348,13 +348,17 @@ export function CheckoutPage() {
                 />
               </label>
               <label className="mt-3 block">
-                <span className="mb-1 block font-body text-sm font-medium text-text">Email</span>
+                <span className="mb-1 block font-body text-sm font-medium text-text">
+                  Email <span className="text-red-600">*</span>
+                </span>
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
                   autoComplete="email"
+                  placeholder="name@mail.ru"
                 />
               </label>
               <label className="mt-3 block">

@@ -157,8 +157,8 @@ def test_build_astrum_payload():
 
 
 @pytest.mark.django_db
-def test_build_astrum_payload_omits_example_com_email():
-    """Astrum отклоняет example.com и подобные домены — в contact не передаём email."""
+def test_build_astrum_payload_includes_email_from_order():
+    """В CRM уходит тот же email, что сохранён в заказе (в т.ч. для старых записей в БД)."""
     order = CartOrder.objects.create(
         order_ref="FAB-TEST-EX",
         customer_name="Тест",
@@ -177,7 +177,7 @@ def test_build_astrum_payload_omits_example_com_email():
         timeout=15,
     )
     p = build_astrum_payload(order, cfg)
-    assert "email" not in p["contact"]
+    assert p["contact"]["email"] == "user@example.com"
     assert p["contact"]["phone"] == "+79991234567"
 
 

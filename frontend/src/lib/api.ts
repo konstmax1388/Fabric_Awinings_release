@@ -1086,7 +1086,7 @@ export async function deleteAddress(accessToken: string, id: number): Promise<bo
 
 export async function postCartOrder(
   body: {
-    customer: { name: string; phone: string; email?: string; comment?: string; website?: string }
+    customer: { name: string; phone: string; email: string; comment?: string; website?: string }
     lines: {
       productId: string
       variantId?: string

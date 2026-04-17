@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from .validators import (
     COMMENT_MAX_LEN,
+    clean_customer_order_email,
     clean_person_name,
     normalize_ru_phone,
     normalize_ru_phone_optional,
@@ -458,12 +459,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("Проверка не пройдена")
         name = clean_person_name(value.get("name") or "")
         phone = normalize_ru_phone(value.get("phone") or "")
-        email = (value.get("email") or "").strip()
-        if email:
-            try:
-                validate_email(email)
-            except DjangoValidationError:
-                raise serializers.ValidationError("Некорректный email")
+        email = clean_customer_order_email(value.get("email") or "")
         comment = (value.get("comment") or "").strip()
         if len(comment) > COMMENT_MAX_LEN:
             raise serializers.ValidationError("Слишком длинный комментарий")
