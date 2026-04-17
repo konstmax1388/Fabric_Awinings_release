@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group, User
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelform_factory
 from django.http import Http404
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -20,6 +21,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
+from django.contrib.admin.utils import quote
 
 from config.homepage_nav import (
     SECTION_FIELDS as HP_SECTION_FIELDS,
@@ -358,6 +360,19 @@ class ProductAdmin(ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if isinstance(form, ProductAdminForm):
+            def _coerce_pct(field_name: str, fallback: int) -> int:
+                raw = form.cleaned_data.get(field_name)
+                if isinstance(raw, int):
+                    return max(0, min(100, raw))
+                raw_text = str(form.data.get(field_name, "") or "").strip().replace(",", ".")
+                if not raw_text:
+                    return fallback
+                try:
+                    num = int(float(raw_text))
+                except (TypeError, ValueError):
+                    return fallback
+                return max(0, min(100, num))
+
             links: dict[str, str] = {}
             for key, fname in (
                 ("wb", "mp_wb"),
@@ -372,18 +387,20 @@ class ProductAdmin(ModelAdmin):
             raw_before = obj.teasers if isinstance(obj.teasers, list) else []
             obj.teasers = teasers_list_for_save(raw_before, form.cleaned_data)
             layers: list[dict[str, object]] = []
+            fallback_pos = {1: (22, 32), 2: (68, 30), 3: (45, 64)}
             for idx in range(1, 4):
                 title = str(form.cleaned_data.get(f"material_layer_{idx}_title") or "").strip()
-                x = form.cleaned_data.get(f"material_layer_{idx}_x")
-                y = form.cleaned_data.get(f"material_layer_{idx}_y")
-                if not title or x is None or y is None:
+                if not title:
                     continue
+                fx, fy = fallback_pos.get(idx, (50, 50))
+                x = _coerce_pct(f"material_layer_{idx}_x", fx)
+                y = _coerce_pct(f"material_layer_{idx}_y", fy)
                 layers.append(
                     {
                         "id": f"layer_{idx}",
                         "title": title,
-                        "x": int(x),
-                        "y": int(y),
+                        "x": x,
+                        "y": y,
                     }
                 )
             obj.material_map = {
@@ -393,6 +410,26 @@ class ProductAdmin(ModelAdmin):
                 "layers": layers,
             }
         super().save_model(request, obj, form, change)
+
+    def _change_url(self, obj) -> str:
+        opts = self.model._meta
+        return reverse(
+            f"admin:{opts.app_label}_{opts.model_name}_change",
+            args=(quote(obj.pk),),
+            current_app=self.admin_site.name,
+        )
+
+    def response_change(self, request, obj):
+        resp = super().response_change(request, obj)
+        if "_save" in request.POST and "_continue" not in request.POST and "_addanother" not in request.POST:
+            return HttpResponseRedirect(self._change_url(obj))
+        return resp
+
+    def response_add(self, request, obj, post_url_continue=None):
+        resp = super().response_add(request, obj, post_url_continue=post_url_continue)
+        if "_save" in request.POST and "_continue" not in request.POST and "_addanother" not in request.POST:
+            return HttpResponseRedirect(self._change_url(obj))
+        return resp
 
     def get_urls(self):
         info = self.model._meta.app_label, self.model._meta.model_name
