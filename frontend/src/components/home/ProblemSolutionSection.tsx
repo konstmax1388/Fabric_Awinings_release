@@ -10,33 +10,6 @@ import {
 } from '../../lib/motion-presets'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
-const FALLBACK_CARDS: ProblemCard[] = [
-  {
-    problem: 'Дорого?',
-    solution: 'Своё производство — на 30% дешевле типовых предложений.',
-    icon: '₽',
-    iconKind: 'emoji',
-  },
-  {
-    problem: 'Долго ждать?',
-    solution: 'Изготовление от 5 рабочих дней, срочные заказы — по договорённости.',
-    icon: '⏱',
-    iconKind: 'emoji',
-  },
-  {
-    problem: 'Ненадёжно?',
-    solution: 'Гарантия на материалы и фурнитуру, договор и акты.',
-    icon: '✓',
-    iconKind: 'emoji',
-  },
-  {
-    problem: 'Сложно с замером?',
-    solution: 'Выезд специалиста или инструкция для самостоятельного замера.',
-    icon: '📐',
-    iconKind: 'emoji',
-  },
-]
-
 /** Допускаем только безопасные классы Font Awesome (латиница, цифры, пробел, дефис). */
 function isSafeFontAwesomeClass(s: string): boolean {
   if (!s || s.length > 120) return false
@@ -76,15 +49,13 @@ export function ProblemSolutionSection() {
   const reduce = useReducedMotion()
   const { home } = useSiteSettings()
   const ps = home?.problemSolution
-  const heading = ps?.heading ?? 'Решаем ваши задачи'
-  const subheading =
-    ps?.subheading ??
-    'Частые вопросы клиентов — и как мы на них отвечаем делом, а не обещаниями.'
+  const heading = ps?.heading ?? ''
+  const subheading = ps?.subheading ?? ''
   const raw = ps?.cards
   const items =
     Array.isArray(raw) && raw.length > 0 && raw.every((c) => c?.problem && c?.solution)
       ? (raw as ProblemCard[])
-      : FALLBACK_CARDS
+      : []
 
   return (
     <motion.section
@@ -94,8 +65,12 @@ export function ProblemSolutionSection() {
       viewport={{ once: true, amount: 0.12 }}
       transition={easeOutSoft}
     >
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-      <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+      {heading.trim() ? (
+        <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+      ) : null}
+      {subheading.trim() ? (
+        <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+      ) : null}
       <motion.div
         className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         variants={staggerContainer}

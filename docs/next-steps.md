@@ -10,8 +10,8 @@
 
 1. Зафиксировать релиз **2.0.4a** в GitHub; прогнать smoke **staff-ui** (`npm run dev` в `staff-ui/`, порт **17301**) и витрину на хостинге после обновления окружения.
 2. Продолжить переход на React Admin (фазы 2+): контент, каталог, настройки — [react-admin-transition-plan.md](./react-admin-transition-plan.md).
-3. Подготовить install-пакет под Beget по чеклисту: [beget-install-package-checklist.md](./beget-install-package-checklist.md).
-4. По хостингу Beget: дождаться ответа поддержки по окружению **Python 3.12+ / MySQL 8.0+** (текущий сервер: Python 3.10.12, MySQL 5.7 — блокер прямого запуска текущего backend).
+3. Прод ведётся на **выделенном личном сервере** (VPS): окружение под контролем — см. [deploy/PRODUCTION-VPS.md](../deploy/PRODUCTION-VPS.md), [deploy/DEPLOY-MECHANISM.md](../deploy/DEPLOY-MECHANISM.md). Чеклист под shared-хостинг Beget оставлен как архив: [beget-install-package-checklist.md](./beget-install-package-checklist.md).
+4. ~~По Beget~~ — неактуально; на VPS держать **Python 3.12+**, **MySQL 8.0+** (как в ТЗ по продакшену).
 
 ## Ближайшие приоритеты (этап 1 магазина)
 

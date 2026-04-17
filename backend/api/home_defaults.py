@@ -218,3 +218,10 @@ def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
     _normalize_problem_solution_cards(out)
     return out
+
+
+def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
+    """Только сохранённый JSON из админки (без подмешивания дефолтов)."""
+    out = deepcopy(stored) if isinstance(stored, dict) else {}
+    _normalize_problem_solution_cards(out)
+    return out

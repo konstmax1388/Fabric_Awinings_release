@@ -7,9 +7,6 @@ import { PulsingCTA } from '../motion/PulsingCTA'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 import { HeroCallbackModal } from './HeroCallbackModal'
 
-const FALLBACK_BG =
-  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&q=80'
-
 function isExternalHref(href: string) {
   return (
     /^https?:\/\//i.test(href) || href.startsWith('mailto:') || href.startsWith('tel:')
@@ -67,13 +64,11 @@ export function HeroSection() {
 
   const [callbackOpen, setCallbackOpen] = useState(false)
 
-  const title = hero?.title ?? 'Тенты на заказ'
-  const subtitle =
-    hero?.subtitle ??
-    'Любая форма и размер: от навесов для техники до тентов для мероприятий. Своё производство — сроки и цена под контролем.'
-  const ctaPrimary = hero?.ctaPrimary ?? 'Рассчитать стоимость'
-  const ctaSecondary = hero?.ctaSecondary ?? 'Смотреть каталог'
-  const heroBg = hero?.bgImageUrl?.trim() || FALLBACK_BG
+  const title = hero?.title ?? ''
+  const subtitle = hero?.subtitle ?? ''
+  const ctaPrimary = hero?.ctaPrimary ?? ''
+  const ctaSecondary = hero?.ctaSecondary ?? ''
+  const heroBg = hero?.bgImageUrl?.trim() || ''
 
   const primaryAction = hero?.primaryAction
   const secondaryAction = hero?.secondaryAction
@@ -91,11 +86,13 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={hero?.callbackModal ?? {}}
       />
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroBg})` }}
-        aria-hidden
-      />
+      {heroBg ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroBg})` }}
+          aria-hidden
+        />
+      ) : null}
       <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent" />
       <div className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28">
         <div className="max-w-2xl">
@@ -121,50 +118,54 @@ export function HeroSection() {
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.28 }}
           >
-            <PulsingCTA>
+            {ctaPrimary.trim() ? (
+              <PulsingCTA>
+                <motion.span
+                  whileHover={reduce ? undefined : { scale: 1.02 }}
+                  whileTap={reduce ? undefined : { scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                  className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.35)]"
+                  style={{ borderRadius: 40 }}
+                >
+                  {primaryIsCallback ? (
+                    <button
+                      type="button"
+                      onClick={openCallback}
+                      className={primaryBtnClass}
+                      style={{ letterSpacing: '0.02em' }}
+                    >
+                      {ctaPrimary}
+                    </button>
+                  ) : (
+                    <HeroCtaLink href={primaryHref} className={primaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                      {ctaPrimary}
+                    </HeroCtaLink>
+                  )}
+                </motion.span>
+              </PulsingCTA>
+            ) : null}
+            {ctaSecondary.trim() ? (
               <motion.span
                 whileHover={reduce ? undefined : { scale: 1.02 }}
                 whileTap={reduce ? undefined : { scale: 0.98 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-                className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.35)]"
-                style={{ borderRadius: 40 }}
+                className="inline-flex rounded-[40px]"
               >
-                {primaryIsCallback ? (
+                {secondaryIsCallback ? (
                   <button
                     type="button"
                     onClick={openCallback}
-                    className={primaryBtnClass}
+                    className={secondaryBtnClass}
                     style={{ letterSpacing: '0.02em' }}
                   >
-                    {ctaPrimary}
+                    {ctaSecondary}
                   </button>
                 ) : (
-                  <HeroCtaLink href={primaryHref} className={primaryBtnClass} style={{ letterSpacing: '0.02em' }}>
-                    {ctaPrimary}
+                  <HeroCtaLink href={secondaryHref} className={secondaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                    {ctaSecondary}
                   </HeroCtaLink>
                 )}
               </motion.span>
-            </PulsingCTA>
-            <motion.span
-              whileHover={reduce ? undefined : { scale: 1.02 }}
-              whileTap={reduce ? undefined : { scale: 0.98 }}
-              className="inline-flex rounded-[40px]"
-            >
-              {secondaryIsCallback ? (
-                <button
-                  type="button"
-                  onClick={openCallback}
-                  className={secondaryBtnClass}
-                  style={{ letterSpacing: '0.02em' }}
-                >
-                  {ctaSecondary}
-                </button>
-              ) : (
-                <HeroCtaLink href={secondaryHref} className={secondaryBtnClass} style={{ letterSpacing: '0.02em' }}>
-                  {ctaSecondary}
-                </HeroCtaLink>
-              )}
-            </motion.span>
+            ) : null}
           </motion.div>
         </div>
       </div>

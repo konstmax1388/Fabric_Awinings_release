@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .home_defaults import merged_home_payload
+from .home_defaults import stored_home_payload
 from .models import CartOrder, CustomerProfile, HomePageContent, ShippingAddress, SiteSettings
 from .permissions import MustNotBePasswordChangeOverdue
 from .throttles import AuthRegisterThrottle
@@ -57,13 +57,13 @@ class SiteSettingsPublicView(APIView):
 
 
 class HomePageContentPublicView(APIView):
-    """Слитые тексты/блоки главной (дефолты + JSON из админки)."""
+    """Публичные тексты/блоки главной из админки (без демо-дефолтов)."""
 
     permission_classes = [AllowAny]
 
     def get(self, request):
         h = HomePageContent.get_solo()
-        home = merged_home_payload(h.payload)
+        home = stored_home_payload(h.payload)
         hero = home.setdefault("hero", {})
         if h.hero_background:
             hero["bgImageUrl"] = request.build_absolute_uri(h.hero_background.url)

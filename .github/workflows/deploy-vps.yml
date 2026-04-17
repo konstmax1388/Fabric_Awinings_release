@@ -1,0 +1,47 @@
+# Деплой на VPS после push в main (или вручную: Actions → Deploy VPS → Run workflow).
+# Один раз настройте Secrets в репозитории GitHub (Settings → Secrets → Actions):
+#   VPS_SSH_HOST      — хост SSH (без user@)
+#   VPS_SSH_USER      — пользователь (например kasatkin_da)
+#   VPS_SSH_PRIVATE_KEY — полный приватный ключ PEM (включая BEGIN/END)
+#   VPS_APP_PATH      — абсолютный путь к корню проекта на сервере
+# Имя unit Gunicorn на сервере должно совпадать с примером (fabrika-gunicorn) или поправьте строку systemctl ниже.
+
+name: Deploy VPS
+
+on:
+  workflow_dispatch:
+  # Раскомментируйте для автодеплоя при каждом push в main:
+  # push:
+  #   branches: [main]
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy (git pull, frontend build, django, restart)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_SSH_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_APP_PATH }}"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            cd frontend
+            if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+            npm run build
+            cd ../backend
+            source .venv/bin/activate
+            pip install -q -r requirements-prod.txt
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+            sudo systemctl restart fabrika-gunicorn

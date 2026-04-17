@@ -25,6 +25,7 @@ build/
 .env.local
 .env.*.local
 *.pem
+deploy/.env.deploy
 
 # Build / IDE
 frontend/dist/

@@ -45,6 +45,12 @@ class WbImportError(Exception):
     """Ошибка разбора ссылки или ответа WB."""
 
 
+PRICE_SOURCE_AUTO = "auto"
+PRICE_SOURCE_SALE = "salePriceU"
+PRICE_SOURCE_PRODUCT = "product"
+PRICE_SOURCE_CHOICES = {PRICE_SOURCE_AUTO, PRICE_SOURCE_SALE, PRICE_SOURCE_PRODUCT}
+
+
 def parse_nm_from_url(url: str) -> int:
     """Извлекает nm (артикул) из URL карточки WB."""
     text = (url or "").strip()
@@ -159,7 +165,15 @@ def fetch_cards_v4_batch(
         )
         data = _http_json(q, timeout=timeout)
         for p in data.get("products") or []:
-            pid = int(p["id"])
+            if not isinstance(p, dict):
+                continue
+            rid = p.get("id")
+            if rid is None:
+                continue
+            try:
+                pid = int(rid)
+            except (TypeError, ValueError):
+                continue
             out[pid] = p
     if require_all:
         missing = [n for n in unique if n not in out]
@@ -212,14 +226,50 @@ def _wb_price_to_rub(value: int | None) -> int | None:
         return None
 
 
-def min_price_rub_from_card(product: dict[str, Any]) -> int:
+def _pick_price_rub_and_source(
+    price_obj: dict[str, Any], *, price_source_mode: str
+) -> tuple[int | None, str]:
+    """WB price object -> RUB value + source field used."""
+    mode = price_source_mode if price_source_mode in PRICE_SOURCE_CHOICES else PRICE_SOURCE_AUTO
+    if mode == PRICE_SOURCE_SALE:
+        rub = _wb_price_to_rub(price_obj.get("salePriceU"))
+        return (rub, "salePriceU") if rub and rub > 0 else (None, "")
+    if mode == PRICE_SOURCE_PRODUCT:
+        rub = _wb_price_to_rub(price_obj.get("product"))
+        return (rub, "product") if rub and rub > 0 else (None, "")
+
+    # auto: как на витрине WB, но с безопасными fallback
+    for field in ("salePriceU", "sale", "product", "priceU", "basic", "total"):
+        rub = _wb_price_to_rub(price_obj.get(field))
+        if rub and rub > 0:
+            return rub, field
+    return None, ""
+
+
+def min_price_rub_from_card(
+    product: dict[str, Any], *, price_source_mode: str = PRICE_SOURCE_AUTO
+) -> tuple[int, str]:
     best: int | None = None
+    best_source = ""
+    # 1) цена из sizes[] (наиболее точная для конкретной карточки/варианта)
     for size in product.get("sizes") or []:
         price = (size.get("price") or {}) if isinstance(size, dict) else {}
-        rub = _wb_price_to_rub(price.get("product"))
+        rub, source = (
+            _pick_price_rub_and_source(price, price_source_mode=price_source_mode)
+            if isinstance(price, dict)
+            else (None, "")
+        )
         if rub is not None and (best is None or rub < best):
             best = rub
-    return best if best is not None else 0
+            best_source = source
+    # 2) fallback на top-level карточки (бывает, что sizes пустой)
+    top_level_price, top_level_source = _pick_price_rub_and_source(
+        product, price_source_mode=price_source_mode
+    )
+    if top_level_price is not None and (best is None or top_level_price < best):
+        best = top_level_price
+        best_source = top_level_source
+    return (best if best is not None else 0), (best_source or "unknown")
 
 
 def image_urls(nm: int, basket: int, pics: int, *, ext: str = "webp") -> list[str]:
@@ -315,6 +365,7 @@ class WbVariantDraft:
     nm: int
     label: str
     price_from: int
+    price_source: str
     image_urls: list[str]
     marketplace_wb_url: str
 
@@ -332,10 +383,14 @@ class WbImportBundle:
     variants: list[WbVariantDraft] = field(default_factory=list)
     specifications: list[tuple[str, str, str, int]] = field(default_factory=list)
     price_from_min: int = 0
+    price_from_min_source: str = "unknown"
+    price_source_mode: str = PRICE_SOURCE_AUTO
     warnings: list[str] = field(default_factory=list)
 
 
-def fetch_wb_import_bundle(seed_nm: int, *, dest: str = DEFAULT_WB_DEST) -> WbImportBundle:
+def fetch_wb_import_bundle(
+    seed_nm: int, *, dest: str = DEFAULT_WB_DEST, price_source_mode: str = PRICE_SOURCE_AUTO
+) -> WbImportBundle:
     warnings: list[str] = []
     try:
         basket_seed, _ext_seed = resolve_basket_media(seed_nm)
@@ -416,11 +471,15 @@ def fetch_wb_import_bundle(seed_nm: int, *, dest: str = DEFAULT_WB_DEST) -> WbIm
         imgs = image_urls(nm, b, pics, ext=ext)
         name = (card.get("name") or "").strip()
         label = variant_label(imt_name, name)
+        price_from, price_source = min_price_rub_from_card(
+            card, price_source_mode=price_source_mode
+        )
         variants.append(
             WbVariantDraft(
                 nm=nm,
                 label=label,
-                price_from=min_price_rub_from_card(card),
+                price_from=price_from,
+                price_source=price_source,
                 image_urls=imgs,
                 marketplace_wb_url=canonical_wb_product_url(nm),
             )
@@ -432,8 +491,9 @@ def fetch_wb_import_bundle(seed_nm: int, *, dest: str = DEFAULT_WB_DEST) -> WbIm
             "Проверьте ссылку или попробуйте позже."
         )
 
-    prices = [v.price_from for v in variants if v.price_from is not None]
-    price_min = min(prices) if prices else 0
+    min_variant = min(variants, key=lambda v: v.price_from) if variants else None
+    price_min = min_variant.price_from if min_variant is not None else 0
+    price_min_source = min_variant.price_source if min_variant is not None else "unknown"
 
     return WbImportBundle(
         root_id=root_id,
@@ -445,6 +505,8 @@ def fetch_wb_import_bundle(seed_nm: int, *, dest: str = DEFAULT_WB_DEST) -> WbIm
         variants=variants,
         specifications=specs,
         price_from_min=price_min,
+        price_from_min_source=price_min_source,
+        price_source_mode=price_source_mode,
         warnings=warnings,
     )
 

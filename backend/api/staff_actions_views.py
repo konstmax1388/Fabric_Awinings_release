@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+_logger = logging.getLogger(__name__)
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
@@ -52,6 +55,17 @@ class StaffWbImportView(APIView):
                 )
             except WbImportError as e:
                 results.append({"url": line, "ok": False, "message": str(e), "productId": None})
+                continue
+            except Exception as e:
+                _logger.exception("WB import failed (staff API)")
+                results.append(
+                    {
+                        "url": line,
+                        "ok": False,
+                        "message": str(e),
+                        "productId": None,
+                    }
+                )
                 continue
             msg_parts: list[str] = []
             if dry and preview is not None:

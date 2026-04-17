@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any
 
 from django import forms
@@ -40,6 +41,8 @@ from .home_page_admin_form import (
     apply_homepage_section_save,
 )
 from .product_wb_import import WbImportError, import_one_from_wb_url
+
+_logger = logging.getLogger(__name__)
 
 from .models import (
     BlogPost,
@@ -395,6 +398,14 @@ class ProductAdmin(ModelAdmin):
                         )
                     except WbImportError as e:
                         messages.error(request, f"{line}: {e}")
+                        continue
+                    except Exception as e:
+                        _logger.exception("WB import failed (admin)")
+                        messages.error(
+                            request,
+                            _("%(url)s: внутренняя ошибка — %(err)s")
+                            % {"url": line, "err": str(e)},
+                        )
                         continue
                     for w in wb_warnings:
                         messages.warning(request, f"{line}: {w}")

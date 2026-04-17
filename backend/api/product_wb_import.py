@@ -51,6 +51,8 @@ def import_one_from_wb_url(
     category: ProductCategory,
     publish: bool,
     dry_run: bool,
+    create_variants: bool = True,
+    price_source_mode: str = "auto",
 ):
     """
     Возвращает (preview, product, warnings).
@@ -59,11 +61,14 @@ def import_one_from_wb_url(
     """
     seed_nm = parse_nm_from_url(raw_url)
     try:
-        bundle = fetch_wb_import_bundle(seed_nm)
+        bundle = fetch_wb_import_bundle(seed_nm, price_source_mode=price_source_mode)
     except WbImportError:
         raise
 
     warnings = list(bundle.warnings)
+    warnings.append(
+        f"Цена WB: источник={bundle.price_from_min_source}, режим={bundle.price_source_mode}, цена_от={bundle.price_from_min} ₽"
+    )
 
     if dry_run:
         return bundle, None, warnings
@@ -100,7 +105,15 @@ def import_one_from_wb_url(
                 sort_order=sort_order,
             )
 
-        for order, vd in enumerate(bundle.variants):
+        variants_to_create = bundle.variants
+        if not create_variants:
+            seed_variant = next(
+                (v for v in bundle.variants if v.nm == bundle.seed_nm),
+                bundle.variants[0] if bundle.variants else None,
+            )
+            variants_to_create = [seed_variant] if seed_variant is not None else []
+
+        for order, vd in enumerate(variants_to_create):
             is_def = vd.nm == bundle.seed_nm
             v = ProductVariant.objects.create(
                 product=p,

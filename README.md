@@ -37,6 +37,8 @@ bash deploy/prune-production-tree.sh /path/to/app
 
 При **`git pull`** в репозитории может оставаться документация — это лишний объём на диске; критично не публиковать **секреты** в Git и не класть **`.env`** с прод-паролями в репозиторий. Статику витрины и `admin-ui` на прод обычно отдают уже **собранные** `dist/` (сборка в CI или на сервере после `npm ci && npm run build`).
 
+**Как жить с продом при минимуме ручных шагов:** **[`deploy/DEPLOY-MECHANISM.md`](deploy/DEPLOY-MECHANISM.md)** (скрипт `deploy/sync-to-production.sh` и опционально GitHub Actions).
+
 **Прод на VPS (Nginx + Gunicorn + MySQL):** пошагово **[`deploy/PRODUCTION-VPS.md`](deploy/PRODUCTION-VPS.md)**; шаблон переменных — **[`.env.production.example`](.env.production.example)** (скопировать в `.env` только на сервере).
 
 ## Документация

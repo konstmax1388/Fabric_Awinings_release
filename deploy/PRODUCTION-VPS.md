@@ -1,6 +1,10 @@
 # Прод: VPS (Ubuntu), Nginx + Gunicorn + MySQL
 
-Целевой путь из панели (пример): `/var/www/kasatkin_da/data/www/fabrika-tentov.ru`.  
+Документ ориентирован на **выделенный сервер (VPS)** с SSH и правами на установку пакетов (`apt`), systemd и свой nginx. Shared-хостинг с ограничениями здесь не целевой сценарий.
+
+**Регулярные обновления кода на уже поднятом сервере:** см. **[`DEPLOY-MECHANISM.md`](DEPLOY-MECHANISM.md)** (одна команда с ПК или GitHub Actions).
+
+Пример корня приложения на сервере (подставьте свой): `/var/www/fabrika-tentov.ru` или `/home/deploy/apps/fabric-awnings`.  
 Секреты только в **`/path/to/app/.env`** на сервере, не в Git.
 
 ## 1. Пакеты (Ubuntu)
