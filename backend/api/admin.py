@@ -254,6 +254,23 @@ class ProductAdmin(ModelAdmin):
             },
         ),
         (
+            _("Блок «Карта материалов» в карточке товара"),
+            {
+                "fields": (
+                    "material_map_enabled",
+                    "material_map_title",
+                    "material_map_subtitle",
+                    ("material_layer_1_title", "material_layer_1_x", "material_layer_1_y"),
+                    ("material_layer_2_title", "material_layer_2_x", "material_layer_2_y"),
+                    ("material_layer_3_title", "material_layer_3_x", "material_layer_3_y"),
+                ),
+                "description": _(
+                    "Точки размещаются в процентах от изображения (X/Y: 0..100). "
+                    "Если заголовок слоя пустой — точка на сайте не будет показана."
+                ),
+            },
+        ),
+        (
             _("Каталог и главная"),
             {
                 "fields": (
@@ -353,6 +370,27 @@ class ProductAdmin(ModelAdmin):
             obj.marketplace_links = links
             raw_before = obj.teasers if isinstance(obj.teasers, list) else []
             obj.teasers = teasers_list_for_save(raw_before, form.cleaned_data)
+            layers: list[dict[str, object]] = []
+            for idx in range(1, 4):
+                title = str(form.cleaned_data.get(f"material_layer_{idx}_title") or "").strip()
+                x = form.cleaned_data.get(f"material_layer_{idx}_x")
+                y = form.cleaned_data.get(f"material_layer_{idx}_y")
+                if not title or x is None or y is None:
+                    continue
+                layers.append(
+                    {
+                        "id": f"layer_{idx}",
+                        "title": title,
+                        "x": int(x),
+                        "y": int(y),
+                    }
+                )
+            obj.material_map = {
+                "enabled": bool(form.cleaned_data.get("material_map_enabled")),
+                "title": str(form.cleaned_data.get("material_map_title") or "").strip(),
+                "subtitle": str(form.cleaned_data.get("material_map_subtitle") or "").strip(),
+                "layers": layers,
+            }
         super().save_model(request, obj, form, change)
 
     def get_urls(self):

@@ -99,14 +99,14 @@ export function HeroSection() {
 
   const depth = useMemo(() => {
     if (reduce) return { bgX: 0, bgY: 0, textX: 0, textY: 0, gradX: 0, gradY: 0 }
-    const scrollShift = Math.min(20, scrollY * 0.035)
+    const scrollShift = Math.min(30, scrollY * 0.05)
     return {
-      bgX: mouse.x * 14,
-      bgY: mouse.y * 10 + scrollShift,
-      textX: -mouse.x * 8,
-      textY: -mouse.y * 4 - scrollShift * 0.22,
-      gradX: mouse.x * 10,
-      gradY: mouse.y * 8 + scrollShift * 0.5,
+      bgX: mouse.x * 22,
+      bgY: mouse.y * 16 + scrollShift,
+      textX: -mouse.x * 12,
+      textY: -mouse.y * 7 - scrollShift * 0.26,
+      gradX: mouse.x * 16,
+      gradY: mouse.y * 12 + scrollShift * 0.62,
     }
   }, [mouse.x, mouse.y, reduce, scrollY])
 
@@ -121,20 +121,20 @@ export function HeroSection() {
         <motion.div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBg})` }}
-          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.02 }}
-          transition={{ type: 'spring', stiffness: 90, damping: 20, mass: 1.1 }}
+          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+          transition={{ type: 'spring', stiffness: 62, damping: 16, mass: 1.2 }}
           aria-hidden
         />
       ) : null}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent"
         animate={{ x: depth.gradX, y: depth.gradY }}
-        transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+        transition={{ type: 'spring', stiffness: 56, damping: 14 }}
       />
       <motion.div
         className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28"
         animate={{ x: depth.textX, y: depth.textY }}
-        transition={{ type: 'spring', stiffness: 110, damping: 22 }}
+        transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
         <div className="max-w-2xl min-w-0">
           <motion.h1
@@ -161,11 +161,11 @@ export function HeroSection() {
           >
             {ctaPrimary.trim() ? (
               <PulsingCTA>
-                <MagneticHover radius={120} strength={0.12}>
+                <MagneticHover radius={155} strength={0.21}>
                   <motion.span
-                  whileHover={reduce ? undefined : { scale: 1.02 }}
+                  whileHover={reduce ? undefined : { scale: 1.06 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                  transition={{ type: 'spring', stiffness: 240, damping: 16 }}
                   className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.35)]"
                   style={{ borderRadius: 40 }}
                 >
@@ -188,9 +188,9 @@ export function HeroSection() {
               </PulsingCTA>
             ) : null}
             {ctaSecondary.trim() ? (
-              <MagneticHover radius={110} strength={0.11}>
+              <MagneticHover radius={145} strength={0.18}>
                 <motion.span
-                whileHover={reduce ? undefined : { scale: 1.02 }}
+                whileHover={reduce ? undefined : { scale: 1.05 }}
                 whileTap={reduce ? undefined : { scale: 0.98 }}
                 className="inline-flex rounded-[40px]"
               >

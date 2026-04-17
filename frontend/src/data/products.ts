@@ -22,6 +22,19 @@ export type ProductSpecificationRow = {
   value: string
 }
 
+export type ProductMaterialLayer = {
+  id: string
+  title: string
+  x: number
+  y: number
+}
+
+export type ProductMaterialMap = {
+  title: string
+  subtitle?: string
+  layers: ProductMaterialLayer[]
+}
+
 /** SEO с бэкенда (автогенерация под Яндекс / РФ). */
 export type ProductSeo = {
   pageTitle: string
@@ -62,6 +75,7 @@ export type Product = {
   variants?: ProductVariantRow[]
   specifications?: ProductSpecificationRow[]
   defaultVariantId?: string | null
+  materialMap?: ProductMaterialMap
   seo?: ProductSeo
 }
 

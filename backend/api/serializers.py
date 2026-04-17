@@ -155,6 +155,7 @@ class ProductDetailSerializer(ProductListSerializer):
     variants = ProductVariantDetailSerializer(many=True, read_only=True)
     specifications = ProductSpecificationSerializer(many=True, read_only=True)
     defaultVariantId = serializers.SerializerMethodField()
+    materialMap = serializers.SerializerMethodField()
 
     class Meta(ProductListSerializer.Meta):
         fields = ProductListSerializer.Meta.fields + (
@@ -162,6 +163,7 @@ class ProductDetailSerializer(ProductListSerializer):
             "variants",
             "specifications",
             "defaultVariantId",
+            "materialMap",
         )
 
     def get_defaultVariantId(self, obj: Product) -> str | None:
@@ -170,6 +172,34 @@ class ProductDetailSerializer(ProductListSerializer):
             return str(d.pk)
         f = obj.variants.order_by("sort_order", "id").first()
         return str(f.pk) if f else None
+
+    def get_materialMap(self, obj: Product) -> dict[str, object] | None:
+        raw = obj.material_map if isinstance(obj.material_map, dict) else {}
+        enabled = bool(raw.get("enabled"))
+        if not enabled:
+            return None
+        title = str(raw.get("title") or "").strip() or "Карта материалов"
+        subtitle = str(raw.get("subtitle") or "").strip()
+        layers_raw = raw.get("layers") if isinstance(raw.get("layers"), list) else []
+        layers: list[dict[str, object]] = []
+        for i, row in enumerate(layers_raw):
+            if not isinstance(row, dict):
+                continue
+            label = str(row.get("title") or "").strip()
+            if not label:
+                continue
+            try:
+                x = int(row.get("x"))
+                y = int(row.get("y"))
+            except (TypeError, ValueError):
+                continue
+            x = max(0, min(100, x))
+            y = max(0, min(100, y))
+            rid = str(row.get("id") or f"layer_{i+1}")
+            layers.append({"id": rid, "title": label, "x": x, "y": y})
+        if not layers:
+            return None
+        return {"title": title, "subtitle": subtitle, "layers": layers}
 
 
 class PortfolioSerializer(serializers.ModelSerializer):

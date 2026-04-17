@@ -9,6 +9,7 @@ import { parseProductPhotoAspect, type ProductPhotoAspect } from './productPhoto
 import type {
   Product,
   ProductCategory,
+  ProductMaterialMap,
   ProductSeo,
   ProductSpecificationRow,
   ProductTeaser,
@@ -104,6 +105,33 @@ function parseSpecRow(row: unknown): ProductSpecificationRow | null {
   return { groupName, name, value }
 }
 
+function parseMaterialMap(raw: unknown): ProductMaterialMap | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as Record<string, unknown>
+  const title = typeof r.title === 'string' && r.title.trim() ? r.title.trim() : 'Карта материалов'
+  const subtitle = typeof r.subtitle === 'string' && r.subtitle.trim() ? r.subtitle.trim() : undefined
+  const rows = Array.isArray(r.layers) ? r.layers : []
+  const layers = rows
+    .map((item, idx) => {
+      if (!item || typeof item !== 'object') return null
+      const o = item as Record<string, unknown>
+      const id = typeof o.id === 'string' && o.id.trim() ? o.id.trim() : `layer_${idx + 1}`
+      const label = typeof o.title === 'string' ? o.title.trim() : ''
+      const x = typeof o.x === 'number' ? o.x : Number(o.x)
+      const y = typeof o.y === 'number' ? o.y : Number(o.y)
+      if (!label || !Number.isFinite(x) || !Number.isFinite(y)) return null
+      return {
+        id,
+        title: label,
+        x: Math.max(0, Math.min(100, x)),
+        y: Math.max(0, Math.min(100, y)),
+      }
+    })
+    .filter((v): v is NonNullable<typeof v> => v !== null)
+  if (!layers.length) return undefined
+  return { title, subtitle, layers }
+}
+
 export function parseProduct(raw: Record<string, unknown>): Product | null {
   if (typeof raw.slug !== 'string' || typeof raw.title !== 'string') return null
   const id = typeof raw.id === 'string' ? raw.id : String(raw.id ?? '')
@@ -140,6 +168,7 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
         ? null
         : undefined
   const seo = parseProductSeo(raw.seo)
+  const materialMap = parseMaterialMap(raw.materialMap)
   return {
     id,
     slug: raw.slug,
@@ -158,6 +187,7 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     variants: variants.length ? variants : undefined,
     specifications: specifications.length ? specifications : undefined,
     defaultVariantId,
+    materialMap,
     seo,
   }
 }

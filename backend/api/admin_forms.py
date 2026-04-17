@@ -15,6 +15,11 @@ _CHECK_CLASSES = (
     "focus:ring-primary-600/40 dark:border-base-600"
 )
 
+_SMALL_INPUT_CLASSES = (
+    "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-md "
+    "bg-white shadow-xs dark:border-base-700 dark:bg-base-900"
+)
+
 # Ключ → имя поля формы; порядок кортежа — для вновь добавляемых тизеров (если их не было в старом JSON).
 TEASER_FORM_FIELDS: tuple[tuple[str, str], ...] = (
     ("bestseller", "teaser_bestseller"),
@@ -104,10 +109,87 @@ class ProductAdminForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxInput(attrs={"class": _CHECK_CLASSES}),
     )
+    material_map_enabled = forms.BooleanField(
+        label=_("Показывать блок «Карта материалов»"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": _CHECK_CLASSES}),
+    )
+    material_map_title = forms.CharField(
+        label=_("Заголовок блока"),
+        required=False,
+        max_length=120,
+        widget=forms.TextInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_map_subtitle = forms.CharField(
+        label=_("Подсказка под заголовком"),
+        required=False,
+        max_length=220,
+        widget=forms.TextInput(attrs={"class": _MP_INPUT_CLASSES}),
+    )
+    material_layer_1_title = forms.CharField(
+        label=_("Слой 1: название"),
+        required=False,
+        max_length=120,
+        widget=forms.TextInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_1_x = forms.IntegerField(
+        label=_("Слой 1: X (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_1_y = forms.IntegerField(
+        label=_("Слой 1: Y (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_2_title = forms.CharField(
+        label=_("Слой 2: название"),
+        required=False,
+        max_length=120,
+        widget=forms.TextInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_2_x = forms.IntegerField(
+        label=_("Слой 2: X (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_2_y = forms.IntegerField(
+        label=_("Слой 2: Y (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_3_title = forms.CharField(
+        label=_("Слой 3: название"),
+        required=False,
+        max_length=120,
+        widget=forms.TextInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_3_x = forms.IntegerField(
+        label=_("Слой 3: X (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
+    material_layer_3_y = forms.IntegerField(
+        label=_("Слой 3: Y (%)"),
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES}),
+    )
 
     class Meta:
         model = Product
-        exclude = ("marketplace_links", "teasers")
+        exclude = ("marketplace_links", "teasers", "material_map")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -133,3 +215,15 @@ class ProductAdminForm(forms.ModelForm):
         active = {t for t in raw_t if isinstance(t, str) and t in allowed}
         for key, fname in TEASER_FORM_FIELDS:
             self.initial.setdefault(fname, key in active)
+
+        raw_mm = getattr(self.instance, "material_map", None)
+        mm = raw_mm if isinstance(raw_mm, dict) else {}
+        self.initial.setdefault("material_map_enabled", bool(mm.get("enabled")))
+        self.initial.setdefault("material_map_title", (mm.get("title") or "").strip())
+        self.initial.setdefault("material_map_subtitle", (mm.get("subtitle") or "").strip())
+        layers = mm.get("layers") if isinstance(mm.get("layers"), list) else []
+        for idx in range(1, 4):
+            row = layers[idx - 1] if idx - 1 < len(layers) and isinstance(layers[idx - 1], dict) else {}
+            self.initial.setdefault(f"material_layer_{idx}_title", str(row.get("title") or "").strip())
+            self.initial.setdefault(f"material_layer_{idx}_x", row.get("x"))
+            self.initial.setdefault(f"material_layer_{idx}_y", row.get("y"))

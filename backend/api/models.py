@@ -53,6 +53,7 @@ class Product(models.Model):
     price_from = models.PositiveIntegerField("Цена, ₽", default=0)
     show_on_home = models.BooleanField("Показывать на главной", default=False, db_index=True)
     teasers = models.JSONField("Тизеры", default=list, blank=True)
+    material_map = models.JSONField("Карта материалов", default=dict, blank=True)
     marketplace_links = models.JSONField("Ссылки МП", default=dict, blank=True)
     is_published = models.BooleanField("Опубликован", default=True, db_index=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)

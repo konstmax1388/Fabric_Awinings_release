@@ -12,8 +12,8 @@ type Props = {
 export function MagneticHover({
   children,
   className = '',
-  radius = 120,
-  strength = 0.14,
+  radius = 145,
+  strength = 0.19,
 }: Props) {
   const reduce = useReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
@@ -42,7 +42,7 @@ export function MagneticHover({
       ref={ref}
       className={className}
       animate={{ x: xy.x, y: xy.y }}
-      transition={{ type: 'spring', stiffness: 380, damping: 22, mass: 0.5 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 18, mass: 0.62 }}
       onMouseMove={onMove}
       onMouseLeave={() => setXy({ x: 0, y: 0 })}
     >

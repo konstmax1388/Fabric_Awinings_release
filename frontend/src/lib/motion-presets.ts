@@ -1,16 +1,16 @@
 import type { Transition, Variants } from 'framer-motion'
 
-export const easeOutSoft: Transition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+export const easeOutSoft: Transition = { duration: 0.82, ease: [0.2, 1, 0.32, 1] }
 
 /** Fade-up для блоков при скролле */
 export const fadeUpHidden = { opacity: 0, y: 20 }
 export const fadeUpVisible = { opacity: 1, y: 0 }
 
-/** Stagger ~100 ms для карточек */
+/** Stagger для карточек (чуть более заметный ритм). */
 export const staggerContainer: Variants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.15, delayChildren: 0.1 },
   },
 }
 
@@ -19,8 +19,8 @@ export const staggerItem: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.62, ease: [0.2, 1, 0.32, 1] },
   },
 }
 
-export const cardHoverTransition: Transition = { type: 'spring', stiffness: 400, damping: 25 }
+export const cardHoverTransition: Transition = { type: 'spring', stiffness: 320, damping: 20 }

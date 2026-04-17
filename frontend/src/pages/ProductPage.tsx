@@ -102,27 +102,26 @@ function ProductPageSkeleton() {
   )
 }
 
-function MaterialLayersHint() {
-  const layers = [
-    { id: 'pvc', title: 'ПВХ-слой', pos: 'left-[22%] top-[32%]' },
-    { id: 'eyelet', title: 'Люверс', pos: 'left-[68%] top-[30%]' },
-    { id: 'seam', title: 'Усиление шва', pos: 'left-[45%] top-[64%]' },
-  ]
-  const [active, setActive] = useState<string>('pvc')
+function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product['materialMap']> }) {
+  const layers = materialMap.layers
+  const [active, setActive] = useState<string>(layers[0]?.id ?? '')
 
   return (
     <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)]">
-      <p className="font-heading text-base font-semibold text-text">Карта материалов</p>
-      <p className="mt-1 font-body text-xs text-text-muted">Тапните по точке, чтобы увидеть слой конструкции.</p>
+      <p className="font-heading text-base font-semibold text-text">{materialMap.title}</p>
+      <p className="mt-1 font-body text-xs text-text-muted">
+        {materialMap.subtitle || 'Тапните по точке, чтобы увидеть слой конструкции.'}
+      </p>
       <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-[linear-gradient(160deg,#ebe4d8,#d9d0c3)]">
         {layers.map((l) => (
           <button
             key={l.id}
             type="button"
             onClick={() => setActive(l.id)}
-            className={`absolute ${l.pos} h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
+            className={`absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
               active === l.id ? 'border-accent bg-accent' : 'border-surface bg-text/50'
             }`}
+            style={{ left: `${l.x}%`, top: `${l.y}%` }}
             aria-label={l.title}
           />
         ))}
@@ -409,7 +408,7 @@ export function ProductPage() {
                 variant={selectedVariant}
               />
 
-              <MaterialLayersHint />
+              {product.materialMap ? <MaterialLayersHint materialMap={product.materialMap} /> : null}
 
               <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)] md:p-6">
                 <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
