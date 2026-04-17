@@ -1,4 +1,10 @@
-"""Проверка HTTP GET для всех changelist в Django admin (отладка 500 на списках)."""
+"""Проверка HTTP GET для всех changelist в Django admin (отладка 500 на списках).
+
+На сервере запускать с подгрузкой прод-окружения, иначе подключится пустой SQLite::
+
+    cd backend && set -a && source ../.env && set +a && source .venv/bin/activate \\
+      && python manage.py check_admin_changelists
+"""
 
 from __future__ import annotations
 
@@ -25,8 +31,16 @@ class Command(BaseCommand):
         User = get_user_model()
         u = User.objects.filter(is_superuser=True, is_active=True).order_by("id").first()
         if u is None:
-            self.stderr.write("Нет активного суперпользователя в БД.")
+            u = User.objects.filter(is_superuser=True).order_by("id").first()
+        if u is None:
+            self.stderr.write("Нет суперпользователя в БД (нужен хотя бы один is_superuser=True).")
             return
+        if not u.is_active:
+            self.stderr.write(
+                self.style.WARNING(
+                    "Используется неактивный суперпользователь (для регресса через test Client это допустимо)."
+                )
+            )
 
         host = "localhost"
         for h in getattr(settings, "ALLOWED_HOSTS", ()):
@@ -34,7 +48,7 @@ class Command(BaseCommand):
                 host = h.lstrip(".")
                 break
 
-        c = Client()
+        c = Client(raise_request_exception=False)
         c.force_login(u)
         bad: list[tuple[str, int, str]] = []
 

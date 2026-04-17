@@ -788,7 +788,8 @@ class CallbackLeadAdmin(ModelAdmin):
 @admin.register(CartOrder)
 class CartOrderAdmin(ModelAdmin):
     list_select_related = ("user",)
-    date_hierarchy = "created_at"
+    # Без date_hierarchy: на MySQL без mysql_tzinfo_to_sql Django падает при построении
+    # иерархии дат (invalid datetime / timezone definitions).
     ordering = ("-created_at", "-id")
     list_display = (
         "order_ref",
