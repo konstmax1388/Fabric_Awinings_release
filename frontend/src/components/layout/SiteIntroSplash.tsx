@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 
 const INTRO_SEEN_KEY = 'fabric_intro_seen_v2'
-const INTRO_DURATION_MS = 4200
+const INTRO_DURATION_MS = 5600
 
 export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   const reduce = useReducedMotion()
@@ -15,6 +15,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
     }
   })
   const [ready, setReady] = useState(() => typeof window === 'undefined')
+  const [stageIdx, setStageIdx] = useState(0)
 
   useEffect(() => {
     try {
@@ -41,6 +42,14 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
       reduce ? 1200 : INTRO_DURATION_MS,
     )
     return () => window.clearTimeout(t)
+  }, [reduce, visible])
+
+  useEffect(() => {
+    if (!visible || reduce) return
+    const marks = [0, 1700, 3400]
+    setStageIdx(0)
+    const timers = marks.map((ms, idx) => window.setTimeout(() => setStageIdx(idx), ms))
+    return () => timers.forEach((t) => window.clearTimeout(t))
   }, [reduce, visible])
 
   const stageTransition = useMemo(
@@ -79,6 +88,62 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1.2, ease: 'easeInOut' }}
+              />
+              {/* truck */}
+              <motion.rect
+                x="165"
+                y="460"
+                width="165"
+                height="46"
+                rx="8"
+                fill="none"
+                stroke="rgba(255,255,255,0.26)"
+                strokeWidth="2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.9, delay: 0.45 }}
+              />
+              <motion.circle
+                cx="205"
+                cy="513"
+                r="10"
+                fill="none"
+                stroke="rgba(255,255,255,0.26)"
+                strokeWidth="2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.65 }}
+              />
+              <motion.circle
+                cx="295"
+                cy="513"
+                r="10"
+                fill="none"
+                stroke="rgba(255,255,255,0.26)"
+                strokeWidth="2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+              />
+              {/* terrace */}
+              <motion.path
+                d="M470 520 L470 456 L620 456 L620 520"
+                stroke="rgba(255,255,255,0.22)"
+                strokeWidth="2"
+                fill="none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.9, delay: 0.55 }}
+              />
+              {/* hangar */}
+              <motion.path
+                d="M815 520 C820 445, 1015 445, 1020 520"
+                stroke="rgba(255,255,255,0.22)"
+                strokeWidth="2"
+                fill="none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.7 }}
               />
               <motion.path
                 d="M180 510 L300 510 L340 455 L505 455 L540 510"
@@ -144,6 +209,17 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
             </motion.svg>
 
             <motion.div
+              className="absolute top-[14vh] flex flex-wrap items-center justify-center gap-2 text-[11px] md:text-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.85 }}
+            >
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Транспорт</span>
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Террасы</span>
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Склады и ангары</span>
+            </motion.div>
+
+            <motion.div
               className="absolute bottom-[10vh] text-center"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -152,6 +228,11 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               <p className="font-heading text-3xl font-semibold text-white md:text-4xl">Фабрика Тентов</p>
               <p className="mt-2 font-body text-sm text-white/70 md:text-base">
                 Натяжные решения для транспорта, террас и складов
+              </p>
+              <p className="mt-3 font-body text-xs tracking-wide text-accent/90 md:text-sm">
+                {stageIdx === 0 && 'Проектируем каркас'}
+                {stageIdx === 1 && 'Натягиваем полотно'}
+                {stageIdx === 2 && 'Фиксируем и сдаем объект'}
               </p>
             </motion.div>
 
