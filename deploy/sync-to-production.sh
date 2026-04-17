@@ -56,7 +56,10 @@ cd ..
 rm -rf frontend/dist/staff.new
 mkdir -p frontend/dist/staff.new
 cp -a admin-ui/dist/. frontend/dist/staff.new/
+rm -rf frontend/dist/staff.prev
+if [[ -d frontend/dist/staff ]]; then mv -T frontend/dist/staff frontend/dist/staff.prev; fi
 mv -T frontend/dist/staff.new frontend/dist/staff
+rm -rf frontend/dist/staff.prev
 rm -rf "$STAFF_TMP"
 cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
@@ -93,7 +96,10 @@ cd ..
 rm -rf frontend/dist/staff.new
 mkdir -p frontend/dist/staff.new
 cp -a admin-ui/dist/. frontend/dist/staff.new/
+rm -rf frontend/dist/staff.prev
+if [[ -d frontend/dist/staff ]]; then mv -T frontend/dist/staff frontend/dist/staff.prev; fi
 mv -T frontend/dist/staff.new frontend/dist/staff
+rm -rf frontend/dist/staff.prev
 rm -rf "$STAFF_TMP"
 cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
