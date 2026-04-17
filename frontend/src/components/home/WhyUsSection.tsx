@@ -87,10 +87,10 @@ export function WhyUsSection() {
         <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
 
         <div className="mt-10 flex flex-col gap-6 rounded-2xl bg-surface px-4 py-8 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] sm:flex-row sm:items-stretch sm:justify-center sm:gap-0 sm:divide-x sm:divide-border-light md:gap-8 md:px-10">
-          {stats.map((s) => (
+          {stats.map((s, idx) => (
             <div key={s.label} className="min-w-0 flex-1 px-0 text-center sm:px-4 md:px-6">
               <p className="font-body text-2xl font-bold tabular-nums tracking-tight text-text md:text-4xl lg:text-5xl">
-                <AnimatedCounter value={s.value} suffix={s.suffix} />
+                <AnimatedCounter value={s.value} suffix={s.suffix} duration={1.8} delay={0.12 * idx} />
               </p>
               <p className="mt-1 font-body text-xs text-text-muted md:text-sm">{s.label}</p>
             </div>

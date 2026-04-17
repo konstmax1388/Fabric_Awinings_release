@@ -24,6 +24,10 @@ export function ProductCard({ product }: Props) {
   )
   const cover = product.images[0]
   const [imgFailed, setImgFailed] = useState(false)
+  const autoBadges = [
+    'Срок изготовления от 5 дней',
+    new Date().getMonth() <= 1 || new Date().getMonth() >= 10 ? 'Сезонное предложение' : '',
+  ].filter(Boolean)
 
   return (
     <motion.article
@@ -89,6 +93,24 @@ export function ProductCard({ product }: Props) {
             </p>
             <MarketplaceLinks hrefById={product.marketplaceLinks} linkKeys={mpKeys} />
           </div>
+        )}
+        {autoBadges.length > 0 && (
+          <motion.div
+            className="mt-3 flex flex-wrap gap-1.5"
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.8 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {autoBadges.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-accent/25 bg-accent/8 px-2.5 py-1 font-body text-[11px] font-medium text-accent"
+              >
+                {tag}
+              </span>
+            ))}
+          </motion.div>
         )}
       </div>
     </motion.article>

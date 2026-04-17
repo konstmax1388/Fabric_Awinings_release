@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 
 /**
  * В SPA при смене маршрута браузер не перезагружает страницу — без этого новый экран
- * открывается с той же прокруткой, что и предыдущий (часто «с середины»).
+ * открывается с той же прокруткой, что и предыдущий (часто "с середины").
  */
 export function ScrollToTopOnRoute() {
   const { pathname, search } = useLocation()

@@ -1,12 +1,13 @@
 import { HelmetProvider } from 'react-helmet-async'
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartProvider'
 import { YandexMetrika } from './components/analytics/YandexMetrika'
 import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
+import { RouteTransition } from './components/layout/RouteTransition'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RequireAuth } from './pages/account/RequireAuth'
 
@@ -63,7 +64,7 @@ function AppShell() {
         <CartProvider>
           <ScrollToTopButton />
           <Suspense fallback={<RouteFallback />}>
-            <Outlet />
+            <RouteTransition />
           </Suspense>
         </CartProvider>
       </AuthProvider>

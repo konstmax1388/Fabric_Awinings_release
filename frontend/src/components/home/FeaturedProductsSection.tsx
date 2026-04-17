@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../catalog/ProductCard'
+import { MagneticHover } from '../motion/MagneticHover'
 import type { Product } from '../../data/products'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchFeaturedProducts } from '../../lib/api'
@@ -70,12 +71,14 @@ export function FeaturedProductsSection() {
       </motion.div>
 
       <div className="mt-10 text-center">
-        <Link
-          to="/catalog"
-          className="inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
-        >
-          {catalogCta}
-        </Link>
+        <MagneticHover radius={100} strength={0.1} className="inline-flex">
+          <Link
+            to="/catalog"
+            className="inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
+          >
+            {catalogCta}
+          </Link>
+        </MagneticHover>
       </div>
     </section>
   )

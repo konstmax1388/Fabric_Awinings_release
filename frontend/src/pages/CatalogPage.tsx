@@ -35,6 +35,23 @@ function parsePage(raw: string | null): number {
   return Number.isFinite(n) && n >= 1 ? n : 1
 }
 
+function CatalogSkeletonGrid() {
+  return (
+    <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="overflow-hidden rounded-2xl border border-border-light bg-surface p-4">
+          <div className="skeleton-shimmer aspect-[4/3] rounded-xl" />
+          <div className="mt-4 skeleton-shimmer h-4 w-1/3 rounded" />
+          <div className="mt-2 skeleton-shimmer h-5 w-5/6 rounded" />
+          <div className="mt-2 skeleton-shimmer h-4 w-full rounded" />
+          <div className="mt-1 skeleton-shimmer h-4 w-4/5 rounded" />
+          <div className="mt-4 skeleton-shimmer h-10 w-full rounded-xl" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function CatalogPage() {
   const [search, setSearch] = useSearchParams()
   const reduce = useReducedMotion()
@@ -241,6 +258,7 @@ export function CatalogPage() {
                 </motion.div>
               ))}
             </motion.div>
+            {loading && <CatalogSkeletonGrid />}
 
             {!loading && !error && slice.length === 0 && (
               <p className="mt-10 font-body text-text-muted">В этой категории пока нет позиций.</p>

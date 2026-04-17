@@ -6,6 +6,7 @@ import { MapFormSection } from '../components/home/MapFormSection'
 import { PortfolioSection } from '../components/home/PortfolioSection'
 import { PriceCalculatorSection } from '../components/home/PriceCalculatorSection'
 import { ProblemSolutionSection } from '../components/home/ProblemSolutionSection'
+import { ProcessTimelineSection } from '../components/home/ProcessTimelineSection'
 import { ReviewsSection } from '../components/home/ReviewsSection'
 import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection'
 import { TentTypesSection } from '../components/home/TentTypesSection'
@@ -84,6 +85,7 @@ export function HomePage() {
           <HeroSection />
         </div>
         <ProblemSolutionSection />
+        <ProcessTimelineSection />
         <TentTypesSection />
         <FeaturedProductsSection />
         {calculatorEnabled ? <PriceCalculatorSection /> : null}

@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchPortfolio, type PortfolioItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { MagneticHover } from '../motion/MagneticHover'
+import { BeforeAfterSlider } from '../portfolio/BeforeAfterSlider'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 const DEFAULT_FILTERS = ['Все', 'Транспорт', 'Склады', 'Террасы']
@@ -105,7 +107,7 @@ export function PortfolioSection() {
               transition={{ type: 'spring', stiffness: 400, damping: 26 }}
               className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
             >
-              <div className="grid grid-cols-2 gap-0.5 bg-border">
+              <div className="hidden grid-cols-2 gap-0.5 bg-border md:grid">
                 <OptimizedImage
                   src={p.before}
                   alt={`${p.title} — до`}
@@ -120,6 +122,9 @@ export function PortfolioSection() {
                   sizes="(max-width: 768px) 100vw, 25vw"
                   className="aspect-[4/3] object-cover"
                 />
+              </div>
+              <div className="md:hidden">
+                <BeforeAfterSlider before={p.before} after={p.after} title={p.title} />
               </div>
               <div className="p-4">
                 <p className="font-body text-xs text-text-subtle">
@@ -137,15 +142,17 @@ export function PortfolioSection() {
       )}
 
       <div className="mt-10 text-center">
-        <motion.span whileHover={reduce ? undefined : { scale: 1.02 }} className="inline-block">
-          <Link
-            to="/portfolio"
-            className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
-            style={{ letterSpacing: '0.02em' }}
-          >
-            {allProjectsCta}
-          </Link>
-        </motion.span>
+        <MagneticHover radius={100} strength={0.1} className="inline-block">
+          <motion.span whileHover={reduce ? undefined : { scale: 1.02 }} className="inline-block">
+            <Link
+              to="/portfolio"
+              className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
+              style={{ letterSpacing: '0.02em' }}
+            >
+              {allProjectsCta}
+            </Link>
+          </motion.span>
+        </MagneticHover>
       </div>
     </motion.section>
   )

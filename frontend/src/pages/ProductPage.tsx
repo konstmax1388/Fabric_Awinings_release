@@ -79,6 +79,61 @@ function groupSpecifications(rows: NonNullable<Product['specifications']>) {
   return map
 }
 
+function ProductPageSkeleton() {
+  return (
+    <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,38%)_minmax(0,1fr)] lg:gap-14">
+      <div className="space-y-4">
+        <div className="skeleton-shimmer aspect-[3/4] rounded-2xl border border-border-light" />
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton-shimmer h-16 w-14 rounded-xl" />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <div className="skeleton-shimmer h-4 w-1/3 rounded" />
+        <div className="skeleton-shimmer h-12 w-4/5 rounded" />
+        <div className="skeleton-shimmer h-4 w-full rounded" />
+        <div className="skeleton-shimmer h-4 w-5/6 rounded" />
+        <div className="skeleton-shimmer mt-3 h-12 w-48 rounded-full" />
+        <div className="skeleton-shimmer mt-6 h-12 w-full rounded-2xl" />
+      </div>
+    </div>
+  )
+}
+
+function MaterialLayersHint() {
+  const layers = [
+    { id: 'pvc', title: 'ПВХ-слой', pos: 'left-[22%] top-[32%]' },
+    { id: 'eyelet', title: 'Люверс', pos: 'left-[68%] top-[30%]' },
+    { id: 'seam', title: 'Усиление шва', pos: 'left-[45%] top-[64%]' },
+  ]
+  const [active, setActive] = useState<string>('pvc')
+
+  return (
+    <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)]">
+      <p className="font-heading text-base font-semibold text-text">Карта материалов</p>
+      <p className="mt-1 font-body text-xs text-text-muted">Тапните по точке, чтобы увидеть слой конструкции.</p>
+      <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-[linear-gradient(160deg,#ebe4d8,#d9d0c3)]">
+        {layers.map((l) => (
+          <button
+            key={l.id}
+            type="button"
+            onClick={() => setActive(l.id)}
+            className={`absolute ${l.pos} h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${
+              active === l.id ? 'border-accent bg-accent' : 'border-surface bg-text/50'
+            }`}
+            aria-label={l.title}
+          />
+        ))}
+      </div>
+      <div className="mt-3 rounded-lg bg-bg-base px-3 py-2 font-body text-sm text-text">
+        {layers.find((l) => l.id === active)?.title}
+      </div>
+    </div>
+  )
+}
+
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
@@ -198,7 +253,7 @@ export function ProductPage() {
       <>
         <SiteHeader />
         <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
-          <p className="font-body text-text-muted">Загрузка…</p>
+          <ProductPageSkeleton />
         </main>
         <SiteFooter />
       </>
@@ -353,6 +408,8 @@ export function ProductPage() {
                 product={product}
                 variant={selectedVariant}
               />
+
+              <MaterialLayersHint />
 
               <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)] md:p-6">
                 <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>

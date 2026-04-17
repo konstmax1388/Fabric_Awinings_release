@@ -1,8 +1,9 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction } from '../../types/homePage'
+import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 import { HeroCallbackModal } from './HeroCallbackModal'
@@ -63,6 +64,8 @@ export function HeroSection() {
   const to = fadeUpVisible
 
   const [callbackOpen, setCallbackOpen] = useState(false)
+  const [mouse, setMouse] = useState({ x: 0, y: 0 })
+  const [scrollY, setScrollY] = useState(0)
 
   const title = hero?.title ?? ''
   const subtitle = hero?.subtitle ?? ''
@@ -78,6 +81,34 @@ export function HeroSection() {
   const secondaryHref = resolveLinkHref(secondaryAction, calculatorEnabled, 'secondary')
 
   const openCallback = () => setCallbackOpen(true)
+  useEffect(() => {
+    if (reduce) return
+    const onScroll = () => setScrollY(window.scrollY)
+    const onMove = (e: MouseEvent) => {
+      const x = e.clientX / Math.max(1, window.innerWidth) - 0.5
+      const y = e.clientY / Math.max(1, window.innerHeight) - 0.5
+      setMouse({ x, y })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('mousemove', onMove, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('mousemove', onMove)
+    }
+  }, [reduce])
+
+  const depth = useMemo(() => {
+    if (reduce) return { bgX: 0, bgY: 0, textX: 0, textY: 0, gradX: 0, gradY: 0 }
+    const scrollShift = Math.min(20, scrollY * 0.035)
+    return {
+      bgX: mouse.x * 14,
+      bgY: mouse.y * 10 + scrollShift,
+      textX: -mouse.x * 8,
+      textY: -mouse.y * 4 - scrollShift * 0.22,
+      gradX: mouse.x * 10,
+      gradY: mouse.y * 8 + scrollShift * 0.5,
+    }
+  }, [mouse.x, mouse.y, reduce, scrollY])
 
   return (
     <section className="relative min-w-0 overflow-hidden rounded-[24px] md:mx-6 lg:mx-auto lg:max-w-[1280px]">
@@ -87,14 +118,24 @@ export function HeroSection() {
         modal={hero?.callbackModal ?? {}}
       />
       {heroBg ? (
-        <div
+        <motion.div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBg})` }}
+          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.02 }}
+          transition={{ type: 'spring', stiffness: 90, damping: 20, mass: 1.1 }}
           aria-hidden
         />
       ) : null}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent" />
-      <div className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28">
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent"
+        animate={{ x: depth.gradX, y: depth.gradY }}
+        transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+      />
+      <motion.div
+        className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28"
+        animate={{ x: depth.textX, y: depth.textY }}
+        transition={{ type: 'spring', stiffness: 110, damping: 22 }}
+      >
         <div className="max-w-2xl min-w-0">
           <motion.h1
             className="break-words font-heading text-4xl font-black tracking-tight text-surface md:text-5xl lg:text-7xl"
@@ -120,7 +161,8 @@ export function HeroSection() {
           >
             {ctaPrimary.trim() ? (
               <PulsingCTA>
-                <motion.span
+                <MagneticHover radius={120} strength={0.12}>
+                  <motion.span
                   whileHover={reduce ? undefined : { scale: 1.02 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 22 }}
@@ -141,11 +183,13 @@ export function HeroSection() {
                       {ctaPrimary}
                     </HeroCtaLink>
                   )}
-                </motion.span>
+                  </motion.span>
+                </MagneticHover>
               </PulsingCTA>
             ) : null}
             {ctaSecondary.trim() ? (
-              <motion.span
+              <MagneticHover radius={110} strength={0.11}>
+                <motion.span
                 whileHover={reduce ? undefined : { scale: 1.02 }}
                 whileTap={reduce ? undefined : { scale: 0.98 }}
                 className="inline-flex rounded-[40px]"
@@ -164,11 +208,12 @@ export function HeroSection() {
                     {ctaSecondary}
                   </HeroCtaLink>
                 )}
-              </motion.span>
+                </motion.span>
+              </MagneticHover>
             ) : null}
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchProductCategories } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { FabricDriftOverlay } from '../ui/FabricDriftOverlay'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 function categoryCardImage(_slug: string, imageUrl: string | null | undefined): string {
@@ -69,7 +70,7 @@ export function TentTypesSection() {
                 transition={{ type: 'spring', stiffness: 400, damping: 26 }}
               >
                 <Link to={`/catalog?category=${encodeURIComponent(c.slug)}`} className="group block h-full">
-                  <div className="aspect-[288/200] overflow-hidden">
+                  <div className="relative aspect-[288/200] overflow-hidden">
                     <OptimizedImage
                       src={c.img}
                       alt=""
@@ -77,6 +78,7 @@ export function TentTypesSection() {
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
+                    <FabricDriftOverlay className="opacity-35 mix-blend-soft-light" />
                   </div>
                   <div className="flex items-center gap-3 p-4">
                     <span

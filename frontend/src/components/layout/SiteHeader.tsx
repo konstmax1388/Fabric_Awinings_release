@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
+import { MagneticHover } from '../motion/MagneticHover'
 import { useCart } from '../../hooks/useCart'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { OptimizedImage } from '../ui/OptimizedImage'
@@ -145,12 +146,14 @@ export function SiteHeader() {
             </span>
             <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
             <span className="hidden h-8 w-px bg-border-light xl:block" aria-hidden />
-            <a
-              href={phoneHref}
-              className="font-body text-sm font-medium text-text-muted hover:text-accent lg:text-base"
-            >
-              {phone}
-            </a>
+            <MagneticHover radius={90} strength={0.1}>
+              <a
+                href={phoneHref}
+                className="font-body text-sm font-medium text-text-muted hover:text-accent lg:text-base"
+              >
+                {phone}
+              </a>
+            </MagneticHover>
           </div>
           <button
             type="button"
