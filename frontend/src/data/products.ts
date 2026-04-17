@@ -1,6 +1,6 @@
 import type { MarketplaceId } from '../config/site'
 
-/** Слаг категории с бэкенда (?category= в каталоге) */
+/** Слаг категории с бэкенда (?category= в каталоге), только латиница / цифры / `-` / `_`. */
 export type ProductCategory = string
 
 /** Тизеры на карточке (в админке — чекбоксы / теги) */

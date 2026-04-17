@@ -16,9 +16,13 @@ import {
 import { fetchProductCategories, fetchProductsPage, type Paginated, type ProductCategoryRow } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
 
+/** Слаг категории с API: только латиница, цифры, `_` и `-` (без кириллицы в URL). */
 function parseCategory(raw: string | null): ProductCategory | null {
-  if (!raw || !/^[a-z0-9-]{1,64}$/i.test(raw)) return null
-  return raw
+  if (!raw) return null
+  const v = raw.trim()
+  if (!v || v.length > 128) return null
+  if (!/^[a-z0-9_-]+$/i.test(v)) return null
+  return v
 }
 
 function parseSort(raw: string | null): CatalogSortId {
@@ -39,6 +43,15 @@ export function CatalogPage() {
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
   const page = parsePage(search.get('page'))
+
+  /** Убираем из адреса устаревший `?category=` с кириллицей после смены слагов на латиницу. */
+  useEffect(() => {
+    const raw = search.get('category')
+    if (!raw || parseCategory(raw) !== null) return
+    const next = new URLSearchParams(search)
+    next.delete('category')
+    setSearch(next, { replace: true })
+  }, [search, setSearch])
 
   const [data, setData] = useState<Paginated<Product> | null>(null)
   const [loading, setLoading] = useState(true)
