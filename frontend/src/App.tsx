@@ -8,7 +8,6 @@ import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { RouteTransition } from './components/layout/RouteTransition'
-import { SiteIntroSplash } from './components/layout/SiteIntroSplash'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RequireAuth } from './pages/account/RequireAuth'
 
@@ -113,9 +112,7 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <HelmetProvider>
-      <SiteIntroSplash>
-        <RouterProvider router={router} />
-      </SiteIntroSplash>
+      <RouterProvider router={router} />
     </HelmetProvider>
   )
 }
