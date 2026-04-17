@@ -1,27 +1,47 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 
-const INTRO_SEEN_KEY = 'fabric_intro_seen_v1'
+const INTRO_SEEN_KEY = 'fabric_intro_seen_v2'
 const INTRO_DURATION_MS = 4200
 
 export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   const reduce = useReducedMotion()
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      return sessionStorage.getItem(INTRO_SEEN_KEY) !== '1'
+    } catch {
+      return true
+    }
+  })
+  const [ready, setReady] = useState(() => typeof window === 'undefined')
 
   useEffect(() => {
-    if (reduce) return
-    const seen = sessionStorage.getItem(INTRO_SEEN_KEY) === '1'
-    if (!seen) {
-      setVisible(true)
-      sessionStorage.setItem(INTRO_SEEN_KEY, '1')
+    try {
+      if (visible) {
+        sessionStorage.setItem(INTRO_SEEN_KEY, '1')
+      }
+    } catch {
+      /* noop */
+    }
+    setReady(true)
+  }, [visible])
+
+  useEffect(() => {
+    if (reduce && visible) {
+      const t = window.setTimeout(() => setVisible(false), 1200)
+      return () => window.clearTimeout(t)
     }
   }, [reduce])
 
   useEffect(() => {
     if (!visible) return
-    const t = window.setTimeout(() => setVisible(false), INTRO_DURATION_MS)
+    const t = window.setTimeout(
+      () => setVisible(false),
+      reduce ? 1200 : INTRO_DURATION_MS,
+    )
     return () => window.clearTimeout(t)
-  }, [visible])
+  }, [reduce, visible])
 
   const stageTransition = useMemo(
     () => ({ duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }),
@@ -30,7 +50,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {children}
+      <div style={{ visibility: ready ? 'visible' : 'hidden' }}>{children}</div>
       <AnimatePresence>
         {visible ? (
           <motion.div
