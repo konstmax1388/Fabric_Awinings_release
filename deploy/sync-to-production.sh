@@ -42,7 +42,11 @@ npm run build
 cd ../admin-ui
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
 npm run build
-cd ../backend
+cd ..
+mkdir -p frontend/dist/staff
+rm -rf frontend/dist/staff/*
+cp -a admin-ui/dist/. frontend/dist/staff/
+cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
 source .venv/bin/activate
 pip install -q -r requirements-prod.txt
@@ -63,7 +67,11 @@ npm run build
 cd ../admin-ui
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
 npm run build
-cd ../backend
+cd ..
+mkdir -p frontend/dist/staff
+rm -rf frontend/dist/staff/*
+cp -a admin-ui/dist/. frontend/dist/staff/
+cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
 source .venv/bin/activate
 pip install -q -r requirements-prod.txt
