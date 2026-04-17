@@ -7,6 +7,7 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem
 import { MagneticHover } from '../motion/MagneticHover'
 import { BeforeAfterSlider } from '../portfolio/BeforeAfterSlider'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { cardHoverTransition, subtleHoverLift, subtleButtonHover } from '../../lib/motion-presets'
 
 const DEFAULT_FILTERS = ['Все', 'Транспорт', 'Склады', 'Террасы']
 
@@ -74,6 +75,7 @@ export function PortfolioSection() {
                   ? 'bg-accent text-surface'
                   : 'bg-surface text-text-muted ring-1 ring-border hover:text-accent'
               }`}
+              style={{ transform: 'translateZ(0)' }}
             >
               {c}
             </button>
@@ -95,16 +97,9 @@ export function PortfolioSection() {
             <motion.article
               key={p.id}
               variants={staggerItem}
-              whileHover={
-                reduce
-                  ? undefined
-                  : {
-                      scale: 1.03,
-                      y: -4,
-                      boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
-                    }
-              }
-              transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+              whileHover={reduce ? undefined : subtleHoverLift}
+              whileTap={reduce ? undefined : { scale: 0.995 }}
+              transition={cardHoverTransition}
               className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
             >
               <div className="hidden grid-cols-2 gap-0.5 bg-border md:grid">
@@ -138,12 +133,26 @@ export function PortfolioSection() {
       )}
 
       {!loading && filtered.length === 0 && (
-        <p className="mt-10 font-body text-text-muted">{emptyText}</p>
+        <div className="mt-10 rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10 text-center">
+          <p className="font-heading text-xl font-semibold text-text">{emptyText}</p>
+          <button
+            type="button"
+            onClick={() => setFilter(categories[0] ?? 'Все')}
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
+          >
+            Сбросить фильтр
+          </button>
+        </div>
       )}
 
       <div className="mt-10 text-center">
         <MagneticHover radius={100} strength={0.1} className="inline-block">
-          <motion.span whileHover={reduce ? undefined : { scale: 1.02 }} className="inline-block">
+          <motion.span
+            whileHover={reduce ? undefined : subtleButtonHover}
+            whileTap={reduce ? undefined : { scale: 0.98 }}
+            transition={cardHoverTransition}
+            className="inline-block"
+          >
             <Link
               to="/portfolio"
               className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"

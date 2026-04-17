@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ProductPhotoAspect } from '../../lib/productPhotoAspect'
 import {
   productGalleryMainFrameClass,
@@ -14,6 +14,7 @@ type Props = {
 
 export function ProductGallery({ images, title, aspect }: Props) {
   const [active, setActive] = useState(0)
+  const touchStartX = useRef<number | null>(null)
   const safe = images.length ? images : ['']
 
   const key = images.join('\0')
@@ -22,11 +23,29 @@ export function ProductGallery({ images, title, aspect }: Props) {
   }, [key])
 
   const mainFrame = productGalleryMainFrameClass(aspect)
+  const hasMany = safe.length > 1
+
+  const goPrev = () => setActive((v) => (v - 1 + safe.length) % safe.length)
+  const goNext = () => setActive((v) => (v + 1) % safe.length)
+
+  const onTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = event.changedTouches[0]?.clientX ?? null
+  }
+
+  const onTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!hasMany || touchStartX.current === null) return
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current
+    const delta = endX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(delta) < 42) return
+    if (delta > 0) goPrev()
+    else goNext()
+  }
 
   return (
     <div className="min-w-0 space-y-4">
       <div className="overflow-hidden rounded-2xl border border-border-light bg-bg-base shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)]">
-        <div className={mainFrame}>
+        <div className={mainFrame} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           {safe[active] ? (
             <OptimizedImage
               src={safe[active]}
@@ -43,36 +62,47 @@ export function ProductGallery({ images, title, aspect }: Props) {
           )}
         </div>
       </div>
-      {safe.length > 1 && (
-        <div
-          className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label="Миниатюры фото"
-        >
-          {safe.map((src, i) => (
-            <button
-              key={`${src}-${i}`}
-              type="button"
-              role="tab"
-              aria-selected={i === active}
-              onClick={() => setActive(i)}
-              aria-label={`${title}: фото ${i + 1}`}
-              className={`flex items-center justify-center ${productGalleryThumbClass(aspect, i === active)}`}
-            >
-              {src ? (
-                <OptimizedImage
-                  src={src}
-                  alt=""
-                  widths={[160, 320, 480]}
-                  sizes="80px"
-                  className="max-h-full max-w-full object-contain bg-bg-base p-0.5"
-                />
-              ) : (
-                <span className="flex h-full items-center justify-center text-[10px] text-text-subtle">—</span>
-              )}
-            </button>
-          ))}
-        </div>
+      {hasMany && (
+        <>
+          <div className="flex justify-center gap-1.5 sm:hidden" aria-hidden>
+            {safe.map((_, i) => (
+              <span
+                key={`dot-${i}`}
+                className={`h-1.5 rounded-full transition-all ${i === active ? 'w-5 bg-accent' : 'w-1.5 bg-border'}`}
+              />
+            ))}
+          </div>
+          <p className="text-center font-body text-[11px] text-text-subtle sm:hidden">Свайпните фото влево/вправо</p>
+          <div
+            className="hidden gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex"
+            role="tablist"
+            aria-label="Миниатюры фото"
+          >
+            {safe.map((src, i) => (
+              <button
+                key={`${src}-${i}`}
+                type="button"
+                role="tab"
+                aria-selected={i === active}
+                onClick={() => setActive(i)}
+                aria-label={`${title}: фото ${i + 1}`}
+                className={`flex items-center justify-center ${productGalleryThumbClass(aspect, i === active)}`}
+              >
+                {src ? (
+                  <OptimizedImage
+                    src={src}
+                    alt=""
+                    widths={[160, 320, 480]}
+                    sizes="80px"
+                    className="max-h-full max-w-full object-contain bg-bg-base p-0.5"
+                  />
+                ) : (
+                  <span className="flex h-full items-center justify-center text-[10px] text-text-subtle">—</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
