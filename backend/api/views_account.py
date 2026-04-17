@@ -2,6 +2,8 @@
 
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -48,6 +50,7 @@ def _user_payload(user: User) -> dict:
     }
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SiteSettingsPublicView(APIView):
     permission_classes = [AllowAny]
 
@@ -56,6 +59,7 @@ class SiteSettingsPublicView(APIView):
         return Response(SiteSettingsPublicSerializer(s, context={"request": request}).data)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class HomePageContentPublicView(APIView):
     """Публичные тексты/блоки главной из админки (без демо-дефолтов)."""
 

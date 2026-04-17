@@ -59,6 +59,23 @@ async function parseTextAny(r: Response): Promise<string> {
   }
 }
 
+function readBrowserCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const safe = name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1')
+  const m = document.cookie.match(new RegExp(`(?:^|; )${safe}=([^;]*)`))
+  return m ? decodeURIComponent(m[1].trim()) : null
+}
+
+/**
+ * POST/PATCH/DELETE к тому же origin: при активной сессии Django (часто после /admin/)
+ * без заголовка X-CSRFToken приходит 403 «CSRF token missing».
+ */
+function withCsrf(headers: Record<string, string>): Record<string, string> {
+  const t = readBrowserCookie('csrftoken')
+  if (!t) return headers
+  return { ...headers, 'X-CSRFToken': t }
+}
+
 function firstApiErrorText(value: unknown): string | null {
   if (typeof value === 'string') {
     const t = value.trim()
@@ -523,7 +540,7 @@ export async function postCalculatorLead(body: Record<string, unknown>): Promise
   try {
     const r = await fetch(`${apiBase()}/api/leads/calculator/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify(body),
     })
     return r.ok
@@ -536,7 +553,7 @@ export async function postCallbackLead(body: Record<string, unknown>): Promise<b
   try {
     const r = await fetch(`${apiBase()}/api/leads/callback/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify(body),
     })
     return r.ok
@@ -557,7 +574,7 @@ export async function postReviewSubmission(body: ReviewSubmissionPayload): Promi
   try {
     const r = await fetch(`${apiBase()}/api/leads/review/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify({ ...body, website: body.website ?? '' }),
     })
     return r.ok
@@ -864,7 +881,7 @@ export async function postRegister(body: {
   try {
     const r = await fetch(`${apiBase()}/api/auth/register/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify({ ...body, website: body.website ?? '' }),
     })
     if (!r.ok) return null
@@ -878,7 +895,7 @@ export async function postLogin(email: string, password: string): Promise<{ acce
   try {
     const r = await fetch(`${apiBase()}/api/auth/token/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify({ username: email.trim().toLowerCase(), password }),
     })
     if (!r.ok) return null
@@ -892,7 +909,7 @@ export async function postRefreshToken(refresh: string): Promise<{ access: strin
   try {
     const r = await fetch(`${apiBase()}/api/auth/token/refresh/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: withCsrf({ 'Content-Type': 'application/json', Accept: 'application/json' }),
       body: JSON.stringify({ refresh }),
     })
     if (!r.ok) return null
@@ -921,11 +938,11 @@ export async function postChangePassword(
   try {
     const r = await fetch(`${apiBase()}/api/auth/change-password/`, {
       method: 'POST',
-      headers: {
+      headers: withCsrf({
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-      },
+      }),
       body: JSON.stringify(body),
     })
     const data = (await r.json().catch(() => null)) as Record<string, unknown> | null
@@ -951,11 +968,11 @@ export async function patchAuthProfile(
   try {
     const r = await fetch(`${apiBase()}/api/auth/me/`, {
       method: 'PATCH',
-      headers: {
+      headers: withCsrf({
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-      },
+      }),
       body: JSON.stringify(body),
     })
     if (!r.ok) return null
@@ -1036,11 +1053,11 @@ export async function postAddress(
   try {
     const r = await fetch(`${apiBase()}/api/addresses/`, {
       method: 'POST',
-      headers: {
+      headers: withCsrf({
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-      },
+      }),
       body: JSON.stringify(body),
     })
     if (!r.ok) return null
@@ -1058,11 +1075,11 @@ export async function patchAddress(
   try {
     const r = await fetch(`${apiBase()}/api/addresses/${id}/`, {
       method: 'PATCH',
-      headers: {
+      headers: withCsrf({
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-      },
+      }),
       body: JSON.stringify(body),
     })
     if (!r.ok) return null
@@ -1076,7 +1093,7 @@ export async function deleteAddress(accessToken: string, id: number): Promise<bo
   try {
     const r = await fetch(`${apiBase()}/api/addresses/${id}/`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: withCsrf({ Authorization: `Bearer ${accessToken}` }),
     })
     return r.status === 204 || r.ok
   } catch {
@@ -1113,10 +1130,10 @@ export async function postCartOrder(
   | { ok: false; detail: string }
 > {
   try {
-    const headers: Record<string, string> = {
+    const headers: Record<string, string> = withCsrf({
       'Content-Type': 'application/json',
       Accept: 'application/json',
-    }
+    })
     if (opts?.accessToken) headers.Authorization = `Bearer ${opts.accessToken}`
     const r = await fetch(`${apiBase()}/api/leads/cart/`, {
       method: 'POST',

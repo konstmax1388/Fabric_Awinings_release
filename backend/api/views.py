@@ -1,5 +1,6 @@
 from django.db.models import Prefetch
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view
@@ -38,6 +39,7 @@ from .serializers import (
 )
 
 
+@ensure_csrf_cookie
 @api_view(["GET"])
 def health(request):
     return Response(
