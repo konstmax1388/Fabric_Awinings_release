@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import {
   formatRuPhoneMask,
   isCompleteRuPhone,
@@ -165,6 +166,17 @@ export function HeroCallbackModal({ open, onClose, modal }: Props) {
                   />
                 </label>
                 {error && <p className="text-sm text-red-600">{error}</p>}
+                <p className="font-body text-xs leading-relaxed text-text-subtle">
+                  Отправляя форму, вы принимаете{' '}
+                  <Link to="/privacy" className="text-accent hover:underline" onClick={onClose}>
+                    политику конфиденциальности
+                  </Link>{' '}
+                  и{' '}
+                  <Link to="/offer" className="text-accent hover:underline" onClick={onClose}>
+                    публичную оферту
+                  </Link>
+                  .
+                </p>
                 <button
                   type="submit"
                   disabled={sending}

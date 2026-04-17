@@ -176,6 +176,17 @@ export function CartView() {
                 <p className="mt-3 text-center font-body text-xs text-text-subtle">
                   Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.
                 </p>
+                <p className="mt-2 text-center font-body text-xs leading-relaxed text-text-subtle">
+                  Оформление заказа регулируется{' '}
+                  <Link to="/offer" className="text-accent hover:underline">
+                    публичной офертой
+                  </Link>{' '}
+                  и{' '}
+                  <Link to="/privacy" className="text-accent hover:underline">
+                    политикой конфиденциальности
+                  </Link>
+                  .
+                </p>
               </div>
             </aside>
           </div>

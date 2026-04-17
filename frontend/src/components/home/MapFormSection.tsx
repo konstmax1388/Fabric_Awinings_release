@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { type FormEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ContactsContentBlock } from '../contacts/ContactsContentBlock'
 import { SITE } from '../../config/site'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
@@ -176,6 +177,17 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
                 />
               </label>
               {error ? <p className="mt-3 font-body text-sm text-red-600">{error}</p> : null}
+              <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
+                Нажимая «{submitButton}», вы соглашаетесь с{' '}
+                <Link to="/privacy" className="text-accent hover:underline">
+                  политикой конфиденциальности
+                </Link>{' '}
+                и{' '}
+                <Link to="/offer" className="text-accent hover:underline">
+                  публичной офертой
+                </Link>
+                .
+              </p>
               <motion.button
                 type="submit"
                 disabled={sending}

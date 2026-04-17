@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   CALC_MATERIALS,
   CALC_OPTIONS,
@@ -265,6 +266,17 @@ export function PriceCalculatorSection() {
                     {error}
                   </p>
                 )}
+                <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
+                  Нажимая кнопку, вы соглашаетесь с{' '}
+                  <Link to="/privacy" className="text-accent hover:underline">
+                    политикой конфиденциальности
+                  </Link>{' '}
+                  и{' '}
+                  <Link to="/offer" className="text-accent hover:underline">
+                    публичной офертой
+                  </Link>
+                  .
+                </p>
                 <motion.button
                   type="submit"
                   disabled={sending}

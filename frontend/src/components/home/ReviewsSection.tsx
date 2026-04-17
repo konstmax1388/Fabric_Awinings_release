@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { type FormEventHandler, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchReviews, postReviewSubmission, type ReviewItem } from '../../lib/api'
 import {
@@ -185,7 +186,13 @@ export function ReviewsSection() {
               onChange={(e) => setForm((v) => ({ ...v, publicationConsent: e.target.checked }))}
               required
             />
-            <label htmlFor="review-consent">Согласен на публикацию отзыва</label>
+            <label htmlFor="review-consent">
+              Согласен на публикацию отзыва и обработку персональных данных согласно{' '}
+              <Link to="/privacy" className="text-accent hover:underline">
+                политике конфиденциальности
+              </Link>
+              .
+            </label>
           </div>
           <textarea
             className="md:col-span-2 min-h-28 rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"

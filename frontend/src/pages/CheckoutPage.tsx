@@ -569,6 +569,17 @@ export function CheckoutPage() {
                   {error}
                 </p>
               )}
+              <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
+                Подтверждая заказ, вы принимаете{' '}
+                <Link to="/privacy" className="text-accent hover:underline">
+                  политику конфиденциальности
+                </Link>{' '}
+                и{' '}
+                <Link to="/offer" className="text-accent hover:underline">
+                  публичную оферту
+                </Link>
+                .
+              </p>
               <div className="mt-6 flex gap-3">
                 <button
                   type="button"

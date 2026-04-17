@@ -163,9 +163,12 @@ export function SiteFooter() {
                 {m.label}
               </a>
             ))}
-            <a href="#" className="hover:text-accent">
+            <Link to="/privacy" className="hover:text-accent">
               Политика конфиденциальности
-            </a>
+            </Link>
+            <Link to="/offer" className="hover:text-accent">
+              Публичная оферта
+            </Link>
           </div>
         </div>
       </div>
