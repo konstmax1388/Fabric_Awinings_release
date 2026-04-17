@@ -18,6 +18,8 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(() => typeof window === 'undefined')
   const [stageIdx, setStageIdx] = useState(0)
   const [isFinishing, setIsFinishing] = useState(false)
+  const [parallaxX, setParallaxX] = useState(0)
+  const [parallaxY, setParallaxY] = useState(0)
 
   useEffect(() => {
     try {
@@ -49,6 +51,18 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
     setStageIdx(0)
     const timers = marks.map((ms, idx) => window.setTimeout(() => setStageIdx(idx), ms))
     return () => timers.forEach((t) => window.clearTimeout(t))
+  }, [reduce, visible])
+
+  useEffect(() => {
+    if (!visible || reduce || typeof window === 'undefined') return
+    const handleMove = (event: MouseEvent) => {
+      const nx = event.clientX / window.innerWidth - 0.5
+      const ny = event.clientY / window.innerHeight - 0.5
+      setParallaxX(nx * 16)
+      setParallaxY(ny * 12)
+    }
+    window.addEventListener('mousemove', handleMove, { passive: true })
+    return () => window.removeEventListener('mousemove', handleMove)
   }, [reduce, visible])
 
   const stageTransition = useMemo(
@@ -88,7 +102,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               viewBox="0 0 1200 680"
               className="h-[min(74vh,520px)] w-[min(92vw,980px)]"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={{ opacity: 1, x: parallaxX, y: parallaxY }}
               transition={stageTransition}
               aria-hidden
             >
@@ -243,6 +257,13 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 transition={{ duration: 1.7, delay: 6.2, ease: [0.18, 1, 0.3, 1] }}
               />
               <motion.path
+                d="M170 420 C350 300, 650 270, 1040 420 L1040 570 L170 570 Z"
+                fill="url(#fabricSweep)"
+                initial={{ opacity: 0, x: -48 }}
+                animate={{ opacity: [0, 0.38, 0.12, 0], x: [0, 42, 86, 120] }}
+                transition={{ duration: 1.9, delay: 6.55, ease: 'easeInOut' }}
+              />
+              <motion.path
                 d="M170 420 C350 300, 650 270, 1040 420"
                 stroke="rgba(255,255,255,0.36)"
                 strokeWidth="2"
@@ -275,6 +296,13 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                   <stop stopColor="#4f5a5f" />
                   <stop offset="0.48" stopColor="#3d464b" />
                   <stop offset="1" stopColor="#2f3539" />
+                </linearGradient>
+                <linearGradient id="fabricSweep" x1="180" y1="320" x2="1000" y2="520" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="rgba(255,255,255,0)" />
+                  <stop offset="0.42" stopColor="rgba(255,255,255,0.02)" />
+                  <stop offset="0.56" stopColor="rgba(255,255,255,0.25)" />
+                  <stop offset="0.7" stopColor="rgba(255,255,255,0.03)" />
+                  <stop offset="1" stopColor="rgba(255,255,255,0)" />
                 </linearGradient>
               </defs>
             </motion.svg>
