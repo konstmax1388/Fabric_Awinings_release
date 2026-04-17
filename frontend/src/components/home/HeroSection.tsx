@@ -5,7 +5,7 @@ import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction } from '../../types/homePage'
 import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
-import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
+import { easeOutSoft, fadeUpHidden, fadeUpVisible, subtleButtonHover, cardHoverTransition } from '../../lib/motion-presets'
 import { HeroCallbackModal } from './HeroCallbackModal'
 
 function isExternalHref(href: string) {
@@ -132,6 +132,12 @@ export function HeroSection() {
         transition={{ type: 'spring', stiffness: 56, damping: 14 }}
       />
       <motion.div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_24%,rgba(232,122,0,0.2),transparent_42%)]"
+        animate={{ opacity: [0.12, 0.28, 0.12] }}
+        transition={{ duration: 7.2, repeat: Infinity, ease: 'easeInOut' }}
+        aria-hidden
+      />
+      <motion.div
         className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28"
         animate={{ x: depth.textX, y: depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
@@ -163,26 +169,26 @@ export function HeroSection() {
               <PulsingCTA>
                 <MagneticHover radius={155} strength={0.21}>
                   <motion.span
-                  whileHover={reduce ? undefined : { scale: 1.06 }}
-                  whileTap={reduce ? undefined : { scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 240, damping: 16 }}
-                  className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.35)]"
-                  style={{ borderRadius: 40 }}
-                >
-                  {primaryIsCallback ? (
-                    <button
-                      type="button"
-                      onClick={openCallback}
-                      className={primaryBtnClass}
-                      style={{ letterSpacing: '0.02em' }}
-                    >
-                      {ctaPrimary}
-                    </button>
-                  ) : (
-                    <HeroCtaLink href={primaryHref} className={primaryBtnClass} style={{ letterSpacing: '0.02em' }}>
-                      {ctaPrimary}
-                    </HeroCtaLink>
-                  )}
+                    whileHover={reduce ? undefined : subtleButtonHover}
+                    whileTap={reduce ? undefined : { scale: 0.98 }}
+                    transition={cardHoverTransition}
+                    className="inline-flex shadow-[0_4px_8px_0_rgba(232,122,0,0.35)]"
+                    style={{ borderRadius: 40 }}
+                  >
+                    {primaryIsCallback ? (
+                      <button
+                        type="button"
+                        onClick={openCallback}
+                        className={primaryBtnClass}
+                        style={{ letterSpacing: '0.02em' }}
+                      >
+                        {ctaPrimary}
+                      </button>
+                    ) : (
+                      <HeroCtaLink href={primaryHref} className={primaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                        {ctaPrimary}
+                      </HeroCtaLink>
+                    )}
                   </motion.span>
                 </MagneticHover>
               </PulsingCTA>
@@ -190,24 +196,25 @@ export function HeroSection() {
             {ctaSecondary.trim() ? (
               <MagneticHover radius={145} strength={0.18}>
                 <motion.span
-                whileHover={reduce ? undefined : { scale: 1.05 }}
-                whileTap={reduce ? undefined : { scale: 0.98 }}
-                className="inline-flex rounded-[40px]"
-              >
-                {secondaryIsCallback ? (
-                  <button
-                    type="button"
-                    onClick={openCallback}
-                    className={secondaryBtnClass}
-                    style={{ letterSpacing: '0.02em' }}
-                  >
-                    {ctaSecondary}
-                  </button>
-                ) : (
-                  <HeroCtaLink href={secondaryHref} className={secondaryBtnClass} style={{ letterSpacing: '0.02em' }}>
-                    {ctaSecondary}
-                  </HeroCtaLink>
-                )}
+                  whileHover={reduce ? undefined : subtleButtonHover}
+                  whileTap={reduce ? undefined : { scale: 0.98 }}
+                  transition={cardHoverTransition}
+                  className="inline-flex rounded-[40px]"
+                >
+                  {secondaryIsCallback ? (
+                    <button
+                      type="button"
+                      onClick={openCallback}
+                      className={secondaryBtnClass}
+                      style={{ letterSpacing: '0.02em' }}
+                    >
+                      {ctaSecondary}
+                    </button>
+                  ) : (
+                    <HeroCtaLink href={secondaryHref} className={secondaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                      {ctaSecondary}
+                    </HeroCtaLink>
+                  )}
                 </motion.span>
               </MagneticHover>
             ) : null}

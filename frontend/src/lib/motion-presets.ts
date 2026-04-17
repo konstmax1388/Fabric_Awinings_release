@@ -1,6 +1,8 @@
 import type { Transition, Variants } from 'framer-motion'
 
 export const easeOutSoft: Transition = { duration: 0.82, ease: [0.2, 1, 0.32, 1] }
+export const easeOutQuick: Transition = { duration: 0.42, ease: [0.2, 1, 0.32, 1] }
+export const easeOutMicro: Transition = { duration: 0.2, ease: [0.2, 1, 0.32, 1] }
 
 /** Fade-up для блоков при скролле */
 export const fadeUpHidden = { opacity: 0, y: 20 }
@@ -24,3 +26,5 @@ export const staggerItem: Variants = {
 }
 
 export const cardHoverTransition: Transition = { type: 'spring', stiffness: 320, damping: 20 }
+export const subtleHoverLift = { y: -4, boxShadow: '0 16px 30px -12px rgba(0,0,0,0.14)' }
+export const subtleButtonHover = { scale: 1.02 }

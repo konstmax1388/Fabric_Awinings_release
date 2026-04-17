@@ -15,7 +15,7 @@ import { MARKETPLACES } from '../config/site'
 import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
 import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
-import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../lib/motion-presets'
+import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
 
 function categoryLabel(p: Product): string {
@@ -29,6 +29,7 @@ function ProductCartControls({
   product: Product
   variant: ProductVariantRow | null
 }) {
+  const reduce = useReducedMotion()
   const navigate = useNavigate()
   const { addProduct } = useCart()
   const [qty, setQty] = useState(1)
@@ -54,16 +55,19 @@ function ProductCartControls({
           +
         </button>
       </div>
-      <button
+      <motion.button
         type="button"
         onClick={() => {
           addProduct(product, qty, variant ?? undefined)
           navigate('/cart')
         }}
+        whileHover={reduce ? undefined : subtleButtonHover}
+        whileTap={reduce ? undefined : { scale: 0.98 }}
+        transition={cardHoverTransition}
         className="inline-flex h-12 min-h-[44px] flex-1 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] hover:bg-[#c65f00] sm:flex-none sm:px-10"
       >
         В корзину
-      </button>
+      </motion.button>
     </div>
   )
 }
@@ -273,16 +277,25 @@ export function ProductPage() {
       <>
         <SiteHeader />
         <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
-          <h1 className="font-heading text-3xl font-bold text-text">Товар не найден</h1>
-          <p className="mt-3 font-body text-text-muted">
-            Позиция отсутствует в каталоге или ссылка устарела.
-          </p>
-          <Link
-            to="/catalog"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface"
-          >
-            В каталог
-          </Link>
+          <div className="rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10">
+            <h1 className="font-heading text-3xl font-bold text-text">Товар не найден</h1>
+            <p className="mt-3 font-body text-text-muted">
+              Позиция отсутствует в каталоге или ссылка устарела.
+            </p>
+            <motion.div
+              whileHover={reduce ? undefined : subtleButtonHover}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
+              transition={cardHoverTransition}
+              className="inline-flex"
+            >
+              <Link
+                to="/catalog"
+                className="mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface"
+              >
+                В каталог
+              </Link>
+            </motion.div>
+          </div>
         </main>
         <SiteFooter />
       </>

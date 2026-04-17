@@ -9,6 +9,7 @@ import { useCart } from '../../hooks/useCart'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { ProductTeaserBadges } from './ProductTeaserBadges'
+import { cardHoverTransition, subtleHoverLift, subtleButtonHover } from '../../lib/motion-presets'
 
 type Props = { product: Product }
 
@@ -31,15 +32,8 @@ export function ProductCard({ product }: Props) {
 
   return (
     <motion.article
-      whileHover={
-        reduce
-          ? undefined
-          : {
-              y: -5,
-              boxShadow: '0 20px 40px -14px rgba(0,0,0,0.14)',
-            }
-      }
-      transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+      whileHover={reduce ? undefined : subtleHoverLift}
+      transition={cardHoverTransition}
       className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-light bg-surface shadow-[0_10px_28px_-10px_rgba(0,0,0,0.1)]"
     >
       <Link to={`/catalog/${product.slug}`} className="relative block overflow-hidden">
@@ -75,17 +69,20 @@ export function ProductCard({ product }: Props) {
         <p className="mt-2 line-clamp-3 flex-1 font-body text-sm leading-relaxed text-text-muted">
           {product.excerpt}
         </p>
-        <button
+        <motion.button
           type="button"
           onClick={(e) => {
             e.preventDefault()
             addProduct(product, 1)
             navigate('/cart')
           }}
+          whileHover={reduce ? undefined : subtleButtonHover}
+          whileTap={reduce ? undefined : { scale: 0.98 }}
+          transition={cardHoverTransition}
           className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface shadow-[0_4px_12px_0_rgba(232,122,0,0.28)] transition hover:bg-[#c65f00] hover:shadow-[0_6px_16px_0_rgba(232,122,0,0.32)]"
         >
           В корзину
-        </button>
+        </motion.button>
         {mpKeys.length > 0 && (
           <div className="mt-4 border-t border-border-light pt-3">
             <p className="mb-2 font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">

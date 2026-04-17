@@ -39,7 +39,7 @@ function CatalogSkeletonGrid() {
   return (
     <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-2xl border border-border-light bg-surface p-4">
+        <div key={i} className="overflow-hidden rounded-2xl border border-border-light bg-surface p-4 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.08)]">
           <div className="skeleton-shimmer aspect-[4/3] rounded-xl" />
           <div className="mt-4 skeleton-shimmer h-4 w-1/3 rounded" />
           <div className="mt-2 skeleton-shimmer h-5 w-5/6 rounded" />
@@ -261,7 +261,19 @@ export function CatalogPage() {
             {loading && <CatalogSkeletonGrid />}
 
             {!loading && !error && slice.length === 0 && (
-              <p className="mt-10 font-body text-text-muted">В этой категории пока нет позиций.</p>
+              <div className="mt-10 rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10 text-center">
+                <p className="font-heading text-xl font-semibold text-text">Пока пусто в этой категории</p>
+                <p className="mt-2 font-body text-sm text-text-muted">
+                  Попробуйте открыть другую категорию или сбросить фильтр до «Все».
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setParams({ category: null, page: 1 })}
+                  className="mt-5 inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
+                >
+                  Показать все товары
+                </button>
+              </div>
             )}
 
             {showPager && (
