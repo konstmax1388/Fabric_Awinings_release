@@ -72,6 +72,15 @@ export function CheckoutPage() {
     setPaymentMethod((prev) => (prev && allowed.includes(prev) ? prev : allowed[0]))
   }, [settingsLoading, checkout.paymentMatrix, deliveryMethod])
 
+  useEffect(() => {
+    if (deliveryMethod !== 'pickup') return
+    setCity('')
+    setAddress('')
+    setDeliveryComment('')
+    setCdekPvzCode('')
+    setCdekPvzAddress('')
+  }, [deliveryMethod])
+
   const deliveryLabel = useMemo(() => {
     return checkout.deliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
   }, [checkout.deliveryOptions, deliveryMethod])
@@ -508,7 +517,7 @@ export function CheckoutPage() {
                     </>
                   )}
 
-                  {deliveryMethod !== 'cdek' && (
+                  {deliveryMethod !== 'cdek' && deliveryMethod !== 'pickup' && (
                     <>
                       <label className="mt-6 block">
                         <span className="mb-1 block font-body text-sm font-medium text-text">Город</span>
@@ -529,17 +538,19 @@ export function CheckoutPage() {
                     </>
                   )}
 
-                  <label className="mt-3 block">
-                    <span className="mb-1 block font-body text-sm font-medium text-text">
-                      Комментарий к доставке
-                    </span>
-                    <textarea
-                      value={deliveryComment}
-                      onChange={(e) => setDeliveryComment(e.target.value)}
-                      rows={2}
-                      className="w-full rounded-xl border border-border px-3 py-2 font-body outline-none focus:border-accent"
-                    />
-                  </label>
+                  {deliveryMethod !== 'pickup' && (
+                    <label className="mt-3 block">
+                      <span className="mb-1 block font-body text-sm font-medium text-text">
+                        Комментарий к доставке
+                      </span>
+                      <textarea
+                        value={deliveryComment}
+                        onChange={(e) => setDeliveryComment(e.target.value)}
+                        rows={2}
+                        className="w-full rounded-xl border border-border px-3 py-2 font-body outline-none focus:border-accent"
+                      />
+                    </label>
+                  )}
 
                   <fieldset className="mt-6 space-y-3">
                     <legend className="mb-2 font-body text-sm font-medium text-text">Оплата</legend>

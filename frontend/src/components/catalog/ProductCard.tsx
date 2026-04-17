@@ -25,6 +25,7 @@ export function ProductCard({ product }: Props) {
   )
   const cover = product.images[0]
   const [imgFailed, setImgFailed] = useState(false)
+  const [addedPromptOpen, setAddedPromptOpen] = useState(false)
   const autoBadges = [
     'Срок изготовления от 5 дней',
     new Date().getMonth() <= 1 || new Date().getMonth() >= 10 ? 'Сезонное предложение' : '',
@@ -74,7 +75,7 @@ export function ProductCard({ product }: Props) {
           onClick={(e) => {
             e.preventDefault()
             addProduct(product, 1)
-            navigate('/cart')
+            setAddedPromptOpen(true)
           }}
           whileHover={reduce ? undefined : subtleButtonHover}
           whileTap={reduce ? undefined : { scale: 0.98 }}
@@ -83,6 +84,28 @@ export function ProductCard({ product }: Props) {
         >
           В корзину
         </motion.button>
+        {addedPromptOpen && (
+          <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[460px]">
+            <p className="font-body text-sm font-medium text-text">Товар добавлен в корзину</p>
+            <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAddedPromptOpen(false)}
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
+              >
+                Продолжить покупки
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/cart')}
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface transition hover:bg-[#c65f00]"
+              >
+                Перейти в корзину
+              </button>
+            </div>
+          </div>
+        )}
         {mpKeys.length > 0 && (
           <div className="mt-4 border-t border-border-light pt-3">
             <p className="mb-2 font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">

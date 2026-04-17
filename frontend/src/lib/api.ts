@@ -42,6 +42,28 @@ async function parseJson<T>(r: Response): Promise<T | null> {
   }
 }
 
+function firstApiErrorText(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const t = value.trim()
+    return t || null
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstApiErrorText(item)
+      if (found) return found
+    }
+    return null
+  }
+  if (value && typeof value === 'object') {
+    for (const v of Object.values(value as Record<string, unknown>)) {
+      const found = firstApiErrorText(v)
+      if (found) return found
+    }
+    return null
+  }
+  return null
+}
+
 export async function fetchHealth(): Promise<{
   status: string
   service: string
@@ -1087,13 +1109,11 @@ export async function postCartOrder(
     if (!r.ok) {
       const err = await parseJson<Record<string, unknown>>(r)
       const detailRaw =
-        (err?.detail as string | undefined) ??
-        (typeof err?.non_field_errors === 'string'
-          ? err.non_field_errors
-          : Array.isArray(err?.non_field_errors)
-            ? String(err?.non_field_errors?.[0] ?? '')
-            : '')
-      return { ok: false, detail: detailRaw?.trim() || 'Не удалось оформить заказ' }
+        firstApiErrorText(err?.detail) ??
+        firstApiErrorText(err?.non_field_errors) ??
+        firstApiErrorText(err) ??
+        ''
+      return { ok: false, detail: detailRaw || 'Не удалось оформить заказ' }
     }
     const data = await parseJson<{
       orderRef: string

@@ -33,6 +33,7 @@ function ProductCartControls({
   const navigate = useNavigate()
   const { addProduct } = useCart()
   const [qty, setQty] = useState(1)
+  const [addedPromptOpen, setAddedPromptOpen] = useState(false)
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -59,7 +60,7 @@ function ProductCartControls({
         type="button"
         onClick={() => {
           addProduct(product, qty, variant ?? undefined)
-          navigate('/cart')
+          setAddedPromptOpen(true)
         }}
         whileHover={reduce ? undefined : subtleButtonHover}
         whileTap={reduce ? undefined : { scale: 0.98 }}
@@ -68,6 +69,28 @@ function ProductCartControls({
       >
         В корзину
       </motion.button>
+      {addedPromptOpen && (
+        <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(560px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[500px]">
+          <p className="font-body text-sm font-medium text-text">Товар добавлен в корзину</p>
+          <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAddedPromptOpen(false)}
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
+            >
+              Продолжить покупки
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/cart')}
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface transition hover:bg-[#c65f00]"
+            >
+              Перейти в корзину
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
