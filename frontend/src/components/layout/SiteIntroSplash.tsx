@@ -2,7 +2,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 
 const INTRO_SEEN_KEY = 'fabric_intro_seen_v2'
-const INTRO_DURATION_MS = 7600
 const INTRO_REDUCED_DURATION_MS = 1600
 
 export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
@@ -36,16 +35,6 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
       return () => window.clearTimeout(t)
     }
   }, [reduce])
-
-  useEffect(() => {
-    if (!visible) return
-    setIsFinishing(false)
-    const t = window.setTimeout(
-      () => setIsFinishing(true),
-      reduce ? INTRO_REDUCED_DURATION_MS : INTRO_DURATION_MS,
-    )
-    return () => window.clearTimeout(t)
-  }, [reduce, visible])
 
   useEffect(() => {
     if (!visible || !isFinishing) return
@@ -246,6 +235,11 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.05, delay: 2.9, ease: [0.22, 1, 0.36, 1] }}
+              onAnimationComplete={() => {
+                if (!isFinishing) {
+                  setIsFinishing(true)
+                }
+              }}
             >
               <p className="font-heading text-3xl font-semibold text-white md:text-4xl">Фабрика Тентов</p>
               <p className="mt-2 font-body text-sm text-white/70 md:text-base">
