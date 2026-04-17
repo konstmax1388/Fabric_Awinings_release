@@ -114,3 +114,43 @@ def test_staff_pagination_params(client):
         HTTP_AUTHORIZATION=f"Bearer {token}",
     )
     assert r.status_code == 200
+
+
+@pytest.mark.django_db
+def test_staff_cart_orders_list(client):
+    """Список заказов для панели /staff (GET /api/staff/v1/orders/)."""
+    from api.models import CartOrder
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    CartOrder.objects.create(
+        order_ref="STAFF-LIST-1",
+        customer_name="Иван",
+        customer_phone="+79990001133",
+        customer_email="ivan@example.com",
+        lines=[{"title": "Тент", "qty": 1, "priceFrom": 1000}],
+        total_approx=1000,
+        fulfillment_status=CartOrder.FulfillmentStatus.RECEIVED,
+        payment_status=CartOrder.PaymentStatus.NOT_REQUIRED,
+        delivery_method=CartOrder.DeliveryMethod.PICKUP,
+        payment_method=CartOrder.PaymentMethod.CASH_PICKUP,
+    )
+
+    User = get_user_model()
+    staff = User.objects.create_user(
+        username="staff_orders",
+        email="staff_orders@example.com",
+        password="staffpass12",
+        is_staff=True,
+    )
+    token = str(RefreshToken.for_user(staff).access_token)
+    r = client.get(
+        "/api/staff/v1/orders/?page=1&pageSize=25&ordering=-created_at",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert r.status_code == 200, r.content[:500]
+    body = r.json()
+    assert "results" in body and "count" in body
+    assert body["count"] >= 1
+    row = next(x for x in body["results"] if x.get("orderRef") == "STAFF-LIST-1")
+    assert row["customerPhone"] == "+79990001133"
+    assert row["fulfillmentStatus"] == "received"

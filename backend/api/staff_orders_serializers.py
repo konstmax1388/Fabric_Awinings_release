@@ -50,7 +50,7 @@ class CalculatorLeadStaffSerializer(serializers.ModelSerializer):
 
 class CartOrderStaffSerializer(serializers.ModelSerializer):
     orderRef = serializers.CharField(source="order_ref", read_only=True)
-    lines = serializers.JSONField(read_only=True, source="lines")
+    lines = serializers.JSONField(read_only=True)
     totalApprox = serializers.IntegerField(source="total_approx", read_only=True)
     managerLetter = serializers.CharField(source="manager_letter", read_only=True)
     clientAck = serializers.CharField(source="client_ack", read_only=True)
