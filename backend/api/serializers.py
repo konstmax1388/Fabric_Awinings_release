@@ -178,6 +178,7 @@ class ProductDetailSerializer(ProductListSerializer):
         enabled = bool(raw.get("enabled"))
         if not enabled:
             return None
+        req = self.context.get("request")
         title = str(raw.get("title") or "").strip() or "Карта материалов"
         subtitle = str(raw.get("subtitle") or "").strip()
         layers_raw = raw.get("layers") if isinstance(raw.get("layers"), list) else []
@@ -199,7 +200,8 @@ class ProductDetailSerializer(ProductListSerializer):
             layers.append({"id": rid, "title": label, "x": x, "y": y})
         if not layers:
             return None
-        return {"title": title, "subtitle": subtitle, "layers": layers}
+        image_url = media_file_absolute(req, obj.material_map_image)
+        return {"title": title, "subtitle": subtitle, "layers": layers, "imageUrl": image_url}
 
 
 class PortfolioSerializer(serializers.ModelSerializer):

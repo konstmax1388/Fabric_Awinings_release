@@ -54,6 +54,14 @@ class Product(models.Model):
     show_on_home = models.BooleanField("Показывать на главной", default=False, db_index=True)
     teasers = models.JSONField("Тизеры", default=list, blank=True)
     material_map = models.JSONField("Карта материалов", default=dict, blank=True)
+    material_map_image = models.ImageField(
+        "Карта материалов (фон)",
+        upload_to="products/material-map/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Фоновая схема для блока «Карта материалов» в карточке товара.",
+    )
     marketplace_links = models.JSONField("Ссылки МП", default=dict, blank=True)
     is_published = models.BooleanField("Опубликован", default=True, db_index=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)

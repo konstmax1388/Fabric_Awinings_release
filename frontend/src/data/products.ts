@@ -32,6 +32,7 @@ export type ProductMaterialLayer = {
 export type ProductMaterialMap = {
   title: string
   subtitle?: string
+  imageUrl?: string
   layers: ProductMaterialLayer[]
 }
 

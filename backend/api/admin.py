@@ -258,6 +258,7 @@ class ProductAdmin(ModelAdmin):
             {
                 "fields": (
                     "material_map_enabled",
+                    "material_map_image",
                     "material_map_title",
                     "material_map_subtitle",
                     ("material_layer_1_title", "material_layer_1_x", "material_layer_1_y"),

@@ -110,6 +110,7 @@ function parseMaterialMap(raw: unknown): ProductMaterialMap | undefined {
   const r = raw as Record<string, unknown>
   const title = typeof r.title === 'string' && r.title.trim() ? r.title.trim() : 'Карта материалов'
   const subtitle = typeof r.subtitle === 'string' && r.subtitle.trim() ? r.subtitle.trim() : undefined
+  const imageUrl = typeof r.imageUrl === 'string' && r.imageUrl.trim() ? r.imageUrl.trim() : undefined
   const rows = Array.isArray(r.layers) ? r.layers : []
   const layers = rows
     .map((item, idx) => {
@@ -129,7 +130,7 @@ function parseMaterialMap(raw: unknown): ProductMaterialMap | undefined {
     })
     .filter((v): v is NonNullable<typeof v> => v !== null)
   if (!layers.length) return undefined
-  return { title, subtitle, layers }
+  return { title, subtitle, imageUrl, layers }
 }
 
 export function parseProduct(raw: Record<string, unknown>): Product | null {

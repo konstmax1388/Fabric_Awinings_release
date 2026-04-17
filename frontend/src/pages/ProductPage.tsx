@@ -113,6 +113,15 @@ function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product[
         {materialMap.subtitle || 'Тапните по точке, чтобы увидеть слой конструкции.'}
       </p>
       <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-[linear-gradient(160deg,#ebe4d8,#d9d0c3)]">
+        {materialMap.imageUrl ? (
+          <img
+            src={materialMap.imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/8" />
         {layers.map((l) => (
           <button
             key={l.id}
