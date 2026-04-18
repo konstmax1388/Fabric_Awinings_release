@@ -12,6 +12,15 @@ import {
 import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 
+import {
+  BITRIX_SYNC_STATUS_RU,
+  DELIVERY_METHOD_RU,
+  enumLabelRu,
+  FULFILLMENT_STATUS_RU,
+  PAYMENT_METHOD_RU,
+  PAYMENT_STATUS_RU,
+} from '../../lib/orderEnumLabelsRu'
+
 type OrderLine = {
   title?: string
   qty?: number
@@ -104,12 +113,37 @@ export default function OrderShow() {
         <TextField source="customerPhone" label="Телефон" />
         <TextField source="customerEmail" label="Email" />
         <TextField source="customerComment" label="Комментарий покупателя" />
-        <TextField source="fulfillmentStatus" label="Выполнение" />
-        <TextField source="paymentStatus" label="Оплата" />
-        <TextField source="deliveryMethod" label="Доставка" />
-        <TextField source="paymentMethod" label="Способ оплаты" />
+        <FunctionField
+          label="Выполнение"
+          render={(record: { fulfillmentStatus?: string }) =>
+            enumLabelRu(FULFILLMENT_STATUS_RU, record.fulfillmentStatus)
+          }
+        />
+        <FunctionField
+          label="Оплата"
+          render={(record: { paymentStatus?: string }) =>
+            enumLabelRu(PAYMENT_STATUS_RU, record.paymentStatus)
+          }
+        />
+        <FunctionField
+          label="Доставка"
+          render={(record: { deliveryMethod?: string }) =>
+            enumLabelRu(DELIVERY_METHOD_RU, record.deliveryMethod)
+          }
+        />
+        <FunctionField
+          label="Способ оплаты"
+          render={(record: { paymentMethod?: string }) =>
+            enumLabelRu(PAYMENT_METHOD_RU, record.paymentMethod)
+          }
+        />
         <NumberField source="totalApprox" label="Сумма (ориентир), ₽" />
-        <TextField source="bitrixSyncStatus" label="Битрикс24" />
+        <FunctionField
+          label="Битрикс24"
+          render={(record: { bitrixSyncStatus?: string }) =>
+            enumLabelRu(BITRIX_SYNC_STATUS_RU, record.bitrixSyncStatus)
+          }
+        />
         <TextField source="bitrixEntityId" label="ID в Битрикс24" />
         <FunctionField
           label="Состав заказа"

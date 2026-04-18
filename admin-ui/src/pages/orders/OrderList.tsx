@@ -1,6 +1,7 @@
 import {
   Datagrid,
   DateField,
+  FunctionField,
   List,
   SearchInput,
   SelectInput,
@@ -8,6 +9,12 @@ import {
   TopToolbar,
   ExportButton,
 } from 'react-admin'
+
+import {
+  enumLabelRu,
+  FULFILLMENT_STATUS_RU,
+  PAYMENT_STATUS_RU,
+} from '../../lib/orderEnumLabelsRu'
 
 const fulfillmentFilters = [
   { id: 'received', name: 'Принят с сайта' },
@@ -70,8 +77,18 @@ export default function OrderList() {
         <TextField source="orderRef" label="Номер" />
         <TextField source="customerName" label="Клиент" />
         <TextField source="customerPhone" label="Телефон" />
-        <TextField source="fulfillmentStatus" label="Статус" />
-        <TextField source="paymentStatus" label="Оплата" />
+        <FunctionField
+          label="Статус"
+          render={(record: { fulfillmentStatus?: string }) =>
+            enumLabelRu(FULFILLMENT_STATUS_RU, record.fulfillmentStatus)
+          }
+        />
+        <FunctionField
+          label="Оплата"
+          render={(record: { paymentStatus?: string }) =>
+            enumLabelRu(PAYMENT_STATUS_RU, record.paymentStatus)
+          }
+        />
         <DateField source="createdAt" label="Создан" showTime />
       </Datagrid>
     </List>

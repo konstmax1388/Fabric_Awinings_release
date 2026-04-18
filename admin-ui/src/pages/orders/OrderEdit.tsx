@@ -16,7 +16,7 @@ const fulfillmentChoices = [
 ]
 
 const paymentChoices = [
-  { id: 'not_required', name: 'Не требовалась' },
+  { id: 'not_required', name: 'Оплата не требовалась' },
   { id: 'pending', name: 'Ожидает оплаты' },
   { id: 'authorized', name: 'Предавторизация' },
   { id: 'captured', name: 'Оплачен' },
