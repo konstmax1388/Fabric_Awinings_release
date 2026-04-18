@@ -80,11 +80,11 @@ if (migrated !== null) {
           createRoot(rootEl).render(
             <RootErrorBoundary>
               {/*
-                HashRouter: при обновлении страницы nginx запрашивает только /staff/, без «глубокого» пути
-                (иначе нужен отдельный location в nginx). basename — у <Admin> не дублировать.
+                HashRouter: URL вида …/staff/#/orders — путь внутри SPA только в hash (#/…), без второго /staff в hash.
+                basename не задаём: иначе RR ждёт #/staff/…, а react-admin строит #/, #/orders — совпадений нет (белый экран).
                 StrictMode отключён: в dev он удваивал эффекты и визуально путал (двойной layout в инспекторе).
               */}
-              <HashRouter basename="/staff">
+              <HashRouter>
                 <App />
               </HashRouter>
             </RootErrorBoundary>,
