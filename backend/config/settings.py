@@ -37,10 +37,15 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
 
 if not DEBUG:
     _sk = (SECRET_KEY or "").strip()
-    if len(_sk) < 50 or _sk.startswith("django-insecure-"):
+    if (
+        len(_sk) < 50
+        or len(set(_sk)) < 5
+        or _sk.startswith("django-insecure-")
+    ):
         raise ImproperlyConfigured(
-            "Задайте DJANGO_SECRET_KEY — длинную случайную строку (≥50 символов), "
-            "не начинающуюся с django-insecure-, когда DJANGO_DEBUG=false."
+            "Задайте DJANGO_SECRET_KEY — длинную случайную строку (≥50 символов, "
+            "не меньше 5 разных символов), не начинающуюся с django-insecure-, "
+            "когда DJANGO_DEBUG=false."
         )
 
 # Капча на /admin/login/: в проде (DEBUG=False) по умолчанию включена; при DEBUG=True — выкл.,
