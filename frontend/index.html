@@ -16,6 +16,21 @@
     <title>Фабрика Тентов — dev</title>
   </head>
   <body>
+    <!--
+      Без отдельного location /staff/ в nginx глубокий URL /staff/orders/… отдаёт ЭТОТ index (витрина).
+      Редирект в hash — тогда запрос к серверу только /staff/, поднимается бандл admin-ui (см. deploy/nginx-staff-location-snippet.conf).
+    -->
+    <script>
+      ;(function () {
+        var p = location.pathname
+        if (p === '/staff' || p === '/staff/') return
+        if (p.indexOf('/staff/') !== 0) return
+        var inner = p.slice('/staff/'.length)
+        if (!inner) return
+        if (location.hash && location.hash.length > 1) return
+        location.replace('/staff/#/' + inner + location.search)
+      })()
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
