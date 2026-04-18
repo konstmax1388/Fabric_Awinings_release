@@ -29,6 +29,11 @@ APP=$(printf '%q' "$DEPLOY_APP_PATH")
 
 echo "==> $DEPLOY_SSH_TARGET → $DEPLOY_APP_PATH (ветка $BRANCH)"
 
+if [[ "${DEPLOY_RUN_PREFLIGHT:-0}" == "1" ]]; then
+  echo "==> Локальный preflight (как CI). Отключить: DEPLOY_RUN_PREFLIGHT=0"
+  bash "$ROOT/deploy/preflight.sh"
+fi
+
 if [[ "${DEPLOY_SKIP_SYSTEMD:-0}" == "1" ]]; then
   ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail

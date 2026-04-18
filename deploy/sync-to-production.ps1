@@ -37,6 +37,18 @@ $skipSystemd = ($cfg.ContainsKey("DEPLOY_SKIP_SYSTEMD") -and $cfg["DEPLOY_SKIP_S
 if (-not $sshTarget) { throw "DEPLOY_SSH_TARGET is missing in $EnvFile" }
 if (-not $appPath) { throw "DEPLOY_APP_PATH is missing in $EnvFile" }
 
+$runPreflight =
+    ($cfg.ContainsKey("DEPLOY_RUN_PREFLIGHT") -and $cfg["DEPLOY_RUN_PREFLIGHT"] -eq "1") -or
+    ($env:DEPLOY_RUN_PREFLIGHT -eq "1")
+if ($runPreflight) {
+    $preflightScript = Join-Path $PSScriptRoot "preflight.ps1"
+    Write-Host "==> Local preflight (same as CI). To skip: remove DEPLOY_RUN_PREFLIGHT or set DEPLOY_RUN_PREFLIGHT=0"
+    & $preflightScript
+    if ($LASTEXITCODE -ne 0) {
+        throw "Preflight failed (exit $LASTEXITCODE). Fix errors or push only after CI is green."
+    }
+}
+
 Write-Host "==> $sshTarget -> $appPath (branch $branch)"
 
 $remoteLines = @(
