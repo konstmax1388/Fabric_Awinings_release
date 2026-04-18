@@ -25,10 +25,11 @@ export const authProvider: AuthProvider = {
     return Promise.resolve()
   },
   checkError: (error: unknown) => {
-    const status =
-      typeof error === 'object' && error !== null && 'status' in error
-        ? Number((error as { status: unknown }).status)
-        : 0
+    let status = 0
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const s = (error as { status: unknown }).status
+      status = typeof s === 'number' ? s : Number(s) || 0
+    }
     if (status === 401 || status === 403) {
       localStorage.removeItem('staff_access')
       localStorage.removeItem('staff_refresh')

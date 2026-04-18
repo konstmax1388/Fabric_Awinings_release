@@ -14,6 +14,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 from .unfold_sidebar import build_unfold_sidebar
@@ -33,6 +34,14 @@ SECRET_KEY = os.environ.get(
 )
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
+
+if not DEBUG:
+    _sk = (SECRET_KEY or "").strip()
+    if len(_sk) < 50 or _sk.startswith("django-insecure-"):
+        raise ImproperlyConfigured(
+            "Задайте DJANGO_SECRET_KEY — длинную случайную строку (≥50 символов), "
+            "не начинающуюся с django-insecure-, когда DJANGO_DEBUG=false."
+        )
 
 # Капча на /admin/login/: в проде (DEBUG=False) по умолчанию включена; при DEBUG=True — выкл.,
 # пока не задать DJANGO_ADMIN_CAPTCHA=true (удобно для локальной разработки).
@@ -329,3 +338,87 @@ UNFOLD = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- Продакшен: TLS за reverse-proxy (Nginx), cookies, HSTS ---
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "true").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    _hsts = (os.environ.get("DJANGO_SECURE_HSTS_SECONDS") or "31536000").strip()
+    try:
+        SECURE_HSTS_SECONDS = max(0, int(_hsts))
+    except ValueError:
+        SECURE_HSTS_SECONDS = 31536000
+    if SECURE_HSTS_SECONDS > 0:
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+            "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "true"
+        ).lower() in ("1", "true", "yes")
+        SECURE_HSTS_PRELOAD = os.environ.get("DJANGO_SECURE_HSTS_PRELOAD", "false").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+
+# Логирование: консоль; опционально файл DJANGO_LOG_FILE (ротация 5×5 МБ).
+_LOG_LEVEL = (os.environ.get("DJANGO_LOG_LEVEL") or "INFO").upper()
+_LOG_FILE = (os.environ.get("DJANGO_LOG_FILE") or "").strip()
+
+_LOGGING: dict = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": _LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": _LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+if _LOG_FILE and not DEBUG:
+    _log_path = Path(_LOG_FILE)
+    _log_path.parent.mkdir(parents=True, exist_ok=True)
+    _LOGGING["handlers"]["file"] = {
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": str(_log_path),
+        "maxBytes": 5 * 1024 * 1024,
+        "backupCount": 5,
+        "formatter": "verbose",
+    }
+    _LOGGING["root"]["handlers"].append("file")
+    _LOGGING["loggers"]["django"]["handlers"].append("file")
+    _LOGGING["loggers"]["django.request"]["handlers"].append("file")
+
+LOGGING = _LOGGING

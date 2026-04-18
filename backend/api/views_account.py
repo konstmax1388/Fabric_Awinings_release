@@ -151,29 +151,40 @@ class CurrentUserView(APIView):
 class CustomerOrderListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, MustNotBePasswordChangeOverdue]
     serializer_class = CustomerOrderListSerializer
+    queryset = CartOrder.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CartOrder.objects.none()
         u = self.request.user
+        base = CartOrder.objects.select_related("user")
         if u.is_staff:
-            return CartOrder.objects.all().order_by("-created_at")
-        return CartOrder.objects.filter(user=u).order_by("-created_at")
+            return base.order_by("-created_at")
+        return base.filter(user=u).order_by("-created_at")
 
 
 class CustomerOrderDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated, MustNotBePasswordChangeOverdue]
     serializer_class = CustomerOrderDetailSerializer
     lookup_field = "order_ref"
+    queryset = CartOrder.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CartOrder.objects.none()
         u = self.request.user
+        base = CartOrder.objects.select_related("user")
         if u.is_staff:
-            return CartOrder.objects.all()
-        return CartOrder.objects.filter(user=u)
+            return base.all()
+        return base.filter(user=u)
 
 
 class ShippingAddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, MustNotBePasswordChangeOverdue]
     serializer_class = ShippingAddressSerializer
+    queryset = ShippingAddress.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ShippingAddress.objects.none()
         return ShippingAddress.objects.filter(user=self.request.user)

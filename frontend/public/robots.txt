@@ -1,5 +1,5 @@
-# Для продакшена замените домен в Sitemap на реальный (или задайте через хостинг).
+# Канонический домен совпадает с DJANGO_PUBLIC_SITE_URL / VITE_SITE_URL.
 User-agent: *
 Allow: /
 
-Sitemap: https://your-domain.example/sitemap.xml
+Sitemap: https://fabrika-tentov.ru/sitemap.xml

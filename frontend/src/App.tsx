@@ -9,6 +9,7 @@ import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { RouteTransition } from './components/layout/RouteTransition'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
+import { RouteErrorPage } from './components/RouteErrorPage'
 import { RequireAuth } from './pages/account/RequireAuth'
 
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })))
@@ -81,6 +82,7 @@ function AppShell() {
 const router = createBrowserRouter([
   {
     element: <AppShell />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/cart', element: <CartPage /> },

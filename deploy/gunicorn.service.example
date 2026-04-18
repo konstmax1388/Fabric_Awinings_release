@@ -11,6 +11,8 @@ ExecStart=/var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/.venv/bin/guni
   --bind 127.0.0.1:8001 \
   --workers 3 \
   --timeout 120 \
+  --access-logfile - \
+  --error-logfile - \
   config.wsgi:application
 Restart=always
 

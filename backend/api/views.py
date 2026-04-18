@@ -130,6 +130,7 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CalculatorLeadCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LeadSubmissionThrottle]
     queryset = CalculatorLead.objects.all()
     serializer_class = CalculatorLeadCreateSerializer
 

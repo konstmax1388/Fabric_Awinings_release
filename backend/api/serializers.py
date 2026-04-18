@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .validators import (
@@ -174,6 +176,7 @@ class ProductDetailSerializer(ProductListSerializer):
         f = obj.variants.order_by("sort_order", "id").first()
         return str(f.pk) if f else None
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_materialMap(self, obj: Product) -> dict[str, object] | None:
         raw = obj.material_map if isinstance(obj.material_map, dict) else {}
         enabled = bool(raw.get("enabled"))
