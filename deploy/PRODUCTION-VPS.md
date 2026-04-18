@@ -104,6 +104,8 @@ sudo systemctl status fabrika-gunicorn
 
 Пример: [`nginx-fabrika-tentov.conf.example`](nginx-fabrika-tentov.conf.example) — прокси на Gunicorn, раздача `frontend/dist` и статики Django. Подключите в `sites-enabled`, проверьте `nginx -t`, перезапустите nginx.
 
+Полный vhost с путями как на хостинге (в т.ч. **панель `/staff/`** и F5 на глубоких URL): [`nginx-fabrika-tentov.ru.full.conf`](nginx-fabrika-tentov.ru.full.conf). Блок `location ^~ /staff/` должен быть **выше** `location /`, иначе обновление страницы на `/staff/orders/…` отдаёт витринный `index.html` → 404.
+
 TLS: `certbot` или сертификат из панели.
 
 ## 9. Проверка
@@ -111,5 +113,6 @@ TLS: `certbot` или сертификат из панели.
 - `https://fabrika-tentov.ru/api/health/`
 - главная, каталог
 - `/admin/` (Unfold)
+- `/staff/` — после входа открыть заказ и обновить страницу (не должно быть 404)
 
 Логи: `journalctl -u fabrika-gunicorn -f`

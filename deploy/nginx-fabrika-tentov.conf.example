@@ -42,9 +42,14 @@ server {
         alias /var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/media/;
     }
 
-    # Панель /staff/ (admin-ui → frontend/dist/staff): глубокие ссылки /staff/orders и т.д. → index SPA, не витрина.
+    # Панель /staff/ (admin-ui → frontend/dist/staff): F5 на /staff/orders/1/show → staff/index.html, не витрина.
+    location = /staff {
+        return 302 /staff/;
+    }
+
     location ^~ /staff/ {
         root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        index index.html;
         try_files $uri $uri/ /staff/index.html;
     }
 
