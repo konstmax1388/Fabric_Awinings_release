@@ -45,6 +45,17 @@ function waitForLayout(): Promise<void> {
   })
 }
 
+/**
+ * Для defaultLocation виджета v3: длинная подпись «Город, область» иногда ломает геокодер Яндекса — берём первую часть.
+ * @see https://github.com/cdek-it/widget/wiki/Настройка-3.0
+ */
+function cityLineForWidgetMap(raw: string): string {
+  const t = raw.trim()
+  if (!t) return 'Москва'
+  const first = t.split(',')[0]?.trim()
+  return first || t
+}
+
 export type CdekWidgetParcel = { width: number; height: number; length: number; weight: number }
 
 /**
@@ -76,6 +87,7 @@ export function CdekWidgetMount({
   const [initError, setInitError] = useState<string | null>(null)
   const goodsJson = JSON.stringify(goods)
   const mapFocus = defaultMapLocation.trim() || fromCity.trim() || 'Москва'
+  const mapLine = cityLineForWidgetMap(mapFocus)
 
   useEffect(() => {
     const src = scriptUrl.trim()
@@ -103,12 +115,14 @@ export function CdekWidgetMount({
         await waitForLayout()
         if (cancelled || !window.CDEKWidget) return
 
+        const sender = (fromCity.trim() || 'Москва').trim()
         widgetRef.current = new window.CDEKWidget({
-          from: fromCity.trim() || 'Москва',
+          // Объект «откуда» стабильнее строки для API СДЭК (wiki: from — string|object).
+          from: { country_code: 'RU', city: sender },
           root: rootId,
           apiKey: key,
           servicePath: svc,
-          defaultLocation: mapFocus,
+          defaultLocation: mapLine,
           goods: parcels,
           lang: 'rus',
           currency: 'RUB',
@@ -118,7 +132,7 @@ export function CdekWidgetMount({
         })
       } catch {
         setInitError(
-          'Не удалось загрузить виджет СДЭК. Проверьте ключ Яндекс.Карт, ограничения HTTP Referrer и доступность API.',
+          'Не удалось инициализировать виджет. Частые причины: неверный ключ JavaScript API Яндекс.Карт; в кабинете Яндекса не указан HTTP Referrer для этого сайта (см. https://yandex.ru/dev/jsapi30/doc/ru/limit); в настройках сайта неверные Account/Secure СДЭК (прокси /api/cdek-widget/service/).',
         )
       }
     })()
@@ -129,7 +143,7 @@ export function CdekWidgetMount({
       if (root) root.innerHTML = ''
       widgetRef.current = null
     }
-  }, [scriptUrl, apiKey, servicePath, fromCity, mapFocus, rootId, goodsJson, onChoose])
+  }, [scriptUrl, apiKey, servicePath, fromCity, mapLine, rootId, goodsJson, onChoose])
 
   const missingKey = !apiKey.trim()
   const missingService = !servicePath.trim()
@@ -138,8 +152,10 @@ export function CdekWidgetMount({
     <div className="mt-4 rounded-xl border border-border-light bg-bg-base p-4">
       {missingKey ? (
         <p className="font-body text-xs text-amber-800 dark:text-amber-200">
-          Укажите ключ JavaScript API Яндекс.Карт в админке (Настройки сайта → оформление → СДЭК). Без ключа карта в
-          виджете не загрузится.
+          Укажите ключ сервиса «JavaScript API и HTTP Геокодер» в админке (Настройки сайта → СДЭК). В кабинете Яндекса
+          обязательно задайте HTTP Referrer для вашего домена (например{' '}
+          <code className="rounded bg-surface px-1">https://ваш-сайт.ru/*</code>
+          ), иначе карта остаётся серой после загрузки.
         </p>
       ) : null}
       {missingService ? (
@@ -157,13 +173,12 @@ export function CdekWidgetMount({
       ) : null}
       {initError ? <p className="mt-2 font-body text-xs text-red-700">{initError}</p> : null}
       {/*
-        Важно: явная высота в px (не только min-h) — иначе движок карты в iframe может отрисовать пустой белый холст.
-        isolate + z-0 — отдельный слой композиции, меньше глюков WebGL.
+        По wiki cdek-it/widget: элемент root — без «лишней» блочной модели (рамки и т.д. только на обёртке),
+        иначе карта Яндекса может не отрисоваться. Рекомендуемая высота ≥600px.
       */}
-      <div
-        id={rootId}
-        className="relative isolate z-0 mt-3 h-[420px] w-full min-h-[420px] overflow-hidden rounded-lg border border-border-light bg-[#e8e5df] sm:h-[480px] sm:min-h-[480px]"
-      />
+      <div className="relative mt-3 w-full min-w-0 overflow-hidden rounded-lg border border-border-light bg-[#e8e5df] sm:min-h-[600px] min-h-[520px] h-[520px] sm:h-[600px]">
+        <div id={rootId} className="h-full w-full min-h-0" />
+      </div>
     </div>
   )
 }

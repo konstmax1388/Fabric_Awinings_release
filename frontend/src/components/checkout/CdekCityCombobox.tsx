@@ -12,6 +12,8 @@ type Props = {
   id?: string
   value: string
   onChange: (cityLabel: string) => void
+  /** После выбора строки из подсказок — код города СДЭК (для виджета карты). */
+  onPickCity?: (opt: CdekCityOption) => void
   disabled?: boolean
 }
 
@@ -22,7 +24,7 @@ const MIN_QUERY = 2
  * Город только из подсказок API СДЭК (поиск по мере ввода).
  * Свободный текст в заказ не уходит: при потере фокуса без выбора восстанавливается последнее подтверждённое значение.
  */
-export function CdekCityCombobox({ id, value, onChange, disabled }: Props) {
+export function CdekCityCombobox({ id, value, onChange, onPickCity, disabled }: Props) {
   const inputId = useId()
   const listboxId = useId()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -90,10 +92,11 @@ export function CdekCityCombobox({ id, value, onChange, disabled }: Props) {
       setCommitted(opt.label)
       setSearch(opt.label)
       onChange(opt.label)
+      onPickCity?.(opt)
       setOpen(false)
       setOptions([])
     },
-    [onChange],
+    [onChange, onPickCity],
   )
 
   const handleBlur = useCallback(() => {
