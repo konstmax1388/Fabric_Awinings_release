@@ -42,17 +42,17 @@ git fetch origin $BRANCH
 git checkout $BRANCH
 git reset --hard "origin/$BRANCH"
 STAFF_TMP="/tmp/fabrika_staff_prev"
-rm -rf "$STAFF_TMP"
+rm -rf "\$STAFF_TMP"
 if [[ -f frontend/dist/staff/index.html ]]; then
-  mkdir -p "$STAFF_TMP"
-  cp -a frontend/dist/staff/. "$STAFF_TMP/"
+  mkdir -p "\$STAFF_TMP"
+  cp -a frontend/dist/staff/. "\$STAFF_TMP/"
 fi
 cd frontend
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
 npm run build
-if [[ -f "$STAFF_TMP/index.html" ]]; then
+if [[ -f "\$STAFF_TMP/index.html" ]]; then
   mkdir -p dist/staff
-  cp -a "$STAFF_TMP"/. dist/staff/
+  cp -a "\$STAFF_TMP"/. dist/staff/
 fi
 cd ../admin-ui
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
@@ -65,7 +65,7 @@ rm -rf frontend/dist/staff.prev
 if [[ -d frontend/dist/staff ]]; then mv -T frontend/dist/staff frontend/dist/staff.prev; fi
 mv -T frontend/dist/staff.new frontend/dist/staff
 rm -rf frontend/dist/staff.prev
-rm -rf "$STAFF_TMP"
+rm -rf "\$STAFF_TMP"
 cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
 source .venv/bin/activate
@@ -82,17 +82,17 @@ git fetch origin $BRANCH
 git checkout $BRANCH
 git reset --hard "origin/$BRANCH"
 STAFF_TMP="/tmp/fabrika_staff_prev"
-rm -rf "$STAFF_TMP"
+rm -rf "\$STAFF_TMP"
 if [[ -f frontend/dist/staff/index.html ]]; then
-  mkdir -p "$STAFF_TMP"
-  cp -a frontend/dist/staff/. "$STAFF_TMP/"
+  mkdir -p "\$STAFF_TMP"
+  cp -a frontend/dist/staff/. "\$STAFF_TMP/"
 fi
 cd frontend
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
 npm run build
-if [[ -f "$STAFF_TMP/index.html" ]]; then
+if [[ -f "\$STAFF_TMP/index.html" ]]; then
   mkdir -p dist/staff
-  cp -a "$STAFF_TMP"/. dist/staff/
+  cp -a "\$STAFF_TMP"/. dist/staff/
 fi
 cd ../admin-ui
 if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
@@ -105,7 +105,7 @@ rm -rf frontend/dist/staff.prev
 if [[ -d frontend/dist/staff ]]; then mv -T frontend/dist/staff frontend/dist/staff.prev; fi
 mv -T frontend/dist/staff.new frontend/dist/staff
 rm -rf frontend/dist/staff.prev
-rm -rf "$STAFF_TMP"
+rm -rf "\$STAFF_TMP"
 cd backend
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
 source .venv/bin/activate
