@@ -35,6 +35,13 @@ export type CheckoutPublicConfig = {
   }
 }
 
+/** Подписи по умолчанию, если в deliveryOptions не пришла строка (устаревший кэш и т.п.). */
+export const CHECKOUT_DELIVERY_FALLBACK_LABELS: Record<string, string> = {
+  pickup: 'Самовывоз со склада',
+  cdek: 'СДЭК (ПВЗ / курьер)',
+  ozon_logistics: 'Логистика Ozon',
+}
+
 export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
   deliveryOptions: [{ id: 'pickup', label: 'Самовывоз со склада' }],
   paymentMatrix: {

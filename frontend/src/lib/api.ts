@@ -1,6 +1,7 @@
 import type { MarketplaceId } from '../config/site'
 import type { HomePayload } from '../types/homePage'
 import {
+  CHECKOUT_DELIVERY_FALLBACK_LABELS,
   DEFAULT_CHECKOUT_PUBLIC,
   type CheckoutDeliveryOption,
   type CheckoutPublicConfig,
@@ -726,6 +727,35 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     if (typeof z.sandbox === 'boolean') ozonPay.sandbox = z.sandbox
   }
 
+  const ensureDeliveryRow = (id: string) => {
+    if (deliveryOptions.some((x) => x.id === id)) return
+    const label = CHECKOUT_DELIVERY_FALLBACK_LABELS[id] || id
+    deliveryOptions.push({ id, label })
+  }
+  if (cdek.enabled) ensureDeliveryRow('cdek')
+  if (ozonLogistics.enabled) ensureDeliveryRow('ozon_logistics')
+
+  const ensurePaymentRow = (deliveryId: string) => {
+    let methods = paymentMatrix[deliveryId]
+    if (methods && methods.length) return
+    const fb = DEFAULT_CHECKOUT_PUBLIC.paymentMatrix[deliveryId]
+    if (fb && fb.length) {
+      methods = [...fb]
+    } else {
+      return
+    }
+    if (deliveryId === 'pickup' && ozonPay.enabled && !methods.includes('card_online')) {
+      methods = [...methods, 'card_online']
+    }
+    if (deliveryId === 'cdek' && ozonPay.enabled && !methods.includes('card_online')) {
+      methods = [...methods, 'card_online']
+    }
+    paymentMatrix[deliveryId] = methods
+  }
+  for (const opt of deliveryOptions) {
+    ensurePaymentRow(opt.id)
+  }
+
   return {
     deliveryOptions,
     paymentMatrix,
@@ -776,7 +806,7 @@ function parseMapFormOverlay(raw: unknown): MapFormSiteOverlay | undefined {
 
 export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
   try {
-    const r = await fetch(`${apiBase()}/api/site-settings/`)
+    const r = await fetch(`${apiBase()}/api/site-settings/`, { cache: 'no-store' })
     const data = await parseJson<Record<string, unknown>>(r)
     if (!data) return null
     const raw = data.enabledMarketplaces

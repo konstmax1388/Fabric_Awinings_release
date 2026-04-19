@@ -518,6 +518,7 @@ def test_cart_order_with_email_triggers_buyer_confirmation(mock_send, client):
 def test_site_settings_public(client):
     r = client.get("/api/site-settings/")
     assert r.status_code == 200
+    assert "no-store" in (r.headers.get("Cache-Control") or "")
     body = r.json()
     assert "enabledMarketplaces" in body
     assert "wb" in body["enabledMarketplaces"]

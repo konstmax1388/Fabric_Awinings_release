@@ -56,7 +56,10 @@ class SiteSettingsPublicView(APIView):
 
     def get(self, request):
         s = SiteSettings.get_solo()
-        return Response(SiteSettingsPublicSerializer(s, context={"request": request}).data)
+        response = Response(SiteSettingsPublicSerializer(s, context={"request": request}).data)
+        # Настройки оформления меняются в админке; не кэшировать у CDN/браузером (иначе остаётся только самовывоз и т.д.).
+        response["Cache-Control"] = "no-store, max-age=0, private"
+        return response
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
