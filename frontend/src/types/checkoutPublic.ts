@@ -23,6 +23,8 @@ export type CheckoutPublicConfig = {
     widgetServiceUrl: string
     widgetSenderCity: string
     manualPvzEnabled: boolean
+    /** widget — карта и виджет cdek-it; custom — список ПВЗ по API без Яндекса */
+    checkoutUi: 'widget' | 'custom'
     widgetGoods: { width: number; height: number; length: number; weight: number }[]
   }
   ozonLogistics: {
@@ -71,6 +73,7 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
     widgetServiceUrl: '',
     widgetSenderCity: 'Москва',
     manualPvzEnabled: true,
+    checkoutUi: 'widget',
     widgetGoods: [{ width: 20, height: 20, length: 30, weight: 3000 }],
   },
   ozonLogistics: {

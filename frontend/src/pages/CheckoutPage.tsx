@@ -8,6 +8,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { CdekAddressCombobox } from '../components/checkout/CdekAddressCombobox'
 import { CdekCityCombobox } from '../components/checkout/CdekCityCombobox'
+import { CdekPickupListCustom } from '../components/checkout/CdekPickupListCustom'
 import { CdekWidgetMount } from '../components/checkout/CdekWidgetMount'
 import { PickupInfoCard } from '../components/checkout/PickupInfoCard'
 import { CartReadonlyLinesList } from '../components/cart/CartReadonlyLinesList'
@@ -41,6 +42,8 @@ export function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [cdekMode, setCdekMode] = useState<CdekMode>('office')
+  /** Код города СДЭК после выбора в подсказках (нужен для списка ПВЗ без виджета). */
+  const [cdekCityCode, setCdekCityCode] = useState<number | null>(null)
   const [cdekPvzCode, setCdekPvzCode] = useState('')
   const [cdekPvzAddress, setCdekPvzAddress] = useState('')
   const [sending, setSending] = useState(false)
@@ -77,9 +80,22 @@ export function CheckoutPage() {
     setCity('')
     setAddress('')
     setDeliveryComment('')
+    setCdekCityCode(null)
     setCdekPvzCode('')
     setCdekPvzAddress('')
   }, [deliveryMethod])
+
+  useEffect(() => {
+    setCdekPvzCode('')
+    setCdekPvzAddress('')
+  }, [cdekCityCode])
+
+  useEffect(() => {
+    if (cdekMode === 'door') {
+      setCdekPvzCode('')
+      setCdekPvzAddress('')
+    }
+  }, [cdekMode])
 
   const deliveryLabel = useMemo(() => {
     return checkout.deliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
@@ -99,6 +115,8 @@ export function CheckoutPage() {
     if (u) return u
     return `${apiBase()}/api/cdek-widget/service/`
   }, [checkout.cdek.widgetServiceUrl])
+
+  const useCdekWidgetUi = checkout.cdek.checkoutUi !== 'custom'
 
   const handleCdekWidgetChoose = useCallback((mode: string, _tariff: unknown, addr: Record<string, unknown>) => {
     if (mode === 'office') {
@@ -165,13 +183,27 @@ export function CheckoutPage() {
       setError('Укажите город: начните ввод и выберите значение из списка подсказок СДЭК.')
       return
     }
-    if (deliveryMethod === 'cdek' && cdekMode === 'office' && !cdekPvzCode.trim()) {
-      if (checkout.cdek.manualPvzEnabled) {
-        setError('Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.')
-      } else {
-        setError('Выберите пункт выдачи на карте СДЭК.')
+    if (deliveryMethod === 'cdek' && cdekMode === 'office') {
+      if (!useCdekWidgetUi && cdekCityCode === null) {
+        setError(
+          'Выберите город из списка подсказок СДЭК — без кода города нельзя показать пункты выдачи.',
+        )
+        return
       }
-      return
+      if (!cdekPvzCode.trim()) {
+        if (checkout.cdek.manualPvzEnabled) {
+          setError(
+            useCdekWidgetUi
+              ? 'Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.'
+              : 'Выберите пункт выдачи из списка или введите код ПВЗ вручную.',
+          )
+        } else {
+          setError(
+            useCdekWidgetUi ? 'Выберите пункт выдачи на карте СДЭК.' : 'Выберите пункт выдачи из списка.',
+          )
+        }
+        return
+      }
     }
     setStep(3)
   }
@@ -201,13 +233,27 @@ export function CheckoutPage() {
       setError('Укажите город: выберите значение из списка подсказок СДЭК.')
       return
     }
-    if (deliveryMethod === 'cdek' && cdekMode === 'office' && !cdekPvzCode.trim()) {
-      if (checkout.cdek.manualPvzEnabled) {
-        setError('Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.')
-      } else {
-        setError('Выберите пункт выдачи на карте СДЭК.')
+    if (deliveryMethod === 'cdek' && cdekMode === 'office') {
+      if (!useCdekWidgetUi && cdekCityCode === null) {
+        setError(
+          'Выберите город из списка подсказок СДЭК — без кода города нельзя показать пункты выдачи.',
+        )
+        return
       }
-      return
+      if (!cdekPvzCode.trim()) {
+        if (checkout.cdek.manualPvzEnabled) {
+          setError(
+            useCdekWidgetUi
+              ? 'Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.'
+              : 'Выберите пункт выдачи из списка или введите код ПВЗ вручную.',
+          )
+        } else {
+          setError(
+            useCdekWidgetUi ? 'Выберите пункт выдачи на карте СДЭК.' : 'Выберите пункт выдачи из списка.',
+          )
+        }
+        return
+      }
     }
     setSending(true)
     try {
@@ -444,7 +490,17 @@ export function CheckoutPage() {
                   {deliveryMethod === 'cdek' && (
                     <>
                       <div className="mt-4">
-                        <CdekCityCombobox value={city} onChange={setCity} disabled={settingsLoading} />
+                        <CdekCityCombobox
+                          value={city}
+                          onChange={(v) => {
+                            setCity(v)
+                            if (!v.trim()) setCdekCityCode(null)
+                          }}
+                          onPickCity={(opt) => {
+                            setCdekCityCode(typeof opt.code === 'number' ? opt.code : null)
+                          }}
+                          disabled={settingsLoading}
+                        />
                       </div>
                       <fieldset className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
                         <legend className="px-1 font-body text-sm font-medium text-text">Тип доставки СДЭК</legend>
@@ -473,51 +529,114 @@ export function CheckoutPage() {
                           </label>
                         </div>
                       </fieldset>
-                      <CdekAddressCombobox
-                        value={address}
-                        onChange={setAddress}
-                        cityHint={city}
-                        yandexApiKey={checkout.cdek.yandexMapApiKey}
-                        disabled={settingsLoading}
-                      />
-                      <CdekWidgetMount
-                        scriptUrl={checkout.cdek.widgetScriptUrl}
-                        apiKey={checkout.cdek.yandexMapApiKey}
-                        servicePath={cdekWidgetServicePath}
-                        fromCity={checkout.cdek.widgetSenderCity}
-                        defaultMapLocation={city.trim() || checkout.cdek.widgetSenderCity}
-                        rootId="cdek-map-root-checkout"
-                        goods={checkout.cdek.widgetGoods}
-                        onChoose={handleCdekWidgetChoose}
-                      />
-                      {checkout.cdek.manualPvzEnabled ? (
-                        <details className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
-                          <summary className="cursor-pointer font-body text-sm font-medium text-text">
-                            Ручной ввод ПВЗ (если виджет не сработал)
-                          </summary>
-                          <label className="mt-3 block">
-                            <span className="mb-1 block font-body text-sm font-medium text-text">
-                              Код ПВЗ (из виджета или от оператора)
-                            </span>
-                            <input
-                              value={cdekPvzCode}
-                              onChange={(e) => setCdekPvzCode(e.target.value)}
-                              className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
-                              placeholder="Например: MSK123"
-                            />
-                          </label>
-                          <label className="mt-3 block">
-                            <span className="mb-1 block font-body text-sm font-medium text-text">
-                              Адрес ПВЗ (текстом)
-                            </span>
-                            <input
-                              value={cdekPvzAddress}
-                              onChange={(e) => setCdekPvzAddress(e.target.value)}
-                              className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
-                            />
-                          </label>
-                        </details>
-                      ) : null}
+                      {useCdekWidgetUi ? (
+                        <>
+                          <CdekAddressCombobox
+                            value={address}
+                            onChange={setAddress}
+                            cityHint={city}
+                            yandexApiKey={checkout.cdek.yandexMapApiKey}
+                            disabled={settingsLoading}
+                          />
+                          <CdekWidgetMount
+                            scriptUrl={checkout.cdek.widgetScriptUrl}
+                            apiKey={checkout.cdek.yandexMapApiKey}
+                            servicePath={cdekWidgetServicePath}
+                            fromCity={checkout.cdek.widgetSenderCity}
+                            defaultMapLocation={city.trim() || checkout.cdek.widgetSenderCity}
+                            rootId="cdek-map-root-checkout"
+                            goods={checkout.cdek.widgetGoods}
+                            onChoose={handleCdekWidgetChoose}
+                          />
+                          {checkout.cdek.manualPvzEnabled ? (
+                            <details className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
+                              <summary className="cursor-pointer font-body text-sm font-medium text-text">
+                                Ручной ввод ПВЗ (если виджет не сработал)
+                              </summary>
+                              <label className="mt-3 block">
+                                <span className="mb-1 block font-body text-sm font-medium text-text">
+                                  Код ПВЗ (из виджета или от оператора)
+                                </span>
+                                <input
+                                  value={cdekPvzCode}
+                                  onChange={(e) => setCdekPvzCode(e.target.value)}
+                                  className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                                  placeholder="Например: MSK123"
+                                />
+                              </label>
+                              <label className="mt-3 block">
+                                <span className="mb-1 block font-body text-sm font-medium text-text">
+                                  Адрес ПВЗ (текстом)
+                                </span>
+                                <input
+                                  value={cdekPvzAddress}
+                                  onChange={(e) => setCdekPvzAddress(e.target.value)}
+                                  className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                                />
+                              </label>
+                            </details>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          {cdekMode === 'door' && (
+                            <label className="mt-3 block">
+                              <span className="mb-1 block font-body text-sm font-medium text-text">
+                                Адрес доставки (улица, дом, квартира)
+                              </span>
+                              <textarea
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                                rows={4}
+                                className="w-full rounded-xl border border-border px-3 py-2 font-body outline-none focus:border-accent"
+                                placeholder="Полный адрес для курьера СДЭК"
+                              />
+                            </label>
+                          )}
+                          {cdekMode === 'office' && (
+                            <div className="mt-3">
+                              <p className="font-body text-sm font-medium text-text">Пункт выдачи</p>
+                              <CdekPickupListCustom
+                                cityCode={cdekCityCode}
+                                selectedCode={cdekPvzCode}
+                                disabled={settingsLoading}
+                                onSelect={(code, line) => {
+                                  setCdekPvzCode(code)
+                                  setCdekPvzAddress(line)
+                                }}
+                              />
+                              {checkout.cdek.manualPvzEnabled ? (
+                                <details className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
+                                  <summary className="cursor-pointer font-body text-sm font-medium text-text">
+                                    Ручной ввод ПВЗ (если списка нет или нужен другой код)
+                                  </summary>
+                                  <label className="mt-3 block">
+                                    <span className="mb-1 block font-body text-sm font-medium text-text">
+                                      Код ПВЗ (от оператора СДЭК)
+                                    </span>
+                                    <input
+                                      value={cdekPvzCode}
+                                      onChange={(e) => setCdekPvzCode(e.target.value)}
+                                      className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                                      placeholder="Например: MSK123"
+                                    />
+                                  </label>
+                                  <label className="mt-3 block">
+                                    <span className="mb-1 block font-body text-sm font-medium text-text">
+                                      Адрес ПВЗ (текстом)
+                                    </span>
+                                    <input
+                                      value={cdekPvzAddress}
+                                      onChange={(e) => setCdekPvzAddress(e.target.value)}
+                                      className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                                    />
+                                  </label>
+                                </details>
+                              ) : null}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
 

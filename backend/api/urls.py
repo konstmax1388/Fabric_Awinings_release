@@ -6,6 +6,7 @@ from . import views
 from .views_checkout import OzonPayWebhookView
 from .views_cdek_address_suggest import CdekYandexAddressSuggestView
 from .views_cdek_cities import CdekSuggestCitiesView
+from .views_cdek_pickup_points import CdekPickupPointsView
 from .views_cdek_widget import CdekWidgetServiceView
 from .views_optimized_image import ImageVariantView
 from .views_account import (
@@ -34,6 +35,7 @@ urlpatterns = [
     path("site-settings/", SiteSettingsPublicView.as_view(), name="site-settings"),
     path("cdek-widget/service/", CdekWidgetServiceView.as_view(), name="cdek-widget-service"),
     path("cdek/suggest-cities/", CdekSuggestCitiesView.as_view(), name="cdek-suggest-cities"),
+    path("cdek/pickup-points/", CdekPickupPointsView.as_view(), name="cdek-pickup-points"),
     path("cdek/address-suggest/", CdekYandexAddressSuggestView.as_view(), name="cdek-suggest-address"),
     path("home-content/", HomePageContentPublicView.as_view(), name="home-content"),
     path("leads/calculator/", views.CalculatorLeadCreateView.as_view(), name="lead-calculator"),

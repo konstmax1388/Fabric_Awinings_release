@@ -226,6 +226,7 @@ const SITE_LABELS: Record<string, string> = {
   pickupPointLat: 'Самовывоз: широта',
   pickupPointLng: 'Самовывоз: долгота',
   cdekEnabled: 'СДЭК: включить на сайте',
+  cdekCheckoutUi: 'СДЭК: интерфейс ПВЗ на витрине',
   cdekTestMode: 'СДЭК: тестовый контур',
   cdekAccount: 'СДЭК: Account',
   cdekSecurePassword: 'СДЭК: пароль (сохранён)',

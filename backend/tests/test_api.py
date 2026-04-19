@@ -564,6 +564,8 @@ def test_site_settings_public(client):
         "yandexMapApiKey",
         "widgetServiceUrl",
         "widgetSenderCity",
+        "manualPvzEnabled",
+        "checkoutUi",
         "widgetGoods",
     ):
         assert k in cdek
@@ -597,6 +599,64 @@ def test_cdek_widget_service_disabled(client):
         content_type="application/json",
     )
     assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cdek_pickup_points_disabled(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = False
+    s.save(update_fields=["cdek_enabled"])
+    r = client.get("/api/cdek/pickup-points/?city_code=44")
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cdek_pickup_points_requires_city_code(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+    r = client.get("/api/cdek/pickup-points/")
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cdek_pickup_points_mocked(client):
+    from unittest.mock import patch
+
+    from api.models import SiteSettings
+    from api.services import cdek_widget_service
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_test_mode = True
+    s.cdek_account = "acc"
+    s.cdek_secure_password = "sec"
+    s.save()
+
+    with (
+        patch.object(cdek_widget_service, "fetch_cdek_access_token", return_value="tok"),
+        patch.object(
+            cdek_widget_service,
+            "get_json",
+            return_value=[
+                {
+                    "code": "MSK1",
+                    "name": "ПВЗ 1",
+                    "location": {"address_full": "ул. Тестовая, 1"},
+                }
+            ],
+        ),
+    ):
+        r = client.get("/api/cdek/pickup-points/?city_code=44")
+    assert r.status_code == 200
+    data = r.json()
+    assert "points" in data
+    assert len(data["points"]) == 1
+    assert data["points"][0]["code"] == "MSK1"
 
 
 @pytest.mark.django_db

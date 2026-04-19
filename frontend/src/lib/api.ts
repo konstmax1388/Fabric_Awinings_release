@@ -691,6 +691,7 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     if (typeof c.yandexMapApiKey === 'string') cdek.yandexMapApiKey = c.yandexMapApiKey.trim()
     if (typeof c.widgetServiceUrl === 'string') cdek.widgetServiceUrl = c.widgetServiceUrl.trim()
     if (typeof c.manualPvzEnabled === 'boolean') cdek.manualPvzEnabled = c.manualPvzEnabled
+    if (c.checkoutUi === 'widget' || c.checkoutUi === 'custom') cdek.checkoutUi = c.checkoutUi
     if (typeof c.widgetSenderCity === 'string' && c.widgetSenderCity.trim())
       cdek.widgetSenderCity = c.widgetSenderCity.trim()
     const wg = c.widgetGoods

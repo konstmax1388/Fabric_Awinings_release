@@ -745,6 +745,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                 "widgetServiceUrl": widget_service_url,
                 "widgetSenderCity": widget_sender_city(),
                 "manualPvzEnabled": obj.cdek_manual_pvz_enabled,
+                "checkoutUi": obj.cdek_checkout_ui,
                 "widgetGoods": default_goods,
             },
             "ozonLogistics": {

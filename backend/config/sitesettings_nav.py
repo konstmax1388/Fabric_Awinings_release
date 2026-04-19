@@ -109,6 +109,7 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "checkout_cdek": (
         "cdek_enabled",
+        "cdek_checkout_ui",
         "cdek_test_mode",
         "cdek_account",
         "cdek_secure_password",

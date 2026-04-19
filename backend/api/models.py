@@ -867,10 +867,21 @@ class SiteSettings(models.Model):
         blank=True,
     )
 
+    class CdekCheckoutUI(models.TextChoices):
+        WIDGET = "widget", "Виджет v3 (карта Яндекса)"
+        CUSTOM = "custom", "Свой интерфейс: список ПВЗ по API, без Яндекса"
+
     cdek_enabled = models.BooleanField(
         "СДЭК: включить на сайте",
         default=False,
         help_text="Доставка СДЭК; учётная запись API — ниже. Виджет ПВЗ подключается на фронте (см. docs).",
+    )
+    cdek_checkout_ui = models.CharField(
+        "СДЭК: интерфейс выбора ПВЗ на витрине",
+        max_length=16,
+        choices=CdekCheckoutUI.choices,
+        default=CdekCheckoutUI.WIDGET,
+        help_text="«Виджет» — официальный виджет cdek-it и ключ Яндекс.Карт. «Свой» — список пунктов из API СДЭК без карты и без ключа Яндекса.",
     )
     cdek_test_mode = models.BooleanField(
         "СДЭК: тестовый контур (api.edu.cdek.ru)",
