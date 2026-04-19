@@ -169,7 +169,7 @@ export function CheckoutPage() {
       if (checkout.cdek.manualPvzEnabled) {
         setError('Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.')
       } else {
-        setError('Для доставки в ПВЗ выберите пункт на карте СДЭК (ручной ввод отключён).')
+        setError('Выберите пункт выдачи на карте СДЭК.')
       }
       return
     }
@@ -205,7 +205,7 @@ export function CheckoutPage() {
       if (checkout.cdek.manualPvzEnabled) {
         setError('Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.')
       } else {
-        setError('Для доставки в ПВЗ выберите пункт на карте СДЭК (ручной ввод отключён).')
+        setError('Выберите пункт выдачи на карте СДЭК.')
       }
       return
     }

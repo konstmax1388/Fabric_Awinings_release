@@ -628,6 +628,30 @@ def test_cdek_widget_service_offices_mocked(client):
 
 
 @pytest.mark.django_db
+def test_cdek_address_suggest_cdek_off(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = False
+    s.save(update_fields=["cdek_enabled"])
+    r = client.get("/api/cdek/address-suggest/?q=тек")
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cdek_address_suggest_short_query(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_yandex_map_api_key = "test-key"
+    s.save()
+    r = client.get("/api/cdek/address-suggest/?q=ab")
+    assert r.status_code == 200
+    assert r.json() == {"suggestions": []}
+
+
+@pytest.mark.django_db
 def test_cdek_suggest_cities_disabled(client):
     from api.models import SiteSettings
 

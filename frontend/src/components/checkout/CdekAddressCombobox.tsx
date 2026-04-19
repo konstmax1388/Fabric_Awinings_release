@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 
-type YSuggestItem = {
-  title?: { text?: string }
-  subtitle?: { text?: string }
-}
+import { apiBase } from '../../lib/api'
 
-type YSuggestResponse = {
-  results?: YSuggestItem[]
+type AddressSuggestResponse = {
+  suggestions?: { label: string }[]
 }
 
 type AddressOption = {
@@ -38,10 +35,10 @@ export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKe
   const [search, setSearch] = useState(value)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [options, setOptions] = useState<AddressOption[]>([])
   const [highlight, setHighlight] = useState(0)
 
+  /** Ключ в JSON витрины: подсказки идут через прокси бэкенда (CORS/403 при прямом вызове Suggest). */
   const hasSuggest = yandexApiKey.trim().length > 0
 
   useEffect(() => {
@@ -56,41 +53,32 @@ export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKe
     async (q: string) => {
       if (!hasSuggest || q.trim().length < MIN_QUERY) {
         setOptions([])
-        setError(null)
         return
       }
       setLoading(true)
-      setError(null)
       try {
-        const text = cityHint.trim() ? `${cityHint}, ${q.trim()}` : q.trim()
-        const spn = cityHint.trim() ? '&spn=0.35,0.35' : ''
-        const url =
-          `https://suggest-maps.yandex.ru/v1/suggest?apikey=${encodeURIComponent(yandexApiKey.trim())}` +
-          `&text=${encodeURIComponent(text)}&types=geo&lang=ru_RU&results=8${spn}`
-        const r = await fetch(url)
+        const qs = new URLSearchParams({ q: q.trim() })
+        if (cityHint.trim()) qs.set('city', cityHint.trim())
+        const r = await fetch(`${apiBase()}/api/cdek/address-suggest/?${qs.toString()}`, { cache: 'no-store' })
+        const data = (await r.json()) as AddressSuggestResponse
         if (!r.ok) {
           setOptions([])
-          setError('Не удалось загрузить подсказки адреса')
           return
         }
-        const data = (await r.json()) as YSuggestResponse
         const out: AddressOption[] = []
-        for (const row of data.results ?? []) {
-          const t = (row.title?.text ?? '').trim()
-          const sub = (row.subtitle?.text ?? '').trim()
-          const label = [t, sub].filter(Boolean).join(', ').trim()
-          if (!label) continue
-          out.push({ label })
+        for (const row of data.suggestions ?? []) {
+          if (row && typeof row.label === 'string' && row.label.trim()) {
+            out.push({ label: row.label.trim() })
+          }
         }
         setOptions(out)
       } catch {
         setOptions([])
-        setError('Ошибка сети. Проверьте соединение.')
       } finally {
         setLoading(false)
       }
     },
-    [cityHint, hasSuggest, yandexApiKey],
+    [cityHint, hasSuggest],
   )
 
   useEffect(() => {
@@ -204,14 +192,9 @@ export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKe
         </p>
       ) : (
         <p className="mt-1.5 font-body text-xs text-amber-800">
-          Подсказки адреса отключены: в настройках СДЭК не задан ключ Яндекс.Карт.
+          Подсказки по адресу: задайте ключ API Яндекс.Карт в настройках СДЭК (тот же, что и для карты).
         </p>
       )}
-      {error ? (
-        <p className="mt-1 font-body text-xs text-amber-800">
-          Подсказки сейчас недоступны. Можно ввести адрес вручную.
-        </p>
-      ) : null}
 
       {hasSuggest && open && search.trim().length >= MIN_QUERY ? (
         <ul
@@ -222,7 +205,7 @@ export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKe
           {loading ? (
             <li className="px-3 py-2 font-body text-sm text-text-muted">Загрузка…</li>
           ) : options.length === 0 ? (
-            <li className="px-3 py-2 font-body text-sm text-text-muted">{error ? null : 'Ничего не найдено'}</li>
+            <li className="px-3 py-2 font-body text-sm text-text-muted">Ничего не найдено</li>
           ) : (
             options.map((opt, i) => (
               <li key={`${opt.label}-${i}`} role="presentation">
