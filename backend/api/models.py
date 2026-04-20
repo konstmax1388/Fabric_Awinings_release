@@ -952,21 +952,21 @@ class SiteSettings(models.Model):
         max_length=500,
         blank=True,
         default="",
-        help_text="Числовые коды тарифов API СДЭК v2 для доставки в пункт выдачи (виджет). Пусто — доступны все тарифы виджета.",
+        help_text="Числовые коды тарифов API СДЭК v2 для доставки в пункт выдачи (виджет). Пусто — доступны все тарифы виджета. Ниже на странице — загрузка списка из API.",
     )
     cdek_tariff_codes_door = models.CharField(
         "СДЭК: коды тарифов для курьера до двери",
         max_length=500,
         blank=True,
         default="",
-        help_text="Тарифы для режима «до двери». Пусто — все.",
+        help_text="Тарифы для режима «до двери». Пусто — все. Список можно подобрать из API блоком ниже.",
     )
     cdek_tariff_codes_pickup = models.CharField(
         "СДЭК: коды тарифов для постаматов",
         max_length=500,
         blank=True,
         default="",
-        help_text="Тарифы для постаматов (если включены в виджете). Пусто — все.",
+        help_text="Тарифы для постаматов (если включены в виджете). Пусто — все. Список можно подобрать из API блоком ниже.",
     )
 
     ozon_logistics_enabled = models.BooleanField(

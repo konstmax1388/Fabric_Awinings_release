@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group, User
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelform_factory
 from django.http import Http404
+from django.http import JsonResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -1352,7 +1353,7 @@ class SiteSettingsAdmin(ModelAdmin):
                     "Секрет можно задать в .env: CDEK_ACCOUNT, CDEK_SECURE, CDEK_API_BASE_URL. "
                     "Виджет v3: wiki https://github.com/cdek-it/widget/wiki — скрипт по умолчанию @cdek-it/widget@3; "
                     "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже). "
-                    "Коды тарифов — числа через запятую (справочник СДЭК v2); пусто — в виджете доступны все тарифы."
+                    "Коды тарифов можно ввести вручную или подставить из ответа калькулятора СДЭК блоком под формой; пусто — в виджете доступны все тарифы."
                 ),
             },
         ),
@@ -1471,6 +1472,11 @@ class SiteSettingsAdmin(ModelAdmin):
                 if slug == "crm_bitrix_catalog"
                 else None
             ),
+            "cdek_tariff_catalog_url": (
+                reverse("admin:api_sitesettings_cdek_tariff_catalog")
+                if slug == "checkout_cdek"
+                else None
+            ),
             "section_nav": _sitesettings_section_nav(slug),
         }
         return TemplateResponse(request, "admin/api/section_form.html", context)
@@ -1512,6 +1518,11 @@ class SiteSettingsAdmin(ModelAdmin):
                 "bitrix24-catalog-sync/",
                 self.admin_site.admin_view(self.bitrix24_catalog_sync_view),
                 name="%s_%s_bitrix24_catalog_sync" % info,
+            ),
+            path(
+                "cdek-tariff-catalog/",
+                self.admin_site.admin_view(self.cdek_tariff_catalog_fetch_view),
+                name="%s_%s_cdek_tariff_catalog" % info,
             ),
             *super().get_urls(),
         ]
@@ -1597,6 +1608,44 @@ class SiteSettingsAdmin(ModelAdmin):
         }
         return TemplateResponse(
             request, "admin/api/sitesettings/bitrix24_catalog_sync.html", context
+        )
+
+    def cdek_tariff_catalog_fetch_view(self, request):
+        """GET JSON: список тарифов из API СДЭК (калькулятор tarifflist) для подбора кодов в админке."""
+        if request.method != "GET":
+            return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+
+        from .services.cdek_tariff_catalog import fetch_cdek_tariff_catalog
+
+        def _parse_opt_int(raw: str | None) -> int | None:
+            if raw is None:
+                return None
+            s = str(raw).strip()
+            if not s:
+                return None
+            try:
+                return int(s)
+            except ValueError:
+                return None
+
+        from_code = _parse_opt_int(request.GET.get("from_code"))
+        to_code = _parse_opt_int(request.GET.get("to_code"))
+
+        settings = SiteSettings.get_solo()
+        items, err = fetch_cdek_tariff_catalog(settings, from_city_code=from_code, to_city_code=to_code)
+        if err:
+            return JsonResponse({"ok": False, "error": err}, status=400)
+        return JsonResponse(
+            {
+                "ok": True,
+                "items": items or [],
+                "meta": {
+                    "fromCityCode": from_code,
+                    "toCityCode": to_code,
+                },
+            }
         )
 
     def smtp_test_view(self, request):

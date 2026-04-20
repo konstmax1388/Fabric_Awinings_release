@@ -119,5 +119,189 @@
       </div>
     </form>
   </div>
+
+  {% if cdek_tariff_catalog_url %}
+  {% trans "ПВЗ (виджет: office)" as cdek_js_ttl_office %}
+  {% trans "До двери (виджет: door)" as cdek_js_ttl_door %}
+  {% trans "Постаматы (виджет: pickup)" as cdek_js_ttl_pickup %}
+  {% trans "Нет строк для отображения." as cdek_js_empty %}
+  {% trans "Ошибка загрузки" as cdek_js_err_load %}
+  {% trans "Сеть или сервер недоступны." as cdek_js_err_net %}
+  <div class="rounded-default border border-base-200 bg-base-50/80 p-4 text-sm dark:border-base-700 dark:bg-base-900/40">
+    <p class="font-medium text-font-important-light dark:text-font-important-dark">
+      {% trans "Тарифы СДЭК: подбор кодов из API" %}
+    </p>
+    <p class="mt-1 text-font-subtle-light dark:text-font-subtle-dark">
+      {% trans "Запрос к калькулятору СДЭК (как у виджета). Укажите при необходимости коды городов; иначе «откуда» берётся из поля «город отправления», «куда» — пример из переменной окружения CDEK_TARIFF_CATALOG_TO_CITY (по умолчанию 44)." %}
+    </p>
+    <div class="mt-3 flex flex-wrap items-end gap-3">
+      <label class="flex flex-col gap-1 text-xs font-medium text-font-important-light dark:text-font-important-dark">
+        {% trans "Код города отправления (пусто — авто)" %}
+        <input type="number" min="1" id="cdek-catalog-from-code" class="h-9 w-36 rounded-default border border-base-200 bg-white px-2 dark:border-base-600 dark:bg-base-900" />
+      </label>
+      <label class="flex flex-col gap-1 text-xs font-medium text-font-important-light dark:text-font-important-dark">
+        {% trans "Код города назначения (пусто — по умолчанию)" %}
+        <input type="number" min="1" id="cdek-catalog-to-code" class="h-9 w-36 rounded-default border border-base-200 bg-white px-2 dark:border-base-600 dark:bg-base-900" />
+      </label>
+      <button type="button" id="cdek-catalog-load" class="inline-flex items-center gap-2 rounded-default bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-primary-700">
+        <span class="material-symbols-outlined text-[20px]">cloud_download</span>
+        {% trans "Загрузить список" %}
+      </button>
+    </div>
+    <p id="cdek-catalog-error" class="mt-2 hidden text-sm text-red-600 dark:text-red-400" role="alert"></p>
+    <div id="cdek-catalog-panel" class="mt-4 hidden max-h-[28rem] overflow-auto rounded-default border border-base-200 bg-white p-3 dark:border-base-600 dark:bg-base-900"></div>
+    <button type="button" id="cdek-catalog-apply" class="mt-3 hidden inline-flex items-center gap-2 rounded-default border border-primary-600 bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-xs hover:bg-primary-50 dark:border-primary-500 dark:bg-base-900 dark:text-primary-300">
+      {% trans "Подставить выбранные коды в поля формы выше" %}
+    </button>
+  </div>
+  <script>
+    (function () {
+      var catalogUrl = "{{ cdek_tariff_catalog_url|escapejs }}";
+      var loadBtn = document.getElementById("cdek-catalog-load");
+      var applyBtn = document.getElementById("cdek-catalog-apply");
+      var errEl = document.getElementById("cdek-catalog-error");
+      var panel = document.getElementById("cdek-catalog-panel");
+      var fromInput = document.getElementById("cdek-catalog-from-code");
+      var toInput = document.getElementById("cdek-catalog-to-code");
+      if (!loadBtn || !catalogUrl) return;
+
+      function fieldByName(name) {
+        return document.querySelector('[name="' + name + '"]');
+      }
+      var fOffice = fieldByName("cdek_tariff_codes_office");
+      var fDoor = fieldByName("cdek_tariff_codes_door");
+      var fPickup = fieldByName("cdek_tariff_codes_pickup");
+
+      function showErr(msg) {
+        if (!errEl) return;
+        if (msg) {
+          errEl.textContent = msg;
+          errEl.classList.remove("hidden");
+        } else {
+          errEl.textContent = "";
+          errEl.classList.add("hidden");
+        }
+      }
+
+      function parseCodes(str) {
+        if (!str) return [];
+        return str
+          .split(/[,;\s]+/)
+          .map(function (x) {
+            return x.trim();
+          })
+          .filter(function (x) {
+            return /^\d+$/.test(x);
+          })
+          .map(function (x) {
+            return parseInt(x, 10);
+          });
+      }
+
+      function render(items) {
+        if (!panel) return;
+        var groups = { office: [], door: [], pickup: [] };
+        items.forEach(function (row) {
+          var b = row.widget_bucket;
+          if (groups[b]) groups[b].push(row);
+        });
+        var titles = {
+          office: "{{ cdek_js_ttl_office|escapejs }}",
+          door: "{{ cdek_js_ttl_door|escapejs }}",
+          pickup: "{{ cdek_js_ttl_pickup|escapejs }}",
+        };
+        var selected = {
+          office: parseCodes(fOffice && fOffice.value),
+          door: parseCodes(fDoor && fDoor.value),
+          pickup: parseCodes(fPickup && fPickup.value),
+        };
+        var html = "";
+        ["office", "door", "pickup"].forEach(function (key) {
+          var rows = groups[key];
+          if (!rows.length) return;
+          html += '<div class="mb-4 last:mb-0"><h3 class="mb-2 text-sm font-semibold text-font-important-light dark:text-font-important-dark">' + titles[key] + "</h3>";
+          html += '<ul class="flex flex-col gap-1.5 text-xs">';
+          rows.forEach(function (r) {
+            var id = "cdek-tariff-" + key + "-" + r.tariff_code;
+            var checked = selected[key].indexOf(r.tariff_code) >= 0 ? " checked" : "";
+            var dm = r.delivery_mode != null ? " · mode " + r.delivery_mode : "";
+            html +=
+              '<li class="flex gap-2 rounded-default border border-base-100 px-2 py-1.5 dark:border-base-700">' +
+              '<input type="checkbox" class="cdek-tariff-cb mt-0.5" data-bucket="' +
+              key +
+              '" value="' +
+              r.tariff_code +
+              '" id="' +
+              id +
+              '"' +
+              checked +
+              " />" +
+              '<label for="' +
+              id +
+              '" class="cursor-pointer leading-snug">' +
+              "<strong>" +
+              r.tariff_code +
+              "</strong> — " +
+              (r.tariff_name || "").replace(/</g, "&lt;") +
+              dm +
+              "</label></li>";
+          });
+          html += "</ul></div>";
+        });
+        panel.innerHTML = html || '<p class="text-font-subtle-light dark:text-font-subtle-dark">{{ cdek_js_empty|escapejs }}</p>';
+        panel.classList.remove("hidden");
+        if (applyBtn) applyBtn.classList.remove("hidden");
+      }
+
+      loadBtn.addEventListener("click", function () {
+        showErr("");
+        loadBtn.disabled = true;
+        var qs = [];
+        var fc = (fromInput && fromInput.value) || "";
+        var tc = (toInput && toInput.value) || "";
+        if (fc) qs.push("from_code=" + encodeURIComponent(fc));
+        if (tc) qs.push("to_code=" + encodeURIComponent(tc));
+        var url = catalogUrl + (qs.length ? "?" + qs.join("&") : "");
+        fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" } })
+          .then(function (r) {
+            return r.json().then(function (data) {
+              return { ok: r.ok, data: data };
+            });
+          })
+          .then(function (res) {
+            loadBtn.disabled = false;
+            if (!res.ok || !res.data.ok) {
+              showErr((res.data && res.data.error) || "{{ cdek_js_err_load|escapejs }}");
+              return;
+            }
+            render(res.data.items || []);
+          })
+          .catch(function () {
+            loadBtn.disabled = false;
+            showErr("{{ cdek_js_err_net|escapejs }}");
+          });
+      });
+
+      if (applyBtn) {
+        applyBtn.addEventListener("click", function () {
+          var buckets = { office: [], door: [], pickup: [] };
+          document.querySelectorAll(".cdek-tariff-cb:checked").forEach(function (cb) {
+            var b = cb.getAttribute("data-bucket");
+            var v = parseInt(cb.value, 10);
+            if (buckets[b] && !isNaN(v)) buckets[b].push(v);
+          });
+          function uniqSort(arr) {
+            return Array.from(new Set(arr)).sort(function (a, b) {
+              return a - b;
+            });
+          }
+          if (fOffice) fOffice.value = uniqSort(buckets.office).join(", ");
+          if (fDoor) fDoor.value = uniqSort(buckets.door).join(", ");
+          if (fPickup) fPickup.value = uniqSort(buckets.pickup).join(", ");
+        });
+      }
+    })();
+  </script>
+  {% endif %}
 </div>
 {% endblock %}
