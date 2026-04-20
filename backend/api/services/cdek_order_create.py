@@ -6,6 +6,7 @@ import logging
 import os
 import time
 import urllib.parse
+import copy
 from typing import Any
 
 from api.models import CartOrder, SiteSettings
@@ -18,8 +19,8 @@ from api.services.http_util import HttpJsonError, get_json, post_json
 
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
-DOOR_ONLY_TARIFF_CODES = {136}
-DEFAULT_OFFICE_TARIFF_CODE = 138
+DEFAULT_OFFICE_TARIFF_CODE = 136
+OFFICE_FALLBACK_TARIFF_CODES = (136, 138)
 
 
 def _first_city_code(settings: SiteSettings, query: str) -> int | None:
@@ -66,6 +67,45 @@ def _parse_tariff_codes(raw: str) -> list[int]:
     return out
 
 
+def _tariff_candidates_for_office(
+    selected_tariff: int | None,
+    office_tariffs: list[int],
+) -> list[int]:
+    out: list[int] = []
+    seen: set[int] = set()
+    source: list[int | None]
+    if office_tariffs:
+        source = [*office_tariffs, selected_tariff, *OFFICE_FALLBACK_TARIFF_CODES]
+    else:
+        source = [selected_tariff, *OFFICE_FALLBACK_TARIFF_CODES]
+    for code in source:
+        if not code:
+            continue
+        try:
+            c = int(code)
+        except (TypeError, ValueError):
+            continue
+        if c <= 0 or c in seen:
+            continue
+        out.append(c)
+        seen.add(c)
+    return out
+
+
+def _is_office_mode_snapshot(order: CartOrder) -> bool:
+    snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+    cdek = snap.get("cdek") if isinstance(snap, dict) else {}
+    if not isinstance(cdek, dict):
+        return False
+    mode = str(cdek.get("mode") or "").strip().lower()
+    return mode in {"office", "pickup"}
+
+
+def _is_cdek_office_address_conflict(err_text: str) -> bool:
+    txt = (err_text or "").lower()
+    return "v2_delivery_address_multivalued" in txt and "[to_location.address] is empty" in txt
+
+
 def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str, Any] | None:
     snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
     cdek = snap.get("cdek") if isinstance(snap, dict) else {}
@@ -101,13 +141,10 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         destination_mode = "office"
 
     if destination_mode == "office":
-        office_candidates = [x for x in office_tariffs if x not in DOOR_ONLY_TARIFF_CODES]
-        if office_tariffs:
-            if tariff_code not in office_candidates:
-                tariff_code = office_candidates[0] if office_candidates else None
+        office_candidates = _tariff_candidates_for_office(tariff_code, office_tariffs)
+        if office_candidates:
+            tariff_code = office_candidates[0]
         if not tariff_code:
-            tariff_code = DEFAULT_OFFICE_TARIFF_CODE
-        if tariff_code in DOOR_ONLY_TARIFF_CODES:
             tariff_code = DEFAULT_OFFICE_TARIFF_CODE
         if not tariff_code:
             return None
@@ -370,8 +407,38 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     try:
         resp = post_json(url, body, headers=headers, timeout=45.0)
     except HttpJsonError as e:
-        logger.warning("CDEK create order failed order=%s payload=%s error=%s", order.order_ref, body, str(e))
-        return False, str(e)
+        err_text = str(e)
+        if _is_office_mode_snapshot(order) and _is_cdek_office_address_conflict(err_text):
+            office_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_office)
+            current_tariff = int(body.get("tariff_code") or 0)
+            retry_candidates = [x for x in _tariff_candidates_for_office(None, office_tariffs) if x != current_tariff]
+            for retry_tariff in retry_candidates:
+                retry_body = copy.deepcopy(body)
+                retry_body["tariff_code"] = int(retry_tariff)
+                snap_retry = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+                snap_retry["cdekLastCreatePayload"] = retry_body
+                order.delivery_snapshot = snap_retry
+                order.save(update_fields=["delivery_snapshot"])
+                try:
+                    resp = post_json(url, retry_body, headers=headers, timeout=45.0)
+                    body = retry_body
+                    break
+                except HttpJsonError as retry_err:
+                    err_text = str(retry_err)
+                    logger.warning(
+                        "CDEK create retry failed order=%s tariff=%s payload=%s error=%s",
+                        order.order_ref,
+                        retry_tariff,
+                        retry_body,
+                        err_text,
+                    )
+                    continue
+            else:
+                logger.warning("CDEK create order failed order=%s payload=%s error=%s", order.order_ref, body, err_text)
+                return False, err_text
+        else:
+            logger.warning("CDEK create order failed order=%s payload=%s error=%s", order.order_ref, body, err_text)
+            return False, err_text
 
     tracking, req_uuid = _extract_tracking_from_cdek_response(resp)
     if not tracking and req_uuid:

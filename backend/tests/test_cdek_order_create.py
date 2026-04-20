@@ -568,7 +568,63 @@ def test_create_cdek_order_office_mode_keeps_delivery_point(
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["delivery_point"] == "IVN6"
     assert "address" not in sent_body["to_location"]
-    assert sent_body["tariff_code"] == 138
+    assert sent_body["tariff_code"] == 136
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.post_json")
+def test_create_cdek_order_retries_office_tariff_on_address_conflict(
+    mock_post_json, mock_search, _mock_token
+):
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+    from api.services.http_util import HttpJsonError
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "138,136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.side_effect = [
+        [{"code": 44, "label": "Москва"}],
+        [{"code": 137, "label": "Иваново"}],
+    ]
+
+    first_error = HttpJsonError(
+        '{"requests":[{"errors":[{"code":"v2_delivery_address_multivalued"},{"code":"v2_field_is_empty","message":"[to_location.address] is empty"}]}]}',
+        status=400,
+    )
+    mock_post_json.side_effect = [first_error, {"entity": {"uuid": "req-office-r1", "cdek_number": "CDEK-OK-1"}}]
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-OFFICE-RETRY-1",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        customer_email="ivan@example.com",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        goods_subtotal_approx=1200,
+        lines=[{"title": "Товар", "priceFrom": 1200, "qty": 1}],
+        delivery_snapshot={
+            "city": "Иваново",
+            "address": "Россия, Иваново, улица Красных Зорь, 7А",
+            "cdek": {"mode": "office", "pvzCode": "IVN6", "tariffCode": 138},
+        },
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    assert mock_post_json.call_count == 2
+    first_body = mock_post_json.call_args_list[0].args[1]
+    second_body = mock_post_json.call_args_list[1].args[1]
+    assert first_body["tariff_code"] == 138
+    assert second_body["tariff_code"] == 136
 
 
 @pytest.mark.django_db
