@@ -107,14 +107,25 @@ export function HomePage() {
       <main className="min-w-0 overflow-x-clip">
         {showFirstVisitPromo ? (
           <section className="mx-auto max-w-[1280px] px-4 pt-4 md:px-6 md:pt-6">
-            <div className="rounded-2xl border border-accent/20 bg-accent/8 px-4 py-3 text-sm text-text md:flex md:items-center md:justify-between md:gap-4 md:text-base">
-              <p className="font-body">
-                Вы на сайте производителя: цены ниже, чем у нас же на маркетплейсах.
+            <div className="relative overflow-hidden rounded-2xl border border-accent/25 bg-gradient-to-r from-accent/15 via-accent/10 to-bg-base px-4 py-4 text-sm text-text shadow-[0_18px_40px_-28px_rgba(232,122,0,0.7)] md:flex md:items-center md:justify-between md:gap-5 md:px-5 md:py-4 md:text-base">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-accent/15 blur-2xl"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-10 left-1/3 h-24 w-24 rounded-full bg-primary/15 blur-2xl"
+              />
+              <p className="relative flex items-start gap-3 font-body md:items-center">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-bg-base md:mt-0">
+                  %
+                </span>
+                <span>Вы на сайте производителя: цены ниже, чем у нас же на маркетплейсах.</span>
               </p>
               <button
                 type="button"
                 onClick={dismissFirstVisitPromo}
-                className="mt-2 inline-flex rounded-lg border border-accent/30 px-3 py-1.5 font-body text-sm text-accent hover:bg-accent/10 md:mt-0"
+                className="relative mt-3 inline-flex items-center justify-center rounded-lg border border-accent/30 bg-bg-base/80 px-4 py-2 font-body text-sm font-semibold text-accent transition duration-300 hover:-translate-y-0.5 hover:bg-accent hover:text-bg-base hover:shadow-[0_10px_20px_-12px_rgba(232,122,0,0.9)] md:mt-0"
               >
                 Понятно
               </button>

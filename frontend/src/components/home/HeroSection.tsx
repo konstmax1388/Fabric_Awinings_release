@@ -55,6 +55,7 @@ const primaryBtnClass =
   'inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] bg-accent px-5 font-body text-base font-medium text-surface hover:bg-[#c65f00] sm:px-8'
 const secondaryBtnClass =
   'inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 border-surface/80 bg-transparent px-5 font-body text-base font-medium text-surface hover:bg-surface/10 sm:px-8'
+const HERO_VIDEO_START_TIMEOUT_MS = 5000
 
 export function HeroSection() {
   const reduce = useReducedMotion()
@@ -66,12 +67,37 @@ export function HeroSection() {
   const [callbackOpen, setCallbackOpen] = useState(false)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [failedVideoBySlide, setFailedVideoBySlide] = useState<Record<number, boolean>>({})
+  const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
 
   const title = hero?.title ?? ''
   const subtitle = hero?.subtitle ?? ''
   const ctaPrimary = hero?.ctaPrimary ?? ''
   const ctaSecondary = hero?.ctaSecondary ?? ''
   const heroBg = hero?.bgImageUrl?.trim() || ''
+
+  const slides = useMemo(() => {
+    const raw = Array.isArray(hero?.slides) ? hero.slides : []
+    const normalized = raw
+      .map((s) => {
+        if (!s || typeof s !== 'object') return null
+        const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
+        const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
+        if (!imageUrl && !videoUrl) return null
+        return { imageUrl, videoUrl }
+      })
+      .filter((s): s is { imageUrl: string; videoUrl: string } => s !== null)
+    if (normalized.length) return normalized
+    return heroBg ? [{ imageUrl: heroBg, videoUrl: '' }] : []
+  }, [hero?.slides, heroBg])
+
+  const hasSlides = slides.length > 0
+  const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
+  const activeImageUrl = activeSlide?.imageUrl || ''
+  const activeVideoUrl = activeSlide?.videoUrl || ''
+  const shouldShowVideo = Boolean(activeVideoUrl) && !failedVideoBySlide[currentSlide]
+  const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
 
   const primaryAction = hero?.primaryAction
   const secondaryAction = hero?.secondaryAction
@@ -81,6 +107,34 @@ export function HeroSection() {
   const secondaryHref = resolveLinkHref(secondaryAction, calculatorEnabled, 'secondary')
 
   const openCallback = () => setCallbackOpen(true)
+
+  useEffect(() => {
+    if (slides.length <= 1) return
+    const id = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
+    }, 7000)
+    return () => window.clearInterval(id)
+  }, [slides.length])
+
+  useEffect(() => {
+    if (slides.length <= 1) {
+      setCurrentSlide(0)
+      return
+    }
+    setCurrentSlide((prev) => (prev >= slides.length ? 0 : prev))
+  }, [slides.length])
+
+  useEffect(() => {
+    if (!shouldShowVideo || hasStartedActiveVideo) return
+    const slideAtStart = currentSlide
+    const timerId = window.setTimeout(() => {
+      setFailedVideoBySlide((prev) => ({
+        ...prev,
+        [slideAtStart]: true,
+      }))
+    }, HERO_VIDEO_START_TIMEOUT_MS)
+    return () => window.clearTimeout(timerId)
+  }, [currentSlide, hasStartedActiveVideo, shouldShowVideo])
   useEffect(() => {
     if (reduce) return
     const onScroll = () => setScrollY(window.scrollY)
@@ -117,10 +171,50 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={hero?.callbackModal ?? {}}
       />
-      {heroBg ? (
+      {shouldShowVideo ? (
+        <motion.video
+          key={`hero-video-${currentSlide}`}
+          className="absolute inset-0 h-full w-full object-cover"
+          src={activeVideoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={activeImageUrl || undefined}
+          onError={() =>
+            setFailedVideoBySlide((prev) => ({
+              ...prev,
+              [currentSlide]: true,
+            }))
+          }
+          onPlaying={() =>
+            setStartedVideoBySlide((prev) => ({
+              ...prev,
+              [currentSlide]: true,
+            }))
+          }
+          onStalled={() =>
+            setFailedVideoBySlide((prev) => ({
+              ...prev,
+              [currentSlide]: true,
+            }))
+          }
+          onAbort={() =>
+            setFailedVideoBySlide((prev) => ({
+              ...prev,
+              [currentSlide]: true,
+            }))
+          }
+          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+          transition={{ type: 'spring', stiffness: 62, damping: 16, mass: 1.2 }}
+          aria-hidden
+        />
+      ) : activeImageUrl ? (
         <motion.div
+          key={`hero-image-${currentSlide}`}
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroBg})` }}
+          style={{ backgroundImage: `url(${activeImageUrl})` }}
           animate={{ x: depth.bgX, y: depth.bgY, scale: 1.04 }}
           transition={{ type: 'spring', stiffness: 62, damping: 16, mass: 1.2 }}
           aria-hidden
@@ -219,6 +313,22 @@ export function HeroSection() {
               </MagneticHover>
             ) : null}
           </motion.div>
+          {slides.length > 1 ? (
+            <div className="mt-6 flex items-center gap-2">
+              {slides.map((_, idx) => (
+                <button
+                  key={`hero-slide-dot-${idx}`}
+                  type="button"
+                  aria-label={`Слайд ${idx + 1}`}
+                  aria-pressed={idx === currentSlide}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    idx === currentSlide ? 'w-8 bg-accent' : 'w-2.5 bg-surface/55 hover:bg-surface/80'
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       </motion.div>
     </section>

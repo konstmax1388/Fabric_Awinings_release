@@ -53,13 +53,13 @@ export function ProcessTimelineSection() {
             <article
               key={step.title}
               data-process-step={idx}
-              className={`rounded-2xl border bg-surface p-4 transition md:p-5 ${
+              className={`group rounded-2xl border bg-surface p-4 transition duration-300 md:p-5 md:hover:-translate-y-1 md:hover:border-accent md:hover:shadow-[0_16px_34px_-18px_rgba(232,122,0,0.65)] ${
                 isActive
                   ? 'border-accent shadow-[0_10px_26px_-14px_rgba(232,122,0,0.65)]'
                   : 'border-border-light'
               }`}
             >
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-base font-body text-sm font-semibold text-accent">
+              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-base font-body text-sm font-semibold text-accent transition-colors duration-300 md:group-hover:bg-accent md:group-hover:text-bg-base">
                 {idx + 1}
               </div>
               <h3 className="font-heading text-lg font-semibold text-text">{step.title}</h3>

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { getPublicAdminLinks } from '../../config/adminLinks'
-import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES, type MarketplaceId } from '../../config/site'
+import { GLOBAL_MARKETPLACE_URLS } from '../../config/site'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { StaffEntryModal } from './StaffEntryModal'
 
@@ -90,7 +90,7 @@ export function SiteFooter() {
           <div>
             <p className="font-body text-sm font-semibold text-text">Маркетплейсы</p>
             <div className="mt-4">
-              <MarketplaceLinks hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
+              <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
             </div>
             {showSocialLinks ? (
               <>
@@ -169,17 +169,6 @@ export function SiteFooter() {
             © {new Date().getFullYear()} {siteName}. Все права защищены.
           </p>
           <div className="flex flex-wrap gap-4">
-            {MARKETPLACES.filter((m) => enabledMarketplaces.includes(m.id as MarketplaceId)).map((m) => (
-              <a
-                key={m.id}
-                href={mergedMpUrls[m.id] ?? m.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-accent"
-              >
-                {m.label}
-              </a>
-            ))}
             <Link to="/privacy" className="hover:text-accent">
               Политика конфиденциальности
             </Link>

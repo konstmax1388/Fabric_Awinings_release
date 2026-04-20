@@ -31,6 +31,11 @@ export type HeroCallbackModalTexts = {
   successMessage?: string
 }
 
+export type HeroSlide = {
+  imageUrl?: string
+  videoUrl?: string
+}
+
 export type HomePayload = {
   meta?: {
     title?: string
@@ -47,6 +52,7 @@ export type HomePayload = {
     secondaryAction?: HeroAction
     callbackModal?: HeroCallbackModalTexts
     bgImageUrl?: string
+    slides?: HeroSlide[]
   }
   problemSolution?: {
     heading?: string
