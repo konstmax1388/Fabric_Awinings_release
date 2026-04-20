@@ -23,6 +23,20 @@ set +a
 : "${DEPLOY_SSH_TARGET:?Задайте DEPLOY_SSH_TARGET в deploy/.env.deploy}"
 : "${DEPLOY_APP_PATH:?Задайте DEPLOY_APP_PATH в deploy/.env.deploy}"
 
+# В Git Bash встроенный ssh из MSYS часто ломает ~/.ssh при кириллице в USERPROFILE — используем OpenSSH из Windows.
+# OSTYPE в MSYS2 иногда пустой; путь к ssh.exe на разных ПК разный (Program Files vs System32).
+SSH_BIN="ssh"
+if [[ -n "${DEPLOY_SSH_BIN:-}" ]]; then
+  SSH_BIN="$DEPLOY_SSH_BIN"
+else
+  for cand in "/c/Program Files/OpenSSH/ssh.exe" "/c/WINDOWS/System32/OpenSSH/ssh.exe" "/c/Windows/System32/OpenSSH/ssh.exe"; do
+    if [[ -x "$cand" ]]; then
+      SSH_BIN="$cand"
+      break
+    fi
+  done
+fi
+
 BRANCH="${DEPLOY_GIT_BRANCH:-main}"
 SERVICE="${DEPLOY_SYSTEMD_SERVICE:-fabrika-gunicorn}"
 APP=$(printf '%q' "$DEPLOY_APP_PATH")
@@ -35,7 +49,7 @@ if [[ "${DEPLOY_RUN_PREFLIGHT:-0}" == "1" ]]; then
 fi
 
 if [[ "${DEPLOY_SKIP_SYSTEMD:-0}" == "1" ]]; then
-  ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
+  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
 git fetch origin $BRANCH
@@ -75,7 +89,7 @@ python manage.py collectstatic --noinput
 echo "(systemd пропущен: DEPLOY_SKIP_SYSTEMD=1)"
 EOF
 else
-  ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
+  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
 git fetch origin $BRANCH
