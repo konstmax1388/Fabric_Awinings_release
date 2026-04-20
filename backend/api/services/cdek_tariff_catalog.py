@@ -10,8 +10,6 @@ import logging
 import os
 from typing import Any, Literal
 
-from django.utils import timezone
-
 from api.models import SiteSettings
 from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
 from api.services.cdek_locations import search_cdek_cities
@@ -94,11 +92,11 @@ def fetch_cdek_tariff_catalog(
         return None, "Код города «куда» совпадает с «откуда». Укажите другой код города назначения (поле выше) для примера расчёта."
 
     weight = _default_weight_g()
+    # Поле date не передаём: API v2 для tarifflist возвращает v2_invalid_value_type для строки ISO (проверено на api.edu.cdek.ru).
     body: dict[str, Any] = {
         "type": 1,
         "currency": 1,
         "lang": "rus",
-        "date": timezone.now().date().isoformat(),
         "from_location": {"code": int(fc)},
         "to_location": {"code": int(tc)},
         "packages": [{"weight": weight, "length": 20, "width": 15, "height": 10}],
