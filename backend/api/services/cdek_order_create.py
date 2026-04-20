@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
+import time
+import urllib.parse
 from typing import Any
 
 from api.models import CartOrder, SiteSettings
@@ -11,7 +14,7 @@ from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
 from api.services.cdek_locations import search_cdek_cities
 from api.services.cdek_runtime import cdek_api_base_url
 from api.services.cdek_widget_service import WIDGET_APP_HEADERS
-from api.services.http_util import HttpJsonError, post_json
+from api.services.http_util import HttpJsonError, get_json, post_json
 
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
@@ -116,6 +119,68 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     return payload
 
 
+def _extract_tracking_from_cdek_response(payload: Any) -> tuple[str, str]:
+    tracking = ""
+    req_uuid = ""
+    if isinstance(payload, dict):
+        ent = payload.get("entity")
+        if isinstance(ent, dict):
+            tracking = str(ent.get("cdek_number") or ent.get("number") or "").strip()
+            req_uuid = str(ent.get("uuid") or "").strip()
+        if not req_uuid:
+            req_uuid = str(payload.get("request_uuid") or "").strip()
+    return tracking, req_uuid
+
+
+def _fetch_cdek_order_by_uuid(settings: SiteSettings, token: str, req_uuid: str) -> dict[str, Any] | None:
+    if not req_uuid:
+        return None
+    base = cdek_api_base_url(settings).rstrip("/")
+    qs = urllib.parse.urlencode({"uuid": req_uuid})
+    url = f"{base}/v2/orders?{qs}"
+    headers = {"Authorization": f"Bearer {token}", **WIDGET_APP_HEADERS}
+    data = get_json(url, headers=headers, timeout=45.0)
+    if isinstance(data, dict):
+        return data
+    return None
+
+
+def _extract_tracking_from_uuid_lookup(payload: dict[str, Any] | None) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    entity = payload.get("entity")
+    if isinstance(entity, dict):
+        return str(entity.get("cdek_number") or entity.get("number") or "").strip()
+    if isinstance(entity, list):
+        for row in entity:
+            if not isinstance(row, dict):
+                continue
+            tr = str(row.get("cdek_number") or row.get("number") or "").strip()
+            if tr:
+                return tr
+    return ""
+
+
+def _inject_tracking_into_order_texts(order: CartOrder, tracking: str) -> None:
+    tr = (tracking or "").strip()
+    if not tr:
+        return
+    changed_fields: list[str] = []
+    client_ack = (order.client_ack or "").strip()
+    manager_letter = (order.manager_letter or "").strip()
+    marker = f"Трек СДЭК: {tr}"
+    if marker not in client_ack:
+        sep = "\n\n" if client_ack else ""
+        order.client_ack = f"{client_ack}{sep}{marker}"
+        changed_fields.append("client_ack")
+    if marker not in manager_letter:
+        sep = "\n" if manager_letter else ""
+        order.manager_letter = f"{manager_letter}{sep}{marker}"
+        changed_fields.append("manager_letter")
+    if changed_fields:
+        order.save(update_fields=changed_fields)
+
+
 def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     """Создаёт заказ в СДЭК для CartOrder с delivery_method=cdek."""
     if order.delivery_method != CartOrder.DeliveryMethod.CDEK:
@@ -143,26 +208,35 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     except HttpJsonError as e:
         return False, str(e)
 
-    tracking = ""
-    req_uuid = ""
-    if isinstance(resp, dict):
-        ent = resp.get("entity")
-        if isinstance(ent, dict):
-            tracking = str(ent.get("cdek_number") or ent.get("number") or "").strip()
-            req_uuid = str(ent.get("uuid") or "").strip()
-        if not req_uuid:
-            req_uuid = str(resp.get("request_uuid") or "").strip()
+    tracking, req_uuid = _extract_tracking_from_cdek_response(resp)
+    if not tracking and req_uuid:
+        for _ in range(3):
+            try:
+                details = _fetch_cdek_order_by_uuid(settings, token, req_uuid)
+            except HttpJsonError:
+                details = None
+            tracking = _extract_tracking_from_uuid_lookup(details)
+            if tracking:
+                break
+            time.sleep(0.8)
 
     if not (tracking or req_uuid):
         logger.warning("CDEK create order response without tracking/request_uuid: %s", resp)
         return False, "unexpected_response"
 
-    order.cdek_tracking = tracking or req_uuid
+    if tracking:
+        order.cdek_tracking = tracking
     snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
     snap["cdekCreateResponse"] = {"tracking": tracking, "requestUuid": req_uuid}
     order.delivery_snapshot = snap
-    order.save(update_fields=["cdek_tracking", "delivery_snapshot"])
-    return True, None
+    update_fields = ["delivery_snapshot"]
+    if tracking:
+        update_fields.append("cdek_tracking")
+    order.save(update_fields=update_fields)
+    if tracking:
+        _inject_tracking_into_order_texts(order, tracking)
+        return True, None
+    return False, f"tracking_pending:{req_uuid or 'unknown'}"
 
 
 def _max_sync_attempts() -> int:

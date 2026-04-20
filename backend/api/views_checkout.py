@@ -102,6 +102,14 @@ class OzonPayWebhookView(View):
                         sync_cdek_order_with_retry(co)
                     except Exception:
                         logger.exception("sync_cdek_order_with_retry failed for order=%s", co.order_ref)
+                co.refresh_from_db()
+                if status == "Completed":
+                    try:
+                        from api.services.notification_email import send_buyer_order_confirmation_email
+
+                        send_buyer_order_confirmation_email(co)
+                    except Exception:
+                        logger.exception("send_buyer_order_confirmation_email failed for order=%s", co.order_ref)
 
         logger.info(
             "Ozon webhook ok: extOrderID=%s status=%s",

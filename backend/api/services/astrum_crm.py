@@ -130,6 +130,9 @@ def build_astrum_payload(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> dict[
         f"Номер на сайте: {order.order_ref}",
         f"Сумма ориентировочно: {order.total_approx} ₽",
     ]
+    cdek_tracking = (order.cdek_tracking or "").strip()
+    if cdek_tracking:
+        comments_parts.append(f"Трек СДЭК: {cdek_tracking}")
     if order.manager_letter:
         comments_parts.append("")
         comments_parts.append(order.manager_letter)

@@ -188,22 +188,6 @@ class CartOrderCreateView(generics.CreateAPIView):
 
             logging.getLogger(__name__).exception("link_cart_order_to_customer_account")
         try:
-            from .services.notification_email import notify_cart_order
-
-            notify_cart_order(order)
-        except Exception:
-            import logging
-
-            logging.getLogger(__name__).exception("notify_cart_order")
-        try:
-            from .services.notification_email import send_buyer_order_confirmation_email
-
-            send_buyer_order_confirmation_email(order)
-        except Exception:
-            import logging
-
-            logging.getLogger(__name__).exception("send_buyer_order_confirmation_email")
-        try:
             from .services.cdek_order_create import sync_cdek_order_with_retry
 
             # Для онлайн-оплаты накладную создаём только после webhook "Completed".
@@ -216,6 +200,28 @@ class CartOrderCreateView(generics.CreateAPIView):
             import logging
 
             logging.getLogger(__name__).exception("sync_cdek_order_with_retry")
+        order.refresh_from_db()
+        try:
+            from .services.notification_email import notify_cart_order
+
+            notify_cart_order(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("notify_cart_order")
+        try:
+            from .services.notification_email import send_buyer_order_confirmation_email
+
+            # При CDEK+CARD_ONLINE письмо подтверждения отправится после оплаты вместе с треком.
+            if not (
+                order.delivery_method == order.DeliveryMethod.CDEK
+                and order.payment_method == order.PaymentMethod.CARD_ONLINE
+            ):
+                send_buyer_order_confirmation_email(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("send_buyer_order_confirmation_email")
         try:
             from .services.astrum_crm import push_cart_order_to_astrum_crm
 

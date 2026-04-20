@@ -826,6 +826,7 @@ class CartOrderAdmin(ModelAdmin):
         "created_at",
         "bitrix_sync_attempts",
         "crm_sync_summary",
+        "cdek_sync_attempts",
     )
     fieldsets = (
         (
@@ -869,6 +870,9 @@ class CartOrderAdmin(ModelAdmin):
                     "delivery_provider",
                     "delivery_snapshot",
                     "cdek_tracking",
+                    "cdek_sync_status",
+                    "cdek_sync_attempts",
+                    "cdek_sync_error",
                     "acquiring_payload",
                 ),
             },

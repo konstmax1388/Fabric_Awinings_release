@@ -68,6 +68,8 @@ def test_create_cdek_order_for_cart_success(mock_post_json, mock_search, _mock_t
     assert order.cdek_tracking == "CDEK-TRACK-1"
     assert isinstance(order.delivery_snapshot, dict)
     assert "cdekCreateResponse" in order.delivery_snapshot
+    assert "Трек СДЭК: CDEK-TRACK-1" in (order.client_ack or "")
+    assert "Трек СДЭК: CDEK-TRACK-1" in (order.manager_letter or "")
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["packages"] == [
         {"number": "1", "weight": 1800, "length": 55, "width": 35, "height": 25},
@@ -128,3 +130,47 @@ def test_create_cdek_order_uses_global_fallback_dimensions(mock_post_json, mock_
     assert sent_body["packages"] == [
         {"number": "1", "weight": 4200, "length": 60, "width": 45, "height": 30}
     ]
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.get_json")
+@patch("api.services.cdek_order_create.post_json")
+def test_create_cdek_order_fetches_tracking_by_request_uuid(
+    mock_post_json, mock_get_json, mock_search, _mock_token
+):
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.side_effect = [
+        [{"code": 44, "label": "Москва"}],
+        [{"code": 137, "label": "Иваново"}],
+    ]
+    mock_post_json.return_value = {"request_uuid": "req-uuid-1"}
+    mock_get_json.return_value = {"entity": {"cdek_number": "CDEK-TRACK-UUID"}}
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-3",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        customer_email="ivan@example.com",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        lines=[{"title": "Товар", "priceFrom": 1000, "qty": 1}],
+        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN1"}},
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    order.refresh_from_db()
+    assert order.cdek_tracking == "CDEK-TRACK-UUID"

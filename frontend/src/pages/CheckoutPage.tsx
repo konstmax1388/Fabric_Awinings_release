@@ -130,6 +130,12 @@ export function CheckoutPage() {
     }
   }, [cdekMode])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (step !== 3 && step !== 'done') return
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [step])
+
   const deliveryLabel = useMemo(() => {
     return checkout.deliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
   }, [checkout.deliveryOptions, deliveryMethod])
