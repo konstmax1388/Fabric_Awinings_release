@@ -24,6 +24,18 @@ import {
 } from '../lib/formValidation'
 import { submitCartOrder } from '../lib/leads'
 
+function extractTariffDeliveryRub(t: unknown): number | null {
+  if (t == null || typeof t !== 'object') return null
+  const o = t as Record<string, unknown>
+  for (const k of ['delivery_sum', 'deliverySum', 'price', 'sum', 'total_sum'] as const) {
+    const v = o[k]
+    if (typeof v === 'number' && Number.isFinite(v)) return Math.max(0, Math.round(v))
+    if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)))
+      return Math.max(0, Math.round(Number(v)))
+  }
+  return null
+}
+
 type Step = 1 | 2 | 3 | 'done'
 type CdekMode = 'office' | 'door'
 
@@ -46,6 +58,8 @@ export function CheckoutPage() {
   const [cdekCityCode, setCdekCityCode] = useState<number | null>(null)
   const [cdekPvzCode, setCdekPvzCode] = useState('')
   const [cdekPvzAddress, setCdekPvzAddress] = useState('')
+  /** Котировка доставки СДЭК (₽) до порога бесплатной доставки; для режима custom — ввод вручную. */
+  const [cdekQuotedDeliveryRub, setCdekQuotedDeliveryRub] = useState<number | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderRef, setOrderRef] = useState('')
@@ -86,6 +100,10 @@ export function CheckoutPage() {
   }, [deliveryMethod])
 
   useEffect(() => {
+    if (deliveryMethod !== 'cdek') setCdekQuotedDeliveryRub(null)
+  }, [deliveryMethod])
+
+  useEffect(() => {
     setCdekPvzCode('')
     setCdekPvzAddress('')
   }, [cdekCityCode])
@@ -118,7 +136,26 @@ export function CheckoutPage() {
 
   const useCdekWidgetUi = checkout.cdek.checkoutUi !== 'custom'
 
-  const handleCdekWidgetChoose = useCallback((mode: string, _tariff: unknown, addr: Record<string, unknown>) => {
+  const goodsSubtotal = totalApprox
+  const freeDeliveryActive = useMemo(() => {
+    const ff = checkout.freeDeliveryFromRub ?? 0
+    return ff > 0 && goodsSubtotal >= ff
+  }, [checkout.freeDeliveryFromRub, goodsSubtotal])
+
+  const deliveryChargeRub = useMemo(() => {
+    if (deliveryMethod !== 'cdek') return 0
+    if (freeDeliveryActive) return 0
+    return cdekQuotedDeliveryRub ?? 0
+  }, [deliveryMethod, freeDeliveryActive, cdekQuotedDeliveryRub])
+
+  const orderGrandTotal = useMemo(
+    () => goodsSubtotal + deliveryChargeRub,
+    [goodsSubtotal, deliveryChargeRub],
+  )
+
+  const handleCdekWidgetChoose = useCallback((mode: string, tariff: unknown, addr: Record<string, unknown>) => {
+    const rub = extractTariffDeliveryRub(tariff)
+    if (rub !== null) setCdekQuotedDeliveryRub(rub)
     if (mode === 'office') {
       setCdekMode('office')
       const rawCode = addr.code
@@ -179,9 +216,22 @@ export function CheckoutPage() {
       setError('Выберите доставку и способ оплаты.')
       return
     }
+    const minOrder = checkout.minimumOrderRub ?? 0
+    if (minOrder > 0 && goodsSubtotal < minOrder) {
+      setError(`Минимальная сумма заказа (товары) — ${minOrder.toLocaleString('ru-RU')} ₽.`)
+      return
+    }
     if (deliveryMethod === 'cdek' && !city.trim()) {
       setError('Укажите город: начните ввод и выберите значение из списка подсказок СДЭК.')
       return
+    }
+    if (deliveryMethod === 'cdek') {
+      const ff = checkout.freeDeliveryFromRub ?? 0
+      const freeDel = ff > 0 && goodsSubtotal >= ff
+      if (!freeDel && cdekQuotedDeliveryRub === null) {
+        setError('Укажите стоимость доставки СДЭК: выберите тариф на карте или введите сумму.')
+        return
+      }
     }
     if (deliveryMethod === 'cdek' && cdekMode === 'office') {
       if (!useCdekWidgetUi && cdekCityCode === null) {
@@ -229,9 +279,22 @@ export function CheckoutPage() {
       setError(`Комментарий не длиннее ${COMMENT_MAX_LEN} символов`)
       return
     }
+    const minOrderSubmit = checkout.minimumOrderRub ?? 0
+    if (minOrderSubmit > 0 && goodsSubtotal < minOrderSubmit) {
+      setError(`Минимальная сумма заказа (товары) — ${minOrderSubmit.toLocaleString('ru-RU')} ₽.`)
+      return
+    }
     if (deliveryMethod === 'cdek' && !city.trim()) {
       setError('Укажите город: выберите значение из списка подсказок СДЭК.')
       return
+    }
+    if (deliveryMethod === 'cdek') {
+      const ff = checkout.freeDeliveryFromRub ?? 0
+      const freeDel = ff > 0 && goodsSubtotal >= ff
+      if (!freeDel && cdekQuotedDeliveryRub === null) {
+        setError('Укажите стоимость доставки СДЭК: выберите тариф на карте или введите сумму.')
+        return
+      }
     }
     if (deliveryMethod === 'cdek' && cdekMode === 'office') {
       if (!useCdekWidgetUi && cdekCityCode === null) {
@@ -262,10 +325,13 @@ export function CheckoutPage() {
       if (address.trim()) delivery.address = address.trim()
       if (deliveryComment.trim()) delivery.comment = deliveryComment.trim()
       if (deliveryMethod === 'cdek') {
+        const ff = checkout.freeDeliveryFromRub ?? 0
+        const freeDel = ff > 0 && goodsSubtotal >= ff
         delivery.cdek = {
           mode: cdekMode,
           pvzCode: cdekPvzCode.trim() || '',
           address: cdekPvzAddress.trim() || '',
+          deliveryPriceRub: freeDel ? 0 : (cdekQuotedDeliveryRub ?? 0),
         }
       }
       if (deliveryMethod === 'ozon_logistics') {
@@ -283,7 +349,7 @@ export function CheckoutPage() {
           comment: comment.trim() || undefined,
         },
         lines: items,
-        totalApprox,
+        totalApprox: orderGrandTotal,
         delivery,
         deliveryMethod,
         paymentMethod,
@@ -546,6 +612,7 @@ export function CheckoutPage() {
                             defaultMapLocation={city.trim() || checkout.cdek.widgetSenderCity}
                             rootId="cdek-map-root-checkout"
                             goods={checkout.cdek.widgetGoods}
+                            tariffs={checkout.cdek.tariffs}
                             onChoose={handleCdekWidgetChoose}
                           />
                           {checkout.cdek.manualPvzEnabled ? (
@@ -635,6 +702,25 @@ export function CheckoutPage() {
                               ) : null}
                             </div>
                           )}
+                          <label className="mt-4 block">
+                            <span className="mb-1 block font-body text-sm font-medium text-text">
+                              Стоимость доставки по СДЭК, ₽
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              inputMode="numeric"
+                              value={cdekQuotedDeliveryRub === null ? '' : String(cdekQuotedDeliveryRub)}
+                              onChange={(e) => {
+                                const v = e.target.value
+                                setCdekQuotedDeliveryRub(v === '' ? null : Math.max(0, parseInt(v, 10) || 0))
+                              }}
+                              className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                              disabled={settingsLoading}
+                              placeholder="После выбора ПВЗ или адреса укажите сумму из калькулятора СДЭК"
+                            />
+                          </label>
                         </>
                       )}
                     </>
@@ -674,6 +760,26 @@ export function CheckoutPage() {
                       />
                     </label>
                   )}
+
+                  <div className="mt-4 rounded-xl border border-border-light bg-bg-base p-4 font-body text-sm text-text">
+                    <p>
+                      <span className="text-text-subtle">Товары:</span>{' '}
+                      <span className="font-medium">{goodsSubtotal.toLocaleString('ru-RU')} ₽</span>
+                    </p>
+                    {deliveryMethod === 'cdek' ? (
+                      <p className="mt-1">
+                        <span className="text-text-subtle">Доставка:</span>{' '}
+                        {freeDeliveryActive ? (
+                          <span>0 ₽ (бесплатно от суммы заказа)</span>
+                        ) : (
+                          <span>{deliveryChargeRub.toLocaleString('ru-RU')} ₽</span>
+                        )}
+                      </p>
+                    ) : null}
+                    <p className="mt-2 font-semibold text-text">
+                      К оплате: {orderGrandTotal.toLocaleString('ru-RU')} ₽
+                    </p>
+                  </div>
 
                   <fieldset className="mt-6 space-y-3">
                     <legend className="mb-2 font-body text-sm font-medium text-text">Оплата</legend>
@@ -741,8 +847,22 @@ export function CheckoutPage() {
                   <span className="text-text-subtle">Позиций:</span> {totalQty}
                 </p>
                 <p className="mt-1">
-                  <span className="text-text-subtle">Сумма ориентировочно:</span>{' '}
-                  <span className="font-semibold text-text">{totalApprox.toLocaleString('ru-RU')} ₽</span>
+                  <span className="text-text-subtle">Товары:</span>{' '}
+                  <span className="font-semibold text-text">{goodsSubtotal.toLocaleString('ru-RU')} ₽</span>
+                </p>
+                {deliveryMethod === 'cdek' ? (
+                  <p className="mt-1">
+                    <span className="text-text-subtle">Доставка:</span>{' '}
+                    {freeDeliveryActive ? (
+                      <span className="font-semibold text-text">0 ₽ (бесплатно от суммы)</span>
+                    ) : (
+                      <span className="font-semibold text-text">{deliveryChargeRub.toLocaleString('ru-RU')} ₽</span>
+                    )}
+                  </p>
+                ) : null}
+                <p className="mt-1">
+                  <span className="text-text-subtle">К оплате:</span>{' '}
+                  <span className="font-semibold text-text">{orderGrandTotal.toLocaleString('ru-RU')} ₽</span>
                 </p>
                 <p className="mt-3 text-text">
                   <span className="text-text-subtle">Доставка:</span> {deliveryLabel}

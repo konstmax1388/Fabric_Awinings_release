@@ -421,6 +421,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         from .models import SiteSettings
+        from .services.checkout_pricing import goods_subtotal_from_lines, quoted_cdek_delivery_rub
         from .services.checkout_rules import delivery_options_public, validate_delivery_and_payment
 
         s = SiteSettings.get_solo()
@@ -433,8 +434,22 @@ class CartOrderCreateSerializer(serializers.Serializer):
             attrs.get("paymentMethod", CartOrder.PaymentMethod.CASH_PICKUP),
             s,
         )
+        lines = attrs.get("lines") or []
+        goods_sub = goods_subtotal_from_lines([dict(x) for x in lines])
+        min_rub = int(s.checkout_minimum_order_rub or 0)
+        if min_rub > 0 and goods_sub < min_rub:
+            est = f"{min_rub:,}".replace(",", " ")
+            raise serializers.ValidationError(f"Минимальная сумма заказа (товары) — {est} ₽.")
+
         dm = attrs.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
         delivery = attrs.get("delivery") or {}
+        free_from = int(s.checkout_free_delivery_from_rub or 0)
+        if dm == CartOrder.DeliveryMethod.CDEK:
+            need_delivery_quote = not (free_from > 0 and goods_sub >= free_from)
+            if need_delivery_quote and quoted_cdek_delivery_rub(delivery) is None:
+                raise serializers.ValidationError(
+                    "Укажите стоимость доставки СДЭК: выберите тариф на карте или введите сумму."
+                )
         if dm == CartOrder.DeliveryMethod.CDEK and isinstance(delivery, dict):
             cdek = delivery.get("cdek") or {}
             mode = ""
@@ -475,6 +490,11 @@ class CartOrderCreateSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         from .models import SiteSettings
+        from .services.checkout_pricing import (
+            expected_total_approx,
+            goods_subtotal_from_lines,
+            quoted_cdek_delivery_rub,
+        )
         from .services.delivery_snapshot import sanitize_checkout_delivery
         from .services.letters import build_cart_letters
         from .services.order_ref import generate_order_ref
@@ -490,17 +510,35 @@ class CartOrderCreateSerializer(serializers.Serializer):
             ref = generate_order_ref()
         customer = validated_data["customer"]
         lines_plain = [dict(x) for x in validated_data["lines"]]
-        total = validated_data["totalApprox"]
+        goods_sub = goods_subtotal_from_lines(lines_plain)
         dm = validated_data.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
         pm = validated_data.get("paymentMethod", CartOrder.PaymentMethod.CASH_PICKUP)
         delivery_snapshot = sanitize_checkout_delivery(validated_data.get("delivery") or {})
 
         settings = SiteSettings.get_solo()
+        free_from = int(settings.checkout_free_delivery_from_rub or 0)
+        if dm == CartOrder.DeliveryMethod.CDEK:
+            if free_from > 0 and goods_sub >= free_from:
+                delivery_charge = 0
+            else:
+                q = quoted_cdek_delivery_rub(delivery_snapshot)
+                delivery_charge = q if q is not None else 0
+        else:
+            delivery_charge = 0
+
+        total_expected = expected_total_approx(goods_sub, delivery_charge)
+        if int(validated_data["totalApprox"]) != total_expected:
+            raise serializers.ValidationError(
+                {
+                    "totalApprox": "Сумма заказа не совпала с расчётом. Обновите страницу и проверьте доставку.",
+                }
+            )
+
         acquiring: dict = {}
         if pm == CartOrder.PaymentMethod.CARD_ONLINE:
             acquiring = try_begin_ozon_pay(
                 order_ref=ref,
-                total_approx=total,
+                total_approx=total_expected,
                 settings=settings,
                 delivery_method=dm,
                 cart_lines=lines_plain,
@@ -527,10 +565,12 @@ class CartOrderCreateSerializer(serializers.Serializer):
             ref,
             customer,
             lines_plain,
-            total,
+            total_expected,
             delivery=delivery_snapshot,
             delivery_method_label=str(dm_label),
             payment_method_label=str(pm_label),
+            goods_subtotal=goods_sub,
+            delivery_price_rub=delivery_charge,
         )
         if pm == CartOrder.PaymentMethod.CARD_ONLINE:
             pay_url = acquiring.get("redirectUrl") if isinstance(acquiring, dict) else None
@@ -548,7 +588,9 @@ class CartOrderCreateSerializer(serializers.Serializer):
             customer_email=(customer.get("email") or "").strip(),
             customer_comment=(customer.get("comment") or "").strip(),
             lines=lines_plain,
-            total_approx=total,
+            total_approx=total_expected,
+            goods_subtotal_approx=goods_sub,
+            delivery_price_rub=delivery_charge,
             manager_letter=manager_letter,
             client_ack=client_ack,
             delivery_method=dm,
@@ -699,6 +741,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
 
         from django.urls import reverse
 
+        from .services.cdek_checkout_public import cdek_widget_tariffs_public
         from .services.cdek_runtime import cdek_api_base_url
         from .services.checkout_rules import allowed_payment_methods, delivery_options_public
 
@@ -724,7 +767,10 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         deliveries = delivery_options_public(obj)
         matrix = {d["id"]: allowed_payment_methods(d["id"], obj) for d in deliveries}
         payment_labels = {c.value: str(c.label) for c in CartOrder.PaymentMethod}
+        tariffs = cdek_widget_tariffs_public(obj)
         return {
+            "minimumOrderRub": int(obj.checkout_minimum_order_rub or 0),
+            "freeDeliveryFromRub": int(obj.checkout_free_delivery_from_rub or 0),
             "deliveryOptions": deliveries,
             "paymentMatrix": matrix,
             "paymentLabels": payment_labels,
@@ -746,6 +792,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                 "widgetSenderCity": widget_sender_city(),
                 "manualPvzEnabled": obj.cdek_manual_pvz_enabled,
                 "checkoutUi": obj.cdek_checkout_ui,
+                "tariffs": tariffs,
                 "widgetGoods": default_goods,
             },
             "ozonLogistics": {

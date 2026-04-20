@@ -170,6 +170,7 @@ def notify_cart_order(order: "CartOrder") -> None:
         order_ref=order.order_ref,
         customer_name=order.customer_name,
         manager_letter=order.manager_letter or "",
+        client_ack=(order.client_ack or "").strip(),
     )
     subj_t, body_t = effective_subject_body("manager_cart")
     subject = fill_placeholders(subj_t, **ctx)
@@ -207,6 +208,7 @@ def send_buyer_order_confirmation_email(order: "CartOrder") -> None:
         order_ref=order.order_ref,
         customer_name=order.customer_name,
         client_ack=(order.client_ack or "").strip() or f"Ваш заказ {order.order_ref} принят.",
+        manager_letter=(order.manager_letter or "").strip(),
     )
     subject = fill_placeholders(subj_t, **ctx)
     body = fill_placeholders(body_t, **ctx)

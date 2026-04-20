@@ -636,6 +636,15 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
   if (!raw || typeof raw !== 'object') return DEFAULT_CHECKOUT_PUBLIC
   const o = raw as Record<string, unknown>
 
+  let minimumOrderRub = DEFAULT_CHECKOUT_PUBLIC.minimumOrderRub
+  if (typeof o.minimumOrderRub === 'number' && Number.isFinite(o.minimumOrderRub) && o.minimumOrderRub >= 0) {
+    minimumOrderRub = Math.floor(o.minimumOrderRub)
+  }
+  let freeDeliveryFromRub = DEFAULT_CHECKOUT_PUBLIC.freeDeliveryFromRub
+  if (typeof o.freeDeliveryFromRub === 'number' && Number.isFinite(o.freeDeliveryFromRub) && o.freeDeliveryFromRub >= 0) {
+    freeDeliveryFromRub = Math.floor(o.freeDeliveryFromRub)
+  }
+
   const deliveryRaw = o.deliveryOptions
   let deliveryOptions: CheckoutDeliveryOption[] = []
   if (Array.isArray(deliveryRaw)) {
@@ -710,6 +719,22 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
       }
       if (parcels.length) cdek.widgetGoods = parcels
     }
+    const tr = c.tariffs
+    if (tr && typeof tr === 'object' && !Array.isArray(tr)) {
+      const t = tr as Record<string, unknown>
+      const tariffs: { office?: number[]; door?: number[]; pickup?: number[] } = {}
+      for (const key of ['office', 'door', 'pickup'] as const) {
+        const arr = t[key]
+        if (Array.isArray(arr) && arr.length) {
+          const nums = arr
+            .map((x) => (typeof x === 'number' ? x : Number(x)))
+            .filter((x) => Number.isFinite(x))
+            .map((x) => Math.round(x))
+          if (nums.length) tariffs[key] = nums
+        }
+      }
+      cdek.tariffs = tariffs
+    }
   }
 
   const ozonLogistics = { ...DEFAULT_CHECKOUT_PUBLIC.ozonLogistics }
@@ -758,6 +783,8 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
   }
 
   return {
+    minimumOrderRub,
+    freeDeliveryFromRub,
     deliveryOptions,
     paymentMatrix,
     paymentLabels,

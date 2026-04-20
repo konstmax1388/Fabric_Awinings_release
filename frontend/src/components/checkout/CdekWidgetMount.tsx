@@ -71,6 +71,7 @@ export function CdekWidgetMount({
   defaultMapLocation,
   rootId,
   goods,
+  tariffs,
   onChoose,
 }: {
   scriptUrl: string
@@ -81,11 +82,14 @@ export function CdekWidgetMount({
   defaultMapLocation: string
   rootId: string
   goods: CdekWidgetParcel[]
+  /** Ограничение тарифов виджета (пустой объект — не передаём, все тарифы). */
+  tariffs?: { office?: number[]; door?: number[]; pickup?: number[] }
   onChoose: (mode: string, tariff: unknown, address: Record<string, unknown>) => void
 }) {
   const widgetRef = useRef<unknown>(null)
   const [initError, setInitError] = useState<string | null>(null)
   const goodsJson = JSON.stringify(goods)
+  const tariffsJson = JSON.stringify(tariffs ?? {})
   const mapFocus = defaultMapLocation.trim() || fromCity.trim() || 'Москва'
   const mapLine = cityLineForWidgetMap(mapFocus)
 
@@ -116,6 +120,17 @@ export function CdekWidgetMount({
         if (cancelled || !window.CDEKWidget) return
 
         const sender = (fromCity.trim() || 'Москва').trim()
+        let tariffCfg: Record<string, number[]> | undefined
+        try {
+          const t = JSON.parse(tariffsJson) as { office?: number[]; door?: number[]; pickup?: number[] }
+          const tw: Record<string, number[]> = {}
+          if (t?.office?.length) tw.office = t.office
+          if (t?.door?.length) tw.door = t.door
+          if (t?.pickup?.length) tw.pickup = t.pickup
+          if (Object.keys(tw).length) tariffCfg = tw
+        } catch {
+          tariffCfg = undefined
+        }
         widgetRef.current = new window.CDEKWidget({
           // Объект «откуда» стабильнее строки для API СДЭК (wiki: from — string|object).
           from: { country_code: 'RU', city: sender },
@@ -124,6 +139,7 @@ export function CdekWidgetMount({
           servicePath: svc,
           defaultLocation: mapLine,
           goods: parcels,
+          ...(tariffCfg ? { tariffs: tariffCfg } : {}),
           lang: 'rus',
           currency: 'RUB',
           onChoose: (mode: string, tariff: unknown, addr: unknown) => {
@@ -143,7 +159,7 @@ export function CdekWidgetMount({
       if (root) root.innerHTML = ''
       widgetRef.current = null
     }
-  }, [scriptUrl, apiKey, servicePath, fromCity, mapLine, rootId, goodsJson, onChoose])
+  }, [scriptUrl, apiKey, servicePath, fromCity, mapLine, rootId, goodsJson, tariffsJson, onChoose])
 
   const missingKey = !apiKey.trim()
   const missingService = !servicePath.trim()

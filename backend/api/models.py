@@ -404,7 +404,17 @@ class CartOrder(models.Model):
     total_approx = models.PositiveIntegerField(
         "Сумма заказа (ориентир)",
         default=0,
-        help_text="Приблизительная сумма в рублях, как передал сайт при оформлении.",
+        help_text="Итого к оплате: товары и доставка (ориентировочно).",
+    )
+    goods_subtotal_approx = models.PositiveIntegerField(
+        "Сумма товаров (ориентир)",
+        default=0,
+        help_text="Сумма по товарным строкам без доставки.",
+    )
+    delivery_price_rub = models.PositiveIntegerField(
+        "Стоимость доставки, ₽",
+        default=0,
+        help_text="Доставка к оплате по этому заказу (с учётом порога бесплатной доставки в настройках).",
     )
     manager_letter = models.TextField("Текст письма менеджеру", blank=True)
     client_ack = models.TextField("Текст для клиента (подтверждение)", blank=True)
@@ -824,6 +834,16 @@ class SiteSettings(models.Model):
     )
 
     # --- Оформление заказа: самовывоз / СДЭК / Ozon (доставка и эквайринг) ---
+    checkout_minimum_order_rub = models.PositiveIntegerField(
+        "Минимальная сумма заказа (товары), ₽",
+        default=0,
+        help_text="0 — без ограничения. Иначе оформление возможно, если сумма товарных позиций не ниже этого порога.",
+    )
+    checkout_free_delivery_from_rub = models.PositiveIntegerField(
+        "Бесплатная доставка от суммы товаров, ₽",
+        default=0,
+        help_text="0 — порог не используется. Если сумма товаров не ниже этого значения, стоимость доставки СДЭК на витрине обнуляется.",
+    )
     checkout_pickup_enabled = models.BooleanField(
         "Самовывоз: показывать на сайте",
         default=True,
@@ -926,6 +946,27 @@ class SiteSettings(models.Model):
         "СДЭК: разрешить ручной ввод ПВЗ",
         default=True,
         help_text="Если выключено, на витрине покупатель сможет выбрать ПВЗ только через виджет (без ручного кода).",
+    )
+    cdek_tariff_codes_office = models.CharField(
+        "СДЭК: коды тарифов для ПВЗ (через запятую)",
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Числовые коды тарифов API СДЭК v2 для доставки в пункт выдачи (виджет). Пусто — доступны все тарифы виджета.",
+    )
+    cdek_tariff_codes_door = models.CharField(
+        "СДЭК: коды тарифов для курьера до двери",
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Тарифы для режима «до двери». Пусто — все.",
+    )
+    cdek_tariff_codes_pickup = models.CharField(
+        "СДЭК: коды тарифов для постаматов",
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Тарифы для постаматов (если включены в виджете). Пусто — все.",
     )
 
     ozon_logistics_enabled = models.BooleanField(

@@ -1300,6 +1300,19 @@ class SiteSettingsAdmin(ModelAdmin):
             },
         ),
         ss_fieldset(
+            "checkout_limits",
+            {
+                "fields": (
+                    "checkout_minimum_order_rub",
+                    "checkout_free_delivery_from_rub",
+                ),
+                "description": _(
+                    "Минимальная сумма считается по товарным позициям без доставки. "
+                    "Бесплатная доставка действует для способа «СДЭК», если сумма товаров не ниже порога."
+                ),
+            },
+        ),
+        ss_fieldset(
             "checkout_pickup",
             {
                 "fields": (
@@ -1330,12 +1343,16 @@ class SiteSettingsAdmin(ModelAdmin):
                     "cdek_yandex_map_api_key",
                     "cdek_widget_sender_city",
                     "cdek_manual_pvz_enabled",
+                    "cdek_tariff_codes_office",
+                    "cdek_tariff_codes_door",
+                    "cdek_tariff_codes_pickup",
                 ),
                 "description": _(
                     "API v2: тест https://api.edu.cdek.ru, бой https://api.cdek.ru (см. docs/cdek-api-v2.md). "
                     "Секрет можно задать в .env: CDEK_ACCOUNT, CDEK_SECURE, CDEK_API_BASE_URL. "
                     "Виджет v3: wiki https://github.com/cdek-it/widget/wiki — скрипт по умолчанию @cdek-it/widget@3; "
-                    "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже)."
+                    "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже). "
+                    "Коды тарифов — числа через запятую (справочник СДЭК v2); пусто — в виджете доступны все тарифы."
                 ),
             },
         ),

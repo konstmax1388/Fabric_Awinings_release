@@ -3,6 +3,10 @@
 export type CheckoutDeliveryOption = { id: string; label: string }
 
 export type CheckoutPublicConfig = {
+  /** Минимальная сумма товаров (без доставки), 0 — нет ограничения */
+  minimumOrderRub: number
+  /** От какой суммы товаров доставка СДЭК бесплатна, 0 — не применять */
+  freeDeliveryFromRub: number
   deliveryOptions: CheckoutDeliveryOption[]
   paymentMatrix: Record<string, string[]>
   paymentLabels: Record<string, string>
@@ -25,6 +29,8 @@ export type CheckoutPublicConfig = {
     manualPvzEnabled: boolean
     /** widget — карта и виджет cdek-it; custom — список ПВЗ по API без Яндекса */
     checkoutUi: 'widget' | 'custom'
+    /** Ограничение тарифов виджета (пустой объект — все тарифы) */
+    tariffs: { office?: number[]; door?: number[]; pickup?: number[] }
     widgetGoods: { width: number; height: number; length: number; weight: number }[]
   }
   ozonLogistics: {
@@ -45,6 +51,8 @@ export const CHECKOUT_DELIVERY_FALLBACK_LABELS: Record<string, string> = {
 }
 
 export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
+  minimumOrderRub: 0,
+  freeDeliveryFromRub: 0,
   deliveryOptions: [{ id: 'pickup', label: 'Самовывоз со склада' }],
   paymentMatrix: {
     pickup: ['cash_pickup'],
@@ -74,6 +82,7 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
     widgetSenderCity: 'Москва',
     manualPvzEnabled: true,
     checkoutUi: 'widget',
+    tariffs: {},
     widgetGoods: [{ width: 20, height: 20, length: 30, weight: 3000 }],
   },
   ozonLogistics: {

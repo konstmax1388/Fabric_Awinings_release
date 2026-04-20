@@ -28,6 +28,7 @@ SECTIONS: dict[str, dict[str, Any]] = {
     "contacts_page": {"title": _("Страница «Контакты» (/contacts)"), "icon": "contact_page"},
     "calculator": {"title": _("Калькулятор на главной"), "icon": "calculate"},
     "catalog": {"title": _("Каталог (/catalog)"), "icon": "storefront"},
+    "checkout_limits": {"title": _("Оформление: пороги сумм"), "icon": "shopping_cart"},
     "checkout_pickup": {"title": _("Оформление: самовывоз"), "icon": "warehouse"},
     "checkout_cdek": {"title": _("Оформление: СДЭК"), "icon": "local_shipping"},
     "checkout_ozon_logistics": {"title": _("Оформление: логистика Ozon"), "icon": "flight"},
@@ -98,6 +99,10 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "calculator": ("show_calculator",),
     "catalog": ("catalog_intro", "product_photo_aspect"),
+    "checkout_limits": (
+        "checkout_minimum_order_rub",
+        "checkout_free_delivery_from_rub",
+    ),
     "checkout_pickup": (
         "checkout_pickup_enabled",
         "pickup_point_title",
@@ -117,6 +122,9 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "cdek_yandex_map_api_key",
         "cdek_widget_sender_city",
         "cdek_manual_pvz_enabled",
+        "cdek_tariff_codes_office",
+        "cdek_tariff_codes_door",
+        "cdek_tariff_codes_pickup",
     ),
     "checkout_ozon_logistics": (
         "ozon_logistics_enabled",
