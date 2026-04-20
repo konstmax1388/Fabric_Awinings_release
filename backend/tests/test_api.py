@@ -715,6 +715,43 @@ def test_cdek_widget_service_offices_mocked(client):
 
 
 @pytest.mark.django_db
+def test_cdek_widget_service_calculate_fills_sender_code(client):
+    from unittest.mock import patch
+
+    from api.models import SiteSettings
+    from api.services import cdek_widget_service
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_test_mode = True
+    s.cdek_account = "acc"
+    s.cdek_secure_password = "sec"
+    s.cdek_widget_sender_city = "Москва"
+    s.save()
+
+    with (
+        patch.object(cdek_widget_service, "fetch_cdek_access_token", return_value="tok"),
+        patch.object(
+            cdek_widget_service,
+            "search_cdek_cities",
+            return_value=[{"code": 44, "label": "Москва"}],
+        ),
+        patch.object(cdek_widget_service, "post_json", return_value={"tariff_codes": []}) as post_mock,
+    ):
+        r = client.post(
+            "/api/cdek-widget/service/",
+            data=(
+                '{"action":"calculate","from_location":{"city":"Иваново","code":null},'
+                '"to_location":{"code":164},"packages":[{"weight":3000,"length":30,"width":20,"height":20}]}'
+            ),
+            content_type="application/json",
+        )
+    assert r.status_code == 200
+    body = post_mock.call_args.args[1]
+    assert body["from_location"]["code"] == 44
+
+
+@pytest.mark.django_db
 def test_cdek_address_suggest_cdek_off(client):
     from api.models import SiteSettings
 

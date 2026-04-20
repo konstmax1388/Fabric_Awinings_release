@@ -11,6 +11,7 @@ from django.http import HttpRequest
 
 from api.models import SiteSettings
 from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
+from api.services.cdek_locations import search_cdek_cities
 from api.services.cdek_runtime import cdek_api_base_url
 from api.services.http_util import HttpJsonError, get_json, post_json
 
@@ -65,6 +66,27 @@ def _encode_deliverypoints_query(params: dict[str, Any]) -> str:
     return urllib.parse.urlencode(pairs)
 
 
+def _sender_city_name(settings: SiteSettings) -> str:
+    sender = (settings.cdek_widget_sender_city or "").strip()
+    if sender:
+        return sender.split(",")[0].strip() or "Москва"
+    pickup_addr = (settings.pickup_point_address or "").strip()
+    if pickup_addr:
+        return pickup_addr.split(",")[0].strip() or "Москва"
+    return "Москва"
+
+
+def _city_code_by_name(settings: SiteSettings, city_name: str) -> int | None:
+    query = (city_name or "").strip()
+    if len(query) < 2:
+        return None
+    rows = search_cdek_cities(settings, query, limit=1)
+    if not rows:
+        return None
+    code = rows[0].get("code")
+    return int(code) if isinstance(code, int) else None
+
+
 def run_cdek_widget_proxy(settings: SiteSettings, merged: dict[str, Any]) -> tuple[int, Any]:
     if not settings.cdek_enabled:
         return 403, {"message": "СДЭК отключён в настройках сайта."}
@@ -95,6 +117,28 @@ def run_cdek_widget_proxy(settings: SiteSettings, merged: dict[str, Any]) -> tup
             logger.warning("CDEK widget proxy deliverypoints: %s", e)
             return (e.status or 502), {"message": str(e)}
         return 200, data
+
+    # Виджет периодически присылает from_location.code = null.
+    # Для расчёта тарифов СДЭК code обязателен, поэтому нормализуем отправителя сервером.
+    from_location = forward.get("from_location")
+    if not isinstance(from_location, dict):
+        from_location = {}
+    sender_city = _sender_city_name(settings)
+    sender_code = _city_code_by_name(settings, sender_city)
+    if sender_code is None:
+        fallback_city = str(from_location.get("city") or "").strip()
+        sender_code = _city_code_by_name(settings, fallback_city) if fallback_city else None
+    if sender_code is None:
+        return 400, {
+            "message": (
+                "Не удалось определить код города отправления для СДЭК. "
+                "Проверьте поле «СДЭК: город отправления (виджет)» в настройках сайта."
+            )
+        }
+    from_location["code"] = int(sender_code)
+    if not (isinstance(from_location.get("city"), str) and from_location.get("city", "").strip()):
+        from_location["city"] = sender_city
+    forward["from_location"] = from_location
 
     try:
         data = post_json(f"{base}/v2/calculator/tarifflist", forward, headers=headers, timeout=45.0)
