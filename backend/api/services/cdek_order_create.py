@@ -18,6 +18,8 @@ from api.services.http_util import HttpJsonError, get_json, post_json
 
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
+DOOR_ONLY_TARIFF_CODES = {136}
+DEFAULT_OFFICE_TARIFF_CODE = 138
 
 
 def _first_city_code(settings: SiteSettings, query: str) -> int | None:
@@ -99,9 +101,14 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         destination_mode = "office"
 
     if destination_mode == "office":
+        office_candidates = [x for x in office_tariffs if x not in DOOR_ONLY_TARIFF_CODES]
         if office_tariffs:
-            if tariff_code not in office_tariffs:
-                tariff_code = office_tariffs[0]
+            if tariff_code not in office_candidates:
+                tariff_code = office_candidates[0] if office_candidates else None
+        if not tariff_code:
+            tariff_code = DEFAULT_OFFICE_TARIFF_CODE
+        if tariff_code in DOOR_ONLY_TARIFF_CODES:
+            tariff_code = DEFAULT_OFFICE_TARIFF_CODE
         if not tariff_code:
             return None
     elif destination_mode == "door":

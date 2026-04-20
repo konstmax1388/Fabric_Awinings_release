@@ -568,7 +568,7 @@ def test_create_cdek_order_office_mode_keeps_delivery_point(
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["delivery_point"] == "IVN6"
     assert "address" not in sent_body["to_location"]
-    assert sent_body["tariff_code"] == 136
+    assert sent_body["tariff_code"] == 138
 
 
 @pytest.mark.django_db
