@@ -150,6 +150,24 @@ export function CheckoutPage() {
   }, [checkout.cdek.widgetServiceUrl])
 
   const useCdekWidgetUi = checkout.cdek.checkoutUi !== 'custom'
+  const cdekWidgetGoods = useMemo(() => {
+    const fallback = checkout.cdek.defaultPackage
+    const goods: { width: number; height: number; length: number; weight: number }[] = []
+    for (const line of items) {
+      const pack = {
+        weight:
+          line.cdekWeightGrams && line.cdekWeightGrams > 0
+            ? line.cdekWeightGrams
+            : fallback.weight,
+        length: line.cdekLengthCm && line.cdekLengthCm > 0 ? line.cdekLengthCm : fallback.length,
+        width: line.cdekWidthCm && line.cdekWidthCm > 0 ? line.cdekWidthCm : fallback.width,
+        height: line.cdekHeightCm && line.cdekHeightCm > 0 ? line.cdekHeightCm : fallback.height,
+      }
+      const qty = Math.min(50, Math.max(1, Math.floor(line.qty || 1)))
+      for (let i = 0; i < qty; i += 1) goods.push(pack)
+    }
+    return goods.length ? goods : [fallback]
+  }, [items, checkout.cdek.defaultPackage])
 
   const goodsSubtotal = totalApprox
   const freeDeliveryActive = useMemo(() => {
@@ -635,7 +653,7 @@ export function CheckoutPage() {
                             fromCity={checkout.cdek.widgetSenderCity}
                             defaultMapLocation={city.trim() || checkout.cdek.widgetSenderCity}
                             rootId="cdek-map-root-checkout"
-                            goods={checkout.cdek.widgetGoods}
+                            goods={cdekWidgetGoods}
                             tariffs={checkout.cdek.tariffs}
                             onChoose={handleCdekWidgetChoose}
                           />

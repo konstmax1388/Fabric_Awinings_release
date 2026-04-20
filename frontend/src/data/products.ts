@@ -78,6 +78,10 @@ export type Product = {
   defaultVariantId?: string | null
   materialMap?: ProductMaterialMap
   seo?: ProductSeo
+  cdekWeightGrams?: number | null
+  cdekLengthCm?: number | null
+  cdekWidthCm?: number | null
+  cdekHeightCm?: number | null
 }
 
 /** Подписи для демо-моков и блока «Виды тентов» (картинки по слагу) */

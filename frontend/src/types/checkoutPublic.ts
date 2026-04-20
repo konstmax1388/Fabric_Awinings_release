@@ -31,6 +31,7 @@ export type CheckoutPublicConfig = {
     checkoutUi: 'widget' | 'custom'
     /** Ограничение тарифов виджета (пустой объект — все тарифы) */
     tariffs: { office?: number[]; door?: number[]; pickup?: number[] }
+    defaultPackage: { width: number; height: number; length: number; weight: number }
     widgetGoods: { width: number; height: number; length: number; weight: number }[]
   }
   ozonLogistics: {
@@ -83,6 +84,7 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
     manualPvzEnabled: true,
     checkoutUi: 'widget',
     tariffs: {},
+    defaultPackage: { width: 20, height: 20, length: 30, weight: 3000 },
     widgetGoods: [{ width: 20, height: 20, length: 30, weight: 3000 }],
   },
   ozonLogistics: {

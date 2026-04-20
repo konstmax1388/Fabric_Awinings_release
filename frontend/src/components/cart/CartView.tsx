@@ -165,7 +165,7 @@ export function CartView() {
                   </div>
                 </dl>
                 <p className="mt-3 rounded-xl bg-surface p-3 font-body text-xs leading-relaxed text-text-muted">
-                  Итоговая сумма появится в коммерческом предложении после уточнения размеров и комплектации.
+                  Итоговая сумма появится после выбора и расчета доставки.
                 </p>
                 <Link
                   to="/checkout"

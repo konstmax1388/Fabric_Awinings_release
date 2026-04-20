@@ -7,10 +7,10 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Literal
 
 from api.models import SiteSettings
+from api.services.cdek_dimensions import cdek_default_package
 from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
 from api.services.cdek_locations import search_cdek_cities
 from api.services.cdek_runtime import cdek_api_base_url
@@ -34,13 +34,6 @@ def _widget_bucket(delivery_mode: int | None, tariff_name: str) -> WidgetBucket:
     if delivery_mode in (2, 4):
         return "office"
     return "office"
-
-
-def _default_weight_g() -> int:
-    try:
-        return max(100, int(os.environ.get("CDEK_WIDGET_DEFAULT_WEIGHT_G", "3000")))
-    except (TypeError, ValueError):
-        return 3000
 
 
 def _default_to_city_code() -> int:
@@ -91,7 +84,7 @@ def fetch_cdek_tariff_catalog(
     if fc == tc:
         return None, "Код города «куда» совпадает с «откуда». Укажите другой код города назначения (поле выше) для примера расчёта."
 
-    weight = _default_weight_g()
+    default_pack = cdek_default_package(settings)
     # Поле date не передаём: API v2 для tarifflist возвращает v2_invalid_value_type для строки ISO (проверено на api.edu.cdek.ru).
     body: dict[str, Any] = {
         "type": 1,
@@ -99,7 +92,7 @@ def fetch_cdek_tariff_catalog(
         "lang": "rus",
         "from_location": {"code": int(fc)},
         "to_location": {"code": int(tc)},
-        "packages": [{"weight": weight, "length": 20, "width": 15, "height": 10}],
+        "packages": [default_pack],
     }
 
     try:

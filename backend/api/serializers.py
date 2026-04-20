@@ -78,6 +78,10 @@ class ProductListSerializer(serializers.ModelSerializer):
     updatedAt = serializers.DateTimeField(source="updated_at", format="%Y-%m-%d")
     category = serializers.CharField(source="category.slug", read_only=True)
     categoryTitle = serializers.CharField(source="category.title", read_only=True)
+    cdekWeightGrams = serializers.IntegerField(source="cdek_weight_grams", allow_null=True, read_only=True)
+    cdekLengthCm = serializers.IntegerField(source="cdek_length_cm", allow_null=True, read_only=True)
+    cdekWidthCm = serializers.IntegerField(source="cdek_width_cm", allow_null=True, read_only=True)
+    cdekHeightCm = serializers.IntegerField(source="cdek_height_cm", allow_null=True, read_only=True)
 
     class Meta:
         model = Product
@@ -95,6 +99,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             "updatedAt",
             "showOnHome",
             "teasers",
+            "cdekWeightGrams",
+            "cdekLengthCm",
+            "cdekWidthCm",
+            "cdekHeightCm",
         )
 
     def get_id(self, obj: Product) -> str:
@@ -393,6 +401,10 @@ class CartLineInputSerializer(serializers.Serializer):
     qty = serializers.IntegerField(min_value=1, max_value=99)
     image = serializers.CharField(required=False, allow_blank=True, default="", max_length=2048)
     ozonSku = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    cdekWeightGrams = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    cdekLengthCm = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    cdekWidthCm = serializers.IntegerField(required=False, allow_null=True, min_value=1)
+    cdekHeightCm = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
     def validate_image(self, value: str) -> str:
         s = (value or "").strip()
@@ -751,10 +763,9 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         return out or None
 
     def get_checkout(self, obj: SiteSettings) -> dict:
-        import os
-
         from django.urls import reverse
 
+        from .services.cdek_dimensions import cdek_default_package
         from .services.cdek_checkout_public import cdek_widget_tariffs_public
         from .services.cdek_runtime import cdek_api_base_url
         from .services.checkout_rules import allowed_payment_methods, delivery_options_public
@@ -770,8 +781,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                     return part
             return "Москва"
 
-        weight = int(os.environ.get("CDEK_WIDGET_DEFAULT_WEIGHT_G", "3000"))
-        default_goods = [{"width": 20, "height": 20, "length": 30, "weight": weight}]
+        default_pack = cdek_default_package(obj)
+        default_goods = [default_pack]
         widget_script = (obj.cdek_widget_script_url or "").strip() or "https://cdn.jsdelivr.net/npm/@cdek-it/widget@3"
         req = self.context.get("request")
         widget_service_url = ""
@@ -807,6 +818,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                 "manualPvzEnabled": obj.cdek_manual_pvz_enabled,
                 "checkoutUi": obj.cdek_checkout_ui,
                 "tariffs": tariffs,
+                "defaultPackage": default_pack,
                 "widgetGoods": default_goods,
             },
             "ozonLogistics": {

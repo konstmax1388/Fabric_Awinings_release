@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 
 from api.models import CartOrder, SiteSettings
+from api.services.cdek_dimensions import cdek_widget_goods_for_lines
 from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
 from api.services.cdek_locations import search_cdek_cities
 from api.services.cdek_runtime import cdek_api_base_url
@@ -69,13 +69,22 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     if not from_code or not to_code:
         return None
 
-    weight = int(os.environ.get("CDEK_WIDGET_DEFAULT_WEIGHT_G", "3000") or "3000")
-    if weight <= 0:
-        weight = 3000
-
     mode = str(cdek.get("mode") or "").strip().lower()
     pvz_code = str(cdek.get("pvzCode") or "").strip()
     addr = str(snap.get("address") or cdek.get("address") or "").strip()
+
+    packages = []
+    goods = cdek_widget_goods_for_lines(order.lines if isinstance(order.lines, list) else [], settings)
+    for idx, item in enumerate(goods, start=1):
+        packages.append(
+            {
+                "number": str(idx),
+                "weight": int(item["weight"]),
+                "length": int(item["length"]),
+                "width": int(item["width"]),
+                "height": int(item["height"]),
+            }
+        )
 
     payload: dict[str, Any] = {
         "type": 1,
@@ -88,7 +97,7 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
             "name": (order.customer_name or "").strip()[:100],
             "phones": [{"number": (order.customer_phone or "").strip()}],
         },
-        "packages": [{"number": "1", "weight": int(weight)}],
+        "packages": packages,
     }
     email = (order.customer_email or "").strip()
     if email:

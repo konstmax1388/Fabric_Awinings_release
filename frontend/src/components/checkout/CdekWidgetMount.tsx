@@ -183,7 +183,7 @@ export function CdekWidgetMount({
       {!missingKey && !missingService ? (
         <>
           <p className="font-body text-xs leading-relaxed text-text-muted">
-            Выберите ПВЗ или доставку до двери; код и адрес ПВЗ подставятся в поля ниже (можно изменить вручную).
+            Выберите ПВЗ или доставку до двери
           </p>
         </>
       ) : null}

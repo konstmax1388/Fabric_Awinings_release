@@ -227,6 +227,30 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
         : undefined
   const seo = parseProductSeo(raw.seo)
   const materialMap = parseMaterialMap(raw.materialMap)
+  const cdekWeightGrams =
+    typeof raw.cdekWeightGrams === 'number'
+      ? raw.cdekWeightGrams
+      : raw.cdekWeightGrams == null
+        ? null
+        : Number(raw.cdekWeightGrams)
+  const cdekLengthCm =
+    typeof raw.cdekLengthCm === 'number'
+      ? raw.cdekLengthCm
+      : raw.cdekLengthCm == null
+        ? null
+        : Number(raw.cdekLengthCm)
+  const cdekWidthCm =
+    typeof raw.cdekWidthCm === 'number'
+      ? raw.cdekWidthCm
+      : raw.cdekWidthCm == null
+        ? null
+        : Number(raw.cdekWidthCm)
+  const cdekHeightCm =
+    typeof raw.cdekHeightCm === 'number'
+      ? raw.cdekHeightCm
+      : raw.cdekHeightCm == null
+        ? null
+        : Number(raw.cdekHeightCm)
   return {
     id,
     slug: raw.slug,
@@ -247,6 +271,10 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     defaultVariantId,
     materialMap,
     seo,
+    cdekWeightGrams: Number.isFinite(cdekWeightGrams) ? cdekWeightGrams : null,
+    cdekLengthCm: Number.isFinite(cdekLengthCm) ? cdekLengthCm : null,
+    cdekWidthCm: Number.isFinite(cdekWidthCm) ? cdekWidthCm : null,
+    cdekHeightCm: Number.isFinite(cdekHeightCm) ? cdekHeightCm : null,
   }
 }
 
@@ -704,6 +732,17 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     if (c.checkoutUi === 'widget' || c.checkoutUi === 'custom') cdek.checkoutUi = c.checkoutUi
     if (typeof c.widgetSenderCity === 'string' && c.widgetSenderCity.trim())
       cdek.widgetSenderCity = c.widgetSenderCity.trim()
+    const dp = c.defaultPackage
+    if (dp && typeof dp === 'object' && !Array.isArray(dp)) {
+      const d = dp as Record<string, unknown>
+      const width = typeof d.width === 'number' ? d.width : Number(d.width)
+      const height = typeof d.height === 'number' ? d.height : Number(d.height)
+      const length = typeof d.length === 'number' ? d.length : Number(d.length)
+      const weight = typeof d.weight === 'number' ? d.weight : Number(d.weight)
+      if ([width, height, length, weight].every((n) => Number.isFinite(n) && n > 0)) {
+        cdek.defaultPackage = { width, height, length, weight }
+      }
+    }
     const wg = c.widgetGoods
     if (Array.isArray(wg) && wg.length) {
       const parcels: { width: number; height: number; length: number; weight: number }[] = []
@@ -1172,6 +1211,10 @@ export async function postCartOrder(
       priceFrom: number
       qty: number
       image?: string
+      cdekWeightGrams?: number
+      cdekLengthCm?: number
+      cdekWidthCm?: number
+      cdekHeightCm?: number
     }[]
     totalApprox: number
     delivery?: Record<string, unknown>

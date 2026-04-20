@@ -53,6 +53,30 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
       priceFrom,
       image,
       qty: Math.min(99, Math.floor(qty)),
+      cdekWeightGrams:
+        typeof r.cdekWeightGrams === 'number'
+          ? r.cdekWeightGrams
+          : r.cdekWeightGrams == null
+            ? null
+            : Number(r.cdekWeightGrams),
+      cdekLengthCm:
+        typeof r.cdekLengthCm === 'number'
+          ? r.cdekLengthCm
+          : r.cdekLengthCm == null
+            ? null
+            : Number(r.cdekLengthCm),
+      cdekWidthCm:
+        typeof r.cdekWidthCm === 'number'
+          ? r.cdekWidthCm
+          : r.cdekWidthCm == null
+            ? null
+            : Number(r.cdekWidthCm),
+      cdekHeightCm:
+        typeof r.cdekHeightCm === 'number'
+          ? r.cdekHeightCm
+          : r.cdekHeightCm == null
+            ? null
+            : Number(r.cdekHeightCm),
     })
   }
   return out
@@ -157,6 +181,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           priceFrom,
           image,
           qty: q,
+          cdekWeightGrams: product.cdekWeightGrams ?? null,
+          cdekLengthCm: product.cdekLengthCm ?? null,
+          cdekWidthCm: product.cdekWidthCm ?? null,
+          cdekHeightCm: product.cdekHeightCm ?? null,
         },
       ]
     })

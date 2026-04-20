@@ -322,6 +322,18 @@ class ProductAdmin(ModelAdmin):
                 ),
             },
         ),
+        (
+            _("СДЭК: параметры товара для расчёта и накладной"),
+            {
+                "fields": (
+                    "cdek_weight_grams",
+                    ("cdek_length_cm", "cdek_width_cm", "cdek_height_cm"),
+                ),
+                "description": _(
+                    "Вес и габариты одной единицы товара. Эти значения имеют приоритет над общими настройками СДЭК."
+                ),
+            },
+        ),
     )
 
     @display(description=_("Фото"))
@@ -1365,13 +1377,18 @@ class SiteSettingsAdmin(ModelAdmin):
                     "cdek_tariff_codes_office",
                     "cdek_tariff_codes_door",
                     "cdek_tariff_codes_pickup",
+                    "cdek_default_weight_grams",
+                    "cdek_default_length_cm",
+                    "cdek_default_width_cm",
+                    "cdek_default_height_cm",
                 ),
                 "description": _(
                     "API v2: тест https://api.edu.cdek.ru, бой https://api.cdek.ru (см. docs/cdek-api-v2.md). "
                     "Секрет можно задать в .env: CDEK_ACCOUNT, CDEK_SECURE, CDEK_API_BASE_URL. "
                     "Виджет v3: wiki https://github.com/cdek-it/widget/wiki — скрипт по умолчанию @cdek-it/widget@3; "
                     "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже). "
-                    "Коды тарифов можно ввести вручную или подставить из ответа калькулятора СДЭК блоком под формой; пусто — в виджете доступны все тарифы."
+                    "Коды тарифов можно ввести вручную или подставить из ответа калькулятора СДЭК блоком под формой; пусто — в виджете доступны все тарифы. "
+                    "Общие вес/габариты используются, если в карточке товара не заполнены параметры СДЭК."
                 ),
             },
         ),

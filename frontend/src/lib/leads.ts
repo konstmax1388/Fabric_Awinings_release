@@ -86,6 +86,12 @@ export async function submitCartOrder(payload: {
         qty: l.qty,
         image: (l.image ?? '').trim(),
         ...(l.ozonSku != null && l.ozonSku > 0 ? { ozonSku: l.ozonSku } : {}),
+        ...(l.cdekWeightGrams != null && l.cdekWeightGrams > 0
+          ? { cdekWeightGrams: l.cdekWeightGrams }
+          : {}),
+        ...(l.cdekLengthCm != null && l.cdekLengthCm > 0 ? { cdekLengthCm: l.cdekLengthCm } : {}),
+        ...(l.cdekWidthCm != null && l.cdekWidthCm > 0 ? { cdekWidthCm: l.cdekWidthCm } : {}),
+        ...(l.cdekHeightCm != null && l.cdekHeightCm > 0 ? { cdekHeightCm: l.cdekHeightCm } : {}),
       })),
       totalApprox: payload.totalApprox,
       delivery: payload.delivery,

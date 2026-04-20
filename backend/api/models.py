@@ -87,6 +87,42 @@ class Product(models.Model):
         blank=True,
         help_text="SKU в каталоге Ozon для createOrder при доставке Ozon Логистика; если задан у варианта — используется он.",
     )
+    cdek_weight_grams = models.PositiveIntegerField(
+        "СДЭК: вес товара, г",
+        null=True,
+        blank=True,
+        help_text=(
+            "Фактический вес одной единицы товара для расчёта доставки и создания накладной. "
+            "Если не заполнено — используется общий fallback из настроек интеграции СДЭК."
+        ),
+    )
+    cdek_length_cm = models.PositiveIntegerField(
+        "СДЭК: длина, см",
+        null=True,
+        blank=True,
+        help_text=(
+            "Габарит одной единицы товара. "
+            "Если не заполнено — используется общий fallback из настроек интеграции СДЭК."
+        ),
+    )
+    cdek_width_cm = models.PositiveIntegerField(
+        "СДЭК: ширина, см",
+        null=True,
+        blank=True,
+        help_text=(
+            "Габарит одной единицы товара. "
+            "Если не заполнено — используется общий fallback из настроек интеграции СДЭК."
+        ),
+    )
+    cdek_height_cm = models.PositiveIntegerField(
+        "СДЭК: высота, см",
+        null=True,
+        blank=True,
+        help_text=(
+            "Габарит одной единицы товара. "
+            "Если не заполнено — используется общий fallback из настроек интеграции СДЭК."
+        ),
+    )
 
     class Meta:
         ordering = ["sort_order", "-updated_at", "id"]
@@ -1031,6 +1067,29 @@ class SiteSettings(models.Model):
         blank=True,
         default="",
         help_text="Тарифы для постаматов (если включены в виджете). Пусто — все. Список можно подобрать из API блоком ниже.",
+    )
+    cdek_default_weight_grams = models.PositiveIntegerField(
+        "СДЭК: общий вес по умолчанию, г",
+        default=3000,
+        help_text=(
+            "Используется для расчёта/накладной, если у товара не заполнен вес. "
+            "Параметры товара имеют приоритет."
+        ),
+    )
+    cdek_default_length_cm = models.PositiveIntegerField(
+        "СДЭК: общая длина по умолчанию, см",
+        default=30,
+        help_text="Используется, если у товара не заполнена длина.",
+    )
+    cdek_default_width_cm = models.PositiveIntegerField(
+        "СДЭК: общая ширина по умолчанию, см",
+        default=20,
+        help_text="Используется, если у товара не заполнена ширина.",
+    )
+    cdek_default_height_cm = models.PositiveIntegerField(
+        "СДЭК: общая высота по умолчанию, см",
+        default=20,
+        help_text="Используется, если у товара не заполнена высота.",
     )
 
     ozon_logistics_enabled = models.BooleanField(
