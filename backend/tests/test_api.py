@@ -1061,6 +1061,45 @@ def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
     mock_cdek_create.assert_called_once()
 
 
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_cart_order_cdek_total_includes_recipient_fee_when_configured(mock_cdek_create, client):
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_recipient_delivery_fee_mode = SiteSettings.CdekRecipientDeliveryFeeMode.FIXED
+    s.cdek_recipient_delivery_fee_fixed_rub = 120
+    s.save(
+        update_fields=[
+            "cdek_enabled",
+            "cdek_recipient_delivery_fee_mode",
+            "cdek_recipient_delivery_fee_fixed_rub",
+        ]
+    )
+
+    payload = {
+        "customer": {"name": "СДЭК Клиент", "phone": "+79990001122", "email": "cdek2@test.ru"},
+        "lines": [{"productId": "1", "slug": "x", "title": "Товар", "priceFrom": 1000, "qty": 1}],
+        "totalApprox": 1320,
+        "deliveryMethod": "cdek",
+        "paymentMethod": "cod_cdek",
+        "delivery": {
+            "city": "Москва",
+            "cdek": {"mode": "office", "pvzCode": "MSK1", "deliveryPriceRub": 200, "tariffCode": 136},
+        },
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 201
+    order = CartOrder.objects.get(order_ref=r.json()["orderRef"])
+    assert order.total_approx == 1320
+    assert isinstance(order.delivery_snapshot, dict)
+    cdek = order.delivery_snapshot.get("cdek")
+    assert isinstance(cdek, dict)
+    assert cdek.get("recipientFeeRub") == 120
+    mock_cdek_create.assert_called_once()
+
+
 @patch("api.views_checkout.verify_notification_request_sign", return_value=True)
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
 @pytest.mark.django_db

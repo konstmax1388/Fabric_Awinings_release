@@ -75,6 +75,26 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     mode = str(cdek.get("mode") or "").strip().lower()
     pvz_code = str(cdek.get("pvzCode") or "").strip()
     addr = str(snap.get("address") or cdek.get("address") or "").strip()
+    tariff_code = int(tariff_code)
+
+    door_tariffs: set[int] = set()
+    for part in (settings.cdek_tariff_codes_door or "").replace(";", ",").split(","):
+        p = part.strip()
+        if p.isdigit():
+            door_tariffs.add(int(p))
+    is_door_tariff = tariff_code in door_tariffs
+
+    destination_mode = ""
+    if mode == "door":
+        destination_mode = "door"
+    elif mode in {"office", "pickup"}:
+        destination_mode = "office"
+    elif addr and not pvz_code:
+        destination_mode = "door"
+    elif pvz_code and not addr:
+        destination_mode = "office"
+    elif addr and pvz_code:
+        destination_mode = "door" if is_door_tariff else "office"
 
     packages = []
     goods = cdek_widget_goods_for_lines(order.lines if isinstance(order.lines, list) else [], settings)
@@ -137,7 +157,7 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     payload: dict[str, Any] = {
         "type": 1,
         "number": order.order_ref,
-        "tariff_code": int(tariff_code),
+        "tariff_code": tariff_code,
         "comment": (order.customer_comment or "").strip()[:255],
         "from_location": {"code": int(from_code)},
         "to_location": {"code": int(to_code)},
@@ -150,25 +170,26 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     email = (order.customer_email or "").strip()
     if email:
         payload["recipient"]["email"] = email
-    if mode == "office" and pvz_code:
+    if destination_mode == "office":
+        if not pvz_code:
+            return None
         payload["delivery_point"] = pvz_code
-    if mode == "door":
+    elif destination_mode == "door":
         if not addr:
             return None
         payload["to_location"]["address"] = addr
+    else:
+        return None
 
     if order.payment_method == CartOrder.PaymentMethod.COD_CDEK:
-        fee_mode = str(settings.cdek_recipient_delivery_fee_mode or "").strip().lower()
+        cdek_raw = snap.get("cdek") if isinstance(snap, dict) else None
+        cdek_data = cdek_raw if isinstance(cdek_raw, dict) else {}
         fee_value = 0
-        if fee_mode == SiteSettings.CdekRecipientDeliveryFeeMode.FIXED:
-            fee_value = max(0, int(settings.cdek_recipient_delivery_fee_fixed_rub or 0))
-        elif fee_mode == SiteSettings.CdekRecipientDeliveryFeeMode.PERCENT:
-            try:
-                pct = float(settings.cdek_recipient_delivery_fee_percent or 0)
-            except (TypeError, ValueError):
-                pct = 0.0
-            base = max(0, int(order.goods_subtotal_approx or 0))
-            fee_value = max(0, int(round(base * max(0.0, pct) / 100.0)))
+        raw_fee = cdek_data.get("recipientFeeRub")
+        try:
+            fee_value = max(0, int(float(raw_fee))) if raw_fee is not None else 0
+        except (TypeError, ValueError):
+            fee_value = 0
         if fee_value > 0:
             payload["delivery_recipient_cost"] = {
                 "value": fee_value,

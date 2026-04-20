@@ -287,14 +287,10 @@ def test_create_cdek_order_sends_recipient_delivery_fee_fixed(
     s = SiteSettings.get_solo()
     s.cdek_enabled = True
     s.cdek_tariff_codes_office = "136"
-    s.cdek_recipient_delivery_fee_mode = SiteSettings.CdekRecipientDeliveryFeeMode.FIXED
-    s.cdek_recipient_delivery_fee_fixed_rub = 350
     s.save(
         update_fields=[
             "cdek_enabled",
             "cdek_tariff_codes_office",
-            "cdek_recipient_delivery_fee_mode",
-            "cdek_recipient_delivery_fee_fixed_rub",
         ]
     )
 
@@ -314,7 +310,10 @@ def test_create_cdek_order_sends_recipient_delivery_fee_fixed(
         total_approx=1500,
         goods_subtotal_approx=1200,
         lines=[{"title": "Товар", "priceFrom": 1200, "qty": 1}],
-        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN1"}},
+        delivery_snapshot={
+            "city": "Иваново",
+            "cdek": {"mode": "office", "pvzCode": "IVN1", "recipientFeeRub": 350},
+        },
         manager_letter="x",
         client_ack="y",
     )
@@ -339,14 +338,10 @@ def test_create_cdek_order_sends_recipient_delivery_fee_percent(
     s = SiteSettings.get_solo()
     s.cdek_enabled = True
     s.cdek_tariff_codes_office = "136"
-    s.cdek_recipient_delivery_fee_mode = SiteSettings.CdekRecipientDeliveryFeeMode.PERCENT
-    s.cdek_recipient_delivery_fee_percent = 10
     s.save(
         update_fields=[
             "cdek_enabled",
             "cdek_tariff_codes_office",
-            "cdek_recipient_delivery_fee_mode",
-            "cdek_recipient_delivery_fee_percent",
         ]
     )
 
@@ -366,7 +361,10 @@ def test_create_cdek_order_sends_recipient_delivery_fee_percent(
         total_approx=1500,
         goods_subtotal_approx=1200,
         lines=[{"title": "Товар", "priceFrom": 1200, "qty": 1}],
-        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN1"}},
+        delivery_snapshot={
+            "city": "Иваново",
+            "cdek": {"mode": "office", "pvzCode": "IVN1", "recipientFeeRub": 120},
+        },
         manager_letter="x",
         client_ack="y",
     )
@@ -419,3 +417,51 @@ def test_sync_cdek_order_tracking_pending_keeps_pending_status(
     assert isinstance(err, str) and err.startswith("tracking_pending:")
     order.refresh_from_db()
     assert order.cdek_sync_status == CartOrder.CdekSyncStatus.PENDING
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.post_json")
+def test_create_cdek_order_door_uses_top_level_address_without_delivery_point(
+    mock_post_json, mock_search, _mock_token
+):
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_door = "137"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_door"])
+
+    mock_search.side_effect = [
+        [{"code": 44, "label": "Москва"}],
+        [{"code": 137, "label": "Иваново"}],
+    ]
+    mock_post_json.return_value = {"entity": {"uuid": "req-door-1", "cdek_number": "CDEK-DOOR-1"}}
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-DOOR-1",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        customer_email="ivan@example.com",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        goods_subtotal_approx=1200,
+        lines=[{"title": "Товар", "priceFrom": 1200, "qty": 1}],
+        delivery_snapshot={
+            "city": "Иваново",
+            "address": "Россия, Иваново, улица Красных Зорь, 7А",
+            "cdek": {"mode": "door", "address": "", "pvzCode": "", "tariffCode": 137},
+        },
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    sent_body = mock_post_json.call_args.args[1]
+    assert sent_body["to_location"]["address"] == "Россия, Иваново, улица Красных Зорь, 7А"
+    assert "delivery_point" not in sent_body

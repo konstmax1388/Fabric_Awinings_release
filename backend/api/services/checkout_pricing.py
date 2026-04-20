@@ -72,5 +72,30 @@ def delivery_charge_rub(
 def expected_total_approx(
     goods_subtotal: int,
     delivery_charge: int,
+    recipient_fee: int = 0,
 ) -> int:
-    return max(0, goods_subtotal + max(0, delivery_charge))
+    return max(0, goods_subtotal + max(0, delivery_charge) + max(0, recipient_fee))
+
+
+def cdek_recipient_fee_rub(
+    *,
+    settings: SiteSettings,
+    delivery_method: str,
+    payment_method: str,
+    goods_subtotal: int,
+) -> int:
+    if delivery_method != CartOrder.DeliveryMethod.CDEK:
+        return 0
+    if payment_method != CartOrder.PaymentMethod.COD_CDEK:
+        return 0
+    mode = str(settings.cdek_recipient_delivery_fee_mode or "").strip().lower()
+    if mode == SiteSettings.CdekRecipientDeliveryFeeMode.FIXED:
+        return max(0, int(settings.cdek_recipient_delivery_fee_fixed_rub or 0))
+    if mode == SiteSettings.CdekRecipientDeliveryFeeMode.PERCENT:
+        try:
+            pct = float(settings.cdek_recipient_delivery_fee_percent or 0)
+        except (TypeError, ValueError):
+            pct = 0.0
+        base = max(0, int(goods_subtotal or 0))
+        return max(0, int(round(base * max(0.0, pct) / 100.0)))
+    return 0

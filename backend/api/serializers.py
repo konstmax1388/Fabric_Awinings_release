@@ -503,6 +503,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         from .models import SiteSettings
         from .services.checkout_pricing import (
+            cdek_recipient_fee_rub,
             expected_total_approx,
             goods_subtotal_from_lines,
             quoted_cdek_delivery_rub,
@@ -538,7 +539,19 @@ class CartOrderCreateSerializer(serializers.Serializer):
         else:
             delivery_charge = 0
 
-        total_expected = expected_total_approx(goods_sub, delivery_charge)
+        recipient_fee = cdek_recipient_fee_rub(
+            settings=settings,
+            delivery_method=dm,
+            payment_method=pm,
+            goods_subtotal=goods_sub,
+        )
+        if dm == CartOrder.DeliveryMethod.CDEK:
+            cdek_raw = delivery_snapshot.get("cdek")
+            cdek_obj = dict(cdek_raw) if isinstance(cdek_raw, dict) else {}
+            cdek_obj["recipientFeeRub"] = int(recipient_fee)
+            delivery_snapshot["cdek"] = cdek_obj
+
+        total_expected = expected_total_approx(goods_sub, delivery_charge, recipient_fee)
         if int(validated_data["totalApprox"]) != total_expected:
             raise serializers.ValidationError(
                 {
@@ -590,6 +603,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
             payment_method_label=str(pm_label),
             goods_subtotal=goods_sub,
             delivery_price_rub=delivery_charge,
+            recipient_fee_rub=recipient_fee,
         )
         if pm == CartOrder.PaymentMethod.CARD_ONLINE:
             pay_url = acquiring.get("redirectUrl") if isinstance(acquiring, dict) else None
@@ -820,6 +834,11 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                 "tariffs": tariffs,
                 "defaultPackage": default_pack,
                 "widgetGoods": default_goods,
+                "recipientDeliveryFee": {
+                    "mode": str(obj.cdek_recipient_delivery_fee_mode or "off"),
+                    "fixedRub": int(obj.cdek_recipient_delivery_fee_fixed_rub or 0),
+                    "percent": float(obj.cdek_recipient_delivery_fee_percent or 0),
+                },
             },
             "ozonLogistics": {
                 "enabled": obj.ozon_logistics_enabled,

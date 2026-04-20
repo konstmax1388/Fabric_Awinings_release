@@ -123,12 +123,30 @@ def build_astrum_payload(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> dict[
             item["product_id"] = b24_id
         products.append(item)
 
+    delivery_price = max(0, int(order.delivery_price_rub or 0))
+    cdek_raw = (order.delivery_snapshot or {}).get("cdek") if isinstance(order.delivery_snapshot, dict) else None
+    cdek_data = cdek_raw if isinstance(cdek_raw, dict) else {}
+    try:
+        recipient_fee = max(0, int(float(cdek_data.get("recipientFeeRub") or 0)))
+    except (TypeError, ValueError):
+        recipient_fee = 0
+    if recipient_fee > 0:
+        products.append(
+            {
+                "product_name": "Доп. сбор с получателя (СДЭК)",
+                "price": recipient_fee,
+                "quantity": 1,
+            }
+        )
+
     prefix = cfg.deal_title_prefix or "Заказ с сайта"
     deal_title = f"{prefix} {order.order_ref}"
 
     comments_parts = [
         f"Номер на сайте: {order.order_ref}",
-        f"Сумма ориентировочно: {order.total_approx} ₽",
+        f"Сумма в CRM (без доставки): {max(0, int(order.total_approx or 0) - delivery_price)} ₽",
+        f"Доставка (справочно): {delivery_price} ₽",
+        f"Итого для клиента (справочно): {order.total_approx} ₽",
     ]
     cdek_tracking = (order.cdek_tracking or "").strip()
     if cdek_tracking:

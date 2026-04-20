@@ -33,6 +33,11 @@ export type CheckoutPublicConfig = {
     tariffs: { office?: number[]; door?: number[]; pickup?: number[] }
     defaultPackage: { width: number; height: number; length: number; weight: number }
     widgetGoods: { width: number; height: number; length: number; weight: number }[]
+    recipientDeliveryFee: {
+      mode: 'off' | 'fixed' | 'percent'
+      fixedRub: number
+      percent: number
+    }
   }
   ozonLogistics: {
     enabled: boolean
@@ -86,6 +91,7 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
     tariffs: {},
     defaultPackage: { width: 20, height: 20, length: 30, weight: 3000 },
     widgetGoods: [{ width: 20, height: 20, length: 30, weight: 3000 }],
+    recipientDeliveryFee: { mode: 'off', fixedRub: 0, percent: 0 },
   },
   ozonLogistics: {
     enabled: false,

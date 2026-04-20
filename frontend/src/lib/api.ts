@@ -775,6 +775,23 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
       }
       cdek.tariffs = tariffs
     }
+    const rdf = c.recipientDeliveryFee
+    if (rdf && typeof rdf === 'object' && !Array.isArray(rdf)) {
+      const r = rdf as Record<string, unknown>
+      if (r.mode === 'off' || r.mode === 'fixed' || r.mode === 'percent') {
+        cdek.recipientDeliveryFee.mode = r.mode
+      }
+      if (typeof r.fixedRub === 'number' && Number.isFinite(r.fixedRub) && r.fixedRub >= 0) {
+        cdek.recipientDeliveryFee.fixedRub = Math.floor(r.fixedRub)
+      } else if (typeof r.fixedRub === 'string' && r.fixedRub.trim() && !Number.isNaN(Number(r.fixedRub))) {
+        cdek.recipientDeliveryFee.fixedRub = Math.max(0, Math.floor(Number(r.fixedRub)))
+      }
+      if (typeof r.percent === 'number' && Number.isFinite(r.percent) && r.percent >= 0) {
+        cdek.recipientDeliveryFee.percent = r.percent
+      } else if (typeof r.percent === 'string' && r.percent.trim() && !Number.isNaN(Number(r.percent))) {
+        cdek.recipientDeliveryFee.percent = Math.max(0, Number(r.percent))
+      }
+    }
   }
 
   const ozonLogistics = { ...DEFAULT_CHECKOUT_PUBLIC.ozonLogistics }

@@ -13,6 +13,7 @@ def build_cart_letters(
     payment_method_label: str = "",
     goods_subtotal: int | None = None,
     delivery_price_rub: int | None = None,
+    recipient_fee_rub: int | None = None,
 ) -> tuple[str, str]:
     name = customer.get("name", "").strip()
     phone = customer.get("phone", "").strip()
@@ -81,6 +82,7 @@ def build_cart_letters(
             hdr.append(f"Комментарий к доставке: {d_comment}")
     gs = goods_subtotal if goods_subtotal is not None else total_approx
     dp = delivery_price_rub if delivery_price_rub is not None else max(0, total_approx - gs)
+    rf = max(0, int(recipient_fee_rub or 0))
     hdr.extend(
         [
             "",
@@ -89,6 +91,7 @@ def build_cart_letters(
             "",
             f"Сумма товаров (ориентировочно): {_money(gs)} ₽",
             f"Доставка: {_money(dp)} ₽",
+            f"Доп. сбор с получателя (СДЭК): {_money(rf)} ₽",
             f"ИТОГО (ориентировочно): {_money(total_approx)} ₽",
             "",
             "Действие: связаться с клиентом, согласовать замер и КП.",
@@ -99,7 +102,7 @@ def build_cart_letters(
 
     client_ack = (
         f"Уважаемый, {name}! Мы получили ваш заказ. Менеджер свяжется с вами в рабочее время.\n"
-        f"Товары: {_money(gs)} ₽; доставка: {_money(dp)} ₽; итого {_money(total_approx)} ₽.\n\n"
+        f"Товары: {_money(gs)} ₽; доставка: {_money(dp)} ₽; доп. сбор: {_money(rf)} ₽; итого {_money(total_approx)} ₽.\n\n"
         "Спасибо за заказ!"
     )
     return manager_letter, client_ack

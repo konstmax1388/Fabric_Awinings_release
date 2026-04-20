@@ -187,9 +187,21 @@ export function CheckoutPage() {
     return cdekQuotedDeliveryRub ?? 0
   }, [deliveryMethod, freeDeliveryActive, cdekQuotedDeliveryRub])
 
+  const cdekRecipientFeeRub = useMemo(() => {
+    if (deliveryMethod !== 'cdek' || paymentMethod !== 'cod_cdek') return 0
+    const cfg = checkout.cdek.recipientDeliveryFee
+    if (cfg.mode === 'fixed') return Math.max(0, Math.floor(cfg.fixedRub || 0))
+    if (cfg.mode === 'percent') {
+      const pct = Number(cfg.percent || 0)
+      if (!Number.isFinite(pct) || pct <= 0) return 0
+      return Math.max(0, Math.round(goodsSubtotal * pct / 100))
+    }
+    return 0
+  }, [deliveryMethod, paymentMethod, checkout.cdek.recipientDeliveryFee, goodsSubtotal])
+
   const orderGrandTotal = useMemo(
-    () => goodsSubtotal + deliveryChargeRub,
-    [goodsSubtotal, deliveryChargeRub],
+    () => goodsSubtotal + deliveryChargeRub + cdekRecipientFeeRub,
+    [goodsSubtotal, deliveryChargeRub, cdekRecipientFeeRub],
   )
 
   const handleCdekWidgetChoose = useCallback((mode: string, tariff: unknown, addr: Record<string, unknown>) => {
@@ -373,6 +385,7 @@ export function CheckoutPage() {
           pvzCode: cdekPvzCode.trim() || '',
           address: cdekPvzAddress.trim() || '',
           deliveryPriceRub: freeDel ? 0 : (cdekQuotedDeliveryRub ?? 0),
+          recipientFeeRub: cdekRecipientFeeRub,
           tariffCode: cdekTariffCode ?? undefined,
         }
       }
@@ -824,6 +837,12 @@ export function CheckoutPage() {
                         )}
                       </p>
                     ) : null}
+                    {deliveryMethod === 'cdek' && paymentMethod === 'cod_cdek' ? (
+                      <p className="mt-1">
+                        <span className="text-text-subtle">Доп. сбор (СДЭК):</span>{' '}
+                        <span>{cdekRecipientFeeRub.toLocaleString('ru-RU')} ₽</span>
+                      </p>
+                    ) : null}
                     <p className="mt-2 font-semibold text-text">
                       К оплате: {orderGrandTotal.toLocaleString('ru-RU')} ₽
                     </p>
@@ -906,6 +925,12 @@ export function CheckoutPage() {
                     ) : (
                       <span className="font-semibold text-text">{deliveryChargeRub.toLocaleString('ru-RU')} ₽</span>
                     )}
+                  </p>
+                ) : null}
+                {deliveryMethod === 'cdek' && paymentMethod === 'cod_cdek' ? (
+                  <p className="mt-1">
+                    <span className="text-text-subtle">Доп. сбор (СДЭК):</span>{' '}
+                    <span className="font-semibold text-text">{cdekRecipientFeeRub.toLocaleString('ru-RU')} ₽</span>
                   </p>
                 ) : null}
                 <p className="mt-1">
