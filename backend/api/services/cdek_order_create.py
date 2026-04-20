@@ -158,10 +158,22 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         payload["to_location"]["address"] = addr
 
     if order.payment_method == CartOrder.PaymentMethod.COD_CDEK:
-        payload["delivery_recipient_cost"] = {
-            "value": int(order.total_approx or 0),
-            "vat_sum": 0,
-        }
+        fee_mode = str(settings.cdek_recipient_delivery_fee_mode or "").strip().lower()
+        fee_value = 0
+        if fee_mode == SiteSettings.CdekRecipientDeliveryFeeMode.FIXED:
+            fee_value = max(0, int(settings.cdek_recipient_delivery_fee_fixed_rub or 0))
+        elif fee_mode == SiteSettings.CdekRecipientDeliveryFeeMode.PERCENT:
+            try:
+                pct = float(settings.cdek_recipient_delivery_fee_percent or 0)
+            except (TypeError, ValueError):
+                pct = 0.0
+            base = max(0, int(order.goods_subtotal_approx or 0))
+            fee_value = max(0, int(round(base * max(0.0, pct) / 100.0)))
+        if fee_value > 0:
+            payload["delivery_recipient_cost"] = {
+                "value": fee_value,
+                "vat_sum": 0,
+            }
 
     return payload
 
@@ -228,6 +240,41 @@ def _inject_tracking_into_order_texts(order: CartOrder, tracking: str) -> None:
         order.save(update_fields=changed_fields)
 
 
+def _dispatch_tracking_to_email_and_crm(order: CartOrder) -> None:
+    tracking = (order.cdek_tracking or "").strip()
+    if not tracking:
+        return
+    snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+    meta = snap.get("cdekTrackingDispatched") if isinstance(snap.get("cdekTrackingDispatched"), dict) else {}
+    sent_buyer = bool(meta.get("buyerEmail"))
+    sent_crm = bool(meta.get("crm"))
+    changed = False
+
+    if not sent_buyer:
+        try:
+            from api.services.notification_email import send_buyer_order_confirmation_email
+
+            send_buyer_order_confirmation_email(order)
+            meta["buyerEmail"] = True
+            changed = True
+        except Exception:
+            logger.exception("send_buyer_order_confirmation_email with tracking failed for order=%s", order.order_ref)
+    if not sent_crm:
+        try:
+            from api.services.astrum_crm import push_cart_order_to_astrum_crm
+
+            push_cart_order_to_astrum_crm(order)
+            meta["crm"] = True
+            changed = True
+        except Exception:
+            logger.exception("push_cart_order_to_astrum_crm with tracking failed for order=%s", order.order_ref)
+
+    if changed:
+        snap["cdekTrackingDispatched"] = meta
+        order.delivery_snapshot = snap
+        order.save(update_fields=["delivery_snapshot"])
+
+
 def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     """Создаёт заказ в СДЭК для CartOrder с delivery_method=cdek."""
     if order.delivery_method != CartOrder.DeliveryMethod.CDEK:
@@ -238,6 +285,25 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     settings = SiteSettings.get_solo()
     if not settings.cdek_enabled:
         return False, "cdek_disabled"
+
+    snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+    create_resp = snap.get("cdekCreateResponse") if isinstance(snap, dict) else {}
+    if isinstance(create_resp, dict):
+        req_uuid = str(create_resp.get("requestUuid") or "").strip()
+        if req_uuid:
+            try:
+                token = fetch_cdek_access_token(settings)
+                details = _fetch_cdek_order_by_uuid(settings, token, req_uuid)
+            except (CdekAuthError, HttpJsonError):
+                details = None
+            tracking = _extract_tracking_from_uuid_lookup(details)
+            if tracking:
+                order.cdek_tracking = tracking
+                order.save(update_fields=["cdek_tracking"])
+                _inject_tracking_into_order_texts(order, tracking)
+                _dispatch_tracking_to_email_and_crm(order)
+                return True, None
+            return False, f"tracking_pending:{req_uuid}"
 
     body = _extract_cdek_payload(order, settings)
     if not body:
@@ -282,6 +348,7 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     order.save(update_fields=update_fields)
     if tracking:
         _inject_tracking_into_order_texts(order, tracking)
+        _dispatch_tracking_to_email_and_crm(order)
         return True, None
     return False, f"tracking_pending:{req_uuid or 'unknown'}"
 
@@ -307,6 +374,7 @@ def sync_cdek_order_with_retry(order: CartOrder) -> tuple[bool, str | None]:
             order.cdek_sync_status = CartOrder.CdekSyncStatus.SUCCESS
             order.cdek_sync_error = ""
             order.save(update_fields=["cdek_sync_status", "cdek_sync_error"])
+        _dispatch_tracking_to_email_and_crm(order)
         return True, None
 
     max_attempts = _max_sync_attempts()
@@ -325,7 +393,14 @@ def sync_cdek_order_with_retry(order: CartOrder) -> tuple[bool, str | None]:
         order.save(update_fields=["cdek_sync_status", "cdek_sync_error"])
         return True, None
 
+    err_text = (err or "unknown_error")[:2000]
+    if err_text.startswith("tracking_pending:"):
+        order.cdek_sync_status = CartOrder.CdekSyncStatus.PENDING
+        order.cdek_sync_error = err_text
+        order.save(update_fields=["cdek_sync_status", "cdek_sync_error"])
+        return False, err
+
     order.cdek_sync_status = CartOrder.CdekSyncStatus.ERROR
-    order.cdek_sync_error = (err or "unknown_error")[:2000]
+    order.cdek_sync_error = err_text
     order.save(update_fields=["cdek_sync_status", "cdek_sync_error"])
     return False, err

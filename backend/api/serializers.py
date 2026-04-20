@@ -566,7 +566,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
                     msg or "Не удалось инициализировать онлайн-оплату Ozon Pay. Проверьте настройки эквайринга."
                 )
 
-        if pm == CartOrder.PaymentMethod.CARD_ONLINE:
+        if pm in (CartOrder.PaymentMethod.CARD_ONLINE, CartOrder.PaymentMethod.COD_CDEK):
             pay_status = CartOrder.PaymentStatus.PENDING
         else:
             pay_status = CartOrder.PaymentStatus.NOT_REQUIRED

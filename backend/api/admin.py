@@ -1385,6 +1385,9 @@ class SiteSettingsAdmin(ModelAdmin):
                     "cdek_default_length_cm",
                     "cdek_default_width_cm",
                     "cdek_default_height_cm",
+                    "cdek_recipient_delivery_fee_mode",
+                    "cdek_recipient_delivery_fee_fixed_rub",
+                    "cdek_recipient_delivery_fee_percent",
                 ),
                 "description": _(
                     "API v2: тест https://api.edu.cdek.ru, бой https://api.cdek.ru (см. docs/cdek-api-v2.md). "
@@ -1392,7 +1395,8 @@ class SiteSettingsAdmin(ModelAdmin):
                     "Виджет v3: wiki https://github.com/cdek-it/widget/wiki — скрипт по умолчанию @cdek-it/widget@3; "
                     "прокси расчёта: GET/POST …/api/cdek-widget/service/ (ключ Яндекс.Карт — в поле ниже). "
                     "Коды тарифов можно ввести вручную или подставить из ответа калькулятора СДЭК блоком под формой; пусто — в виджете доступны все тарифы. "
-                    "Общие вес/габариты используются, если в карточке товара не заполнены параметры СДЭК."
+                    "Общие вес/габариты используются, если в карточке товара не заполнены параметры СДЭК. "
+                    "Доп. сбор с получателя за доставку (delivery_recipient_cost) можно выключить, задавать фиксом или процентом от суммы товаров."
                 ),
             },
         ),

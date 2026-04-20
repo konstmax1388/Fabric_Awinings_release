@@ -990,6 +990,11 @@ class SiteSettings(models.Model):
     class CdekCheckoutUI(models.TextChoices):
         WIDGET = "widget", "Виджет v3 (карта Яндекса)"
         CUSTOM = "custom", "Свой интерфейс: список ПВЗ по API, без Яндекса"
+    
+    class CdekRecipientDeliveryFeeMode(models.TextChoices):
+        OFF = "off", "Отключено"
+        FIXED = "fixed", "Фиксированная сумма (₽)"
+        PERCENT = "percent", "Процент от суммы товаров"
 
     cdek_enabled = models.BooleanField(
         "СДЭК: включить на сайте",
@@ -1090,6 +1095,25 @@ class SiteSettings(models.Model):
         "СДЭК: общая высота по умолчанию, см",
         default=20,
         help_text="Используется, если у товара не заполнена высота.",
+    )
+    cdek_recipient_delivery_fee_mode = models.CharField(
+        "СДЭК: доп. сбор с получателя за доставку",
+        max_length=16,
+        choices=CdekRecipientDeliveryFeeMode.choices,
+        default=CdekRecipientDeliveryFeeMode.OFF,
+        help_text="Передаётся в delivery_recipient_cost.value (наложенный платёж).",
+    )
+    cdek_recipient_delivery_fee_fixed_rub = models.PositiveIntegerField(
+        "СДЭК: доп. сбор с получателя (фикс), ₽",
+        default=0,
+        help_text="Используется, если выбран режим «Фиксированная сумма».",
+    )
+    cdek_recipient_delivery_fee_percent = models.DecimalField(
+        "СДЭК: доп. сбор с получателя (% от суммы товаров)",
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text="Используется, если выбран режим «Процент от суммы товаров».",
     )
 
     ozon_logistics_enabled = models.BooleanField(

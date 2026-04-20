@@ -139,6 +139,9 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "cdek_default_length_cm",
         "cdek_default_width_cm",
         "cdek_default_height_cm",
+        "cdek_recipient_delivery_fee_mode",
+        "cdek_recipient_delivery_fee_fixed_rub",
+        "cdek_recipient_delivery_fee_percent",
     ),
     "checkout_ozon_logistics": (
         "ozon_logistics_enabled",

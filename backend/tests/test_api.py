@@ -1037,7 +1037,7 @@ def test_cart_order_second_guest_same_email_reuses_user(_mock_send, client):
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
 @pytest.mark.django_db
 def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
-    from api.models import SiteSettings
+    from api.models import CartOrder, SiteSettings
 
     s = SiteSettings.get_solo()
     s.cdek_enabled = True
@@ -1056,6 +1056,8 @@ def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
     }
     r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
     assert r.status_code == 201
+    order = CartOrder.objects.get(order_ref=r.json()["orderRef"])
+    assert order.payment_status == CartOrder.PaymentStatus.PENDING
     mock_cdek_create.assert_called_once()
 
 
