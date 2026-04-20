@@ -72,8 +72,40 @@ def test_create_cdek_order_for_cart_success(mock_post_json, mock_search, _mock_t
     assert "Трек СДЭК: CDEK-TRACK-1" in (order.manager_letter or "")
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["packages"] == [
-        {"number": "1", "weight": 1800, "length": 55, "width": 35, "height": 25},
-        {"number": "2", "weight": 1800, "length": 55, "width": 35, "height": 25},
+        {
+            "number": "1",
+            "weight": 1800,
+            "length": 55,
+            "width": 35,
+            "height": 25,
+            "items": [
+                {
+                    "name": "Товар",
+                    "ware_key": "1-1",
+                    "cost": 1000,
+                    "payment": {"value": 1000},
+                    "amount": 1,
+                    "weight": 1800,
+                }
+            ],
+        },
+        {
+            "number": "2",
+            "weight": 1800,
+            "length": 55,
+            "width": 35,
+            "height": 25,
+            "items": [
+                {
+                    "name": "Товар",
+                    "ware_key": "1-2",
+                    "cost": 1000,
+                    "payment": {"value": 1000},
+                    "amount": 1,
+                    "weight": 1800,
+                }
+            ],
+        },
     ]
 
 
@@ -128,7 +160,23 @@ def test_create_cdek_order_uses_global_fallback_dimensions(mock_post_json, mock_
     assert err is None
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["packages"] == [
-        {"number": "1", "weight": 4200, "length": 60, "width": 45, "height": 30}
+        {
+            "number": "1",
+            "weight": 4200,
+            "length": 60,
+            "width": 45,
+            "height": 30,
+            "items": [
+                {
+                    "name": "Товар",
+                    "ware_key": "1-1",
+                    "cost": 1000,
+                    "payment": {"value": 1000},
+                    "amount": 1,
+                    "weight": 4200,
+                }
+            ],
+        }
     ]
 
 

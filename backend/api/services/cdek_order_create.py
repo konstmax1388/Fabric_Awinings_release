@@ -78,14 +78,59 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
 
     packages = []
     goods = cdek_widget_goods_for_lines(order.lines if isinstance(order.lines, list) else [], settings)
-    for idx, item in enumerate(goods, start=1):
+    unit_items: list[dict[str, Any]] = []
+    lines = order.lines if isinstance(order.lines, list) else []
+    for line_idx, raw in enumerate(lines, start=1):
+        if not isinstance(raw, dict):
+            continue
+        title = str(raw.get("title") or "Товар").strip()[:255] or "Товар"
+        try:
+            price = int(raw.get("priceFrom") or 0)
+        except (TypeError, ValueError):
+            price = 0
+        price = max(0, price)
+        try:
+            qty = int(raw.get("qty") or 1)
+        except (TypeError, ValueError):
+            qty = 1
+        qty = min(max(1, qty), 50)
+        for unit_no in range(1, qty + 1):
+            unit_items.append(
+                {
+                    "name": title,
+                    "ware_key": f"{line_idx}-{unit_no}",
+                    "cost": price,
+                    "payment": {"value": price if order.payment_method == CartOrder.PaymentMethod.COD_CDEK else 0},
+                    "amount": 1,
+                }
+            )
+    if not unit_items:
+        unit_items = [
+            {
+                "name": "Товар",
+                "ware_key": "1-1",
+                "cost": 0,
+                "payment": {"value": 0},
+                "amount": 1,
+            }
+        ]
+
+    package_count = max(len(goods), len(unit_items))
+    if package_count < 1:
+        package_count = 1
+    for idx in range(package_count):
+        pack = goods[idx] if idx < len(goods) else goods[-1]
+        base_item = unit_items[idx] if idx < len(unit_items) else unit_items[-1]
+        item = dict(base_item)
+        item["weight"] = int(pack["weight"])
         packages.append(
             {
-                "number": str(idx),
-                "weight": int(item["weight"]),
-                "length": int(item["length"]),
-                "width": int(item["width"]),
-                "height": int(item["height"]),
+                "number": str(idx + 1),
+                "weight": int(pack["weight"]),
+                "length": int(pack["length"]),
+                "width": int(pack["width"]),
+                "height": int(pack["height"]),
+                "items": [item],
             }
         )
 
@@ -107,7 +152,9 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         payload["recipient"]["email"] = email
     if mode == "office" and pvz_code:
         payload["delivery_point"] = pvz_code
-    if mode == "door" and addr:
+    if mode == "door":
+        if not addr:
+            return None
         payload["to_location"]["address"] = addr
 
     if order.payment_method == CartOrder.PaymentMethod.COD_CDEK:
