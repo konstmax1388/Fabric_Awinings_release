@@ -55,6 +55,15 @@ def _tariff_code_from_snapshot(order: CartOrder, settings: SiteSettings) -> int 
     return None
 
 
+def _parse_tariff_codes(raw: str) -> list[int]:
+    out: list[int] = []
+    for part in (raw or "").replace(";", ",").split(","):
+        p = part.strip()
+        if p.isdigit():
+            out.append(int(p))
+    return out
+
+
 def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str, Any] | None:
     snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
     cdek = snap.get("cdek") if isinstance(snap, dict) else {}
@@ -62,8 +71,6 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         return None
 
     tariff_code = _tariff_code_from_snapshot(order, settings)
-    if not tariff_code:
-        return None
 
     to_city = str(snap.get("city") or "").strip()
     from_city = (settings.cdek_widget_sender_city or "Москва").strip()
@@ -75,26 +82,36 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     mode = str(cdek.get("mode") or "").strip().lower()
     pvz_code = str(cdek.get("pvzCode") or "").strip()
     addr = str(snap.get("address") or cdek.get("address") or "").strip()
-    tariff_code = int(tariff_code)
-
-    door_tariffs: set[int] = set()
-    for part in (settings.cdek_tariff_codes_door or "").replace(";", ",").split(","):
-        p = part.strip()
-        if p.isdigit():
-            door_tariffs.add(int(p))
-    is_door_tariff = tariff_code in door_tariffs
+    office_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_office)
+    door_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_door)
 
     destination_mode = ""
-    if mode == "door":
-        destination_mode = "door"
-    elif mode in {"office", "pickup"}:
+    # Приоритет — явный выбор покупателя на checkout.
+    if mode in {"office", "pickup"}:
         destination_mode = "office"
+    elif mode == "door":
+        destination_mode = "door"
     elif addr and not pvz_code:
         destination_mode = "door"
     elif pvz_code and not addr:
         destination_mode = "office"
     elif addr and pvz_code:
-        destination_mode = "door" if is_door_tariff else "office"
+        destination_mode = "office"
+
+    if destination_mode == "office":
+        if office_tariffs:
+            if tariff_code not in office_tariffs:
+                tariff_code = office_tariffs[0]
+        if not tariff_code:
+            return None
+    elif destination_mode == "door":
+        if door_tariffs:
+            if tariff_code not in door_tariffs:
+                tariff_code = door_tariffs[0]
+        if not tariff_code:
+            return None
+    else:
+        return None
 
     packages = []
     goods = cdek_widget_goods_for_lines(order.lines if isinstance(order.lines, list) else [], settings)
@@ -157,7 +174,7 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     payload: dict[str, Any] = {
         "type": 1,
         "number": order.order_ref,
-        "tariff_code": tariff_code,
+        "tariff_code": int(tariff_code),
         "comment": (order.customer_comment or "").strip()[:255],
         "from_location": {"code": int(from_code)},
         "to_location": {"code": int(to_code)},
@@ -173,10 +190,12 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     if destination_mode == "office":
         if not pvz_code:
             return None
+        payload["to_location"].pop("address", None)
         payload["delivery_point"] = pvz_code
     elif destination_mode == "door":
         if not addr:
             return None
+        payload.pop("delivery_point", None)
         payload["to_location"]["address"] = addr
     else:
         return None
