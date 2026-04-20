@@ -190,13 +190,13 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     if destination_mode == "office":
         if not pvz_code:
             return None
-        payload["to_location"].pop("address", None)
+        payload["to_location"] = {"code": int(to_code)}
         payload["delivery_point"] = pvz_code
     elif destination_mode == "door":
         if not addr:
             return None
         payload.pop("delivery_point", None)
-        payload["to_location"]["address"] = addr
+        payload["to_location"] = {"code": int(to_code), "address": addr}
     else:
         return None
 
@@ -348,6 +348,10 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     body = _extract_cdek_payload(order, settings)
     if not body:
         return False, "insufficient_payload"
+    snap_for_debug = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+    snap_for_debug["cdekLastCreatePayload"] = body
+    order.delivery_snapshot = snap_for_debug
+    order.save(update_fields=["delivery_snapshot"])
 
     try:
         token = fetch_cdek_access_token(settings)
@@ -359,6 +363,7 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
     try:
         resp = post_json(url, body, headers=headers, timeout=45.0)
     except HttpJsonError as e:
+        logger.warning("CDEK create order failed order=%s payload=%s error=%s", order.order_ref, body, str(e))
         return False, str(e)
 
     tracking, req_uuid = _extract_tracking_from_cdek_response(resp)
