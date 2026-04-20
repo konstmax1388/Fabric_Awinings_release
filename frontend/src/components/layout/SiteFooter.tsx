@@ -20,6 +20,7 @@ export function SiteFooter() {
     footerVkUrl,
     footerTelegramUrl,
     showSocialLinks,
+    portfolioEnabled,
   } = useSiteSettings()
   const mergedMpUrls = { ...GLOBAL_MARKETPLACE_URLS, ...globalMarketplaceUrls }
   const vkHref = footerVkUrl?.trim() || '#'
@@ -67,11 +68,13 @@ export function SiteFooter() {
                   Каталог
                 </Link>
               </li>
-              <li>
-                <Link to="/portfolio" className="hover:text-accent">
-                  Портфолио
-                </Link>
-              </li>
+              {portfolioEnabled ? (
+                <li>
+                  <Link to="/portfolio" className="hover:text-accent">
+                    Портфолио
+                  </Link>
+                </li>
+              ) : null}
               <li>
                 <Link to="/contacts" className="hover:text-accent">
                   Контакты
@@ -122,6 +125,20 @@ export function SiteFooter() {
               </li>
               <li>{address}</li>
             </ul>
+            <div className="mt-5">
+              <p className="font-body text-sm font-semibold text-text">Оплата</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <img src="/payments/ozon-bank-icon-logo.svg" alt="Ozon Bank" className="h-7 w-auto object-contain" />
+                <img src="/payments/mir-logo.svg" alt="МИР" className="h-7 w-auto object-contain" />
+                <img src="/payments/sbp-logo.svg" alt="СБП" className="h-7 w-auto object-contain" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="font-body text-sm font-semibold text-text">Доставка</p>
+              <div className="mt-2 flex items-center gap-2">
+                <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-7 w-auto object-contain" />
+              </div>
+            </div>
           </div>
         </div>
 

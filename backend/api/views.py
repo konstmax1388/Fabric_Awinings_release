@@ -204,6 +204,19 @@ class CartOrderCreateView(generics.CreateAPIView):
 
             logging.getLogger(__name__).exception("send_buyer_order_confirmation_email")
         try:
+            from .services.cdek_order_create import sync_cdek_order_with_retry
+
+            # Для онлайн-оплаты накладную создаём только после webhook "Completed".
+            if not (
+                order.delivery_method == order.DeliveryMethod.CDEK
+                and order.payment_method == order.PaymentMethod.CARD_ONLINE
+            ):
+                sync_cdek_order_with_retry(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("sync_cdek_order_with_retry")
+        try:
             from .services.astrum_crm import push_cart_order_to_astrum_crm
 
             push_cart_order_to_astrum_crm(order)

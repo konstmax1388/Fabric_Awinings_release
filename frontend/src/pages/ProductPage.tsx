@@ -326,7 +326,8 @@ export function ProductPage() {
   }
 
   const seo = product.seo
-  const pageTitle = seo?.pageTitle ?? `${product.title} — каталог`
+  const rawPageTitle = seo?.pageTitle ?? `${product.title} — каталог`
+  const pageTitle = seoDefaults.titleSuffix ? `${rawPageTitle} ${seoDefaults.titleSuffix}` : rawPageTitle
   const metaDesc =
     seo?.metaDescription ?? (product.excerpt || product.description || '').slice(0, 160)
   const canonicalHref = seo?.canonicalUrl || `${site}/catalog/${encodeURIComponent(product.slug)}`

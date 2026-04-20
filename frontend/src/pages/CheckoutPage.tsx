@@ -36,13 +36,27 @@ function extractTariffDeliveryRub(t: unknown): number | null {
   return null
 }
 
+function extractTariffCode(t: unknown): number | null {
+  if (t == null || typeof t !== 'object') return null
+  const o = t as Record<string, unknown>
+  for (const k of ['tariff_code', 'tariffCode', 'id', 'code'] as const) {
+    const v = o[k]
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) return Math.round(v)
+    if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) {
+      const n = Math.round(Number(v))
+      if (n > 0) return n
+    }
+  }
+  return null
+}
+
 type Step = 1 | 2 | 3 | 'done'
 type CdekMode = 'office' | 'door'
 
 export function CheckoutPage() {
   const { items, totalApprox, clear, totalQty } = useCart()
   const { user, accessToken } = useAuth()
-  const { checkout, loading: settingsLoading } = useSiteSettings()
+  const { checkout, loading: settingsLoading, seoDefaults } = useSiteSettings()
   const [step, setStep] = useState<Step>(1)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -58,6 +72,7 @@ export function CheckoutPage() {
   const [cdekCityCode, setCdekCityCode] = useState<number | null>(null)
   const [cdekPvzCode, setCdekPvzCode] = useState('')
   const [cdekPvzAddress, setCdekPvzAddress] = useState('')
+  const [cdekTariffCode, setCdekTariffCode] = useState<number | null>(null)
   /** Котировка доставки СДЭК (₽) до порога бесплатной доставки; для режима custom — ввод вручную. */
   const [cdekQuotedDeliveryRub, setCdekQuotedDeliveryRub] = useState<number | null>(null)
   const [sending, setSending] = useState(false)
@@ -156,6 +171,8 @@ export function CheckoutPage() {
   const handleCdekWidgetChoose = useCallback((mode: string, tariff: unknown, addr: Record<string, unknown>) => {
     const rub = extractTariffDeliveryRub(tariff)
     if (rub !== null) setCdekQuotedDeliveryRub(rub)
+    const tariffCode = extractTariffCode(tariff)
+    if (tariffCode !== null) setCdekTariffCode(tariffCode)
     if (mode === 'office') {
       setCdekMode('office')
       const rawCode = addr.code
@@ -332,6 +349,7 @@ export function CheckoutPage() {
           pvzCode: cdekPvzCode.trim() || '',
           address: cdekPvzAddress.trim() || '',
           deliveryPriceRub: freeDel ? 0 : (cdekQuotedDeliveryRub ?? 0),
+          tariffCode: cdekTariffCode ?? undefined,
         }
       }
       if (deliveryMethod === 'ozon_logistics') {
@@ -383,8 +401,9 @@ export function CheckoutPage() {
   return (
     <>
       <Helmet>
-        <title>Оформление заказа — Фабрика Тентов</title>
+        <title>{`Оформление заказа${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
         <meta name="description" content="Контакты, доставка, подтверждение заказа." />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto flex min-h-[60vh] w-full min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-10 md:px-6 md:py-14">
@@ -535,7 +554,12 @@ export function CheckoutPage() {
                           onChange={() => setDeliveryMethod(o.id)}
                           className="mt-1"
                         />
-                        <span className="font-body text-sm text-text">{o.label}</span>
+                        <span className="flex items-center gap-2 font-body text-sm text-text">
+                          {o.id === 'cdek' ? (
+                            <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-4 w-auto object-contain" />
+                          ) : null}
+                          {o.label}
+                        </span>
                       </label>
                     ))}
                   </fieldset>

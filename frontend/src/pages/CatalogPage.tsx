@@ -7,6 +7,7 @@ import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { publicSiteUrl } from '../config/publicSite'
 import type { Product, ProductCategory } from '../data/products'
 import {
   PAGE_SIZE,
@@ -55,7 +56,8 @@ function CatalogSkeletonGrid() {
 export function CatalogPage() {
   const [search, setSearch] = useSearchParams()
   const reduce = useReducedMotion()
-  const { catalogIntro } = useSiteSettings()
+  const { catalogIntro, seoDefaults } = useSiteSettings()
+  const site = publicSiteUrl()
 
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
@@ -143,10 +145,24 @@ export function CatalogPage() {
   return (
     <>
       <Helmet>
-        <title>Каталог — Фабрика Тентов</title>
+        <title>{`Каталог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
         <meta
           name="description"
-          content="Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от»."
+          content={
+            seoDefaults.defaultMetaDescription?.trim() ||
+            'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».'
+          }
+        />
+        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
+        <link rel="canonical" href={`${site}/catalog`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`Каталог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`} />
+        <meta
+          property="og:description"
+          content={
+            seoDefaults.defaultMetaDescription?.trim() ||
+            'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».'
+          }
         />
       </Helmet>
       <SiteHeader />

@@ -27,7 +27,7 @@ export function ProductCard({ product }: Props) {
   const [imgFailed, setImgFailed] = useState(false)
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)
   const autoBadges = [
-    'Срок изготовления от 5 дней',
+    'Всё в наличии',
     new Date().getMonth() <= 1 || new Date().getMonth() >= 10 ? 'Сезонное предложение' : '',
   ].filter(Boolean)
 
@@ -136,3 +136,4 @@ export function ProductCard({ product }: Props) {
     </motion.article>
   )
 }
+

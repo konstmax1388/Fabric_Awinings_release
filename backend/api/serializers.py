@@ -559,6 +559,13 @@ class CartOrderCreateSerializer(serializers.Serializer):
         else:
             pay_status = CartOrder.PaymentStatus.NOT_REQUIRED
 
+        if dm == CartOrder.DeliveryMethod.CDEK and pm == CartOrder.PaymentMethod.CARD_ONLINE:
+            cdek_sync_status = CartOrder.CdekSyncStatus.PENDING
+        elif dm == CartOrder.DeliveryMethod.CDEK:
+            cdek_sync_status = CartOrder.CdekSyncStatus.PENDING
+        else:
+            cdek_sync_status = CartOrder.CdekSyncStatus.NOT_REQUIRED
+
         dm_label = CartOrder.DeliveryMethod(dm).label
         pm_label = CartOrder.PaymentMethod(pm).label
         manager_letter, client_ack = build_cart_letters(
@@ -600,6 +607,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
             delivery_provider=str(dm),
             delivery_snapshot=delivery_snapshot,
             acquiring_payload=acquiring if isinstance(acquiring, dict) else {},
+            cdek_sync_status=cdek_sync_status,
         )
 
 
@@ -640,10 +648,13 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     contactsMetaDescription = serializers.CharField(source="contacts_meta_description", read_only=True)
     contactsBackLinkLabel = serializers.CharField(source="contacts_back_link_label", read_only=True)
     calculatorEnabled = serializers.BooleanField(source="show_calculator", read_only=True)
+    portfolioEnabled = serializers.BooleanField(source="show_portfolio", read_only=True)
     productPhotoAspect = serializers.CharField(source="product_photo_aspect", read_only=True)
     catalogIntro = serializers.CharField(source="catalog_intro", read_only=True)
     checkout = serializers.SerializerMethodField()
     mapForm = serializers.SerializerMethodField()
+    analyticsYandex = serializers.SerializerMethodField()
+    seoDefaults = serializers.SerializerMethodField()
 
     class Meta:
         model = SiteSettings
@@ -669,10 +680,13 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "contactsMetaDescription",
             "contactsBackLinkLabel",
             "calculatorEnabled",
+            "portfolioEnabled",
             "productPhotoAspect",
             "catalogIntro",
             "checkout",
             "mapForm",
+            "analyticsYandex",
+            "seoDefaults",
         )
 
     def _absolute_media(self, request, f) -> str | None:
@@ -803,6 +817,21 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                 "enabled": obj.ozon_pay_enabled,
                 "sandbox": obj.ozon_pay_sandbox,
             },
+        }
+
+    def get_analyticsYandex(self, obj: SiteSettings) -> dict:
+        return {
+            "enabled": bool(obj.analytics_yandex_enabled),
+            "counterId": str(obj.analytics_yandex_counter_id or "").strip(),
+        }
+
+    def get_seoDefaults(self, obj: SiteSettings) -> dict:
+        return {
+            "allowIndexing": bool(obj.seo_allow_indexing),
+            "region": (obj.seo_region or "RU").strip() or "RU",
+            "defaultMetaDescription": (obj.seo_default_meta_description or "").strip(),
+            "titleSuffix": (obj.seo_title_suffix or "").strip(),
+            "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
         }
 
 

@@ -54,6 +54,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const [logoBroken, setLogoBroken] = useState(false)
   const reduce = useReducedMotion()
+  const { totalQty } = useCart()
   const {
     enabledMarketplaces,
     globalMarketplaceUrls,
@@ -62,6 +63,7 @@ export function SiteHeader() {
     phone,
     phoneHref,
     home,
+    portfolioEnabled,
   } = useSiteSettings()
   const buyOnLabel = home?.ui?.buyOnMarketplaces ?? 'Купить на'
   const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
@@ -120,9 +122,11 @@ export function SiteHeader() {
           <NavLink to="/catalog" className={navLinkClass}>
             Каталог
           </NavLink>
-          <NavLink to="/portfolio" className={navLinkClass}>
-            Портфолио
-          </NavLink>
+          {portfolioEnabled ? (
+            <NavLink to="/portfolio" className={navLinkClass}>
+              Портфолио
+            </NavLink>
+          ) : null}
           <NavLink to="/contacts" className={navLinkClass}>
             Контакты
           </NavLink>
@@ -218,9 +222,11 @@ export function SiteHeader() {
                   <NavLink to="/catalog" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
                     Каталог
                   </NavLink>
-                  <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Портфолио
-                  </NavLink>
+                  {portfolioEnabled ? (
+                    <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                      Портфолио
+                    </NavLink>
+                  ) : null}
                   <NavLink to="/contacts" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
                     Контакты
                   </NavLink>
@@ -258,6 +264,73 @@ export function SiteHeader() {
           </>
         ) : null}
       </AnimatePresence>
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border-light bg-bg-base/95 px-2 py-2 backdrop-blur-md md:hidden">
+        <div className="mx-auto flex max-w-[640px] items-stretch justify-between gap-1">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
+                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+              }`
+            }
+          >
+            <span aria-hidden>🏠</span>
+            <span>Главная</span>
+          </NavLink>
+          <NavLink
+            to="/catalog"
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
+                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+              }`
+            }
+          >
+            <span aria-hidden>🧰</span>
+            <span>Каталог</span>
+          </NavLink>
+          {portfolioEnabled ? (
+            <NavLink
+              to="/portfolio"
+              className={({ isActive }) =>
+                `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
+                  isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                }`
+              }
+            >
+              <span aria-hidden>🖼️</span>
+              <span>Портфолио</span>
+            </NavLink>
+          ) : null}
+          <NavLink
+            to="/cart"
+            className={({ isActive }) =>
+              `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
+                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+              }`
+            }
+          >
+            <span aria-hidden>🛒</span>
+            <span>Корзина</span>
+            {totalQty > 0 ? (
+              <span className="absolute right-3 top-1 rounded-full bg-accent px-1.5 text-[10px] text-white">
+                {totalQty > 99 ? '99+' : totalQty}
+              </span>
+            ) : null}
+          </NavLink>
+          <NavLink
+            to="/account"
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
+                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+              }`
+            }
+          >
+            <span aria-hidden>👤</span>
+            <span>Профиль</span>
+          </NavLink>
+        </div>
+      </nav>
     </header>
   )
 }

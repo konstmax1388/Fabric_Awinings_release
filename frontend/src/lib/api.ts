@@ -624,6 +624,7 @@ export type SiteSettingsDto = {
   contactsMetaDescription?: string
   contactsBackLinkLabel?: string
   calculatorEnabled?: boolean
+  portfolioEnabled?: boolean
   productPhotoAspect?: ProductPhotoAspect
   catalogIntro?: string
   checkout?: CheckoutPublicConfig
@@ -872,6 +873,7 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
       contactsBackLinkLabel: optStr(data.contactsBackLinkLabel),
       calculatorEnabled:
         typeof data.calculatorEnabled === 'boolean' ? data.calculatorEnabled : undefined,
+      portfolioEnabled: typeof data.portfolioEnabled === 'boolean' ? data.portfolioEnabled : undefined,
       productPhotoAspect: parseProductPhotoAspect(data.productPhotoAspect),
       catalogIntro: strOrEmpty(data.catalogIntro),
       checkout: parseCheckoutPublic(data.checkout),

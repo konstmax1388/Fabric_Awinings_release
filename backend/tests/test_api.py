@@ -543,10 +543,13 @@ def test_site_settings_public(client):
         "contactsMetaDescription",
         "contactsBackLinkLabel",
         "calculatorEnabled",
+        "portfolioEnabled",
         "showSocialLinks",
         "productPhotoAspect",
         "catalogIntro",
         "checkout",
+        "analyticsYandex",
+        "seoDefaults",
     ):
         assert key in body
     assert body["productPhotoAspect"] in ("portrait_3_4", "square")
@@ -572,6 +575,30 @@ def test_site_settings_public(client):
     assert isinstance(cdek["widgetGoods"], list)
     assert "ozonLogistics" in co
     assert "ozonPay" in co
+    assert "cdek" in co
+
+
+@pytest.mark.django_db
+def test_site_settings_public_cdek_payment_methods_depend_on_acquiring(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.ozon_pay_enabled = False
+    s.save(update_fields=["cdek_enabled", "ozon_pay_enabled"])
+    r1 = client.get("/api/site-settings/")
+    assert r1.status_code == 200
+    pm1 = r1.json()["checkout"]["paymentMatrix"]
+    assert "cod_cdek" in pm1.get("cdek", [])
+    assert "card_online" not in pm1.get("cdek", [])
+
+    s.ozon_pay_enabled = True
+    s.save(update_fields=["ozon_pay_enabled"])
+    r2 = client.get("/api/site-settings/")
+    assert r2.status_code == 200
+    pm2 = r2.json()["checkout"]["paymentMatrix"]
+    assert "cod_cdek" in pm2.get("cdek", [])
+    assert "card_online" in pm2.get("cdek", [])
 
 
 @pytest.mark.django_db
@@ -937,6 +964,7 @@ def test_cart_order_guest_with_email_creates_user_and_links_order(_mock_send, cl
     assert prof.password_change_deadline is not None
     User = get_user_model()
     assert User.objects.filter(username__iexact=email).count() == 1
+    _mock_send.assert_called_once()
 
 
 @patch(
@@ -966,6 +994,109 @@ def test_cart_order_second_guest_same_email_reuses_user(_mock_send, client):
     assert r2.status_code == 201
     User = get_user_model()
     assert User.objects.filter(username__iexact=email).count() == 1
+    _mock_send.assert_called_once()
+
+
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+
+    payload = {
+        "customer": {"name": "СДЭК Клиент", "phone": "+79990001122", "email": "cdek@test.ru"},
+        "lines": [{"productId": "1", "slug": "x", "title": "Товар", "priceFrom": 1000, "qty": 1}],
+        "totalApprox": 1200,
+        "deliveryMethod": "cdek",
+        "paymentMethod": "cod_cdek",
+        "delivery": {
+            "city": "Москва",
+            "cdek": {"mode": "office", "pvzCode": "MSK1", "deliveryPriceRub": 200, "tariffCode": 136},
+        },
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 201
+    mock_cdek_create.assert_called_once()
+
+
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_ozon_webhook_completed_triggers_cdek_sync(mock_sync, _mock_sign, client):
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save(update_fields=["ozon_pay_client_id", "ozon_pay_webhook_secret"])
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-WEBHOOK-1",
+        customer_name="Онлайн Клиент",
+        customer_phone="+79990001122",
+        customer_email="ok@shop.ru",
+        lines=[{"title": "x", "priceFrom": 1000, "qty": 1}],
+        total_approx=1300,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        manager_letter="m",
+        client_ack="c",
+    )
+    payload = {
+        "requestSign": "ok",
+        "extOrderID": co.order_ref,
+        "status": "Completed",
+        "orderID": "oz-123",
+    }
+    r = client.post("/api/webhooks/ozon-pay/", data=payload, content_type="application/json")
+    assert r.status_code == 200
+    co.refresh_from_db()
+    assert co.payment_status == CartOrder.PaymentStatus.CAPTURED
+    assert co.fulfillment_status == CartOrder.FulfillmentStatus.PAID
+    mock_sync.assert_called_once()
+
+
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_ozon_webhook_non_completed_does_not_trigger_cdek_sync(mock_sync, _mock_sign, client):
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save(update_fields=["ozon_pay_client_id", "ozon_pay_webhook_secret"])
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-WEBHOOK-2",
+        customer_name="Онлайн Клиент",
+        customer_phone="+79990001122",
+        customer_email="ok2@shop.ru",
+        lines=[{"title": "x", "priceFrom": 1000, "qty": 1}],
+        total_approx=1300,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        manager_letter="m",
+        client_ack="c",
+    )
+    payload = {
+        "requestSign": "ok",
+        "extOrderID": co.order_ref,
+        "status": "Authorized",
+        "orderID": "oz-124",
+    }
+    r = client.post("/api/webhooks/ozon-pay/", data=payload, content_type="application/json")
+    assert r.status_code == 200
+    co.refresh_from_db()
+    assert co.payment_status == CartOrder.PaymentStatus.AUTHORIZED
+    mock_sync.assert_not_called()
 
 
 @pytest.mark.django_db

@@ -135,7 +135,7 @@ export function ReviewsSection() {
                   </div>
                 </div>
               </div>
-              <p className="mt-4 flex-1 font-body text-sm italic leading-relaxed text-text-muted md:text-[15px]">
+              <p className="mt-4 flex-1 font-body text-sm leading-relaxed text-text-muted md:text-[15px]">
                 «{r.text}»
               </p>
               {r.video && (

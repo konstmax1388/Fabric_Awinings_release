@@ -87,7 +87,7 @@ export function TentTypesSection() {
                     >
                       ◆
                     </span>
-                    <span className="font-heading text-lg font-semibold italic text-text group-hover:text-accent">
+                    <span className="font-heading text-lg font-semibold text-text group-hover:text-accent">
                       {c.title}
                     </span>
                   </div>

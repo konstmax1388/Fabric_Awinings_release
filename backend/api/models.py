@@ -387,6 +387,12 @@ class CartOrder(models.Model):
         FAILED = "failed", "Ошибка оплаты"
         REFUNDED = "refunded", "Возврат"
 
+    class CdekSyncStatus(models.TextChoices):
+        NOT_REQUIRED = "not_required", "Не требуется"
+        PENDING = "pending", "Ожидает отправки"
+        SUCCESS = "success", "Успешно отправлено"
+        ERROR = "error", "Ошибка отправки"
+
     order_ref = models.CharField("Номер заказа", max_length=40, unique=True, db_index=True)
     customer_name = models.CharField("Имя покупателя", max_length=120)
     customer_phone = models.CharField("Телефон", max_length=40)
@@ -491,6 +497,15 @@ class CartOrder(models.Model):
     delivery_provider = models.CharField("Доставка (код, legacy)", max_length=32, blank=True)
     delivery_snapshot = models.JSONField("Снимок доставки (ПВЗ, тариф)", default=dict, blank=True)
     cdek_tracking = models.CharField("Трек СДЭК", max_length=64, blank=True)
+    cdek_sync_status = models.CharField(
+        "Синхронизация СДЭК",
+        max_length=24,
+        choices=CdekSyncStatus.choices,
+        default=CdekSyncStatus.NOT_REQUIRED,
+        db_index=True,
+    )
+    cdek_sync_attempts = models.PositiveSmallIntegerField("Попыток отправки в СДЭК", default=0)
+    cdek_sync_error = models.TextField("Ошибка синхронизации СДЭК", blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -519,6 +534,11 @@ class SiteSettings(models.Model):
         "Показывать калькулятор на главной",
         default=True,
         help_text="Если выключено, блок скрыт; кнопка в герое ведёт в каталог. Тексты калькулятора — в «Главная страница (контент)».",
+    )
+    show_portfolio = models.BooleanField(
+        "Показывать блок портфолио на главной",
+        default=True,
+        help_text="Если выключено, блок портфолио скрыт на главной странице.",
     )
 
     product_photo_aspect = models.CharField(
@@ -623,6 +643,50 @@ class SiteSettings(models.Model):
         max_length=120,
         blank=True,
         default="← На главную",
+    )
+    analytics_yandex_enabled = models.BooleanField(
+        "Яндекс Метрика: включить счётчик",
+        default=False,
+        help_text="Включает загрузку тега Метрики на витрине.",
+    )
+    analytics_yandex_counter_id = models.CharField(
+        "Яндекс Метрика: ID счётчика",
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Только цифры, например 12345678.",
+    )
+    seo_allow_indexing = models.BooleanField(
+        "SEO: разрешить индексацию",
+        default=True,
+        help_text="Если выключено, витрина отдает robots noindex,nofollow.",
+    )
+    seo_region = models.CharField(
+        "SEO: регион",
+        max_length=16,
+        blank=True,
+        default="RU",
+        help_text="Код региона для structured data, например RU.",
+    )
+    seo_default_meta_description = models.TextField(
+        "SEO: мета-описание по умолчанию",
+        blank=True,
+        default="",
+        help_text="Используется, если у конкретной страницы нет своего description.",
+    )
+    seo_title_suffix = models.CharField(
+        "SEO: суффикс title",
+        max_length=120,
+        blank=True,
+        default="",
+        help_text="Например: «— Фабрика Тентов». Добавляется к заголовкам страниц.",
+    )
+    seo_locale = models.CharField(
+        "SEO: locale",
+        max_length=16,
+        blank=True,
+        default="ru_RU",
+        help_text="Open Graph locale, например ru_RU.",
     )
 
     # Блок карты + формы на главной (перекрывает mapForm из «Главная страница», если заполнено)

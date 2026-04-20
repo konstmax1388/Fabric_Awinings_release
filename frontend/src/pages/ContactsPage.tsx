@@ -4,11 +4,19 @@ import { ContactsContentBlock } from '../components/contacts/ContactsContentBloc
 import { MapFormSection } from '../components/home/MapFormSection'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function ContactsPage() {
-  const { siteName, address, contactsPageTitle, contactsMetaDescription, contactsBackLinkLabel } =
-    useSiteSettings()
+  const site = publicSiteUrl()
+  const {
+    siteName,
+    address,
+    contactsPageTitle,
+    contactsMetaDescription,
+    contactsBackLinkLabel,
+    seoDefaults,
+  } = useSiteSettings()
 
   const metaDescription =
     contactsMetaDescription.trim() ||
@@ -19,6 +27,8 @@ export function ContactsPage() {
       <Helmet>
         <title>{`${contactsPageTitle} — ${siteName}`}</title>
         <meta name="description" content={metaDescription} />
+        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
+        <link rel="canonical" href={`${site}/contacts`} />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-12 md:px-6">

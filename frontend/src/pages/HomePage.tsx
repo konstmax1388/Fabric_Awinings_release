@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { BlogPreviewSection } from '../components/home/BlogPreviewSection'
 import { HeroSection } from '../components/home/HeroSection'
 import { MapFormSection } from '../components/home/MapFormSection'
@@ -18,8 +18,10 @@ import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function HomePage() {
   const site = publicSiteUrl()
-  const { home, siteName, calculatorEnabled, phone, address, seoDefaults } = useSiteSettings()
+  const { home, siteName, calculatorEnabled, portfolioEnabled, phone, address, seoDefaults } =
+    useSiteSettings()
   const meta = home?.meta
+  const [showFirstVisitPromo, setShowFirstVisitPromo] = useState(false)
 
   const orgJsonLd = useMemo(() => {
     const desc =
@@ -64,11 +66,33 @@ export function HomePage() {
     }
   }, [calculatorEnabled])
 
-  const pageTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
+  useEffect(() => {
+    const k = 'fabric:first-visit-producer-note:v1'
+    try {
+      if (!window.localStorage.getItem(k)) {
+        setShowFirstVisitPromo(true)
+      }
+    } catch {
+      setShowFirstVisitPromo(true)
+    }
+  }, [])
+
+  const dismissFirstVisitPromo = () => {
+    const k = 'fabric:first-visit-producer-note:v1'
+    setShowFirstVisitPromo(false)
+    try {
+      window.localStorage.setItem(k, '1')
+    } catch {
+      /* noop */
+    }
+  }
+
+  const baseTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
+  const pageTitle = seoDefaults.titleSuffix ? `${baseTitle} ${seoDefaults.titleSuffix}` : baseTitle
   const pageDesc =
     meta?.description?.trim() ||
     seoDefaults.defaultMetaDescription?.trim() ||
-    'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, калькулятор, заявка онлайн.'
+    'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.'
 
   return (
     <>
@@ -81,6 +105,22 @@ export function HomePage() {
       </Helmet>
       <SiteHeader />
       <main className="min-w-0 overflow-x-clip">
+        {showFirstVisitPromo ? (
+          <section className="mx-auto max-w-[1280px] px-4 pt-4 md:px-6 md:pt-6">
+            <div className="rounded-2xl border border-accent/20 bg-accent/8 px-4 py-3 text-sm text-text md:flex md:items-center md:justify-between md:gap-4 md:text-base">
+              <p className="font-body">
+                Вы на сайте производителя: цены ниже, чем у нас же на маркетплейсах.
+              </p>
+              <button
+                type="button"
+                onClick={dismissFirstVisitPromo}
+                className="mt-2 inline-flex rounded-lg border border-accent/30 px-3 py-1.5 font-body text-sm text-accent hover:bg-accent/10 md:mt-0"
+              >
+                Понятно
+              </button>
+            </div>
+          </section>
+        ) : null}
         <div className="px-0 pt-4 md:pt-6">
           <HeroSection />
         </div>
@@ -89,7 +129,7 @@ export function HomePage() {
         <TentTypesSection />
         <FeaturedProductsSection />
         {calculatorEnabled ? <PriceCalculatorSection /> : null}
-        <PortfolioSection />
+        {portfolioEnabled ? <PortfolioSection /> : null}
         <WhyUsSection />
         <ReviewsSection />
         <BlogPreviewSection />

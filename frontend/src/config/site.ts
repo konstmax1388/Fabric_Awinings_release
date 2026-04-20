@@ -32,7 +32,8 @@ export const MARKETPLACES = [
     id: 'ym',
     label: 'Яндекс Маркет',
     href: 'https://market.yandex.ru/',
-    logoSrc: '/marketplaces/yandex-market.svg',
+    logoSrc: '/marketplaces/yandex-market-sign-logo.svg',
+    iconSrc: '/marketplaces/icons/yandex-market-sign-logo.svg',
   },
   {
     id: 'avito',

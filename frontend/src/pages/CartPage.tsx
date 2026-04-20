@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom'
 import { CartView } from '../components/cart/CartView'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function CartPage() {
+  const { seoDefaults } = useSiteSettings()
   return (
     <>
       <Helmet>
-        <title>Корзина — Фабрика Тентов</title>
+        <title>{`Корзина${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
         <meta name="description" content="Состав заказа и оформление заявки." />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto flex min-h-[60vh] min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-8 md:px-6 md:py-12">

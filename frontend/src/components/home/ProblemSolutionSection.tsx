@@ -98,7 +98,7 @@ export function ProblemSolutionSection() {
             >
               <ProblemSolutionIcon card={card} />
             </span>
-            <h3 className="mt-4 font-heading text-xl font-semibold italic text-text">{card.problem}</h3>
+            <h3 className="mt-4 font-heading text-xl font-semibold text-text">{card.problem}</h3>
             <p className="mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{card.solution}</p>
           </motion.article>
         ))}

@@ -92,10 +92,10 @@ export function PriceCalculatorSection() {
     }
   }
 
-  const heading = c.heading ?? 'Калькулятор стоимости'
+  const heading = c.heading ?? 'Конструктор тента'
   const subheading =
     c.subheading ??
-    'Предварительный расчёт по площади и материалу. Точную цену подтвердим после замера. Заявку обработает менеджер.'
+    'Подберите параметры тента и получите предварительную стоимость. Точную цену подтвердим после уточнения деталей.'
   const lengthLabel = c.lengthLabel ?? 'Длина, м'
   const widthLabel = c.widthLabel ?? 'Ширина, м'
   const materialLabel = c.materialLabel ?? 'Материал'
@@ -109,11 +109,11 @@ export function PriceCalculatorSection() {
   const namePlaceholder = c.namePlaceholder ?? 'Как к вам обращаться'
   const phonePlaceholder = c.phonePlaceholder ?? '+7'
   const commentPlaceholder = c.commentPlaceholder ?? 'Объект, сроки'
-  const submitButton = c.submitButton ?? 'Отправить заявку'
+  const submitButton = c.submitButton ?? 'Отправить параметры'
   const submitting = c.submitting ?? 'Отправка…'
   const successMessage =
     c.successMessage ??
-    'Спасибо! Заявка принята. Перезвоним в рабочее время и уточним детали расчёта.'
+    'Спасибо! Параметры отправлены. Перезвоним в рабочее время и уточним детали.'
 
   return (
     <motion.section

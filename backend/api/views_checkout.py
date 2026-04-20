@@ -91,6 +91,17 @@ class OzonPayWebhookView(View):
                         "fulfillment_status",
                     ]
                 )
+                if (
+                    status == "Completed"
+                    and co.delivery_method == CartOrder.DeliveryMethod.CDEK
+                    and co.payment_method == CartOrder.PaymentMethod.CARD_ONLINE
+                ):
+                    try:
+                        from api.services.cdek_order_create import sync_cdek_order_with_retry
+
+                        sync_cdek_order_with_retry(co)
+                    except Exception:
+                        logger.exception("sync_cdek_order_with_retry failed for order=%s", co.order_ref)
 
         logger.info(
             "Ozon webhook ok: extOrderID=%s status=%s",

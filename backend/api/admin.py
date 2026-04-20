@@ -1281,12 +1281,30 @@ class SiteSettingsAdmin(ModelAdmin):
             },
         ),
         ss_fieldset(
+            "analytics_seo",
+            {
+                "fields": (
+                    "analytics_yandex_enabled",
+                    "analytics_yandex_counter_id",
+                    "seo_allow_indexing",
+                    "seo_region",
+                    "seo_default_meta_description",
+                    "seo_title_suffix",
+                    "seo_locale",
+                ),
+                "description": _(
+                    "Настройки аналитики и базовых SEO-параметров витрины: включение Метрики, "
+                    "индексация, регион и суффикс заголовков."
+                ),
+            },
+        ),
+        ss_fieldset(
             "calculator",
             {
-                "fields": ("show_calculator",),
+                "fields": ("show_calculator", "show_portfolio"),
                 "description": _(
-                    "Включите или выключите блок калькулятора на главной странице. "
-                    "Подписи полей, кнопки и тексты — в разделе «Главная страница (контент)», блок «Калькулятор»."
+                    "Включайте и выключайте блоки «Конструктор тента» и «Портфолио» на главной странице. "
+                    "Подписи полей, кнопки и тексты конструктора — в разделе «Главная страница (контент)», блок «Калькулятор»."
                 ),
             },
         ),

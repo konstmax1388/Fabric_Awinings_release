@@ -40,6 +40,7 @@ export type SiteSettingsContextValue = {
   contactsMetaDescription: string
   contactsBackLinkLabel: string
   calculatorEnabled: boolean
+  portfolioEnabled: boolean
   productPhotoAspect: ProductPhotoAspect
   catalogIntro: string
   checkout: CheckoutPublicConfig
@@ -75,6 +76,7 @@ const initialValue: SiteSettingsContextValue = {
   contactsMetaDescription: '',
   contactsBackLinkLabel: '← На главную',
   calculatorEnabled: true,
+  portfolioEnabled: true,
   productPhotoAspect: DEFAULT_PRODUCT_PHOTO_ASPECT,
   catalogIntro: SITE.catalogIntro,
   checkout: DEFAULT_CHECKOUT_PUBLIC,
@@ -115,6 +117,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [contactsMetaDescription, setContactsMetaDescription] = useState('')
   const [contactsBackLinkLabel, setContactsBackLinkLabel] = useState('← На главную')
   const [calculatorEnabled, setCalculatorEnabled] = useState(true)
+  const [portfolioEnabled, setPortfolioEnabled] = useState(true)
   const [productPhotoAspect, setProductPhotoAspect] =
     useState<ProductPhotoAspect>(DEFAULT_PRODUCT_PHOTO_ASPECT)
   const [catalogIntro, setCatalogIntro] = useState<string>(SITE.catalogIntro)
@@ -156,6 +159,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         setContactsMetaDescription(s.contactsMetaDescription?.trim() ?? '')
         setContactsBackLinkLabel(s.contactsBackLinkLabel?.trim() || '← На главную')
         setCalculatorEnabled(s.calculatorEnabled !== false)
+        setPortfolioEnabled(s.portfolioEnabled !== false)
         setProductPhotoAspect(s.productPhotoAspect ?? DEFAULT_PRODUCT_PHOTO_ASPECT)
         setCatalogIntro(
           s.catalogIntro !== undefined && s.catalogIntro !== null && String(s.catalogIntro).trim()
@@ -211,6 +215,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       contactsMetaDescription,
       contactsBackLinkLabel,
       calculatorEnabled,
+      portfolioEnabled,
       productPhotoAspect,
       catalogIntro,
       checkout,
@@ -242,6 +247,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       contactsMetaDescription,
       contactsBackLinkLabel,
       calculatorEnabled,
+      portfolioEnabled,
       productPhotoAspect,
       catalogIntro,
       checkout,

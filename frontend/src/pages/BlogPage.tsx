@@ -5,8 +5,12 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchBlogPosts, type BlogListItem } from '../lib/api'
 import { Helmet } from 'react-helmet-async'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
+import { publicSiteUrl } from '../config/publicSite'
+import { useSiteSettings } from '../context/SiteSettingsContext'
 
 export function BlogPage() {
+  const site = publicSiteUrl()
+  const { seoDefaults } = useSiteSettings()
   const [posts, setPosts] = useState<BlogListItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -26,11 +30,16 @@ export function BlogPage() {
   return (
     <>
       <Helmet>
-        <title>Блог — Фабрика Тентов</title>
+        <title>{`Блог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
         <meta
           name="description"
-          content="Статьи о материалах, замере и монтаже тентов и навесов."
+          content={
+            seoDefaults.defaultMetaDescription?.trim() ||
+            'Статьи о материалах, замере и монтаже тентов и навесов.'
+          }
         />
+        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
+        <link rel="canonical" href={`${site}/blog`} />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-16 md:px-6">
