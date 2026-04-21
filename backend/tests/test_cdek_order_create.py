@@ -3,6 +3,15 @@ from unittest.mock import patch
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _cdek_pvz_city_lookup_not_live(monkeypatch):
+    """Юнит-тесты не вызывают GET /v2/deliverypoints; на проде город «куда» для ПВЗ берётся по коду пункта."""
+    monkeypatch.setattr(
+        "api.services.cdek_order_create._city_code_from_pvz_code",
+        lambda _settings, _pvz: None,
+    )
+
+
 @pytest.mark.django_db
 @patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
 @patch("api.services.cdek_order_create.search_cdek_cities")
@@ -674,3 +683,49 @@ def test_create_cdek_order_door_mode_keeps_address(
     assert sent_body["to_location"]["address"] == "Россия, Иваново, улица Красных Зорь, 7А"
     assert "delivery_point" not in sent_body
     assert sent_body["tariff_code"] == 137
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.resolve_sender_city_code", return_value=44)
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.post_json")
+def test_create_cdek_order_office_to_location_prefers_city_from_pvz_code(
+    mock_post_json, mock_search, _mock_token, _mock_resolve_from, monkeypatch
+):
+    """Город получателя для ПВЗ берётся из справочника по коду пункта, а не только из /location/cities."""
+    monkeypatch.setattr(
+        "api.services.cdek_order_create._city_code_from_pvz_code",
+        lambda _s, _pv: 991,
+    )
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.return_value = [{"code": 164, "label": "Неверный матч города"}]
+    mock_post_json.return_value = {"entity": {"uuid": "req-pvz-city", "cdek_number": "CDEK-PVZ-C"}}
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-PVZ-CITY",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        lines=[{"title": "Товар", "priceFrom": 1000, "qty": 1}],
+        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN6"}},
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    sent_body = mock_post_json.call_args.args[1]
+    assert sent_body["to_location"]["code"] == 991
+    assert sent_body["delivery_point"] == "IVN6"
+    assert sent_body["from_location"]["code"] == 44

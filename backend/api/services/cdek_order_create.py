@@ -48,6 +48,57 @@ def _first_city_code(settings: SiteSettings, query: str) -> int | None:
     return int(code) if isinstance(code, int) else None
 
 
+def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | None:
+    """
+    Код города получателя по коду ПВЗ из GET /v2/deliverypoints.
+    Нужен, чтобы не совпадали to_location и from_location из‑за неточного совпадения города в /location/cities
+    (например «Иваново» и склад в соседнем городе дают один code — тогда СДЭК отвечает multivalued / пустой address).
+    """
+    pc = (pvz_code or "").strip()
+    if len(pc) < 2:
+        return None
+    try:
+        token = fetch_cdek_access_token(settings)
+    except CdekAuthError:
+        return None
+    base = cdek_api_base_url(settings).rstrip("/")
+    qs = urllib.parse.urlencode({"code": pc, "type": "PVZ"})
+    url = f"{base}/v2/deliverypoints?{qs}"
+    headers = {"Authorization": f"Bearer {token}", **WIDGET_APP_HEADERS}
+    try:
+        data = get_json(url, headers=headers, timeout=20.0)
+    except HttpJsonError as e:
+        logger.warning("CDEK deliverypoints by code=%s: %s", pc, e)
+        return None
+    rows: list[Any] | None = None
+    if isinstance(data, list):
+        rows = data
+    elif isinstance(data, dict):
+        for key in ("entity", "items", "deliverypoints"):
+            raw = data.get(key)
+            if isinstance(raw, list):
+                rows = raw
+                break
+    if not rows:
+        return None
+    first = rows[0]
+    if not isinstance(first, dict):
+        return None
+    loc = first.get("location")
+    if not isinstance(loc, dict):
+        return None
+    code = loc.get("code")
+    if code is None:
+        code = loc.get("city_code")
+    try:
+        if code is None:
+            return None
+        c = int(code)
+        return c if c > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _tariff_code_from_snapshot(order: CartOrder, settings: SiteSettings) -> int | None:
     snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
     cdek = snap.get("cdek") if isinstance(snap, dict) else {}
@@ -171,7 +222,7 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     if from_code is None:
         from_code = _first_city_code(settings, from_city or "Москва")
     to_code = _first_city_code(settings, to_city)
-    if not from_code or not to_code:
+    if not from_code:
         return None
 
     mode = str(cdek.get("mode") or "").strip().lower()
@@ -216,6 +267,15 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         if not tariff_code:
             return None
     else:
+        return None
+
+    # Город «куда» по коду ПВЗ — источник истины; иначе to_location и from_location могут совпасть при разных НП.
+    if destination_mode == "office" and pvz_code:
+        pvz_city = _city_code_from_pvz_code(settings, pvz_code)
+        if pvz_city is not None:
+            to_code = pvz_city
+
+    if not to_code:
         return None
 
     packages = []
