@@ -14,7 +14,8 @@ export function PublicOfferPage() {
         />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-h-[60vh] w-full max-w-[960px] px-4 py-10 md:px-6 md:py-14">
+      <main className="fabric-page">
+        <div className="fabric-page-main min-h-[60vh] w-full max-w-[960px]">
         <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
@@ -23,7 +24,7 @@ export function PublicOfferPage() {
           <span className="text-text">Публичная оферта</span>
         </nav>
 
-        <article className="mt-8 space-y-6 rounded-2xl border border-border-light bg-surface p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
+        <article className="fabric-card mt-8 space-y-6 p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
           <header className="space-y-2">
             <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Публичная оферта</h1>
             <p className="text-text-muted">
@@ -121,7 +122,7 @@ export function PublicOfferPage() {
             </p>
           </section>
 
-          <section className="space-y-1 rounded-xl border border-border-light bg-bg-base p-4 text-sm text-text-muted">
+          <section className="space-y-1 rounded-xl border border-border bg-bg-base/80 p-4 text-sm text-text-muted">
             <h2 className="font-heading text-lg font-semibold text-text">8. Реквизиты Исполнителя</h2>
             <p>ИП Четверикова Лариса Юрьевна</p>
             <p>ИНН 370207333295</p>
@@ -131,6 +132,7 @@ export function PublicOfferPage() {
             <p>Адрес: 153550, Ивановская область, Кохма, улица Связи, 27</p>
           </section>
         </article>
+        </div>
       </main>
       <SiteFooter />
     </>

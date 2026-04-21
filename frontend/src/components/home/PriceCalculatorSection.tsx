@@ -114,11 +114,21 @@ export function PriceCalculatorSection() {
   const successMessage =
     c.successMessage ??
     'Спасибо! Параметры отправлены. Перезвоним в рабочее время и уточним детали.'
+  const mode = c.mode === 'request_form' ? 'request_form' : 'calculator'
+  const requestTitle = c.requestFormTitle ?? 'Индивидуальный проект под вашу задачу'
+  const requestSubtitle =
+    c.requestFormSubtitle ??
+    'Опишите объект и пожелания. Менеджер свяжется, сделает расчёт, согласует материалы и при необходимости организует замер.'
+  const requestBenefits = [
+    c.requestFormBenefit1 ?? 'Персональный расчёт под ваш проект',
+    c.requestFormBenefit2 ?? 'Подбор материалов и конструктивных решений',
+    c.requestFormBenefit3 ?? 'Выезд на замер и сопровождение до монтажа',
+  ].map((item) => item.trim()).filter(Boolean)
 
   return (
     <motion.section
       id="calculator"
-      className="mx-auto min-w-0 max-w-[1280px] scroll-mt-24 px-4 py-12 md:px-6 md:py-24"
+      className="fabric-container min-w-0 scroll-mt-24 py-12 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.1 }}
@@ -128,15 +138,25 @@ export function PriceCalculatorSection() {
       <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
 
       <motion.div
-        className="mt-10 rounded-[24px] border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-10"
+        className="mt-10 rounded-[24px] border border-border-light bg-surface p-4 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-8 lg:p-10"
         initial={reduce ? false : { opacity: 0, y: 12 }}
         whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ ...easeOutSoft, delay: 0.05 }}
       >
-        <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-2">
-          <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
+        <form
+          onSubmit={handleSubmit}
+          className={
+            mode === 'calculator'
+              ? 'grid max-h-[78vh] snap-y snap-mandatory gap-4 overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0 lg:grid-cols-3 lg:gap-6'
+              : 'grid gap-6 lg:grid-cols-[1.1fr_0.9fr]'
+          }
+        >
+          {mode === 'calculator' ? (
+            <>
+          <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
+            <p className="mb-3 font-heading text-lg font-semibold text-text">1. Форма и материал</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block font-body text-sm font-medium text-text">{lengthLabel}</span>
                 <input
@@ -160,7 +180,7 @@ export function PriceCalculatorSection() {
                 />
               </label>
             </div>
-            <label className="block">
+            <label className="mt-4 block">
               <span className="mb-2 block font-body text-sm font-medium text-text">{materialLabel}</span>
               <select
                 value={materialId}
@@ -174,7 +194,7 @@ export function PriceCalculatorSection() {
                 ))}
               </select>
             </label>
-            <div>
+            <div className="mt-4">
               <span className="mb-3 block font-body text-sm font-medium text-text">{optionsLabel}</span>
               <div className="flex flex-col gap-3">
                 {CALC_OPTIONS.map((o) => (
@@ -196,25 +216,110 @@ export function PriceCalculatorSection() {
                 ))}
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="flex flex-col justify-center rounded-2xl bg-bg-base p-6 md:p-8">
-            <p className="font-body text-sm text-text-muted">{estimateLabel}</p>
-            <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.p
-                  key={price}
-                  className="font-body text-3xl font-bold tracking-tight text-accent md:text-4xl"
-                  initial={reduce ? false : { opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduce ? undefined : { opacity: 0, y: -6 }}
-                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {price.toLocaleString('ru-RU')} ₽
-                </motion.p>
-              </AnimatePresence>
+          <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
+            <p className="mb-3 font-heading text-lg font-semibold text-text">2. Размер и масштаб</p>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block font-body text-sm text-text-muted">{lengthLabel}</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={30}
+                  step={0.1}
+                  value={Math.max(1, Math.min(30, length))}
+                  onChange={(e) => setLength(Number(e.target.value))}
+                  className="w-full accent-accent"
+                />
+                <div className="mt-1 flex justify-between font-body text-xs text-text-subtle">
+                  <span>1 м</span>
+                  <span>{length.toFixed(1)} м</span>
+                  <span>30 м</span>
+                </div>
+              </label>
+              <label className="block">
+                <span className="mb-1 block font-body text-sm text-text-muted">{widthLabel}</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={20}
+                  step={0.1}
+                  value={Math.max(1, Math.min(20, width))}
+                  onChange={(e) => setWidth(Number(e.target.value))}
+                  className="w-full accent-accent"
+                />
+                <div className="mt-1 flex justify-between font-body text-xs text-text-subtle">
+                  <span>1 м</span>
+                  <span>{width.toFixed(1)} м</span>
+                  <span>20 м</span>
+                </div>
+              </label>
             </div>
-            <p className="mt-4 font-body text-sm text-text-subtle">{estimateNote}</p>
+            <div className="mt-5 rounded-xl border border-border-light bg-surface p-4">
+              <p className="font-body text-xs uppercase tracking-wide text-text-subtle">Виртуальная рулетка</p>
+              <div className="mt-3 grid grid-cols-[1fr_auto] gap-3">
+                <div>
+                  <div className="h-2 rounded-full bg-border-light">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all"
+                      style={{ width: `${Math.max(5, Math.min(100, (length / 30) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="font-body text-sm font-medium text-text">{length.toFixed(1)} м</span>
+                <div>
+                  <div className="h-2 rounded-full bg-border-light">
+                    <div
+                      className="h-full rounded-full bg-secondary transition-all"
+                      style={{ width: `${Math.max(5, Math.min(100, (width / 20) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="font-body text-sm font-medium text-text">{width.toFixed(1)} м</span>
+              </div>
+            </div>
+          </section>
+            </>
+          ) : (
+            <section className="rounded-2xl border border-border-light bg-bg-base p-5 md:p-7">
+              <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent">Индивидуальный проект</p>
+              <h3 className="mt-3 font-heading text-2xl text-text md:text-3xl">{requestTitle}</h3>
+              <p className="mt-3 max-w-2xl font-body text-sm text-text-muted md:text-base">{requestSubtitle}</p>
+              <div className="mt-5 grid gap-3">
+                {requestBenefits.map((item, idx) => (
+                  <div
+                    key={`request-benefit-${idx}`}
+                    className="rounded-2xl border border-border-light bg-surface/70 px-4 py-3 font-body text-sm text-text"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className={`rounded-2xl border border-border-light bg-bg-base p-4 md:p-5 ${mode === 'calculator' ? 'snap-start' : ''}`}>
+            {mode === 'calculator' ? (
+              <>
+                <p className="font-body text-sm text-text-muted">{estimateLabel}</p>
+                <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.p
+                      key={price}
+                      className="fabric-price text-accent"
+                      initial={reduce ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={reduce ? undefined : { opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      {price.toLocaleString('ru-RU')} ₽
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+                <p className="mt-3 font-body text-sm text-text-subtle">{estimateNote}</p>
+              </>
+            ) : null}
 
             {done ? (
               <p className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3 font-body text-sm text-text">
@@ -222,7 +327,7 @@ export function PriceCalculatorSection() {
               </p>
             ) : (
               <>
-                <label className="mt-6 block">
+                <label className="mt-5 block">
                   <span className="mb-2 block font-body text-sm font-medium text-text">{nameLabel}</span>
                   <input
                     type="text"
@@ -253,7 +358,7 @@ export function PriceCalculatorSection() {
                   <span className="mb-2 block font-body text-sm font-medium text-text">{commentLabel}</span>
                   <textarea
                     name="calc-comment"
-                    rows={2}
+                    rows={mode === 'calculator' ? 2 : 4}
                     maxLength={COMMENT_MAX_LEN}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -280,7 +385,7 @@ export function PriceCalculatorSection() {
                 <motion.button
                   type="submit"
                   disabled={sending}
-                  className="mt-6 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] disabled:opacity-60 md:w-auto md:self-start md:px-10"
+                  className="fabric-strap-btn mt-6 inline-flex h-14 min-h-[44px] w-full items-center justify-center rounded-[40px] bg-accent font-body text-base font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition hover:bg-[#c65f00] disabled:opacity-60 md:w-auto md:self-start md:px-10"
                   style={{ letterSpacing: '0.02em' }}
                   whileHover={reduce || sending ? undefined : { scale: 1.02 }}
                   whileTap={reduce || sending ? undefined : { scale: 0.98 }}
@@ -289,7 +394,7 @@ export function PriceCalculatorSection() {
                 </motion.button>
               </>
             )}
-          </div>
+          </section>
         </form>
       </motion.div>
     </motion.section>

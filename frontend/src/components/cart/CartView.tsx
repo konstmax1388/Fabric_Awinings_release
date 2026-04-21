@@ -31,7 +31,7 @@ export function CartView() {
 
       <div className="mt-8 flex min-h-0 flex-1 flex-col">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-16 text-center">
+          <div className="fabric-card flex flex-col items-center border-dashed px-6 py-16 text-center">
             <div
               className="flex h-16 w-16 items-center justify-center rounded-full bg-border-light/60 text-text-muted"
               aria-hidden
@@ -50,7 +50,7 @@ export function CartView() {
             </p>
             <Link
               to="/catalog"
-              className="mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body text-sm font-medium text-surface"
+              className="fabric-strap-btn mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body text-sm font-medium text-[#0d121c]"
             >
               Перейти в каталог
             </Link>
@@ -61,7 +61,7 @@ export function CartView() {
               <h2 className="font-body text-sm font-semibold uppercase tracking-wide text-text-subtle">
                 Товары · {totalQty} {pluralPositions(totalQty)}
               </h2>
-              <ul className="mt-4 flex flex-col divide-y divide-border-light rounded-2xl border border-border-light bg-surface">
+              <ul className="fabric-card mt-4 flex flex-col divide-y divide-border">
                 {items.map((line) => {
                   const lineApprox = line.priceFrom * line.qty
                   return (
@@ -104,7 +104,7 @@ export function CartView() {
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                           <span className="font-body text-xs text-text-subtle">Количество</span>
-                          <div className="inline-flex items-center rounded-xl border border-border bg-bg-base p-0.5">
+                          <div className="inline-flex items-center rounded-xl border border-border bg-bg-base/80 p-0.5">
                             <button
                               type="button"
                               className="flex h-10 w-10 items-center justify-center rounded-lg text-lg leading-none text-text hover:bg-surface"
@@ -150,7 +150,7 @@ export function CartView() {
             </div>
 
             <aside className="lg:sticky lg:top-24 lg:w-full lg:max-w-sm lg:shrink-0">
-              <div className="rounded-2xl border border-border-light bg-bg-base p-5 shadow-sm">
+              <div className="fabric-card p-5">
                 <h2 className="font-heading text-lg font-semibold text-text">Итого</h2>
                 <dl className="mt-4 space-y-3 font-body text-sm">
                   <div className="flex justify-between gap-4 text-text-muted">
@@ -169,7 +169,7 @@ export function CartView() {
                 </p>
                 <Link
                   to="/checkout"
-                  className="mt-5 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] transition-colors hover:bg-[#c65f00]"
+                  className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
                 >
                   Оформить заказ
                 </Link>

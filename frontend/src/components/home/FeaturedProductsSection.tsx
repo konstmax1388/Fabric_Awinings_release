@@ -36,7 +36,7 @@ export function FeaturedProductsSection() {
 
   if (loading) {
     return (
-      <section className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+      <section className="fabric-container min-w-0 py-12 md:py-24">
         <p className="font-body text-text-muted">{loadingText}</p>
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -54,7 +54,7 @@ export function FeaturedProductsSection() {
 
   if (products.length === 0) {
     return (
-      <section className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+      <section className="fabric-container min-w-0 py-12 md:py-24">
         <div className="rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10 text-center">
           <p className="font-heading text-xl font-semibold text-text">Подборка скоро появится</p>
           <p className="mt-2 font-body text-sm text-text-muted">Пока можно посмотреть весь каталог.</p>
@@ -70,7 +70,7 @@ export function FeaturedProductsSection() {
   }
 
   return (
-    <section className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24">
+    <section className="fabric-container min-w-0 py-12 md:py-24">
       <motion.div
         initial={reduce ? false : fadeUpHidden}
         whileInView={reduce ? undefined : fadeUpVisible}
@@ -99,7 +99,7 @@ export function FeaturedProductsSection() {
         <MagneticHover radius={100} strength={0.1} className="inline-flex">
           <Link
             to="/catalog"
-            className="inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
+            className="fabric-strap-btn inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
           >
             {catalogCta}
           </Link>

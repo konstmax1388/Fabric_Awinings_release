@@ -287,8 +287,10 @@ export function ProductPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
+        <main className="fabric-page">
+          <div className="fabric-page-main min-w-0 overflow-x-clip">
           <ProductPageSkeleton />
+          </div>
         </main>
         <SiteFooter />
       </>
@@ -299,8 +301,9 @@ export function ProductPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-20 md:px-6">
-          <div className="rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10">
+        <main className="fabric-page">
+          <div className="fabric-page-main min-w-0 overflow-x-clip">
+          <div className="fabric-card border-dashed px-6 py-10">
             <h1 className="font-heading text-3xl font-bold text-text">Товар не найден</h1>
             <p className="mt-3 font-body text-text-muted">
               Позиция отсутствует в каталоге или ссылка устарела.
@@ -313,11 +316,12 @@ export function ProductPage() {
             >
               <Link
                 to="/catalog"
-                className="mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface"
+                className="fabric-strap-btn mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-[#0d121c]"
               >
                 В каталог
               </Link>
             </motion.div>
+          </div>
           </div>
         </main>
         <SiteFooter />
@@ -348,7 +352,8 @@ export function ProductPage() {
         <script type="application/ld+json">{productJsonLd}</script>
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-10 md:px-6 md:py-14">
+      <main className="fabric-page">
+        <div className="fabric-page-main min-w-0 overflow-x-clip">
         <motion.div
           initial={reduce ? false : fadeUpHidden}
           animate={reduce ? undefined : fadeUpVisible}
@@ -384,7 +389,7 @@ export function ProductPage() {
               <div>
                 <p className="font-body text-sm font-medium text-accent">{categoryLabel(product)}</p>
                 <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />
-                <h1 className="mt-2 break-words font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                <h1 className="fabric-section-title mt-2 break-words lg:text-[2.75rem] lg:leading-[1.1]">
                   {product.title}
                 </h1>
                 <div className="mt-5 inline-flex items-baseline gap-2 rounded-2xl bg-accent/10 px-4 py-2.5">
@@ -456,7 +461,7 @@ export function ProductPage() {
 
               {product.materialMap ? <MaterialLayersHint materialMap={product.materialMap} /> : null}
 
-              <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)] md:p-6">
+              <div className="fabric-card p-5 md:p-6">
                 <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
                 <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">
                   Переход к покупке на выбранной площадке — в новой вкладке.
@@ -469,7 +474,7 @@ export function ProductPage() {
               {calculatorEnabled ? (
                 <Link
                   to="/#calculator"
-                  className="inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(232,122,0,0.08)] sm:w-auto"
+                  className="fabric-strap-btn inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)] sm:w-auto"
                 >
                   Рассчитать по размерам
                 </Link>
@@ -479,7 +484,7 @@ export function ProductPage() {
         </motion.div>
 
         {related.length > 0 && (
-          <section className="mt-16 border-t border-border-light pt-14">
+          <section className="mt-16 border-t border-border pt-14">
             <h2 className="font-heading text-2xl font-bold text-text md:text-3xl">Похожие позиции</h2>
             <p className="mt-2 font-body text-text-muted">Та же категория: {categoryLabel(product)}</p>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -489,6 +494,7 @@ export function ProductPage() {
             </div>
           </section>
         )}
+        </div>
       </main>
 
       <ProductDetailsDrawer

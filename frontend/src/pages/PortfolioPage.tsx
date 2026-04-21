@@ -45,13 +45,14 @@ export function PortfolioPage() {
         <link rel="canonical" href={`${site}/portfolio`} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-16 md:px-6">
+      <main className="fabric-page">
+        <div className="fabric-page-main min-w-0 overflow-x-clip">
         <motion.div
           initial={reduce ? false : fadeUpHidden}
           animate={reduce ? undefined : fadeUpVisible}
           transition={easeOutSoft}
         >
-          <h1 className="font-heading text-4xl font-bold text-text md:text-5xl">Портфолио</h1>
+          <h1 className="fabric-section-title">Портфолио</h1>
           <p className="mt-4 max-w-xl font-body text-text-muted">
             Реализованные проекты: до и после. Категории совпадают с фильтрами на главной.
           </p>
@@ -70,7 +71,7 @@ export function PortfolioPage() {
               <motion.article
                 key={p.id}
                 variants={staggerItem}
-                className="overflow-hidden rounded-2xl border border-border-light bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+                className="fabric-card overflow-hidden"
               >
                 <div className="hidden grid-cols-2 gap-0.5 bg-border md:grid">
                   <OptimizedImage
@@ -102,9 +103,10 @@ export function PortfolioPage() {
           </motion.div>
         )}
 
-        <Link to="/" className="mt-12 inline-block font-medium text-accent hover:underline">
+        <Link to="/" className="fabric-strap-btn mt-12 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">
           ← На главную
         </Link>
+        </div>
       </main>
       <SiteFooter />
     </>

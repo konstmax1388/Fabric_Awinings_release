@@ -42,18 +42,19 @@ export function BlogPage() {
         <link rel="canonical" href={`${site}/blog`} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-16 md:px-6">
-        <h1 className="font-heading text-4xl font-bold text-text md:text-5xl">Блог</h1>
+      <main className="fabric-page">
+        <div className="fabric-page-main min-w-0 overflow-x-clip">
+        <h1 className="fabric-section-title">Блог</h1>
         <p className="mt-4 max-w-xl font-body text-text-muted">Материалы для заказчиков и монтажников.</p>
 
         {loading ? (
           <p className="mt-10 font-body text-text-muted">Загрузка…</p>
         ) : (
-          <ul className="mt-10 flex flex-col gap-8">
+          <ul className="mt-10 flex flex-col gap-6">
             {posts.map((post) => (
               <li
                 key={post.slug}
-                className="flex flex-col gap-4 border-b border-border-light pb-8 sm:flex-row"
+                className="fabric-card flex flex-col gap-4 p-5 sm:flex-row"
               >
                 {post.img ? (
                   <OptimizedImage
@@ -84,9 +85,10 @@ export function BlogPage() {
           </ul>
         )}
 
-        <Link to="/" className="mt-12 inline-block font-medium text-accent hover:underline">
+        <Link to="/" className="fabric-strap-btn mt-12 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">
           ← На главную
         </Link>
+        </div>
       </main>
       <SiteFooter />
     </>

@@ -458,7 +458,8 @@ export function CheckoutPage() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[60vh] w-full min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-10 md:px-6 md:py-14">
+      <main className="fabric-page">
+        <div className="fabric-page-main flex min-h-[60vh] w-full min-w-0 flex-col overflow-x-clip">
         <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
@@ -490,10 +491,10 @@ export function CheckoutPage() {
           </div>
         )}
 
-        <div className="mx-auto mt-10 w-full min-w-0 max-w-2xl sm:max-w-3xl lg:max-w-5xl">
+        <div className="fabric-card mx-auto mt-10 w-full min-w-0 max-w-2xl p-5 sm:max-w-3xl sm:p-6 lg:max-w-5xl lg:p-8">
           {step === 1 && (
             <form onSubmit={goNextFromContacts} className="flex flex-col">
-              <h1 className="font-heading text-2xl font-semibold text-text">Контактные данные</h1>
+              <h1 className="fabric-section-title text-2xl md:text-3xl">Контактные данные</h1>
               <p className="mt-2 font-body text-sm text-text-muted">
                 {!user ? (
                   <>
@@ -512,7 +513,7 @@ export function CheckoutPage() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                  className="fabric-input"
                   autoComplete="name"
                 />
               </label>
@@ -526,7 +527,7 @@ export function CheckoutPage() {
                   onChange={(e) =>
                     setPhone(formatRuPhoneMask(nationalDigitsFromInput(e.target.value)))
                   }
-                  className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                  className="fabric-input"
                   autoComplete="tel"
                 />
               </label>
@@ -539,7 +540,7 @@ export function CheckoutPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border px-3 font-body outline-none focus:border-accent"
+                  className="fabric-input"
                   autoComplete="email"
                   placeholder="name@mail.ru"
                 />
@@ -551,7 +552,7 @@ export function CheckoutPage() {
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
                   maxLength={COMMENT_MAX_LEN}
-                  className="w-full rounded-xl border border-border px-3 py-2 font-body outline-none focus:border-accent"
+                  className="w-full rounded-xl border border-border bg-bg-base/85 px-3 py-2 font-body text-text outline-none focus:border-accent"
                 />
               </label>
               {error && (
@@ -562,13 +563,13 @@ export function CheckoutPage() {
               <div className="mt-6 flex gap-3">
                 <Link
                   to="/cart"
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
                 >
                   Назад
                 </Link>
                 <button
                   type="submit"
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c]"
                 >
                   Далее
                 </button>
@@ -578,7 +579,7 @@ export function CheckoutPage() {
 
           {step === 2 && (
             <form onSubmit={goNextFromDelivery} className="flex flex-col">
-              <h1 className="font-heading text-2xl font-semibold text-text">Доставка и оплата</h1>
+              <h1 className="fabric-section-title text-2xl md:text-3xl">Доставка и оплата</h1>
               {settingsLoading ? (
                 <p className="mt-4 font-body text-sm text-text-muted">Загрузка настроек…</p>
               ) : checkout.deliveryOptions.length === 0 ? (
@@ -913,14 +914,14 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
                 >
                   Назад
                 </button>
                 <button
                   type="submit"
                   disabled={settingsLoading || checkout.deliveryOptions.length === 0}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface disabled:opacity-50"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:opacity-50"
                 >
                   Далее
                 </button>
@@ -930,7 +931,7 @@ export function CheckoutPage() {
 
           {step === 3 && (
             <form onSubmit={submitOrder} className="flex flex-col">
-              <h1 className="font-heading text-2xl font-semibold text-text">Подтверждение</h1>
+              <h1 className="fabric-section-title text-2xl md:text-3xl">Подтверждение</h1>
               <div className="mt-4 rounded-2xl border border-border-light bg-bg-base p-4 font-body text-sm text-text-muted">
                 <p>
                   <span className="text-text-subtle">Позиций:</span> {totalQty}
@@ -993,14 +994,14 @@ export function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border border-border font-body font-medium text-text"
                 >
                   Назад
                 </button>
                 <button
                   type="submit"
                   disabled={sending}
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface disabled:opacity-50"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:opacity-50"
                 >
                   {sending ? 'Отправка…' : 'Подтвердить заказ'}
                 </button>
@@ -1010,7 +1011,7 @@ export function CheckoutPage() {
 
           {step === 'done' && (
             <div className="flex flex-col">
-              <h1 className="font-heading text-2xl font-semibold text-text">Заказ принят</h1>
+              <h1 className="fabric-section-title text-2xl md:text-3xl">Заказ принят</h1>
               {cdekSyncInfo?.status === 'error' ? (
                 <div
                   className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 font-body text-sm text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100"
@@ -1034,7 +1035,7 @@ export function CheckoutPage() {
               {paymentRedirectUrl ? (
                 <a
                   href={paymentRedirectUrl}
-                  className="mt-4 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
+                  className="fabric-strap-btn mt-4 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-[#0d121c]"
                 >
                   Перейти к оплате
                 </a>
@@ -1046,20 +1047,21 @@ export function CheckoutPage() {
                 {accessToken ? (
                   <Link
                     to="/account/orders"
-                    className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-surface"
+                    className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c]"
                   >
                     Мои заказы
                   </Link>
                 ) : null}
                 <Link
                   to="/catalog"
-                  className="inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border-2 border-accent font-body font-medium text-accent"
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] border-2 border-accent font-body font-medium text-accent"
                 >
                   В каталог
                 </Link>
               </div>
             </div>
           )}
+        </div>
         </div>
       </main>
       <SiteFooter />

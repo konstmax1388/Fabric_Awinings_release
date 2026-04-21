@@ -25,6 +25,7 @@
 | [functional-requirements.md](./functional-requirements.md) | Цели, **frontend**, **админка**, **интеграции** (Б24, СДЭК, эквайринг, МП, …) |
 | [typography.md](./typography.md) | Шрифты: Google Fonts, Tailwind, Figma, адаптив Mobile First |
 | [design.md](./design.md) | **Дизайн:** бриф (§1) + глобальные стили (§2) |
+| [design-redesign-rollout-plan.md](./design-redesign-rollout-plan.md) | **План редизайна без поломок:** Mobile First 375x667, поэтапный rollout, критерии готовности и проверки |
 | [components.md](./components.md) | **Компоненты:** Primary/Secondary/иконка, Input, карточки товара/портфолио/отзыва, иконки МП, бургер |
 | [animations.md](./animations.md) | **Анимации (ТЗ §5):** fade-up, stagger, hover, CTA-пульс, счётчики, бургер; реализация Framer Motion |
 | [development-phases.md](./development-phases.md) | **Этапы по ТЗ 2.0** (1–12): магазин, ЛК, Б24, СДЭК, эквайринг, Celery, React Admin, SEO, тесты + статус кода |

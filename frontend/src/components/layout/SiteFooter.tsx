@@ -31,15 +31,15 @@ export function SiteFooter() {
   const [staffModalOpen, setStaffModalOpen] = useState(false)
 
   return (
-    <footer className="border-t border-border-light bg-bg-base">
-      <div className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,2.1fr)_minmax(0,0.72fr)_minmax(0,1fr)_minmax(0,1fr)]">
+    <footer className="border-t border-border bg-bg-base">
+      <div className="fabric-container py-12 md:py-16">
+        <div className="fabric-card grid gap-10 p-6 md:grid-cols-2 md:p-8 lg:grid-cols-[minmax(0,2.1fr)_minmax(0,0.72fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="min-w-0 lg:pr-2">
             <p className="font-heading text-xl font-semibold text-text">{siteName}</p>
             {siteTagline.trim() ? (
               <div className="relative mt-5 max-w-none pl-4 sm:pl-5">
                 <span
-                  className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-accent shadow-[2px_0_12px_rgba(232,122,0,0.35)]"
+                  className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-accent shadow-[2px_0_12px_rgba(200,155,83,0.35)]"
                   aria-hidden
                 />
                 <p className="font-heading text-xl font-semibold leading-snug tracking-tight text-text sm:text-2xl md:text-[1.75rem] md:leading-tight">
@@ -143,7 +143,7 @@ export function SiteFooter() {
         </div>
 
         {showStaffLinks ? (
-          <div className="mt-10 flex justify-center border-t border-border-light pt-8 sm:justify-start">
+          <div className="mt-10 flex justify-center border-t border-border pt-8 sm:justify-start">
             <button
               type="button"
               onClick={() => setStaffModalOpen(true)}
@@ -164,7 +164,7 @@ export function SiteFooter() {
           </div>
         ) : null}
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-border-light pt-8 text-sm text-text-subtle md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-border pt-8 text-sm text-text-subtle md:flex-row md:items-center md:justify-between">
           <p>
             © {new Date().getFullYear()} {siteName}. Все права защищены.
           </p>

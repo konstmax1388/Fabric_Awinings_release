@@ -36,6 +36,11 @@ export type HeroSlide = {
   videoUrl?: string
 }
 
+export type HeroStat = {
+  value?: string
+  label?: string
+}
+
 export type HomePayload = {
   meta?: {
     title?: string
@@ -44,8 +49,13 @@ export type HomePayload = {
     orgDescription?: string
   }
   hero?: {
+    eyebrow?: string
+    usp?: string
     title?: string
     subtitle?: string
+    trustLine?: string
+    trustItems?: string[]
+    stats?: HeroStat[]
     ctaPrimary?: string
     ctaSecondary?: string
     primaryAction?: HeroAction
@@ -59,6 +69,29 @@ export type HomePayload = {
     subheading?: string
     cards?: ProblemCard[]
   }
+  processTimeline?: {
+    heading?: string
+    subheading?: string
+    steps?: Array<{
+      title?: string
+      text?: string
+    }>
+  }
+  purchasePaths?: {
+    eyebrow?: string
+    heading?: string
+    subheading?: string
+    readyTitle?: string
+    readySubtitle?: string
+    readyBullets?: string[]
+    readyCta?: string
+    readyHref?: string
+    customTitle?: string
+    customSubtitle?: string
+    customBullets?: string[]
+    customCta?: string
+    customHref?: string
+  }
   tentTypes?: {
     heading?: string
     subheading?: string
@@ -69,6 +102,7 @@ export type HomePayload = {
     catalogCta?: string
   }
   calculator?: {
+    mode?: 'calculator' | 'request_form'
     heading?: string
     subheading?: string
     lengthLabel?: string
@@ -86,6 +120,11 @@ export type HomePayload = {
     submitButton?: string
     submitting?: string
     successMessage?: string
+    requestFormTitle?: string
+    requestFormSubtitle?: string
+    requestFormBenefit1?: string
+    requestFormBenefit2?: string
+    requestFormBenefit3?: string
   }
   portfolio?: {
     heading?: string

@@ -81,7 +81,7 @@ export function ReviewsSection() {
 
   return (
     <motion.section
-      className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
+      className="fabric-container min-w-0 py-12 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.08 }}

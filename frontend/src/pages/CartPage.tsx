@@ -15,7 +15,8 @@ export function CartPage() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto flex min-h-[60vh] min-w-0 max-w-[1280px] flex-col overflow-x-clip px-4 py-8 md:px-6 md:py-12">
+      <main className="fabric-page">
+        <div className="fabric-page-main flex min-h-[60vh] min-w-0 flex-col overflow-x-clip">
         <nav className="font-body text-sm text-text-muted">
           <Link to="/" className="hover:text-accent">
             Главная
@@ -25,6 +26,7 @@ export function CartPage() {
         </nav>
         <div className="mt-5 flex flex-1 flex-col md:mt-8">
           <CartView />
+        </div>
         </div>
       </main>
       <SiteFooter />

@@ -35,11 +35,11 @@ export function ProductCard({ product }: Props) {
     <motion.article
       whileHover={reduce ? undefined : subtleHoverLift}
       transition={cardHoverTransition}
-      className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-light bg-surface shadow-[0_10px_28px_-10px_rgba(0,0,0,0.1)]"
+      className="fabric-card flex h-full flex-col overflow-hidden"
     >
       <Link to={`/catalog/${product.slug}`} className="relative block overflow-hidden">
         <div
-          className={`${frameClass} overflow-hidden bg-gradient-to-br from-bg-base to-border-light/40`}
+          className={`${frameClass} overflow-hidden bg-gradient-to-br from-bg-base to-primary/60`}
         >
           {cover && !imgFailed ? (
             <OptimizedImage
@@ -80,12 +80,12 @@ export function ProductCard({ product }: Props) {
           whileHover={reduce ? undefined : subtleButtonHover}
           whileTap={reduce ? undefined : { scale: 0.98 }}
           transition={cardHoverTransition}
-          className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface shadow-[0_4px_12px_0_rgba(232,122,0,0.28)] transition hover:bg-[#c65f00] hover:shadow-[0_6px_16px_0_rgba(232,122,0,0.32)]"
+          className="fabric-strap-btn mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_12px_0_rgba(200,155,83,0.28)] transition hover:bg-[#d4ad72] hover:shadow-[0_6px_16px_0_rgba(200,155,83,0.32)]"
         >
           В корзину
         </motion.button>
         {addedPromptOpen && (
-          <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[460px]">
+          <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.48)] md:inset-x-auto md:right-6 md:mx-0 md:w-[460px]">
             <p className="font-body text-sm font-medium text-text">Товар добавлен в корзину</p>
             <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
             <div className="mt-3 flex gap-2">
@@ -99,7 +99,7 @@ export function ProductCard({ product }: Props) {
               <button
                 type="button"
                 onClick={() => navigate('/cart')}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface transition hover:bg-[#c65f00]"
+                className="fabric-strap-btn inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] transition hover:bg-[#d4ad72]"
               >
                 Перейти в корзину
               </button>

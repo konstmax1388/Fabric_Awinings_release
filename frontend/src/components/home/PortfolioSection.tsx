@@ -1,5 +1,5 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchPortfolio, type PortfolioItem } from '../../lib/api'
@@ -30,6 +30,8 @@ export function PortfolioSection() {
   const [filter, setFilter] = useState(categories[0] ?? 'Все')
   const [projects, setProjects] = useState<PortfolioItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [preview, setPreview] = useState<PortfolioItem | null>(null)
+  const longPressTimer = useRef<number | null>(null)
   const reduce = useReducedMotion()
 
   useEffect(() => {
@@ -51,9 +53,25 @@ export function PortfolioSection() {
 
   const filtered = filter === 'Все' ? projects : projects.filter((p) => p.category === filter)
 
+  const clearLongPress = () => {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  const onTouchStartCard = (item: PortfolioItem) => {
+    if (reduce) return
+    clearLongPress()
+    longPressTimer.current = window.setTimeout(() => {
+      setPreview(item)
+      longPressTimer.current = null
+    }, 420)
+  }
+
   return (
     <motion.section
-      className="mx-auto min-w-0 max-w-[1280px] px-4 py-12 md:px-6 md:py-24"
+      className="fabric-container min-w-0 py-12 md:py-24"
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
       viewport={{ once: true, amount: 0.08 }}
@@ -100,9 +118,12 @@ export function PortfolioSection() {
               whileHover={reduce ? undefined : subtleHoverLift}
               whileTap={reduce ? undefined : { scale: 0.995 }}
               transition={cardHoverTransition}
-              className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+              className="fabric-card overflow-hidden"
+              onTouchStart={() => onTouchStartCard(p)}
+              onTouchEnd={clearLongPress}
+              onTouchCancel={clearLongPress}
             >
-              <div className="hidden grid-cols-2 gap-0.5 bg-border md:grid">
+              <div className="portfolio-blinds hidden grid-cols-2 gap-0.5 bg-border md:grid">
                 <OptimizedImage
                   src={p.before}
                   alt={`${p.title} — до`}
@@ -155,7 +176,7 @@ export function PortfolioSection() {
           >
             <Link
               to="/portfolio"
-              className="inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
+              className="fabric-strap-btn inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
               style={{ letterSpacing: '0.02em' }}
             >
               {allProjectsCta}
@@ -163,6 +184,41 @@ export function PortfolioSection() {
           </motion.span>
         </MagneticHover>
       </div>
+      <AnimatePresence>
+        {preview ? (
+          <motion.div
+            className="fixed inset-0 z-[70] flex items-end bg-[#242730]/75 p-3 md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreview(null)}
+          >
+            <motion.div
+              className="w-full overflow-hidden rounded-2xl bg-surface"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <BeforeAfterSlider before={preview.before} after={preview.after} title={preview.title} />
+              <div className="p-4">
+                <p className="font-body text-xs text-text-subtle">
+                  {preview.category} · {preview.date}
+                </p>
+                <h3 className="mt-1 font-heading text-lg font-semibold text-text">{preview.title}</h3>
+                <button
+                  type="button"
+                  className="fabric-strap-btn mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-border px-4 font-body text-sm font-medium text-text"
+                  onClick={() => setPreview(null)}
+                >
+                  Закрыть превью
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.section>
   )
 }

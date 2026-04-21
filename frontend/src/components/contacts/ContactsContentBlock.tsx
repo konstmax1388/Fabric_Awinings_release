@@ -1,6 +1,6 @@
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 
-const titleClass = 'font-heading text-4xl font-bold text-text md:text-5xl'
+const titleClass = 'fabric-section-title text-text'
 
 type Props = {
   /** На странице /contacts — H1, в секции главной — H2 (одинаковые стили). */

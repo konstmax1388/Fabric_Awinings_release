@@ -15,7 +15,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   `block rounded-2xl px-4 py-3.5 font-body text-[17px] font-semibold tracking-wide transition-colors ${
-    isActive ? 'bg-accent/12 text-accent ring-1 ring-accent/25' : 'text-text hover:bg-[#EDE6DB]'
+    isActive ? 'bg-accent/15 text-accent ring-1 ring-accent/30' : 'text-text hover:bg-primary/70'
   }`
 
 function CartHeaderLink({ className = '' }: { className?: string }) {
@@ -24,8 +24,8 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
     <NavLink
       to="/cart"
       className={({ isActive }) =>
-        `relative flex h-11 w-11 items-center justify-center rounded-xl text-text hover:bg-[#F5F0E8] ${
-          isActive ? 'bg-[#F5F0E8] text-accent' : ''
+        `relative flex h-11 w-11 items-center justify-center rounded-xl text-text hover:bg-primary/70 ${
+          isActive ? 'bg-primary/80 text-accent' : ''
         } ${className}`
       }
       aria-label={`Корзина${totalQty ? `, ${totalQty} поз.` : ''}`}
@@ -53,6 +53,14 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
   const [logoBroken, setLogoBroken] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = window.localStorage.getItem('fabric:theme:v1')
+      return saved === 'light' ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
   const reduce = useReducedMotion()
   const { totalQty } = useCart()
   const {
@@ -73,6 +81,16 @@ export function SiteHeader() {
   }
 
   useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-theme', theme)
+    try {
+      window.localStorage.setItem('fabric:theme:v1', theme)
+    } catch {
+      /* noop */
+    }
+  }, [theme])
+
+  useEffect(() => {
     if (!open) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -91,8 +109,8 @@ export function SiteHeader() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border-light bg-bg-base/95 backdrop-blur-md">
-      <div className="mx-auto flex min-w-0 max-w-[1280px] items-center justify-between gap-3 px-4 py-4 md:gap-4 md:px-6">
+    <header className="fabric-liquid-glass sticky top-0 z-50 border-b border-border bg-bg-base/90">
+      <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"
           className="flex min-w-0 max-w-[min(100%,220px)] items-center gap-2 md:max-w-[280px]"
@@ -133,11 +151,20 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <button
+            type="button"
+            className="fabric-theme-toggle hidden md:inline-flex"
+            onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+            aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          >
+            <span aria-hidden>{theme === 'dark' ? '☾' : '☀'}</span>
+          </button>
           <NavLink
             to="/account"
             className={({ isActive }) =>
-              `hidden h-11 items-center rounded-xl px-3 font-body text-sm font-medium text-text hover:bg-[#F5F0E8] md:inline-flex ${
-                isActive ? 'bg-[#F5F0E8] text-accent' : ''
+              `hidden h-11 items-center rounded-xl px-3 font-body text-sm font-medium text-text hover:bg-primary/70 md:inline-flex ${
+                isActive ? 'bg-primary/70 text-accent' : ''
               }`
             }
           >
@@ -191,7 +218,7 @@ export function SiteHeader() {
             <motion.button
               type="button"
               key="mobile-menu-backdrop"
-              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#1a1a1a]/50 backdrop-blur-[3px] md:hidden"
+              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#060a11]/72 backdrop-blur-[3px] md:hidden"
               initial={reduce ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduce ? undefined : { opacity: 0 }}
@@ -207,8 +234,8 @@ export function SiteHeader() {
               exit={reduce ? undefined : { x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             >
-              <div className="flex h-full min-h-0 flex-col border-l border-border-light bg-bg-base shadow-[-16px_0_48px_rgba(0,0,0,0.14)]">
-                <div className="shrink-0 border-b border-border-light/80 bg-surface/90 px-5 py-4">
+              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border shadow-[-16px_0_48px_rgba(0,0,0,0.42)]">
+                <div className="fabric-liquid-glass-soft shrink-0 border-b border-border px-5 py-4">
                   <p className="font-heading text-lg font-semibold text-text">Меню</p>
                   <p className="mt-0.5 font-body text-xs text-text-muted">Разделы сайта и контакты</p>
                 </div>
@@ -236,9 +263,19 @@ export function SiteHeader() {
                   <NavLink to="/account" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
                     Личный кабинет
                   </NavLink>
+                  <button
+                    type="button"
+                    className="fabric-theme-toggle mt-1 justify-start rounded-2xl px-4"
+                    onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                  >
+                    <span aria-hidden>{theme === 'dark' ? '☾' : '☀'}</span>
+                    <span className="font-body text-sm font-semibold">
+                      {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                    </span>
+                  </button>
                   <a
                     href={phoneHref}
-                    className="mt-1 flex items-center gap-3 rounded-2xl border border-border-light bg-surface px-4 py-4 font-body text-lg font-semibold text-accent shadow-sm ring-1 ring-border-light/60"
+                    className="fabric-liquid-glass-soft mt-1 flex items-center gap-3 rounded-2xl border border-border px-4 py-4 font-body text-lg font-semibold text-accent shadow-sm ring-1 ring-border/70"
                     onClick={() => setOpen(false)}
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent" aria-hidden>
@@ -252,7 +289,7 @@ export function SiteHeader() {
                     </span>
                     <span className="min-w-0 break-words">{phone}</span>
                   </a>
-                  <div className="mt-4 rounded-2xl border border-border-light bg-surface/80 p-4 shadow-inner">
+                  <div className="fabric-liquid-glass-soft mt-4 rounded-2xl border border-border p-4 shadow-inner">
                     <p className="mb-3 font-body text-xs font-semibold uppercase tracking-wider text-text-muted">
                       {buyOnMobileLabel}
                     </p>
@@ -264,29 +301,29 @@ export function SiteHeader() {
           </>
         ) : null}
       </AnimatePresence>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border-light bg-bg-base/95 px-2 py-2 backdrop-blur-md md:hidden">
+      <nav className="fabric-liquid-glass fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg-base/95 px-2 py-2 md:hidden">
         <div className="mx-auto flex max-w-[640px] items-stretch justify-between gap-1">
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
               `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
               }`
             }
           >
-            <span aria-hidden>🏠</span>
+            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
             <span>Главная</span>
           </NavLink>
           <NavLink
             to="/catalog"
             className={({ isActive }) =>
               `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
               }`
             }
           >
-            <span aria-hidden>🧰</span>
+            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
             <span>Каталог</span>
           </NavLink>
           {portfolioEnabled ? (
@@ -294,11 +331,11 @@ export function SiteHeader() {
               to="/portfolio"
               className={({ isActive }) =>
                 `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                  isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                  isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
                 }`
               }
             >
-              <span aria-hidden>🖼️</span>
+              <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
               <span>Портфолио</span>
             </NavLink>
           ) : null}
@@ -306,11 +343,11 @@ export function SiteHeader() {
             to="/cart"
             className={({ isActive }) =>
               `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
               }`
             }
           >
-            <span aria-hidden>🛒</span>
+            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
             <span>Корзина</span>
             {totalQty > 0 ? (
               <span className="absolute right-3 top-1 rounded-full bg-accent px-1.5 text-[10px] text-white">
@@ -322,11 +359,11 @@ export function SiteHeader() {
             to="/account"
             className={({ isActive }) =>
               `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/12 text-accent' : 'text-text-muted'
+                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
               }`
             }
           >
-            <span aria-hidden>👤</span>
+            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
             <span>Профиль</span>
           </NavLink>
         </div>

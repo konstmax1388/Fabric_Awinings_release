@@ -166,7 +166,8 @@ export function CatalogPage() {
         />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-10 md:px-6 md:py-14">
+      <main className="fabric-page">
+        <div className="fabric-page-main min-w-0 overflow-x-clip">
         <motion.div
           initial={reduce ? false : fadeUpHidden}
           animate={reduce ? undefined : fadeUpVisible}
@@ -179,22 +180,22 @@ export function CatalogPage() {
             <span className="mx-2">/</span>
             <span className="text-text">Каталог</span>
           </nav>
-          <h1 className="mt-4 font-heading text-4xl font-bold tracking-tight text-text md:text-5xl">
+          <h1 className="fabric-section-title mt-4">
             Каталог
           </h1>
           <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{catalogIntro}</p>
         </motion.div>
 
         <div className="mt-10 flex flex-col gap-10 lg:flex-row">
-          <aside className="shrink-0 lg:w-56">
+          <aside className="fabric-card shrink-0 p-4 lg:w-56 lg:p-5">
             <p className="font-body text-sm font-semibold text-text">Категория</p>
             <ul className="mt-3 flex flex-col gap-1 font-body text-sm">
               <li>
                 <button
                   type="button"
                   onClick={() => setParams({ category: null, page: 1 })}
-                  className={`w-full rounded-xl px-3 py-2 text-left transition hover:bg-[#F5F0E8] ${
-                    !category ? 'bg-[#F5F0E8] font-medium text-text' : 'text-text-muted'
+                  className={`w-full rounded-xl px-3 py-2 text-left transition hover:bg-primary/80 ${
+                    !category ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
                   }`}
                 >
                   Все
@@ -208,8 +209,8 @@ export function CatalogPage() {
                     <button
                       type="button"
                       onClick={() => setParams({ category: c.slug, page: 1 })}
-                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-[#F5F0E8] ${
-                        category === c.slug ? 'bg-[#F5F0E8] font-medium text-text' : 'text-text-muted'
+                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-primary/80 ${
+                        category === c.slug ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
                       }`}
                     >
                       {c.imageUrl ? (
@@ -277,7 +278,7 @@ export function CatalogPage() {
             {loading && <CatalogSkeletonGrid />}
 
             {!loading && !error && slice.length === 0 && (
-              <div className="mt-10 rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10 text-center">
+              <div className="fabric-card mt-10 border-dashed px-6 py-10 text-center">
                 <p className="font-heading text-xl font-semibold text-text">Пока пусто в этой категории</p>
                 <p className="mt-2 font-body text-sm text-text-muted">
                   Попробуйте открыть другую категорию или сбросить фильтр до «Все».
@@ -330,6 +331,7 @@ export function CatalogPage() {
               </nav>
             )}
           </div>
+        </div>
         </div>
       </main>
       <SiteFooter />

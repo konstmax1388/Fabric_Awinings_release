@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { WhyColumn, WhyStat } from '../../types/homePage'
 import { AnimatedCounter } from '../motion/AnimatedCounter'
@@ -68,16 +68,41 @@ function normalizeColumns(raw: unknown): WhyColumn[] {
 export function WhyUsSection() {
   const reduce = useReducedMotion()
   const { home } = useSiteSettings()
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const [lineProgress, setLineProgress] = useState(0)
   const w = home?.whyUs
   const heading = w?.heading ?? 'Почему выбирают нас'
   const subheading = w?.subheading ?? 'Работаем прозрачно: вы знаете этапы, сроки и ответственных.'
   const stats = useMemo(() => normalizeStats(w?.stats), [w?.stats])
   const cols = useMemo(() => normalizeColumns(w?.columns), [w?.columns])
 
+  useEffect(() => {
+    if (reduce) return
+    const update = () => {
+      const node = sectionRef.current
+      if (!node) return
+      const rect = node.getBoundingClientRect()
+      const vh = Math.max(1, window.innerHeight)
+      const start = vh * 0.9
+      const end = -rect.height * 0.2
+      const range = start - end
+      const raw = (start - rect.top) / Math.max(1, range)
+      const clamped = Math.max(0, Math.min(1, raw))
+      setLineProgress(clamped)
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [reduce])
+
   return (
-    <section className="bg-[#F5F0E8]/40 py-12 md:py-24">
+    <section ref={sectionRef} className="bg-[#F5F0E8]/40 py-12 md:py-24">
       <motion.div
-        className="mx-auto min-w-0 max-w-[1280px] px-4 md:px-6"
+        className="fabric-container min-w-0"
         initial={reduce ? false : fadeUpHidden}
         whileInView={reduce ? undefined : fadeUpVisible}
         viewport={{ once: true, amount: 0.1 }}
@@ -98,28 +123,41 @@ export function WhyUsSection() {
         </div>
 
         <motion.div
-          className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-10"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.08 }}
         >
-          {cols.map((c) => (
-            <motion.div
-              key={c.title}
-              variants={staggerItem}
-              className="rounded-2xl bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)]"
-            >
-              <span
-                className="flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
-                aria-hidden
+          <div className="hidden lg:mb-6 lg:block">
+            <div className="relative h-[2px] rounded-full bg-border-light">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-accent"
+                style={{ width: `${Math.max(6, lineProgress * 100)}%` }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {cols.map((c) => (
+              <motion.div
+                key={c.title}
+                variants={staggerItem}
+                className="rounded-2xl bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] lg:h-full lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none"
               >
-                {c.icon}
-              </span>
-              <h3 className="mt-4 font-heading text-xl font-semibold text-text">{c.title}</h3>
-              <p className="mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{c.text}</p>
-            </motion.div>
-          ))}
+                <div className="rounded-2xl bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] lg:h-full">
+                  <span
+                    className="flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
+                    aria-hidden
+                  >
+                    {c.icon}
+                  </span>
+                  <h3 className="mt-4 font-heading text-xl font-semibold text-text">{c.title}</h3>
+                  <p className="mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{c.text}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </motion.div>
     </section>

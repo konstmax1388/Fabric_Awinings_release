@@ -52,9 +52,9 @@ function resolveLinkHref(
 }
 
 const primaryBtnClass =
-  'inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] bg-accent px-5 font-body text-base font-medium text-surface hover:bg-[#c65f00] sm:px-8'
+  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] bg-accent px-5 font-body text-base font-medium text-surface hover:bg-[#c65f00] sm:px-8'
 const secondaryBtnClass =
-  'inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 border-surface/80 bg-transparent px-5 font-body text-base font-medium text-surface hover:bg-surface/10 sm:px-8'
+  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 border-surface/80 bg-transparent px-5 font-body text-base font-medium text-surface hover:bg-surface/10 sm:px-8'
 const HERO_VIDEO_START_TIMEOUT_MS = 5000
 
 export function HeroSection() {
@@ -73,6 +73,21 @@ export function HeroSection() {
 
   const title = hero?.title ?? ''
   const subtitle = hero?.subtitle ?? ''
+  const eyebrow = hero?.eyebrow?.trim() || ''
+  const usp = hero?.usp?.trim() || ''
+  const trustLine = hero?.trustLine?.trim() || ''
+  const trustItems = Array.isArray(hero?.trustItems)
+    ? hero.trustItems.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+    : []
+  const heroStats = Array.isArray(hero?.stats)
+    ? hero.stats
+        .map((item) => ({
+          value: String(item?.value || '').trim(),
+          label: String(item?.label || '').trim(),
+        }))
+        .filter((item) => item.value && item.label)
+        .slice(0, 3)
+    : []
   const ctaPrimary = hero?.ctaPrimary ?? ''
   const ctaSecondary = hero?.ctaSecondary ?? ''
   const heroBg = hero?.bgImageUrl?.trim() || ''
@@ -165,7 +180,7 @@ export function HeroSection() {
   }, [mouse.x, mouse.y, reduce, scrollY])
 
   return (
-    <section className="relative min-w-0 overflow-hidden rounded-[24px] md:mx-6 lg:mx-auto lg:max-w-[1280px]">
+    <section className="fabric-container relative min-w-0 overflow-hidden rounded-[24px]">
       <HeroCallbackModal
         open={callbackOpen}
         onClose={() => setCallbackOpen(false)}
@@ -232,13 +247,40 @@ export function HeroSection() {
         aria-hidden
       />
       <motion.div
+        className="fabric-liquid-glass pointer-events-none absolute inset-y-8 right-6 hidden w-[38%] rounded-[28px] lg:block"
+        initial={reduce ? false : { opacity: 0, x: 26 }}
+        animate={reduce ? undefined : { opacity: 1, x: 0 }}
+        transition={{ ...easeOutSoft, delay: 0.34 }}
+        aria-hidden
+      />
+      <motion.div
         className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28"
         animate={{ x: depth.textX, y: depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
         <div className="max-w-2xl min-w-0">
+          {eyebrow ? (
+            <motion.p
+              className="fabric-hero-badge"
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.03 }}
+            >
+              {eyebrow}
+            </motion.p>
+          ) : null}
+          {usp ? (
+            <motion.p
+              className="mt-5 font-heading text-sm uppercase tracking-[0.2em] text-accent sm:text-base"
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.06 }}
+            >
+              {usp}
+            </motion.p>
+          ) : null}
           <motion.h1
-            className="break-words font-heading text-4xl font-black tracking-tight text-surface md:text-5xl lg:text-7xl"
+            className="fabric-h1 mt-4 break-words text-surface"
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
@@ -246,7 +288,7 @@ export function HeroSection() {
             {title}
           </motion.h1>
           <motion.p
-            className="mt-4 break-words font-body text-lg text-surface/90 md:text-xl"
+            className="fabric-body mt-4 break-words text-surface/90"
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
@@ -313,6 +355,46 @@ export function HeroSection() {
               </MagneticHover>
             ) : null}
           </motion.div>
+          {heroStats.length ? (
+            <motion.div
+              className="fabric-liquid-glass-soft mt-8 grid max-w-xl grid-cols-1 gap-2 rounded-2xl p-3 sm:grid-cols-3"
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.35 }}
+            >
+              {heroStats.map((item, idx) => (
+                <div
+                  key={`hero-stat-${idx}`}
+                  className="fabric-liquid-glass-soft rounded-xl px-3 py-2 text-center"
+                >
+                  <p className="font-heading text-lg text-surface">{item.value}</p>
+                  <p className="font-body text-[11px] uppercase tracking-wider text-surface/75">{item.label}</p>
+                </div>
+              ))}
+            </motion.div>
+          ) : null}
+          {trustLine || trustItems.length ? (
+            <motion.div
+              className="mt-6 space-y-3"
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.4 }}
+            >
+              {trustLine ? <p className="font-body text-sm text-surface/85 sm:text-base">{trustLine}</p> : null}
+              {trustItems.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {trustItems.map((item, idx) => (
+                    <span
+                      key={`hero-trust-${idx}`}
+                      className="fabric-liquid-glass-soft inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-surface/90"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </motion.div>
+          ) : null}
           {slides.length > 1 ? (
             <div className="mt-6 flex items-center gap-2">
               {slides.map((_, idx) => (

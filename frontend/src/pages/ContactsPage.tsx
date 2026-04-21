@@ -31,13 +31,17 @@ export function ContactsPage() {
         <link rel="canonical" href={`${site}/contacts`} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[1280px] overflow-x-clip px-4 py-12 md:px-6">
-        <ContactsContentBlock titleAs="h1" />
-        <Link to="/" className="mt-8 inline-block font-medium text-accent hover:underline">
+      <main className="fabric-page">
+        <div className="fabric-page-main min-w-0 overflow-x-clip">
+        <div className="fabric-card p-6 md:p-8">
+          <ContactsContentBlock titleAs="h1" />
+        </div>
+        <Link to="/" className="fabric-strap-btn mt-8 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">
           {contactsBackLinkLabel}
         </Link>
-        <div className="mt-16 border-t border-border-light pt-16">
+        <div className="mt-16 border-t border-border pt-16">
           <MapFormSection showHeading={false} />
+        </div>
         </div>
       </main>
       <SiteFooter />

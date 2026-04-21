@@ -17,6 +17,11 @@ HERO_ACTION_CHOICES = (
     ("callback", _("Форма обратного звонка (попап)")),
 )
 
+CALCULATOR_MODE_CHOICES = (
+    ("calculator", _("Конструктор (калькулятор)")),
+    ("request_form", _("Форма заявки на индивидуальный проект")),
+)
+
 _W = (
     "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-4xl "
     "bg-white shadow-xs dark:border-base-700 dark:bg-base-900"
@@ -92,8 +97,20 @@ class HomePageContentAdminForm(forms.ModelForm):
     meta_org_description = _area(_("Описание организации (schema.org)"), rows=2)
 
     # --- hero ---
+    hero_eyebrow = _txt(_("Верхний бейдж (короткая строка над заголовком)"))
+    hero_usp = _txt(_("УТП (ключевое обещание)"))
     hero_title = _req_txt(_("Заголовок"))
     hero_subtitle = _area(_("Подзаголовок"), rows=3)
+    hero_trust_line = _txt(_("Строка доверия под кнопками"))
+    hero_trust_i0 = _txt(_("Метка доверия 1"))
+    hero_trust_i1 = _txt(_("Метка доверия 2"))
+    hero_trust_i2 = _txt(_("Метка доверия 3"))
+    hero_stat_0_value = _txt(_("KPI 1: значение"))
+    hero_stat_0_label = _txt(_("KPI 1: подпись"))
+    hero_stat_1_value = _txt(_("KPI 2: значение"))
+    hero_stat_1_label = _txt(_("KPI 2: подпись"))
+    hero_stat_2_value = _txt(_("KPI 3: значение"))
+    hero_stat_2_label = _txt(_("KPI 3: подпись"))
     hero_cta_primary = _req_txt(_("Кнопка: основная (текст)"))
     hero_primary_action = forms.ChoiceField(
         label=_("Основная кнопка: действие"),
@@ -224,6 +241,37 @@ class HomePageContentAdminForm(forms.ModelForm):
         help_text=_("См. подсказку у карточки 1."),
     )
 
+    # --- process timeline ---
+    proc_heading = _req_txt(_("Заголовок блока «От замера до монтажа»"))
+    proc_subheading = _area(_("Подзаголовок блока"), rows=2)
+    proc_s0_title = _req_txt(_("Этап 1: заголовок"))
+    proc_s0_text = _area(_("Этап 1: текст"), rows=2)
+    proc_s1_title = _req_txt(_("Этап 2: заголовок"))
+    proc_s1_text = _area(_("Этап 2: текст"), rows=2)
+    proc_s2_title = _req_txt(_("Этап 3: заголовок"))
+    proc_s2_text = _area(_("Этап 3: текст"), rows=2)
+    proc_s3_title = _req_txt(_("Этап 4: заголовок"))
+    proc_s3_text = _area(_("Этап 4: текст"), rows=2)
+
+    # --- purchase paths ---
+    paths_eyebrow = _req_txt(_("Бейдж блока «Как оформить заказ»"))
+    paths_heading = _req_txt(_("Заголовок блока"))
+    paths_subheading = _area(_("Подзаголовок блока"), rows=3)
+    paths_ready_title = _req_txt(_("Готовая продукция: название сценария"))
+    paths_ready_subtitle = _req_txt(_("Готовая продукция: подзаголовок"))
+    paths_ready_b0 = _req_txt(_("Готовая продукция: пункт 1"))
+    paths_ready_b1 = _req_txt(_("Готовая продукция: пункт 2"))
+    paths_ready_b2 = _req_txt(_("Готовая продукция: пункт 3"))
+    paths_ready_cta = _req_txt(_("Готовая продукция: текст кнопки"))
+    paths_ready_href = _req_txt(_("Готовая продукция: ссылка кнопки"))
+    paths_custom_title = _req_txt(_("Индивидуальный проект: название сценария"))
+    paths_custom_subtitle = _req_txt(_("Индивидуальный проект: подзаголовок"))
+    paths_custom_b0 = _req_txt(_("Индивидуальный проект: пункт 1"))
+    paths_custom_b1 = _req_txt(_("Индивидуальный проект: пункт 2"))
+    paths_custom_b2 = _req_txt(_("Индивидуальный проект: пункт 3"))
+    paths_custom_cta = _req_txt(_("Индивидуальный проект: текст кнопки"))
+    paths_custom_href = _req_txt(_("Индивидуальный проект: ссылка кнопки"))
+
     # --- tent types ---
     tt_heading = _req_txt(_("Заголовок"))
     tt_subheading = _area(_("Подзаголовок"), rows=3)
@@ -234,6 +282,11 @@ class HomePageContentAdminForm(forms.ModelForm):
     feat_catalog_cta = _req_txt(_("Текст кнопки «в каталог»"))
 
     # --- calculator ---
+    calc_mode = forms.ChoiceField(
+        label=_("Режим блока"),
+        choices=CALCULATOR_MODE_CHOICES,
+        widget=forms.Select(attrs={"class": _W}),
+    )
     calc_heading = _req_txt(_("Заголовок"))
     calc_subheading = _area(_("Подзаголовок"), rows=3)
     calc_length_label = _req_txt(_("Подпись: длина"))
@@ -251,6 +304,11 @@ class HomePageContentAdminForm(forms.ModelForm):
     calc_submit_button = _req_txt(_("Кнопка отправки"))
     calc_submitting = _req_txt(_("Текст при отправке"))
     calc_success_message = _area(_("Сообщение после успешной отправки"), rows=2)
+    calc_request_title = _req_txt(_("Форма заявки: заголовок"))
+    calc_request_subtitle = _area(_("Форма заявки: подзаголовок"), rows=3)
+    calc_request_benefit_1 = _req_txt(_("Форма заявки: преимущество 1"))
+    calc_request_benefit_2 = _req_txt(_("Форма заявки: преимущество 2"))
+    calc_request_benefit_3 = _req_txt(_("Форма заявки: преимущество 3"))
 
     # --- portfolio ---
     port_heading = _req_txt(_("Заголовок"))
@@ -363,8 +421,20 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("meta_org_description", meta.get("orgDescription", ""))
 
         hero = m.get("hero") or {}
+        self.initial.setdefault("hero_eyebrow", hero.get("eyebrow", ""))
+        self.initial.setdefault("hero_usp", hero.get("usp", ""))
         self.initial.setdefault("hero_title", hero.get("title", ""))
         self.initial.setdefault("hero_subtitle", hero.get("subtitle", ""))
+        self.initial.setdefault("hero_trust_line", hero.get("trustLine", ""))
+        trust_items = hero.get("trustItems") if isinstance(hero.get("trustItems"), list) else []
+        for i in range(3):
+            item = trust_items[i] if i < len(trust_items) else ""
+            self.initial.setdefault(f"hero_trust_i{i}", str(item or "").strip())
+        stats = hero.get("stats") if isinstance(hero.get("stats"), list) else []
+        for i in range(3):
+            s = stats[i] if i < len(stats) and isinstance(stats[i], dict) else {}
+            self.initial.setdefault(f"hero_stat_{i}_value", str(s.get("value", "") or "").strip())
+            self.initial.setdefault(f"hero_stat_{i}_label", str(s.get("label", "") or "").strip())
         self.initial.setdefault("hero_cta_primary", hero.get("ctaPrimary", ""))
         self.initial.setdefault("hero_cta_secondary", hero.get("ctaSecondary", ""))
         pa = hero.get("primaryAction") if isinstance(hero.get("primaryAction"), dict) else {}
@@ -411,6 +481,36 @@ class HomePageContentAdminForm(forms.ModelForm):
                 self.initial.setdefault(f"ps{i}_fontawesome", fa_cls)
 
         tt = m.get("tentTypes") or {}
+        proc = m.get("processTimeline") or {}
+        self.initial.setdefault("proc_heading", proc.get("heading", ""))
+        self.initial.setdefault("proc_subheading", proc.get("subheading", ""))
+        steps = proc.get("steps") if isinstance(proc.get("steps"), list) else []
+        for i in range(4):
+            s = steps[i] if i < len(steps) and isinstance(steps[i], dict) else {}
+            self.initial.setdefault(f"proc_s{i}_title", s.get("title", ""))
+            self.initial.setdefault(f"proc_s{i}_text", s.get("text", ""))
+
+        paths = m.get("purchasePaths") or {}
+        self.initial.setdefault("paths_eyebrow", paths.get("eyebrow", ""))
+        self.initial.setdefault("paths_heading", paths.get("heading", ""))
+        self.initial.setdefault("paths_subheading", paths.get("subheading", ""))
+        self.initial.setdefault("paths_ready_title", paths.get("readyTitle", ""))
+        self.initial.setdefault("paths_ready_subtitle", paths.get("readySubtitle", ""))
+        ready_bullets = paths.get("readyBullets") if isinstance(paths.get("readyBullets"), list) else []
+        for i in range(3):
+            bullet = ready_bullets[i] if i < len(ready_bullets) else ""
+            self.initial.setdefault(f"paths_ready_b{i}", str(bullet or "").strip())
+        self.initial.setdefault("paths_ready_cta", paths.get("readyCta", ""))
+        self.initial.setdefault("paths_ready_href", paths.get("readyHref", ""))
+        self.initial.setdefault("paths_custom_title", paths.get("customTitle", ""))
+        self.initial.setdefault("paths_custom_subtitle", paths.get("customSubtitle", ""))
+        custom_bullets = paths.get("customBullets") if isinstance(paths.get("customBullets"), list) else []
+        for i in range(3):
+            bullet = custom_bullets[i] if i < len(custom_bullets) else ""
+            self.initial.setdefault(f"paths_custom_b{i}", str(bullet or "").strip())
+        self.initial.setdefault("paths_custom_cta", paths.get("customCta", ""))
+        self.initial.setdefault("paths_custom_href", paths.get("customHref", ""))
+
         self.initial.setdefault("tt_heading", tt.get("heading", ""))
         self.initial.setdefault("tt_subheading", tt.get("subheading", ""))
 
@@ -420,6 +520,8 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("feat_catalog_cta", feat.get("catalogCta", ""))
 
         calc = m.get("calculator") or {}
+        mode = calc.get("mode")
+        self.initial.setdefault("calc_mode", mode if mode in ("calculator", "request_form") else "calculator")
         for key, suffix in (
             ("heading", "calc_heading"),
             ("subheading", "calc_subheading"),
@@ -438,6 +540,11 @@ class HomePageContentAdminForm(forms.ModelForm):
             ("submitButton", "calc_submit_button"),
             ("submitting", "calc_submitting"),
             ("successMessage", "calc_success_message"),
+            ("requestFormTitle", "calc_request_title"),
+            ("requestFormSubtitle", "calc_request_subtitle"),
+            ("requestFormBenefit1", "calc_request_benefit_1"),
+            ("requestFormBenefit2", "calc_request_benefit_2"),
+            ("requestFormBenefit3", "calc_request_benefit_3"),
         ):
             self.initial.setdefault(suffix, calc.get(key, ""))
 
@@ -514,8 +621,16 @@ class HomePageContentAdminForm(forms.ModelForm):
             "orgDescription": cd["meta_org_description"].strip(),
         }
         base["hero"] = {
+            "eyebrow": cd["hero_eyebrow"].strip(),
+            "usp": cd["hero_usp"].strip(),
             "title": cd["hero_title"].strip(),
             "subtitle": cd["hero_subtitle"].strip(),
+            "trustLine": cd["hero_trust_line"].strip(),
+            "trustItems": [cd[f"hero_trust_i{i}"].strip() for i in range(3)],
+            "stats": [
+                {"value": cd[f"hero_stat_{i}_value"].strip(), "label": cd[f"hero_stat_{i}_label"].strip()}
+                for i in range(3)
+            ],
             "ctaPrimary": cd["hero_cta_primary"].strip(),
             "ctaSecondary": cd["hero_cta_secondary"].strip(),
             "primaryAction": {
@@ -545,12 +660,39 @@ class HomePageContentAdminForm(forms.ModelForm):
             "heading": cd["tt_heading"].strip(),
             "subheading": cd["tt_subheading"].strip(),
         }
+        base["processTimeline"] = {
+            "heading": cd["proc_heading"].strip(),
+            "subheading": cd["proc_subheading"].strip(),
+            "steps": [
+                {
+                    "title": cd[f"proc_s{i}_title"].strip(),
+                    "text": cd[f"proc_s{i}_text"].strip(),
+                }
+                for i in range(4)
+            ],
+        }
+        base["purchasePaths"] = {
+            "eyebrow": cd["paths_eyebrow"].strip(),
+            "heading": cd["paths_heading"].strip(),
+            "subheading": cd["paths_subheading"].strip(),
+            "readyTitle": cd["paths_ready_title"].strip(),
+            "readySubtitle": cd["paths_ready_subtitle"].strip(),
+            "readyBullets": [cd[f"paths_ready_b{i}"].strip() for i in range(3)],
+            "readyCta": cd["paths_ready_cta"].strip(),
+            "readyHref": cd["paths_ready_href"].strip(),
+            "customTitle": cd["paths_custom_title"].strip(),
+            "customSubtitle": cd["paths_custom_subtitle"].strip(),
+            "customBullets": [cd[f"paths_custom_b{i}"].strip() for i in range(3)],
+            "customCta": cd["paths_custom_cta"].strip(),
+            "customHref": cd["paths_custom_href"].strip(),
+        }
         base["featured"] = {
             "heading": cd["feat_heading"].strip(),
             "subheading": cd["feat_subheading"].strip(),
             "catalogCta": cd["feat_catalog_cta"].strip(),
         }
         base["calculator"] = {
+            "mode": cd["calc_mode"],
             "heading": cd["calc_heading"].strip(),
             "subheading": cd["calc_subheading"].strip(),
             "lengthLabel": cd["calc_length_label"].strip(),
@@ -568,6 +710,11 @@ class HomePageContentAdminForm(forms.ModelForm):
             "submitButton": cd["calc_submit_button"].strip(),
             "submitting": cd["calc_submitting"].strip(),
             "successMessage": cd["calc_success_message"].strip(),
+            "requestFormTitle": cd["calc_request_title"].strip(),
+            "requestFormSubtitle": cd["calc_request_subtitle"].strip(),
+            "requestFormBenefit1": cd["calc_request_benefit_1"].strip(),
+            "requestFormBenefit2": cd["calc_request_benefit_2"].strip(),
+            "requestFormBenefit3": cd["calc_request_benefit_3"].strip(),
         }
         raw_filters = [x.strip() for x in cd["port_filters"].split(",") if x.strip()]
         base["portfolio"] = {

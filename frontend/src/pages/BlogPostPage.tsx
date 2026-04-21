@@ -29,8 +29,10 @@ export function BlogPostPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
+        <main className="fabric-page">
+          <div className="fabric-page-main min-w-0 max-w-[720px] overflow-x-clip">
           <p className="font-body text-text-muted">Загрузка…</p>
+          </div>
         </main>
         <SiteFooter />
       </>
@@ -44,11 +46,13 @@ export function BlogPostPage() {
           <title>Статья не найдена — Фабрика Тентов</title>
         </Helmet>
         <SiteHeader />
-        <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
+        <main className="fabric-page">
+          <div className="fabric-page-main min-w-0 max-w-[720px] overflow-x-clip">
           <h1 className="font-heading text-3xl font-bold text-text">Статья не найдена</h1>
-          <Link to="/blog" className="mt-8 inline-block font-medium text-accent hover:underline">
+          <Link to="/blog" className="fabric-strap-btn mt-8 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">
             ← К списку блога
           </Link>
+          </div>
         </main>
         <SiteFooter />
       </>
@@ -69,10 +73,10 @@ export function BlogPostPage() {
         <meta property="og:title" content={post.seo?.pageTitle ?? post.title} />
       </Helmet>
       <SiteHeader />
-      <main className="mx-auto min-w-0 max-w-[720px] overflow-x-clip px-4 py-16 md:px-6">
-        <article className="min-w-0">
+      <main className="fabric-page">
+        <article className="fabric-page-main fabric-card min-w-0 max-w-[820px] p-5 md:p-8">
           <time className="font-body text-sm text-text-subtle">{post.date}</time>
-          <h1 className="mt-2 break-words font-heading text-3xl font-bold text-text md:text-4xl">{post.title}</h1>
+          <h1 className="fabric-section-title mt-2 break-words md:text-4xl">{post.title}</h1>
           {post.img ? (
             <OptimizedImage
               src={post.img}
@@ -88,9 +92,11 @@ export function BlogPostPage() {
             dangerouslySetInnerHTML={{ __html: post.body }}
           />
         </article>
-        <Link to="/blog" className="mt-12 inline-block font-medium text-accent hover:underline">
+        <div className="fabric-page-main max-w-[820px] pt-0">
+        <Link to="/blog" className="fabric-strap-btn mt-6 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">
           ← К списку блога
         </Link>
+        </div>
       </main>
       <SiteFooter />
     </>
