@@ -92,6 +92,8 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "hero": (
         "hero_eyebrow",
         "hero_usp",
+        "hero_text_tone",
+        "hero_height_mode",
         "hero_title",
         "hero_subtitle",
         "hero_trust_line",
@@ -116,6 +118,14 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "hero_cb_submit",
         "hero_cb_submitting",
         "hero_cb_success",
+        "hero_slide_1_image_url",
+        "hero_slide_1_video_url",
+        "hero_slide_2_image_url",
+        "hero_slide_2_video_url",
+        "hero_slide_3_image_url",
+        "hero_slide_3_video_url",
+        "hero_slide_4_image_url",
+        "hero_slide_4_video_url",
         "hero_background",
     ),
     "ps": (

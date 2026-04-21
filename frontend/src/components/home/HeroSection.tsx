@@ -91,6 +91,8 @@ export function HeroSection() {
   const ctaPrimary = hero?.ctaPrimary ?? ''
   const ctaSecondary = hero?.ctaSecondary ?? ''
   const heroBg = hero?.bgImageUrl?.trim() || ''
+  const heroTextTone = hero?.textTone === 'dark' ? 'dark' : 'light'
+  const heroHeightMode = hero?.heightMode === 'wow' ? 'wow' : hero?.heightMode === 'normal' ? 'normal' : 'tall'
 
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
@@ -179,8 +181,38 @@ export function HeroSection() {
     }
   }, [mouse.x, mouse.y, reduce, scrollY])
 
+  const textClasses =
+    heroTextTone === 'dark'
+      ? {
+          heading: 'text-[#111827]',
+          body: 'text-[#1f2937]/90',
+          subtle: 'text-[#1f2937]/85',
+          chip: 'text-[#111827]/90',
+          chipLabel: 'text-[#111827]/75',
+          chipBg: 'bg-white/65 border-black/10',
+          trustPill: 'text-[#111827]/90 border-black/15 bg-white/55',
+          slideDotOff: 'bg-[#1f2937]/45 hover:bg-[#1f2937]/70',
+        }
+      : {
+          heading: 'text-surface',
+          body: 'text-surface/90',
+          subtle: 'text-surface/85',
+          chip: 'text-surface',
+          chipLabel: 'text-surface/75',
+          chipBg: 'bg-surface/5 border-surface/15',
+          trustPill: 'text-surface/90 border-surface/25 bg-surface/8',
+          slideDotOff: 'bg-surface/55 hover:bg-surface/80',
+        }
+
+  const heroHeightClass =
+    heroHeightMode === 'wow'
+      ? 'min-h-[32rem] md:min-h-[40rem] lg:min-h-[46rem]'
+      : heroHeightMode === 'normal'
+        ? 'min-h-[24rem] md:min-h-[30rem] lg:min-h-[34rem]'
+        : 'min-h-[28rem] md:min-h-[35rem] lg:min-h-[40rem]'
+
   return (
-    <section className="fabric-container relative min-w-0 overflow-hidden rounded-[24px]">
+    <section className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}>
       <HeroCallbackModal
         open={callbackOpen}
         onClose={() => setCallbackOpen(false)}
@@ -280,7 +312,7 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.h1
-            className="fabric-h1 mt-4 break-words text-surface"
+            className={`fabric-h1 mt-4 break-words ${textClasses.heading}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
@@ -288,7 +320,7 @@ export function HeroSection() {
             {title}
           </motion.h1>
           <motion.p
-            className="fabric-body mt-4 break-words text-surface/90"
+            className={`fabric-body mt-4 break-words ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
@@ -365,10 +397,10 @@ export function HeroSection() {
               {heroStats.map((item, idx) => (
                 <div
                   key={`hero-stat-${idx}`}
-                  className="fabric-liquid-glass-soft rounded-xl px-3 py-2 text-center"
+                  className={`fabric-liquid-glass-soft rounded-xl px-3 py-2 text-center ${textClasses.chipBg}`}
                 >
-                  <p className="font-heading text-lg text-surface">{item.value}</p>
-                  <p className="font-body text-[11px] uppercase tracking-wider text-surface/75">{item.label}</p>
+                  <p className={`font-heading text-lg ${textClasses.chip}`}>{item.value}</p>
+                  <p className={`font-body text-[11px] uppercase tracking-wider ${textClasses.chipLabel}`}>{item.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -380,13 +412,13 @@ export function HeroSection() {
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.4 }}
             >
-              {trustLine ? <p className="font-body text-sm text-surface/85 sm:text-base">{trustLine}</p> : null}
+              {trustLine ? <p className={`font-body text-sm sm:text-base ${textClasses.subtle}`}>{trustLine}</p> : null}
               {trustItems.length ? (
                 <div className="flex flex-wrap gap-2">
                   {trustItems.map((item, idx) => (
                     <span
                       key={`hero-trust-${idx}`}
-                      className="fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-[0.08em] text-surface/90 break-words"
+                      className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-[0.08em] break-words ${textClasses.trustPill}`}
                     >
                       {item}
                     </span>
@@ -405,7 +437,7 @@ export function HeroSection() {
                   aria-pressed={idx === currentSlide}
                   onClick={() => setCurrentSlide(idx)}
                   className={`h-2.5 rounded-full transition-all ${
-                    idx === currentSlide ? 'w-8 bg-accent' : 'w-2.5 bg-surface/55 hover:bg-surface/80'
+                    idx === currentSlide ? 'w-8 bg-accent' : `w-2.5 ${textClasses.slideDotOff}`
                   }`}
                 />
               ))}

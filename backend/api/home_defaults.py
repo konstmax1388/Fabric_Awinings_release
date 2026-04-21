@@ -20,6 +20,8 @@ def default_home_payload() -> dict[str, Any]:
         "hero": {
             "eyebrow": "Премиальные тентовые решения под ключ",
             "usp": "Производитель с фиксированными сроками и понятной сметой",
+            "textTone": "light",
+            "heightMode": "tall",
             "title": "Тенты на заказ",
             "subtitle": (
                 "Любая форма и размер: от навесов для техники до тентов для мероприятий. Своё производство — "
@@ -45,6 +47,12 @@ def default_home_payload() -> dict[str, Any]:
                 "successMessage": "Спасибо! Мы перезвоним в рабочее время.",
             },
             "bgImageUrl": "",
+            "slides": [
+                {"imageUrl": "", "videoUrl": ""},
+                {"imageUrl": "", "videoUrl": ""},
+                {"imageUrl": "", "videoUrl": ""},
+                {"imageUrl": "", "videoUrl": ""},
+            ],
         },
         "problemSolution": {
             "heading": "Решаем ваши задачи",

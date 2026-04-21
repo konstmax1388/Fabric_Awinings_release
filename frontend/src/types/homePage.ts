@@ -51,6 +51,8 @@ export type HomePayload = {
   hero?: {
     eyebrow?: string
     usp?: string
+    textTone?: 'light' | 'dark'
+    heightMode?: 'normal' | 'tall' | 'wow'
     title?: string
     subtitle?: string
     trustLine?: string

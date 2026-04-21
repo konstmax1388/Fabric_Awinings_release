@@ -17,6 +17,17 @@ HERO_ACTION_CHOICES = (
     ("callback", _("Форма обратного звонка (попап)")),
 )
 
+HERO_TEXT_TONE_CHOICES = (
+    ("light", _("Светлый текст (для тёмных фото/видео)")),
+    ("dark", _("Тёмный текст (для светлых фото/видео)")),
+)
+
+HERO_HEIGHT_MODE_CHOICES = (
+    ("normal", _("Стандартная высота")),
+    ("tall", _("Высокий Hero")),
+    ("wow", _("Максимальный (wow)")),
+)
+
 CALCULATOR_MODE_CHOICES = (
     ("calculator", _("Конструктор (калькулятор)")),
     ("request_form", _("Форма заявки на индивидуальный проект")),
@@ -99,6 +110,16 @@ class HomePageContentAdminForm(forms.ModelForm):
     # --- hero ---
     hero_eyebrow = _txt(_("Верхний бейдж (короткая строка над заголовком)"))
     hero_usp = _txt(_("УТП (ключевое обещание)"))
+    hero_text_tone = forms.ChoiceField(
+        label=_("Цвет текста поверх слайда"),
+        choices=HERO_TEXT_TONE_CHOICES,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    hero_height_mode = forms.ChoiceField(
+        label=_("Высота Hero"),
+        choices=HERO_HEIGHT_MODE_CHOICES,
+        widget=forms.Select(attrs={"class": _W}),
+    )
     hero_title = _req_txt(_("Заголовок"))
     hero_subtitle = _area(_("Подзаголовок"), rows=3)
     hero_trust_line = _txt(_("Строка доверия под кнопками"))
@@ -141,6 +162,14 @@ class HomePageContentAdminForm(forms.ModelForm):
     hero_cb_submit = _req_txt(_("Попап: текст кнопки отправки"))
     hero_cb_submitting = _req_txt(_("Попап: текст при отправке"))
     hero_cb_success = _area(_("Попап: сообщение после успеха"), rows=2)
+    hero_slide_1_image_url = _txt(_("Слайд 1: URL изображения"))
+    hero_slide_1_video_url = _txt(_("Слайд 1: URL видео (mp4/webm, необязательно)"))
+    hero_slide_2_image_url = _txt(_("Слайд 2: URL изображения"))
+    hero_slide_2_video_url = _txt(_("Слайд 2: URL видео (mp4/webm, необязательно)"))
+    hero_slide_3_image_url = _txt(_("Слайд 3: URL изображения"))
+    hero_slide_3_video_url = _txt(_("Слайд 3: URL видео (mp4/webm, необязательно)"))
+    hero_slide_4_image_url = _txt(_("Слайд 4: URL изображения"))
+    hero_slide_4_video_url = _txt(_("Слайд 4: URL видео (mp4/webm, необязательно)"))
 
     # --- problem / solution ---
     ps_heading = _req_txt(_("Заголовок секции"))
@@ -423,6 +452,10 @@ class HomePageContentAdminForm(forms.ModelForm):
         hero = m.get("hero") or {}
         self.initial.setdefault("hero_eyebrow", hero.get("eyebrow", ""))
         self.initial.setdefault("hero_usp", hero.get("usp", ""))
+        tone = hero.get("textTone")
+        self.initial.setdefault("hero_text_tone", tone if tone in ("light", "dark") else "light")
+        hmode = hero.get("heightMode")
+        self.initial.setdefault("hero_height_mode", hmode if hmode in ("normal", "tall", "wow") else "tall")
         self.initial.setdefault("hero_title", hero.get("title", ""))
         self.initial.setdefault("hero_subtitle", hero.get("subtitle", ""))
         self.initial.setdefault("hero_trust_line", hero.get("trustLine", ""))
@@ -458,6 +491,11 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("hero_cb_submit", cb.get("submitButton", ""))
         self.initial.setdefault("hero_cb_submitting", cb.get("submitting", ""))
         self.initial.setdefault("hero_cb_success", cb.get("successMessage", ""))
+        slides = hero.get("slides") if isinstance(hero.get("slides"), list) else []
+        for i in range(4):
+            s = slides[i] if i < len(slides) and isinstance(slides[i], dict) else {}
+            self.initial.setdefault(f"hero_slide_{i + 1}_image_url", str(s.get("imageUrl", "") or "").strip())
+            self.initial.setdefault(f"hero_slide_{i + 1}_video_url", str(s.get("videoUrl", "") or "").strip())
 
         ps = m.get("problemSolution") or {}
         self.initial.setdefault("ps_heading", ps.get("heading", ""))
@@ -623,6 +661,8 @@ class HomePageContentAdminForm(forms.ModelForm):
         base["hero"] = {
             "eyebrow": cd["hero_eyebrow"].strip(),
             "usp": cd["hero_usp"].strip(),
+            "textTone": cd["hero_text_tone"],
+            "heightMode": cd["hero_height_mode"],
             "title": cd["hero_title"].strip(),
             "subtitle": cd["hero_subtitle"].strip(),
             "trustLine": cd["hero_trust_line"].strip(),
@@ -650,6 +690,13 @@ class HomePageContentAdminForm(forms.ModelForm):
                 "successMessage": cd["hero_cb_success"].strip(),
             },
             "bgImageUrl": "",
+            "slides": [
+                {
+                    "imageUrl": cd[f"hero_slide_{i + 1}_image_url"].strip(),
+                    "videoUrl": cd[f"hero_slide_{i + 1}_video_url"].strip(),
+                }
+                for i in range(4)
+            ],
         }
         base["problemSolution"] = {
             "heading": cd["ps_heading"].strip(),
