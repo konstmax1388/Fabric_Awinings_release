@@ -1246,6 +1246,11 @@ export async function postCartOrder(
       clientAck: string
       fulfillmentStatus?: string
       paymentRedirectUrl?: string | null
+      cdekSync?: {
+        status: string
+        error?: string | null
+        tracking?: string | null
+      } | null
     }
   | { ok: false; detail: string }
 > {
@@ -1276,6 +1281,11 @@ export async function postCartOrder(
       clientAck: string
       fulfillmentStatus?: string
       paymentRedirectUrl?: string | null
+      cdekSync?: {
+        status: string
+        error?: string | null
+        tracking?: string | null
+      } | null
     }>(r)
     if (!data) return { ok: false, detail: 'Пустой ответ сервера' }
     return { ok: true, ...data }

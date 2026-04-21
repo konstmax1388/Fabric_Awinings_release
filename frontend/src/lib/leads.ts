@@ -66,6 +66,11 @@ export async function submitCartOrder(payload: {
   clientAck: string
   orderRef: string
   paymentRedirectUrl?: string | null
+  cdekSync?: {
+    status: string
+    error?: string | null
+    tracking?: string | null
+  } | null
   error?: string
 }> {
   const data = await postCartOrder(
@@ -106,5 +111,6 @@ export async function submitCartOrder(payload: {
     clientAck: data.clientAck,
     orderRef: data.orderRef,
     paymentRedirectUrl: data.paymentRedirectUrl ?? null,
+    cdekSync: data.cdekSync ?? null,
   }
 }

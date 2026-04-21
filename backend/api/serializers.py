@@ -480,6 +480,15 @@ class CartOrderCreateSerializer(serializers.Serializer):
                     raise serializers.ValidationError(
                         "Для доставки в ПВЗ выберите пункт на карте СДЭК (ручной ввод ПВЗ отключён в настройках сайта)."
                     )
+            if mode == "door":
+                top_addr = str(delivery.get("address") or "").strip()
+                cdek_addr = ""
+                if isinstance(cdek, dict):
+                    cdek_addr = str(cdek.get("address") or "").strip()
+                if not top_addr and not cdek_addr:
+                    raise serializers.ValidationError(
+                        "Для доставки курьером укажите адрес: улица, дом (и квартиру при необходимости)."
+                    )
         return attrs
 
     def validate_customer(self, value):
@@ -642,10 +651,22 @@ class CartOrderResponseSerializer(serializers.ModelSerializer):
     clientAck = serializers.CharField(source="client_ack")
     fulfillmentStatus = serializers.CharField(source="fulfillment_status", read_only=True)
     paymentRedirectUrl = serializers.SerializerMethodField()
+    cdekSync = serializers.SerializerMethodField()
 
     class Meta:
         model = CartOrder
-        fields = ("orderRef", "clientAck", "fulfillmentStatus", "paymentRedirectUrl")
+        fields = ("orderRef", "clientAck", "fulfillmentStatus", "paymentRedirectUrl", "cdekSync")
+
+    def get_cdekSync(self, obj: CartOrder) -> dict[str, str | None] | None:
+        if obj.delivery_method != CartOrder.DeliveryMethod.CDEK:
+            return None
+        err = (obj.cdek_sync_error or "").strip() or None
+        tr = (obj.cdek_tracking or "").strip() or None
+        return {
+            "status": str(obj.cdek_sync_status or ""),
+            "error": err,
+            "tracking": tr,
+        }
 
     def get_paymentRedirectUrl(self, obj: CartOrder) -> str | None:
         raw = obj.acquiring_payload

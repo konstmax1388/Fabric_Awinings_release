@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 
 from api.models import CartOrder
 from api.services.cdek_order_create import sync_cdek_order_with_retry
 
 
 class Command(BaseCommand):
-    help = "Повторная отправка заказов в СДЭК (ошибки/ожидание) для онлайн-оплаченных заказов."
+    help = (
+        "Повторная отправка заказов в СДЭК (ошибки/ожидание): наложенный платёж (СДЭК) и онлайн после оплаты."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -22,10 +25,18 @@ class Command(BaseCommand):
         qs = (
             CartOrder.objects.filter(
                 delivery_method=CartOrder.DeliveryMethod.CDEK,
-                payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
-                payment_status=CartOrder.PaymentStatus.CAPTURED,
+                cdek_sync_status__in=[
+                    CartOrder.CdekSyncStatus.PENDING,
+                    CartOrder.CdekSyncStatus.ERROR,
+                ],
             )
-            .filter(cdek_sync_status__in=[CartOrder.CdekSyncStatus.PENDING, CartOrder.CdekSyncStatus.ERROR])
+            .filter(
+                Q(payment_method=CartOrder.PaymentMethod.COD_CDEK)
+                | Q(
+                    payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+                    payment_status=CartOrder.PaymentStatus.CAPTURED,
+                )
+            )
             .order_by("created_at")
         )
         rows = list(qs[:limit])

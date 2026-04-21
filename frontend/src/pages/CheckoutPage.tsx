@@ -80,6 +80,11 @@ export function CheckoutPage() {
   const [orderRef, setOrderRef] = useState('')
   const [clientAck, setClientAck] = useState('')
   const [paymentRedirectUrl, setPaymentRedirectUrl] = useState<string | null>(null)
+  const [cdekSyncInfo, setCdekSyncInfo] = useState<{
+    status: string
+    error?: string | null
+    tracking?: string | null
+  } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -395,8 +400,14 @@ export function CheckoutPage() {
         }
       }
 
-      const { ok, clientAck: ack, orderRef: ref, paymentRedirectUrl: payUrl, error: submitError } =
-        await submitCartOrder({
+      const {
+        ok,
+        clientAck: ack,
+        orderRef: ref,
+        paymentRedirectUrl: payUrl,
+        cdekSync: cdekSyncResp,
+        error: submitError,
+      } = await submitCartOrder({
         customer: {
           name: name.trim(),
           phone: phoneForApi(phone),
@@ -418,6 +429,7 @@ export function CheckoutPage() {
         setOrderRef(ref)
         setClientAck(ack)
         setPaymentRedirectUrl(payUrl ?? null)
+        setCdekSyncInfo(cdekSyncResp ?? null)
         clear()
         setStep('done')
       } else setError(submitError || 'Не удалось оформить заказ. Позвоните нам.')
@@ -989,6 +1001,23 @@ export function CheckoutPage() {
           {step === 'done' && (
             <div className="flex flex-col">
               <h1 className="font-heading text-2xl font-semibold text-text">Заказ принят</h1>
+              {cdekSyncInfo?.status === 'error' ? (
+                <div
+                  className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 font-body text-sm text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100"
+                  role="status"
+                >
+                  <p className="font-medium">Заказ сохранён, но отправка в СДЭК завершилась с ошибкой.</p>
+                  <p className="mt-1 text-amber-900/90 dark:text-amber-100/90">
+                    Мы увидим заказ в админке и сможем оформить доставку вручную. Если нужно срочно — позвоните нам и
+                    назовите номер заказа.
+                  </p>
+                  {cdekSyncInfo.error ? (
+                    <p className="mt-2 font-mono text-xs text-amber-950/80 dark:text-amber-100/80">
+                      {cdekSyncInfo.error}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <p className="mt-2 font-body text-sm text-text-muted">
                 Номер заказа: <span className="font-mono font-medium text-accent">{orderRef}</span>
               </p>

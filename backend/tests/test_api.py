@@ -1034,6 +1034,29 @@ def test_cart_order_second_guest_same_email_reuses_user(_mock_send, client):
     _mock_send.assert_called_once()
 
 
+@pytest.mark.django_db
+def test_cart_order_cdek_door_requires_address(client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+
+    payload = {
+        "customer": {"name": "Курьер", "phone": "+79990002222", "email": "door@test.ru"},
+        "lines": [{"productId": "1", "slug": "x", "title": "Товар", "priceFrom": 1000, "qty": 1}],
+        "totalApprox": 1200,
+        "deliveryMethod": "cdek",
+        "paymentMethod": "cod_cdek",
+        "delivery": {
+            "city": "Москва",
+            "cdek": {"mode": "door", "deliveryPriceRub": 200},
+        },
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 400
+
+
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
 @pytest.mark.django_db
 def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
@@ -1059,6 +1082,48 @@ def test_cart_order_cdek_triggers_cdek_order_creation(mock_cdek_create, client):
     order = CartOrder.objects.get(order_ref=r.json()["orderRef"])
     assert order.payment_status == CartOrder.PaymentStatus.PENDING
     mock_cdek_create.assert_called_once()
+
+
+def _sync_side_effect_set_cdek_error(order):
+    from api.models import CartOrder
+
+    CartOrder.objects.filter(pk=order.pk).update(
+        cdek_sync_status=CartOrder.CdekSyncStatus.ERROR,
+        cdek_sync_error="HTTP 400: test",
+    )
+    return False, "HTTP 400: test"
+
+
+@patch(
+    "api.services.cdek_order_create.sync_cdek_order_with_retry",
+    side_effect=_sync_side_effect_set_cdek_error,
+)
+@pytest.mark.django_db
+def test_cart_order_cdek_response_includes_sync_error(mock_sync, client):
+    from api.models import SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.save(update_fields=["cdek_enabled"])
+
+    payload = {
+        "customer": {"name": "СДЭК Клиент", "phone": "+79990003333", "email": "cdekerr@test.ru"},
+        "lines": [{"productId": "1", "slug": "x", "title": "Товар", "priceFrom": 1000, "qty": 1}],
+        "totalApprox": 1200,
+        "deliveryMethod": "cdek",
+        "paymentMethod": "cod_cdek",
+        "delivery": {
+            "city": "Москва",
+            "cdek": {"mode": "office", "pvzCode": "MSK1", "deliveryPriceRub": 200, "tariffCode": 136},
+        },
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 201
+    data = r.json()
+    assert data.get("cdekSync") is not None
+    assert data["cdekSync"]["status"] == "error"
+    assert "HTTP 400" in (data["cdekSync"].get("error") or "")
+    mock_sync.assert_called_once()
 
 
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
@@ -1257,3 +1322,27 @@ def test_customer_order_list_includes_russian_status_labels(client):
     row = data[0]
     assert row["fulfillmentStatusLabel"] == "В обработке"
     assert row["paymentStatusLabel"] == "Оплата не требовалась"
+
+
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_retry_cdek_sync_command_includes_cod_cdek(mock_sync):
+    from django.core.management import call_command
+
+    from api.models import CartOrder
+
+    CartOrder.objects.create(
+        order_ref="RETRY-COD-1",
+        customer_name="Тест",
+        customer_phone="+79990004444",
+        customer_email="retry_cod@test.ru",
+        lines=[{"title": "Товар", "priceFrom": 500, "qty": 1}],
+        total_approx=800,
+        goods_subtotal_approx=500,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        cdek_sync_status=CartOrder.CdekSyncStatus.ERROR,
+    )
+    call_command("retry_cdek_sync", limit=10)
+    mock_sync.assert_called_once()
