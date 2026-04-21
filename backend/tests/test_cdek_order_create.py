@@ -575,12 +575,12 @@ def test_create_cdek_order_office_mode_keeps_delivery_point(
 @patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
 @patch("api.services.cdek_order_create.search_cdek_cities")
 @patch("api.services.cdek_order_create.post_json")
-def test_create_cdek_order_retries_office_tariff_on_address_conflict(
+def test_create_cdek_order_office_replaces_tariff_138_with_136(
     mock_post_json, mock_search, _mock_token
 ):
+    """Тариф 138 (дверь—склад) с delivery_point даёт 400 у СДЭК; для ПВЗ оставляем только склад—склад (136)."""
     from api.models import CartOrder, SiteSettings
     from api.services.cdek_order_create import create_cdek_order_for_cart
-    from api.services.http_util import HttpJsonError
 
     s = SiteSettings.get_solo()
     s.cdek_enabled = True
@@ -591,12 +591,7 @@ def test_create_cdek_order_retries_office_tariff_on_address_conflict(
         [{"code": 44, "label": "Москва"}],
         [{"code": 137, "label": "Иваново"}],
     ]
-
-    first_error = HttpJsonError(
-        '{"requests":[{"errors":[{"code":"v2_delivery_address_multivalued"},{"code":"v2_field_is_empty","message":"[to_location.address] is empty"}]}]}',
-        status=400,
-    )
-    mock_post_json.side_effect = [first_error, {"entity": {"uuid": "req-office-r1", "cdek_number": "CDEK-OK-1"}}]
+    mock_post_json.return_value = {"entity": {"uuid": "req-office-r1", "cdek_number": "CDEK-OK-1"}}
 
     order = CartOrder.objects.create(
         order_ref="T-CDEK-OFFICE-RETRY-1",
@@ -620,11 +615,9 @@ def test_create_cdek_order_retries_office_tariff_on_address_conflict(
     ok, err = create_cdek_order_for_cart(order)
     assert ok is True
     assert err is None
-    assert mock_post_json.call_count == 2
-    first_body = mock_post_json.call_args_list[0].args[1]
-    second_body = mock_post_json.call_args_list[1].args[1]
-    assert first_body["tariff_code"] == 138
-    assert second_body["tariff_code"] == 136
+    assert mock_post_json.call_count == 1
+    sent_body = mock_post_json.call_args.args[1]
+    assert sent_body["tariff_code"] == 136
 
 
 @pytest.mark.django_db

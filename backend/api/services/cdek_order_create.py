@@ -20,9 +20,19 @@ from api.services.http_util import HttpJsonError, get_json, post_json
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
 DEFAULT_OFFICE_TARIFF_CODE = 136
-OFFICE_FALLBACK_TARIFF_CODES = (136, 138)
-# 137 = склад—дверь, 139 = дверь—дверь: для ПВЗ нужен склад—склад (136) или совместимые, не «до двери».
-PVZ_INCOMPATIBLE_TARIFF_CODES = frozenset({137, 139})
+# Только склад—склад для ПВЗ; 138 (дверь—склад) с delivery_point даёт те же 400, что и «до двери».
+OFFICE_FALLBACK_TARIFF_CODES = (136,)
+# 137 склад—дверь, 138 дверь—склад, 139 дверь—дверь — не сочетаются с delivery_point без отдельной адресной схемы.
+PVZ_INCOMPATIBLE_TARIFF_CODES = frozenset({137, 138, 139})
+
+
+def _city_query_for_cdek_search(raw: str, *, default: str = "") -> str:
+    """Берём первый фрагмент до запятой (город), как в виджете — длинная строка хуже матчится в /location/cities."""
+    s = (raw or "").strip() or default
+    if not s:
+        return ""
+    part = s.split(",")[0].strip()
+    return part or s
 
 
 def _first_city_code(settings: SiteSettings, query: str) -> int | None:
@@ -127,8 +137,10 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
 
     tariff_code = _tariff_code_from_snapshot(order, settings)
 
-    to_city = str(snap.get("city") or "").strip()
-    from_city = (settings.cdek_widget_sender_city or "Москва").strip()
+    to_city = _city_query_for_cdek_search(str(snap.get("city") or ""))
+    from_city = _city_query_for_cdek_search(
+        (settings.cdek_widget_sender_city or "").strip(), default="Москва"
+    )
     from_code = _first_city_code(settings, from_city)
     to_code = _first_city_code(settings, to_city)
     if not from_code or not to_code:
