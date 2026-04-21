@@ -432,19 +432,15 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         if not pvz_code:
             return None
         payload["tariff_code"] = int(DEFAULT_OFFICE_TARIFF_CODE)
-        # Разные коды города: стандартно code + delivery_point.
-        # Один код (склад и ПВЗ в одном НП): нельзя одновременно delivery_point и to_location без адреса (400 + пустой address);
-        # нельзя и code+point как у «двух адресов» — только to_location с непустым address по ПВЗ, без delivery_point.
-        if int(to_code) != int(from_code):
-            payload["to_location"] = {"code": int(to_code)}
-            payload["delivery_point"] = pvz_code
-        else:
-            pvz_addr = _pvz_address_line_from_catalog_or_snapshot(
-                settings, pvz_code, cdek_line, to_city
-            ).strip()
-            if not pvz_addr:
-                return None
-            payload["to_location"] = {"code": int(to_code), "address": pvz_addr}
+        # Для текущего профиля ИМ API СДЭК отвергает связку to_location + delivery_point (v2_delivery_address_multivalued),
+        # поэтому для ПВЗ передаём только адрес ПВЗ в to_location.
+        pvz_addr = _pvz_address_line_from_catalog_or_snapshot(
+            settings, pvz_code, cdek_line, to_city
+        ).strip()
+        if not pvz_addr:
+            return None
+        payload.pop("delivery_point", None)
+        payload["to_location"] = {"code": int(to_code), "address": pvz_addr}
     elif destination_mode == "door":
         if not addr:
             return None

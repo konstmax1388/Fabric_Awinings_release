@@ -520,15 +520,16 @@ def test_create_cdek_order_mode_office_has_priority_over_door_tariff(
     assert ok is True
     assert err is None
     sent_body = mock_post_json.call_args.args[1]
-    assert sent_body["delivery_point"] == "IVN6"
-    assert "address" not in sent_body["to_location"]
+    assert "delivery_point" not in sent_body
+    assert sent_body["to_location"]["code"] == 137
+    assert sent_body["to_location"]["address"]
 
 
 @pytest.mark.django_db
 @patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
 @patch("api.services.cdek_order_create.search_cdek_cities")
 @patch("api.services.cdek_order_create.post_json")
-def test_create_cdek_order_office_mode_keeps_delivery_point(
+def test_create_cdek_order_office_mode_uses_to_location_address_without_delivery_point(
     mock_post_json, mock_search, _mock_token
 ):
     from api.models import CartOrder, SiteSettings
@@ -575,8 +576,9 @@ def test_create_cdek_order_office_mode_keeps_delivery_point(
     assert ok is True
     assert err is None
     sent_body = mock_post_json.call_args.args[1]
-    assert sent_body["delivery_point"] == "IVN6"
-    assert "address" not in sent_body["to_location"]
+    assert "delivery_point" not in sent_body
+    assert sent_body["to_location"]["code"] == 137
+    assert sent_body["to_location"]["address"]
     assert sent_body["tariff_code"] == 136
 
 
@@ -587,7 +589,7 @@ def test_create_cdek_order_office_mode_keeps_delivery_point(
 def test_create_cdek_order_office_replaces_tariff_138_with_136(
     mock_post_json, mock_search, _mock_token
 ):
-    """Тариф 138 (дверь—склад) с delivery_point даёт 400 у СДЭК; для ПВЗ оставляем только склад—склад (136)."""
+    """Тариф 138 (дверь—склад) даёт 400; для ПВЗ оставляем склад—склад (136)."""
     from api.models import CartOrder, SiteSettings
     from api.services.cdek_order_create import create_cdek_order_for_cart
 
@@ -727,7 +729,8 @@ def test_create_cdek_order_office_to_location_prefers_city_from_pvz_code(
     assert err is None
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["to_location"]["code"] == 991
-    assert sent_body["delivery_point"] == "IVN6"
+    assert "delivery_point" not in sent_body
+    assert sent_body["to_location"]["address"]
     assert sent_body["from_location"]["code"] == 44
 
 
