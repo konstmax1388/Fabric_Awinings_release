@@ -434,7 +434,7 @@ export function HeroSection() {
                   {trustItems.map((item, idx) => (
                     <span
                       key={`hero-trust-${idx}`}
-                      className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-[0.08em] break-words ${textClasses.trustPill}`}
+                      className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] leading-relaxed break-words ${textClasses.trustPill}`}
                     >
                       {item}
                     </span>

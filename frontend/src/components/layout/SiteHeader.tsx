@@ -218,7 +218,7 @@ export function SiteHeader() {
             <motion.button
               type="button"
               key="mobile-menu-backdrop"
-              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#060a11]/72 backdrop-blur-[3px] md:hidden"
+              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#060a11]/82 backdrop-blur-[2px] md:hidden"
               initial={reduce ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduce ? undefined : { opacity: 0 }}
@@ -234,7 +234,7 @@ export function SiteHeader() {
               exit={reduce ? undefined : { x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             >
-              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border shadow-[-16px_0_48px_rgba(0,0,0,0.42)]">
+              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border bg-bg-base/98 shadow-[-16px_0_48px_rgba(0,0,0,0.52)]">
                 <div className="fabric-liquid-glass-soft shrink-0 border-b border-border px-5 py-4">
                   <p className="font-heading text-lg font-semibold text-text">Меню</p>
                   <p className="mt-0.5 font-body text-xs text-text-muted">Разделы сайта и контакты</p>
@@ -301,7 +301,9 @@ export function SiteHeader() {
           </>
         ) : null}
       </AnimatePresence>
-      <nav className="fabric-liquid-glass fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg-base/95 px-2 py-2 md:hidden">
+      <nav
+        className="fabric-liquid-glass fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg-base/98 px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] md:hidden"
+      >
         <div className="mx-auto flex max-w-[640px] items-stretch justify-between gap-1">
           <NavLink
             to="/"
