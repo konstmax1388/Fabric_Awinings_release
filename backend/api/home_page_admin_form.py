@@ -211,6 +211,13 @@ class HomePageContentAdminForm(forms.ModelForm):
         choices=HERO_TEXT_TONE_CHOICES,
         widget=forms.Select(attrs={"class": _W}),
     )
+    hero_slide_5_image_url = _image_url(_("Слайд 5: URL изображения"))
+    hero_slide_5_video_url = _txt(_("Слайд 5: URL видео (mp4/webm, необязательно)"))
+    hero_slide_5_text_tone = forms.ChoiceField(
+        label=_("Слайд 5: цвет текста"),
+        choices=HERO_TEXT_TONE_CHOICES,
+        widget=forms.Select(attrs={"class": _W}),
+    )
 
     # --- problem / solution ---
     ps_heading = _req_txt(_("Заголовок секции"))
@@ -534,7 +541,7 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("hero_cb_success", cb.get("successMessage", ""))
         slides = hero.get("slides") if isinstance(hero.get("slides"), list) else []
         fallback_tone = tone if tone in ("light", "dark") else "light"
-        for i in range(4):
+        for i in range(5):
             s = slides[i] if i < len(slides) and isinstance(slides[i], dict) else {}
             self.initial.setdefault(f"hero_slide_{i + 1}_image_url", str(s.get("imageUrl", "") or "").strip())
             self.initial.setdefault(f"hero_slide_{i + 1}_video_url", str(s.get("videoUrl", "") or "").strip())
@@ -743,7 +750,7 @@ class HomePageContentAdminForm(forms.ModelForm):
                     "videoUrl": cd[f"hero_slide_{i + 1}_video_url"].strip(),
                     "textTone": cd[f"hero_slide_{i + 1}_text_tone"],
                 }
-                for i in range(4)
+                for i in range(5)
             ],
         }
         base["problemSolution"] = {

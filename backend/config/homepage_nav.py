@@ -130,6 +130,9 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "hero_slide_4_image_url",
         "hero_slide_4_video_url",
         "hero_slide_4_text_tone",
+        "hero_slide_5_image_url",
+        "hero_slide_5_video_url",
+        "hero_slide_5_text_tone",
         "hero_background",
     ),
     "ps": (

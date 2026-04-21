@@ -52,9 +52,9 @@ function resolveLinkHref(
 }
 
 const primaryBtnClass =
-  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] bg-accent px-5 font-body text-base font-medium text-surface hover:bg-[#c65f00] sm:px-8'
+  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] bg-accent px-5 font-body text-base font-medium sm:px-8'
 const secondaryBtnClass =
-  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 border-surface/80 bg-transparent px-5 font-body text-base font-medium text-surface hover:bg-surface/10 sm:px-8'
+  'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-5 font-body text-base font-medium sm:px-8'
 const HERO_VIDEO_START_TIMEOUT_MS = 5000
 
 export function HeroSection() {
@@ -194,16 +194,22 @@ export function HeroSection() {
           chipBg: 'bg-white/65 border-black/10',
           trustPill: 'text-[#111827]/90 border-black/15 bg-white/55',
           slideDotOff: 'bg-[#1f2937]/45 hover:bg-[#1f2937]/70',
+          primaryBtn: 'text-[#111827] hover:bg-[#c65f00]',
+          secondaryBtn:
+            'border-[#111827]/70 text-[#111827] hover:bg-[#111827]/12',
         }
       : {
-          heading: 'text-surface',
-          body: 'text-surface/90',
-          subtle: 'text-surface/85',
-          chip: 'text-surface',
-          chipLabel: 'text-surface/75',
-          chipBg: 'bg-surface/5 border-surface/15',
-          trustPill: 'text-surface/90 border-surface/25 bg-surface/8',
-          slideDotOff: 'bg-surface/55 hover:bg-surface/80',
+          heading: 'text-white',
+          body: 'text-white/90',
+          subtle: 'text-white/85',
+          chip: 'text-white',
+          chipLabel: 'text-white/75',
+          chipBg: 'bg-white/8 border-white/18',
+          trustPill: 'text-white/90 border-white/28 bg-white/10',
+          slideDotOff: 'bg-white/55 hover:bg-white/80',
+          primaryBtn: 'text-white hover:bg-[#c65f00]',
+          secondaryBtn:
+            'border-white/80 text-white hover:bg-white/12',
         }
 
   const heroHeightClass =
@@ -349,13 +355,17 @@ export function HeroSection() {
                       <button
                         type="button"
                         onClick={openCallback}
-                        className={primaryBtnClass}
+                        className={`${primaryBtnClass} ${textClasses.primaryBtn}`}
                         style={{ letterSpacing: '0.02em' }}
                       >
                         {ctaPrimary}
                       </button>
                     ) : (
-                      <HeroCtaLink href={primaryHref} className={primaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                      <HeroCtaLink
+                        href={primaryHref}
+                        className={`${primaryBtnClass} ${textClasses.primaryBtn}`}
+                        style={{ letterSpacing: '0.02em' }}
+                      >
                         {ctaPrimary}
                       </HeroCtaLink>
                     )}
@@ -375,13 +385,17 @@ export function HeroSection() {
                     <button
                       type="button"
                       onClick={openCallback}
-                      className={secondaryBtnClass}
+                      className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
                       style={{ letterSpacing: '0.02em' }}
                     >
                       {ctaSecondary}
                     </button>
                   ) : (
-                    <HeroCtaLink href={secondaryHref} className={secondaryBtnClass} style={{ letterSpacing: '0.02em' }}>
+                    <HeroCtaLink
+                      href={secondaryHref}
+                      className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
+                      style={{ letterSpacing: '0.02em' }}
+                    >
                       {ctaSecondary}
                     </HeroCtaLink>
                   )}

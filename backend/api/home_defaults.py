@@ -52,6 +52,7 @@ def default_home_payload() -> dict[str, Any]:
                 {"imageUrl": "", "videoUrl": "", "textTone": "light"},
                 {"imageUrl": "", "videoUrl": "", "textTone": "light"},
                 {"imageUrl": "", "videoUrl": "", "textTone": "light"},
+                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
             ],
         },
         "problemSolution": {

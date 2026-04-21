@@ -1820,6 +1820,9 @@ class HomePageContentAdmin(ModelAdmin):
                     "hero_slide_4_image_url",
                     "hero_slide_4_video_url",
                     "hero_slide_4_text_tone",
+                    "hero_slide_5_image_url",
+                    "hero_slide_5_video_url",
+                    "hero_slide_5_text_tone",
                     "hero_background",
                 ),
                 "description": _(
