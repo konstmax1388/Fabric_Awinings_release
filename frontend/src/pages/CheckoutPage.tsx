@@ -216,6 +216,7 @@ export function CheckoutPage() {
     if (tariffCode !== null) setCdekTariffCode(tariffCode)
     if (mode === 'office') {
       setCdekMode('office')
+      setAddress('')
       const rawCode = addr.code
       if (rawCode !== undefined && rawCode !== null) {
         const code = String(rawCode).trim()
@@ -228,6 +229,8 @@ export function CheckoutPage() {
     }
     if (mode === 'door') {
       setCdekMode('door')
+      setCdekPvzCode('')
+      setCdekPvzAddress('')
       const doorCity = typeof addr.city === 'string' ? addr.city.trim() : ''
       if (doorCity) setCity((prev) => prev.trim() || doorCity)
       const formatted = typeof addr.formatted === 'string' ? addr.formatted.trim() : ''
@@ -641,33 +644,40 @@ export function CheckoutPage() {
                           disabled={settingsLoading}
                         />
                       </div>
-                      <fieldset className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
-                        <legend className="px-1 font-body text-sm font-medium text-text">Тип доставки СДЭК</legend>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border px-3 py-2 has-[:checked]:border-accent">
-                            <input
-                              type="radio"
-                              name="cdekMode"
-                              value="office"
-                              checked={cdekMode === 'office'}
-                              onChange={() => setCdekMode('office')}
-                              className="mt-1"
-                            />
-                            <span className="font-body text-sm text-text">Доставка в ПВЗ</span>
-                          </label>
-                          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border px-3 py-2 has-[:checked]:border-accent">
-                            <input
-                              type="radio"
-                              name="cdekMode"
-                              value="door"
-                              checked={cdekMode === 'door'}
-                              onChange={() => setCdekMode('door')}
-                              className="mt-1"
-                            />
-                            <span className="font-body text-sm text-text">Доставка до двери</span>
-                          </label>
-                        </div>
-                      </fieldset>
+                      {!useCdekWidgetUi ? (
+                        <fieldset className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
+                          <legend className="px-1 font-body text-sm font-medium text-text">Тип доставки СДЭК</legend>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border px-3 py-2 has-[:checked]:border-accent">
+                              <input
+                                type="radio"
+                                name="cdekMode"
+                                value="office"
+                                checked={cdekMode === 'office'}
+                                onChange={() => setCdekMode('office')}
+                                className="mt-1"
+                              />
+                              <span className="font-body text-sm text-text">Доставка в ПВЗ</span>
+                            </label>
+                            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border px-3 py-2 has-[:checked]:border-accent">
+                              <input
+                                type="radio"
+                                name="cdekMode"
+                                value="door"
+                                checked={cdekMode === 'door'}
+                                onChange={() => setCdekMode('door')}
+                                className="mt-1"
+                              />
+                              <span className="font-body text-sm text-text">Доставка до двери</span>
+                            </label>
+                          </div>
+                        </fieldset>
+                      ) : (
+                        <p className="mt-3 rounded-xl border border-border-light bg-bg-base px-3 py-2 font-body text-xs text-text-muted">
+                          Тип доставки СДЭК (пункт выдачи или до двери) выбирается на карте ниже — отдельно указывать не
+                          нужно.
+                        </p>
+                      )}
                       {useCdekWidgetUi ? (
                         <>
                           <CdekAddressCombobox

@@ -176,12 +176,20 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
 
     mode = str(cdek.get("mode") or "").strip().lower()
     pvz_code = str(cdek.get("pvzCode") or "").strip()
-    addr = str(snap.get("address") or cdek.get("address") or "").strip()
+    snap_line = str(snap.get("address") or "").strip()
+    cdek_line = str(cdek.get("address") or "").strip()
+    # Уличный адрес курьеру vs подпись ПВЗ в cdek.address — не смешивать (иначе в снапшоте «и точка, и улица»).
+    if mode == "door":
+        addr = snap_line or cdek_line
+    elif mode in {"office", "pickup"}:
+        addr = snap_line
+    else:
+        addr = snap_line or cdek_line
     office_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_office)
     door_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_door)
 
     destination_mode = ""
-    # Приоритет — явный выбор покупателя на checkout.
+    # Приоритет — явный выбор покупателя на checkout (в режиме виджета — из onChoose карты).
     if mode in {"office", "pickup"}:
         destination_mode = "office"
     elif mode == "door":
