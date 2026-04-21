@@ -48,6 +48,34 @@ def _first_city_code(settings: SiteSettings, query: str) -> int | None:
     return int(code) if isinstance(code, int) else None
 
 
+def _first_city_code_excluding_sender(
+    settings: SiteSettings, raw_city_query: str, exclude_code: int
+) -> int | None:
+    """
+    Подбор кода города из /location/cities, отличного от города отправителя.
+    Первый результат поиска иногда совпадает с складом (один региональный хаб в справочнике СДЭК).
+    """
+    q = _city_query_for_cdek_search(str(raw_city_query or ""))
+    if len(q) < 2:
+        return None
+    rows = search_cdek_cities(settings, q, limit=30)
+    if not rows:
+        return None
+    q_low = q.lower()
+    for row in rows:
+        c = row.get("code")
+        if not isinstance(c, int) or c <= 0 or c == exclude_code:
+            continue
+        city = (row.get("city") or row.get("name") or "").strip().lower()
+        if city == q_low:
+            return c
+    for row in rows:
+        c = row.get("code")
+        if isinstance(c, int) and c > 0 and c != exclude_code:
+            return c
+    return None
+
+
 def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | None:
     """
     Код города получателя по коду ПВЗ из GET /v2/deliverypoints.
@@ -62,26 +90,45 @@ def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | Non
     except CdekAuthError:
         return None
     base = cdek_api_base_url(settings).rstrip("/")
-    qs = urllib.parse.urlencode({"code": pc, "type": "PVZ"})
-    url = f"{base}/v2/deliverypoints?{qs}"
     headers = {"Authorization": f"Bearer {token}", **WIDGET_APP_HEADERS}
-    try:
-        data = get_json(url, headers=headers, timeout=20.0)
-    except HttpJsonError as e:
-        logger.warning("CDEK deliverypoints by code=%s: %s", pc, e)
-        return None
+
+    def _fetch(qs: str) -> Any | None:
+        url = f"{base}/v2/deliverypoints?{qs}"
+        try:
+            return get_json(url, headers=headers, timeout=20.0)
+        except HttpJsonError as e:
+            logger.warning("CDEK deliverypoints by code=%s url=%s: %s", pc, url, e)
+            return None
+
     rows: list[Any] | None = None
-    if isinstance(data, list):
-        rows = data
-    elif isinstance(data, dict):
-        for key in ("entity", "items", "deliverypoints"):
-            raw = data.get(key)
-            if isinstance(raw, list):
-                rows = raw
-                break
+    for params in (
+        {"code": pc, "type": "PVZ", "country_code": "RU"},
+        {"code": pc, "type": "PVZ"},
+    ):
+        rows = None
+        data = _fetch(urllib.parse.urlencode(params))
+        if data is None:
+            continue
+        if isinstance(data, list):
+            rows = data
+        elif isinstance(data, dict):
+            for key in ("entity", "items", "deliverypoints"):
+                raw = data.get(key)
+                if isinstance(raw, list):
+                    rows = raw
+                    break
+        if rows:
+            break
     if not rows:
         return None
-    first = rows[0]
+    pick: dict[str, Any] | None = None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("code") or "").strip().upper() == pc.upper():
+            pick = row
+            break
+    first = pick if pick is not None else (rows[0] if isinstance(rows[0], dict) else None)
     if not isinstance(first, dict):
         return None
     loc = first.get("location")
@@ -269,11 +316,15 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     else:
         return None
 
-    # Город «куда» по коду ПВЗ — источник истины; иначе to_location и from_location могут совпасть при разных НП.
+    # Город «куда»: справочник по ПВЗ; если код совпал со складом — ищем город из подсказки, исключая отправителя.
     if destination_mode == "office" and pvz_code:
         pvz_city = _city_code_from_pvz_code(settings, pvz_code)
         if pvz_city is not None:
             to_code = pvz_city
+        if to_code == from_code:
+            alt = _first_city_code_excluding_sender(settings, str(snap.get("city") or ""), from_code)
+            if alt is not None:
+                to_code = alt
 
     if not to_code:
         return None

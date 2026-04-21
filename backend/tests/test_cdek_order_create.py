@@ -729,3 +729,54 @@ def test_create_cdek_order_office_to_location_prefers_city_from_pvz_code(
     assert sent_body["to_location"]["code"] == 991
     assert sent_body["delivery_point"] == "IVN6"
     assert sent_body["from_location"]["code"] == 44
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.resolve_sender_city_code", return_value=164)
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.post_json")
+def test_office_when_pvz_city_equals_sender_uses_city_search_excluding_sender(
+    mock_post_json, mock_search, _mock_token, _mock_resolve_from, monkeypatch
+):
+    """Если справочник ПВЗ даёт тот же code, что склад, берём город из cities, исключая отправителя."""
+    monkeypatch.setattr(
+        "api.services.cdek_order_create._city_code_from_pvz_code",
+        lambda _s, _pv: 164,
+    )
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.side_effect = [
+        [{"code": 164, "city": "Кохма", "region": "Ивановская область"}],
+        [
+            {"code": 164, "city": "Кохма"},
+            {"code": 991, "city": "Иваново", "region": "Ивановская область"},
+        ],
+    ]
+    mock_post_json.return_value = {"entity": {"uuid": "req-excl", "cdek_number": "CDEK-EXCL"}}
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-EXCL-SENDER",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        lines=[{"title": "Товар", "priceFrom": 1000, "qty": 1}],
+        delivery_snapshot={"city": "Иваново, Ивановская область", "cdek": {"mode": "office", "pvzCode": "IVN6"}},
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    sent_body = mock_post_json.call_args.args[1]
+    assert sent_body["to_location"]["code"] == 991
+    assert sent_body["from_location"]["code"] == 164
