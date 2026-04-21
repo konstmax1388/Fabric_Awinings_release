@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
 DEFAULT_OFFICE_TARIFF_CODE = 136
 OFFICE_FALLBACK_TARIFF_CODES = (136, 138)
+# 137 = склад—дверь, 139 = дверь—дверь: для ПВЗ нужен склад—склад (136) или совместимые, не «до двери».
+PVZ_INCOMPATIBLE_TARIFF_CODES = frozenset({137, 139})
 
 
 def _first_city_code(settings: SiteSettings, query: str) -> int | None:
@@ -87,8 +89,12 @@ def _tariff_candidates_for_office(
             continue
         if c <= 0 or c in seen:
             continue
+        if c in PVZ_INCOMPATIBLE_TARIFF_CODES:
+            continue
         out.append(c)
         seen.add(c)
+    if not out:
+        out = [DEFAULT_OFFICE_TARIFF_CODE]
     return out
 
 
@@ -101,9 +107,16 @@ def _is_office_mode_snapshot(order: CartOrder) -> bool:
     return mode in {"office", "pickup"}
 
 
-def _is_cdek_office_address_conflict(err_text: str) -> bool:
-    txt = (err_text or "").lower()
-    return "v2_delivery_address_multivalued" in txt and "[to_location.address] is empty" in txt
+def _http_json_error_full_text(e: HttpJsonError) -> str:
+    parts = [str(e), (e.body or "")]
+    return "\n".join(parts).lower()
+
+
+def _is_cdek_office_address_conflict(err: HttpJsonError) -> bool:
+    txt = _http_json_error_full_text(err)
+    if "v2_delivery_address_multivalued" not in txt:
+        return False
+    return "to_location.address" in txt and "empty" in txt
 
 
 def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str, Any] | None:
@@ -408,7 +421,7 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
         resp = post_json(url, body, headers=headers, timeout=45.0)
     except HttpJsonError as e:
         err_text = str(e)
-        if _is_office_mode_snapshot(order) and _is_cdek_office_address_conflict(err_text):
+        if _is_office_mode_snapshot(order) and _is_cdek_office_address_conflict(e):
             office_tariffs = _parse_tariff_codes(settings.cdek_tariff_codes_office)
             current_tariff = int(body.get("tariff_code") or 0)
             retry_candidates = [x for x in _tariff_candidates_for_office(None, office_tariffs) if x != current_tariff]
