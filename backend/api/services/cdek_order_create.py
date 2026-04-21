@@ -14,8 +14,10 @@ from api.services.cdek_dimensions import cdek_widget_goods_for_lines
 from api.services.cdek_http import CdekAuthError, fetch_cdek_access_token
 from api.services.cdek_locations import search_cdek_cities
 from api.services.cdek_runtime import cdek_api_base_url
+from api.services.cdek_tariff_catalog import resolve_sender_city_code
 from api.services.cdek_widget_service import WIDGET_APP_HEADERS
 from api.services.http_util import HttpJsonError, get_json, post_json
+from api.validators import normalize_ru_phone
 
 logger = logging.getLogger(__name__)
 DEFAULT_MAX_SYNC_ATTEMPTS = 5
@@ -124,9 +126,33 @@ def _http_json_error_full_text(e: HttpJsonError) -> str:
 
 def _is_cdek_office_address_conflict(err: HttpJsonError) -> bool:
     txt = _http_json_error_full_text(err)
-    if "v2_delivery_address_multivalued" not in txt:
-        return False
-    return "to_location.address" in txt and "empty" in txt
+    return "v2_delivery_address_multivalued" in txt
+
+
+def _cdek_sender_phone_for_order(settings: SiteSettings) -> str:
+    raw = (settings.phone_href or settings.phone_display or "").strip()
+    if "tel:" in raw:
+        raw = raw.split("tel:", 1)[-1].strip()
+    try:
+        return normalize_ru_phone(raw)
+    except Exception:
+        return "+78000000000"
+
+
+def _cdek_from_location(settings: SiteSettings, from_code: int) -> dict[str, Any]:
+    loc: dict[str, Any] = {"code": int(from_code)}
+    addr = (settings.pickup_point_address or "").strip()
+    if addr:
+        loc["address"] = addr.split("\n")[0].strip()[:500]
+    return loc
+
+
+def _cdek_sender_block(settings: SiteSettings) -> dict[str, Any]:
+    name = (settings.site_name or "Интернет-магазин").strip()[:100] or "Магазин"
+    return {
+        "name": name,
+        "phones": [{"number": _cdek_sender_phone_for_order(settings)}],
+    }
 
 
 def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str, Any] | None:
@@ -141,7 +167,9 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     from_city = _city_query_for_cdek_search(
         (settings.cdek_widget_sender_city or "").strip(), default="Москва"
     )
-    from_code = _first_city_code(settings, from_city)
+    from_code = resolve_sender_city_code(settings)
+    if from_code is None:
+        from_code = _first_city_code(settings, from_city or "Москва")
     to_code = _first_city_code(settings, to_city)
     if not from_code or not to_code:
         return None
@@ -245,7 +273,8 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         "number": order.order_ref,
         "tariff_code": int(tariff_code),
         "comment": (order.customer_comment or "").strip()[:255],
-        "from_location": {"code": int(from_code)},
+        "from_location": _cdek_from_location(settings, from_code),
+        "sender": _cdek_sender_block(settings),
         "to_location": {"code": int(to_code)},
         "recipient": {
             "name": (order.customer_name or "").strip()[:100],
@@ -259,6 +288,7 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
     if destination_mode == "office":
         if not pvz_code:
             return None
+        payload["tariff_code"] = int(DEFAULT_OFFICE_TARIFF_CODE)
         payload["to_location"] = {"code": int(to_code)}
         payload["delivery_point"] = pvz_code
     elif destination_mode == "door":
