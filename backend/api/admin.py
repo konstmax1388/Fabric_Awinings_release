@@ -1810,19 +1810,23 @@ class HomePageContentAdmin(ModelAdmin):
                     "hero_cb_success",
                     "hero_slide_1_image_url",
                     "hero_slide_1_video_url",
+                    "hero_slide_1_text_tone",
                     "hero_slide_2_image_url",
                     "hero_slide_2_video_url",
+                    "hero_slide_2_text_tone",
                     "hero_slide_3_image_url",
                     "hero_slide_3_video_url",
+                    "hero_slide_3_text_tone",
                     "hero_slide_4_image_url",
                     "hero_slide_4_video_url",
+                    "hero_slide_4_text_tone",
                     "hero_background",
                 ),
                 "description": _(
                     "Кнопки: «По ссылке» — укажите путь (/catalog, /#calculator) или полный https://… "
                     "Пустая ссылка при режиме «По ссылке» сохраняет прежнее поведение (основная — калькулятор или каталог, "
                     "вторая — каталог). «Обратный звонок» открывает всплывающую форму; тексты формы — поля ниже. "
-                    "Для слайдов можно указывать image URL и/или video URL (mp4/webm)."
+                    "Для слайдов можно указывать image URL и/или video URL (mp4/webm), а также цвет текста для каждого слайда."
                 ),
             },
         ),

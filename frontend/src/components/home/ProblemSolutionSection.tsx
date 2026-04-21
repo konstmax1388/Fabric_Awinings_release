@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { ProblemCard, ProblemCardIconKind } from '../../types/homePage'
 import {
@@ -48,6 +49,7 @@ function ProblemSolutionIcon({ card }: { card: ProblemCard }) {
 export function ProblemSolutionSection() {
   const reduce = useReducedMotion()
   const { home } = useSiteSettings()
+  const [spotlight, setSpotlight] = useState<Record<string, { x: number; y: number; on: boolean }>>({})
   const ps = home?.problemSolution
   const heading = ps?.heading ?? ''
   const subheading = ps?.subheading ?? ''
@@ -80,26 +82,66 @@ export function ProblemSolutionSection() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.1 }}
       >
-        {items.map((card) => (
+        {items.map((card, idx) => (
           <motion.article
             key={card.problem}
             variants={staggerItem}
+            initial={reduce ? false : { opacity: 0, y: 18, scale: 0.985 }}
+            whileInView={reduce ? undefined : { opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.18 }}
             whileHover={
               reduce
                 ? undefined
-                : { y: -4, boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)' }
+                : {
+                    y: -6,
+                    boxShadow: '0 18px 36px -16px rgba(200,155,83,0.45)',
+                  }
             }
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="rounded-2xl border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            className="relative overflow-hidden rounded-2xl border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] transition-colors duration-300 hover:border-accent/45"
+            onMouseMove={
+              reduce
+                ? undefined
+                : (e) => {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const x = e.clientX - rect.left
+                    const y = e.clientY - rect.top
+                    setSpotlight((prev) => ({
+                      ...prev,
+                      [String(idx)]: { x, y, on: true },
+                    }))
+                  }
+            }
+            onMouseLeave={
+              reduce
+                ? undefined
+                : () =>
+                    setSpotlight((prev) => ({
+                      ...prev,
+                      [String(idx)]: {
+                        ...(prev[String(idx)] ?? { x: 0, y: 0 }),
+                        on: false,
+                      },
+                    }))
+            }
           >
+            {!reduce && spotlight[String(idx)]?.on ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 transition-opacity duration-150"
+                style={{
+                  background: `radial-gradient(180px circle at ${spotlight[String(idx)]?.x ?? 0}px ${spotlight[String(idx)]?.y ?? 0}px, rgba(200,155,83,0.2), transparent 72%)`,
+                }}
+              />
+            ) : null}
             <span
-              className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F0E8]"
+              className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F0E8]"
               aria-hidden
             >
               <ProblemSolutionIcon card={card} />
             </span>
-            <h3 className="mt-4 font-heading text-xl font-semibold text-text">{card.problem}</h3>
-            <p className="mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{card.solution}</p>
+            <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">{card.problem}</h3>
+            <p className="relative z-10 mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{card.solution}</p>
           </motion.article>
         ))}
       </motion.div>

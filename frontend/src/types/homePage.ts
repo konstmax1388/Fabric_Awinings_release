@@ -34,6 +34,7 @@ export type HeroCallbackModalTexts = {
 export type HeroSlide = {
   imageUrl?: string
   videoUrl?: string
+  textTone?: 'light' | 'dark'
 }
 
 export type HeroStat = {

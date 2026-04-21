@@ -101,18 +101,20 @@ export function HeroSection() {
         if (!s || typeof s !== 'object') return null
         const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
         const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
+        const textTone = s.textTone === 'dark' ? 'dark' : heroTextTone
         if (!imageUrl && !videoUrl) return null
-        return { imageUrl, videoUrl }
+        return { imageUrl, videoUrl, textTone }
       })
-      .filter((s): s is { imageUrl: string; videoUrl: string } => s !== null)
+      .filter((s): s is { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' } => s !== null)
     if (normalized.length) return normalized
-    return heroBg ? [{ imageUrl: heroBg, videoUrl: '' }] : []
-  }, [hero?.slides, heroBg])
+    return heroBg ? [{ imageUrl: heroBg, videoUrl: '', textTone: heroTextTone }] : []
+  }, [hero?.slides, heroBg, heroTextTone])
 
   const hasSlides = slides.length > 0
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
   const activeImageUrl = activeSlide?.imageUrl || ''
   const activeVideoUrl = activeSlide?.videoUrl || ''
+  const activeSlideTextTone = activeSlide?.textTone ?? heroTextTone
   const shouldShowVideo = Boolean(activeVideoUrl) && !failedVideoBySlide[currentSlide]
   const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
 
@@ -182,7 +184,7 @@ export function HeroSection() {
   }, [mouse.x, mouse.y, reduce, scrollY])
 
   const textClasses =
-    heroTextTone === 'dark'
+    activeSlideTextTone === 'dark'
       ? {
           heading: 'text-[#111827]',
           body: 'text-[#1f2937]/90',

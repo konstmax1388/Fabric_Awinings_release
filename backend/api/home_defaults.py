@@ -48,10 +48,10 @@ def default_home_payload() -> dict[str, Any]:
             },
             "bgImageUrl": "",
             "slides": [
-                {"imageUrl": "", "videoUrl": ""},
-                {"imageUrl": "", "videoUrl": ""},
-                {"imageUrl": "", "videoUrl": ""},
-                {"imageUrl": "", "videoUrl": ""},
+                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
+                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
+                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
+                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
             ],
         },
         "problemSolution": {
@@ -276,9 +276,25 @@ def _normalize_problem_solution_cards(home: dict[str, Any]) -> None:
         c.setdefault("iconImageUrl", "")
 
 
+def _normalize_hero_slides(home: dict[str, Any]) -> None:
+    hero = home.get("hero")
+    if not isinstance(hero, dict):
+        return
+    fallback_tone = hero.get("textTone") if hero.get("textTone") in ("light", "dark") else "light"
+    slides = hero.get("slides")
+    if not isinstance(slides, list):
+        return
+    for slide in slides:
+        if not isinstance(slide, dict):
+            continue
+        if slide.get("textTone") not in ("light", "dark"):
+            slide["textTone"] = fallback_tone
+
+
 def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
     _normalize_problem_solution_cards(out)
+    _normalize_hero_slides(out)
     return out
 
 
@@ -286,4 +302,5 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     """Только сохранённый JSON из админки (без подмешивания дефолтов)."""
     out = deepcopy(stored) if isinstance(stored, dict) else {}
     _normalize_problem_solution_cards(out)
+    _normalize_hero_slides(out)
     return out
