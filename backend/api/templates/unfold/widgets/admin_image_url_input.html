@@ -1,0 +1,43 @@
+{% load i18n %}
+
+<div class="admin-file-upload-with-hint admin-image-url-root max-w-2xl">
+    <p class="mb-2 flex items-center gap-2 text-xs font-medium text-font-important-light dark:text-font-important-dark">
+        <span class="material-symbols-outlined text-[18px] text-primary-600 dark:text-primary-400" aria-hidden="true">image</span>
+        {% trans "Изображение по ссылке" %}
+    </p>
+    <p class="mb-3 text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">
+        {% trans "Вставьте прямую ссылку на картинку (https://...). Для загрузки с компьютера используйте соседние поля с зоной перетаскивания." %}
+    </p>
+
+    <div class="rounded-default border-2 border-dashed border-base-300 bg-base-50/90 p-2 transition-colors dark:border-base-600 dark:bg-base-800/50">
+        <div class="flex min-h-[44px] items-center gap-2">
+            <span class="material-symbols-outlined px-2 text-base-400" aria-hidden="true">link</span>
+            <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %} />
+            {% if widget.value %}
+                <a
+                    href="{{ widget.value|stringformat:'s' }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-default border border-base-200 bg-white text-base-500 hover:text-base-800 dark:border-base-700 dark:bg-base-900 dark:text-base-400 dark:hover:text-base-200"
+                    title="{% trans 'Открыть ссылку' %}"
+                >
+                    <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="mt-2 overflow-hidden rounded-default border border-base-200 bg-white dark:border-base-700 dark:bg-base-900">
+            <img
+                src="{{ widget.value|stringformat:'s' }}"
+                alt=""
+                data-admin-image-url-preview
+                class="block max-h-44 w-full object-contain {% if not widget.value %}hidden{% endif %}"
+                loading="lazy"
+                decoding="async"
+            />
+            <div data-admin-image-url-empty class="px-3 py-2 text-xs text-font-subtle-light dark:text-font-subtle-dark {% if widget.value %}hidden{% endif %}">
+                {% trans "Предпросмотр появится после вставки валидной ссылки на изображение." %}
+            </div>
+        </div>
+    </div>
+</div>
