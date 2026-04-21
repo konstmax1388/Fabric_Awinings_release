@@ -394,7 +394,6 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         "comment": (order.customer_comment or "").strip()[:255],
         "from_location": _cdek_from_location(settings, from_code),
         "sender": _cdek_sender_block(settings),
-        "to_location": {"code": int(to_code)},
         "recipient": {
             "name": (order.customer_name or "").strip()[:100],
             "phones": [{"number": (order.customer_phone or "").strip()}],
@@ -408,7 +407,9 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         if not pvz_code:
             return None
         payload["tariff_code"] = int(DEFAULT_OFFICE_TARIFF_CODE)
-        payload["to_location"] = {"code": int(to_code)}
+        # Один код города «откуда» и «куда» (напр. склад и ПВЗ в Иваново) — to_location+delivery_point даёт 400 multivalued.
+        if int(to_code) != int(from_code):
+            payload["to_location"] = {"code": int(to_code)}
         payload["delivery_point"] = pvz_code
     elif destination_mode == "door":
         if not addr:

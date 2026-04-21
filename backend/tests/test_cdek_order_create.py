@@ -780,3 +780,45 @@ def test_office_when_pvz_city_equals_sender_uses_city_search_excluding_sender(
     sent_body = mock_post_json.call_args.args[1]
     assert sent_body["to_location"]["code"] == 991
     assert sent_body["from_location"]["code"] == 164
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.resolve_sender_city_code", return_value=137)
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.post_json")
+def test_create_cdek_order_office_same_city_omits_to_location(
+    mock_post_json, mock_search, _mock_token, _mock_resolve_from
+):
+    """Склад и ПВЗ в одном городе СДЭК: только delivery_point, без to_location (иначе multivalued)."""
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import create_cdek_order_for_cart
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.return_value = [{"code": 137, "city": "Иваново"}]
+    mock_post_json.return_value = {"entity": {"uuid": "req-same", "cdek_number": "CDEK-SAME"}}
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-SAME-CITY",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        lines=[{"title": "Товар", "priceFrom": 1000, "qty": 1}],
+        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN6"}},
+        manager_letter="x",
+        client_ack="y",
+    )
+
+    ok, err = create_cdek_order_for_cart(order)
+    assert ok is True
+    assert err is None
+    sent_body = mock_post_json.call_args.args[1]
+    assert "to_location" not in sent_body
+    assert sent_body["delivery_point"] == "IVN6"
+    assert sent_body["from_location"]["code"] == 137
