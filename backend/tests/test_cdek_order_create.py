@@ -431,6 +431,57 @@ def test_sync_cdek_order_tracking_pending_keeps_pending_status(
 @pytest.mark.django_db
 @patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
 @patch("api.services.cdek_order_create.search_cdek_cities")
+@patch("api.services.cdek_order_create.get_json")
+@patch("api.services.cdek_order_create.post_json")
+def test_sync_cdek_order_request_uuid_invalid_returns_error_not_pending(
+    mock_post_json, mock_get_json, mock_search, _mock_token
+):
+    from api.models import CartOrder, SiteSettings
+    from api.services.cdek_order_create import sync_cdek_order_with_retry
+
+    s = SiteSettings.get_solo()
+    s.cdek_enabled = True
+    s.cdek_tariff_codes_office = "136"
+    s.save(update_fields=["cdek_enabled", "cdek_tariff_codes_office"])
+
+    mock_search.side_effect = [
+        [{"code": 44, "label": "Москва"}],
+        [{"code": 137, "label": "Иваново"}],
+    ]
+    mock_post_json.return_value = {"request_uuid": "req-invalid-1"}
+    mock_get_json.return_value = {
+        "requests": [
+            {
+                "state": "INVALID",
+                "errors": [{"code": "v2_field_is_empty", "message": "[to_location.address] is empty"}],
+            }
+        ]
+    }
+
+    order = CartOrder.objects.create(
+        order_ref="T-CDEK-INVALID-UUID",
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        customer_email="ivan@example.com",
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.COD_CDEK,
+        total_approx=1500,
+        lines=[{"title": "Товар", "priceFrom": 1000, "qty": 1}],
+        delivery_snapshot={"city": "Иваново", "cdek": {"mode": "office", "pvzCode": "IVN1"}},
+        manager_letter="x",
+        client_ack="y",
+    )
+    ok, err = sync_cdek_order_with_retry(order)
+    assert ok is False
+    assert isinstance(err, str) and "v2_field_is_empty" in err
+    assert "tracking_pending:" not in err
+    order.refresh_from_db()
+    assert order.cdek_sync_status == CartOrder.CdekSyncStatus.ERROR
+
+
+@pytest.mark.django_db
+@patch("api.services.cdek_order_create.fetch_cdek_access_token", return_value="tok")
+@patch("api.services.cdek_order_create.search_cdek_cities")
 @patch("api.services.cdek_order_create.post_json")
 def test_create_cdek_order_door_uses_top_level_address_without_delivery_point(
     mock_post_json, mock_search, _mock_token

@@ -263,11 +263,9 @@ def _cdek_sender_phone_for_order(settings: SiteSettings) -> str:
 
 
 def _cdek_from_location(settings: SiteSettings, from_code: int) -> dict[str, Any]:
-    loc: dict[str, Any] = {"code": int(from_code)}
-    addr = (settings.pickup_point_address or "").strip()
-    if addr:
-        loc["address"] = addr.split("\n")[0].strip()[:500]
-    return loc
+    # Отправитель определяется по коду города из "СДЭК: город отправления (виджет)".
+    # Адрес склада из pickup_point_address может быть в другом НП и ломать ожидания по origin.
+    return {"code": int(from_code)}
 
 
 def _cdek_sender_block(settings: SiteSettings) -> dict[str, Any]:
@@ -509,6 +507,39 @@ def _extract_tracking_from_uuid_lookup(payload: dict[str, Any] | None) -> str:
     return ""
 
 
+def _extract_cdek_request_invalid_error(payload: dict[str, Any] | None) -> str | None:
+    """Читает requests[].errors[] из ответа /v2/orders?uuid и возвращает компактный текст ошибки."""
+    if not isinstance(payload, dict):
+        return None
+    reqs = payload.get("requests")
+    if not isinstance(reqs, list):
+        return None
+    messages: list[str] = []
+    for req in reqs:
+        if not isinstance(req, dict):
+            continue
+        state = str(req.get("state") or "").strip().upper()
+        if state and state != "INVALID":
+            continue
+        errs = req.get("errors")
+        if not isinstance(errs, list):
+            continue
+        for er in errs:
+            if not isinstance(er, dict):
+                continue
+            code = str(er.get("code") or "").strip()
+            msg = str(er.get("message") or "").strip()
+            if code and msg:
+                messages.append(f"{code}: {msg}")
+            elif code:
+                messages.append(code)
+            elif msg:
+                messages.append(msg)
+    if not messages:
+        return None
+    return "; ".join(messages)[:1000]
+
+
 def _inject_tracking_into_order_texts(order: CartOrder, tracking: str) -> None:
     tr = (tracking or "").strip()
     if not tr:
@@ -592,6 +623,9 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
                 _inject_tracking_into_order_texts(order, tracking)
                 _dispatch_tracking_to_email_and_crm(order)
                 return True, None
+            invalid_msg = _extract_cdek_request_invalid_error(details)
+            if invalid_msg:
+                return False, invalid_msg
             return False, f"tracking_pending:{req_uuid}"
 
     body = _extract_cdek_payload(order, settings)
@@ -646,16 +680,23 @@ def create_cdek_order_for_cart(order: CartOrder) -> tuple[bool, str | None]:
             return False, err_text
 
     tracking, req_uuid = _extract_tracking_from_cdek_response(resp)
+    lookup_details: dict[str, Any] | None = None
     if not tracking and req_uuid:
         for _ in range(3):
             try:
                 details = _fetch_cdek_order_by_uuid(settings, token, req_uuid)
             except HttpJsonError:
                 details = None
+            lookup_details = details
             tracking = _extract_tracking_from_uuid_lookup(details)
             if tracking:
                 break
             time.sleep(0.8)
+        if not tracking:
+            invalid_msg = _extract_cdek_request_invalid_error(lookup_details)
+            if invalid_msg:
+                logger.warning("CDEK create request invalid order=%s uuid=%s error=%s", order.order_ref, req_uuid, invalid_msg)
+                return False, invalid_msg
 
     if not (tracking or req_uuid):
         logger.warning("CDEK create order response without tracking/request_uuid: %s", resp)
