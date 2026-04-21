@@ -294,6 +294,12 @@ def unfold_admin_file_dropzone_script(request):
     return static("admin/js/file_dropzone.js")
 
 
+def unfold_admin_image_url_script(request):
+    from django.templatetags.static import static
+
+    return static("admin/js/image_url_widget.js")
+
+
 def unfold_admin_fabric_css(request):
     from django.templatetags.static import static
 
@@ -336,6 +342,7 @@ UNFOLD = {
     # Подсказки и drag-and-drop для полей файла (переопределение шаблонов unfold/widgets/*).
     "SCRIPTS": [
         unfold_admin_file_dropzone_script,
+        unfold_admin_image_url_script,
     ],
 }
 

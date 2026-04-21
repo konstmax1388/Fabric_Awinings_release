@@ -37,6 +37,12 @@ _W = (
     "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-4xl "
     "bg-white shadow-xs dark:border-base-700 dark:bg-base-900"
 )
+
+
+class AdminImageUrlWidget(forms.URLInput):
+    template_name = "unfold/widgets/admin_image_url_input.html"
+
+
 def _txt(label: str, **kw) -> forms.CharField:
     return forms.CharField(label=label, required=False, widget=forms.TextInput(attrs={"class": _W}), **kw)
 
@@ -50,6 +56,21 @@ def _area(label: str, rows: int = 3) -> forms.CharField:
         label=label,
         required=False,
         widget=forms.Textarea(attrs={"rows": rows, "class": _W}),
+    )
+
+
+def _image_url(label: str, **kw) -> forms.CharField:
+    return forms.CharField(
+        label=label,
+        required=False,
+        widget=AdminImageUrlWidget(
+            attrs={
+                "class": _W,
+                "placeholder": "https://...",
+                "data-admin-image-url-input": "1",
+            }
+        ),
+        **kw,
     )
 
 
@@ -162,13 +183,13 @@ class HomePageContentAdminForm(forms.ModelForm):
     hero_cb_submit = _req_txt(_("Попап: текст кнопки отправки"))
     hero_cb_submitting = _req_txt(_("Попап: текст при отправке"))
     hero_cb_success = _area(_("Попап: сообщение после успеха"), rows=2)
-    hero_slide_1_image_url = _txt(_("Слайд 1: URL изображения"))
+    hero_slide_1_image_url = _image_url(_("Слайд 1: URL изображения"))
     hero_slide_1_video_url = _txt(_("Слайд 1: URL видео (mp4/webm, необязательно)"))
-    hero_slide_2_image_url = _txt(_("Слайд 2: URL изображения"))
+    hero_slide_2_image_url = _image_url(_("Слайд 2: URL изображения"))
     hero_slide_2_video_url = _txt(_("Слайд 2: URL видео (mp4/webm, необязательно)"))
-    hero_slide_3_image_url = _txt(_("Слайд 3: URL изображения"))
+    hero_slide_3_image_url = _image_url(_("Слайд 3: URL изображения"))
     hero_slide_3_video_url = _txt(_("Слайд 3: URL видео (mp4/webm, необязательно)"))
-    hero_slide_4_image_url = _txt(_("Слайд 4: URL изображения"))
+    hero_slide_4_image_url = _image_url(_("Слайд 4: URL изображения"))
     hero_slide_4_video_url = _txt(_("Слайд 4: URL видео (mp4/webm, необязательно)"))
 
     # --- problem / solution ---
