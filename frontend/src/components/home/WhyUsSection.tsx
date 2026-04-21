@@ -70,6 +70,7 @@ export function WhyUsSection() {
   const { home } = useSiteSettings()
   const sectionRef = useRef<HTMLElement | null>(null)
   const [lineProgress, setLineProgress] = useState(0)
+  const [spotlight, setSpotlight] = useState<Record<string, { x: number; y: number; on: boolean }>>({})
   const w = home?.whyUs
   const heading = w?.heading ?? 'Почему выбирают нас'
   const subheading = w?.subheading ?? 'Работаем прозрачно: вы знаете этапы, сроки и ответственных.'
@@ -113,12 +114,28 @@ export function WhyUsSection() {
 
         <div className="mt-10 flex flex-col gap-6 rounded-2xl bg-surface px-4 py-8 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] sm:flex-row sm:items-stretch sm:justify-center sm:gap-0 sm:divide-x sm:divide-border-light md:gap-8 md:px-10">
           {stats.map((s, idx) => (
-            <div key={s.label} className="min-w-0 flex-1 px-0 text-center sm:px-4 md:px-6">
+            <motion.div
+              key={s.label}
+              className="min-w-0 flex-1 rounded-xl px-0 py-2 text-center transition-colors sm:px-4 md:px-6"
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ ...easeOutSoft, delay: idx * 0.08 }}
+              whileHover={
+                reduce
+                  ? undefined
+                  : {
+                      y: -3,
+                      backgroundColor: 'rgba(200,155,83,0.08)',
+                      boxShadow: '0 14px 26px -16px rgba(200,155,83,0.55)',
+                    }
+              }
+            >
               <p className="font-body text-2xl font-bold tabular-nums tracking-tight text-text md:text-4xl lg:text-5xl">
                 <AnimatedCounter value={s.value} suffix={s.suffix} duration={1.8} delay={0.12 * idx} />
               </p>
               <p className="mt-1 font-body text-xs text-text-muted md:text-sm">{s.label}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
@@ -139,21 +156,65 @@ export function WhyUsSection() {
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {cols.map((c) => (
+            {cols.map((c, idx) => (
               <motion.div
                 key={c.title}
                 variants={staggerItem}
                 className="rounded-2xl bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] lg:h-full lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none"
+                whileHover={
+                  reduce
+                    ? undefined
+                    : {
+                        y: -5,
+                      }
+                }
+                transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
-                <div className="rounded-2xl bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] lg:h-full">
+                <div
+                  className="relative overflow-hidden rounded-2xl border border-transparent bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] transition-colors duration-300 hover:border-accent/40 hover:shadow-[0_18px_36px_-18px_rgba(200,155,83,0.45)] lg:h-full"
+                  onMouseMove={
+                    reduce
+                      ? undefined
+                      : (e) => {
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          const x = e.clientX - rect.left
+                          const y = e.clientY - rect.top
+                          setSpotlight((prev) => ({
+                            ...prev,
+                            [String(idx)]: { x, y, on: true },
+                          }))
+                        }
+                  }
+                  onMouseLeave={
+                    reduce
+                      ? undefined
+                      : () =>
+                          setSpotlight((prev) => ({
+                            ...prev,
+                            [String(idx)]: {
+                              ...(prev[String(idx)] ?? { x: 0, y: 0 }),
+                              on: false,
+                            },
+                          }))
+                  }
+                >
+                  {!reduce && spotlight[String(idx)]?.on ? (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 transition-opacity duration-150"
+                      style={{
+                        background: `radial-gradient(180px circle at ${spotlight[String(idx)]?.x ?? 0}px ${spotlight[String(idx)]?.y ?? 0}px, rgba(200,155,83,0.22), transparent 70%)`,
+                      }}
+                    />
+                  ) : null}
                   <span
-                    className="flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
+                    className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
                     aria-hidden
                   >
                     {c.icon}
                   </span>
-                  <h3 className="mt-4 font-heading text-xl font-semibold text-text">{c.title}</h3>
-                  <p className="mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{c.text}</p>
+                  <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">{c.title}</h3>
+                  <p className="relative z-10 mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{c.text}</p>
                 </div>
               </motion.div>
             ))}
