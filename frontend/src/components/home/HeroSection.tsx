@@ -271,7 +271,7 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className="mt-5 font-heading text-sm uppercase tracking-[0.2em] text-accent sm:text-base"
+              className="mt-5 break-words font-heading text-sm uppercase tracking-[0.2em] text-accent sm:text-base"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.06 }}
@@ -386,7 +386,7 @@ export function HeroSection() {
                   {trustItems.map((item, idx) => (
                     <span
                       key={`hero-trust-${idx}`}
-                      className="fabric-liquid-glass-soft inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-surface/90"
+                      className="fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-[0.08em] text-surface/90 break-words"
                     >
                       {item}
                     </span>

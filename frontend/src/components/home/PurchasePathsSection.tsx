@@ -59,11 +59,11 @@ export function PurchasePathsSection() {
       transition={easeOutSoft}
     >
       <div className="fabric-card p-4 md:p-6">
-        <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent md:text-sm">{eyebrow}</p>
+        <p className="break-words font-heading text-xs uppercase tracking-[0.18em] text-accent md:text-sm">{eyebrow}</p>
         <h2 className="mt-3 break-words font-heading text-2xl font-semibold text-text md:text-4xl">
           {heading}
         </h2>
-        <p className="mt-3 max-w-3xl font-body text-sm text-text-muted md:text-base">{subheading}</p>
+        <p className="mt-3 max-w-3xl break-words font-body text-sm text-text-muted md:text-base">{subheading}</p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <motion.article
@@ -71,17 +71,17 @@ export function PurchasePathsSection() {
             whileHover={reduce ? undefined : { y: -4 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
           >
-            <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-accent/90">{readyTitle}</p>
-            <h3 className="mt-2 font-heading text-xl text-text">{readySubtitle}</h3>
+            <p className="break-words font-heading text-[11px] uppercase tracking-[0.16em] text-accent/90">{readyTitle}</p>
+            <h3 className="mt-2 break-words font-heading text-xl text-text">{readySubtitle}</h3>
             <ul className="mt-3 space-y-2 font-body text-sm text-text-muted">
               {readyPoints.map((item, idx) => (
-                <li key={`ready-path-bullet-${idx}`}>{item}</li>
+                <li key={`ready-path-bullet-${idx}`} className="break-words">{item}</li>
               ))}
             </ul>
             {isExternalHref(readyHref) ? (
               <a
                 href={readyHref}
-                className="fabric-strap-btn mt-5 inline-flex h-11 items-center justify-center rounded-full bg-accent px-5 font-body text-sm font-semibold text-bg-base hover:bg-[#d7ab67]"
+                className="fabric-strap-btn mt-5 inline-flex h-auto min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-bg-base hover:bg-[#d7ab67]"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -90,7 +90,7 @@ export function PurchasePathsSection() {
             ) : (
               <Link
                 to={readyHref}
-                className="fabric-strap-btn mt-5 inline-flex h-11 items-center justify-center rounded-full bg-accent px-5 font-body text-sm font-semibold text-bg-base hover:bg-[#d7ab67]"
+                className="fabric-strap-btn mt-5 inline-flex h-auto min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-bg-base hover:bg-[#d7ab67]"
               >
                 {readyCta}
               </Link>
@@ -102,17 +102,17 @@ export function PurchasePathsSection() {
             whileHover={reduce ? undefined : { y: -4 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
           >
-            <p className="font-heading text-[11px] uppercase tracking-[0.16em] text-accent">{customTitle}</p>
-            <h3 className="mt-2 font-heading text-xl text-text">{customSubtitle}</h3>
+            <p className="break-words font-heading text-[11px] uppercase tracking-[0.16em] text-accent">{customTitle}</p>
+            <h3 className="mt-2 break-words font-heading text-xl text-text">{customSubtitle}</h3>
             <ul className="mt-3 space-y-2 font-body text-sm text-text-muted">
               {customPoints.map((item, idx) => (
-                <li key={`custom-path-bullet-${idx}`}>{item}</li>
+                <li key={`custom-path-bullet-${idx}`} className="break-words">{item}</li>
               ))}
             </ul>
             {isExternalHref(customHref) ? (
               <a
                 href={customHref}
-                className="fabric-strap-btn mt-5 inline-flex h-11 items-center justify-center rounded-full border border-accent/60 bg-transparent px-5 font-body text-sm font-semibold text-accent hover:bg-accent hover:text-bg-base"
+                className="fabric-strap-btn mt-5 inline-flex h-auto min-h-11 items-center justify-center rounded-full border border-accent/60 bg-transparent px-5 py-2.5 font-body text-sm font-semibold text-accent hover:bg-accent hover:text-bg-base"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -121,7 +121,7 @@ export function PurchasePathsSection() {
             ) : (
               <a
                 href={customHref}
-                className="fabric-strap-btn mt-5 inline-flex h-11 items-center justify-center rounded-full border border-accent/60 bg-transparent px-5 font-body text-sm font-semibold text-accent hover:bg-accent hover:text-bg-base"
+                className="fabric-strap-btn mt-5 inline-flex h-auto min-h-11 items-center justify-center rounded-full border border-accent/60 bg-transparent px-5 py-2.5 font-body text-sm font-semibold text-accent hover:bg-accent hover:text-bg-base"
               >
                 {customCta}
               </a>
