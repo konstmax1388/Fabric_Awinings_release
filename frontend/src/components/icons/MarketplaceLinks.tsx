@@ -26,6 +26,8 @@ type Props = {
   className?: string
   /** Только иконки — для шапки */
   compact?: boolean
+  /** Игнорировать глобальные переключатели show_marketplace_* */
+  ignoreEnabledFilter?: boolean
   /** URL витрины; если для id нет записи — берётся глобальный href из конфига */
   hrefById?: Partial<Record<MarketplaceId, string>>
   /** Только эти площадки и в таком порядке (для карточек каталога — ключи из данных товара) */
@@ -45,11 +47,17 @@ function resolveHref(
   return (fromProduct || fromGlobal || m.href) as string
 }
 
-export function MarketplaceLinks({ className = '', compact = false, hrefById, linkKeys }: Props) {
+export function MarketplaceLinks({
+  className = '',
+  compact = false,
+  ignoreEnabledFilter = false,
+  hrefById,
+  linkKeys,
+}: Props) {
   const reduce = useReducedMotion()
   const { enabledMarketplaces, globalMarketplaceUrls } = useSiteSettings()
   const enabledSet = new Set(enabledMarketplaces)
-  const entries = orderEntries(linkKeys).filter((m) => enabledSet.has(m.id))
+  const entries = orderEntries(linkKeys).filter((m) => ignoreEnabledFilter || enabledSet.has(m.id))
 
   if (compact) {
     return (

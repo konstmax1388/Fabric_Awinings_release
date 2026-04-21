@@ -1,7 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { MarketplaceId } from '../../config/site'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { Product } from '../../data/products'
 import { productCardImageFrameClass } from '../../lib/productPhotoAspect'
@@ -17,11 +16,10 @@ export function ProductCard({ product }: Props) {
   const reduce = useReducedMotion()
   const navigate = useNavigate()
   const { addProduct } = useCart()
-  const { enabledMarketplaces, productPhotoAspect } = useSiteSettings()
+  const { productPhotoAspect } = useSiteSettings()
   const frameClass = productCardImageFrameClass(productPhotoAspect)
-  const enabledSet = new Set(enabledMarketplaces)
-  const mpKeys = (Object.keys(product.marketplaceLinks) as MarketplaceId[]).filter(
-    (k) => product.marketplaceLinks[k] && enabledSet.has(k),
+  const mpKeys = (Object.keys(product.marketplaceLinks) as (keyof typeof product.marketplaceLinks)[]).filter(
+    (k) => Boolean(product.marketplaceLinks[k]),
   )
   const cover = product.images[0]
   const [imgFailed, setImgFailed] = useState(false)
@@ -111,7 +109,12 @@ export function ProductCard({ product }: Props) {
             <p className="mb-2 font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">
               На маркетплейсах
             </p>
-            <MarketplaceLinks hrefById={product.marketplaceLinks} linkKeys={mpKeys} />
+            <MarketplaceLinks
+              compact
+              ignoreEnabledFilter
+              hrefById={product.marketplaceLinks}
+              linkKeys={mpKeys}
+            />
           </div>
         )}
         {autoBadges.length > 0 && (

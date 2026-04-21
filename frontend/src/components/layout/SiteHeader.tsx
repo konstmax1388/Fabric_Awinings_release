@@ -113,7 +113,7 @@ export function SiteHeader() {
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"
-          className="flex min-w-0 max-w-[min(100%,220px)] items-center gap-2 md:max-w-[280px]"
+          className="fabric-logo-link flex min-w-0 max-w-[min(100%,250px)] items-center gap-2 md:max-w-[320px]"
           aria-label={siteName}
         >
           {!logoBroken ? (
@@ -123,7 +123,8 @@ export function SiteHeader() {
               priority
               widths={[160, 320, 480]}
               sizes="(max-width: 768px) 160px, 200px"
-              className="h-8 w-auto max-h-10 max-w-full object-contain object-left md:h-10"
+              className="fabric-header-logo h-10 w-auto max-h-12 max-w-full object-contain object-left md:h-12"
+              data-logo-tone={theme === 'dark' ? 'white' : 'black'}
               onError={() => setLogoBroken(true)}
             />
           ) : (

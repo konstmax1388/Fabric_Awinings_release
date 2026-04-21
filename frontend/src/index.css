@@ -300,6 +300,23 @@ body {
     rgba(250, 247, 241, 0.95);
 }
 
+.fabric-header-logo {
+  transition: filter 240ms ease, transform 240ms ease, opacity 240ms ease;
+}
+
+.fabric-header-logo[data-logo-tone='white'] {
+  filter: brightness(0) invert(1);
+}
+
+.fabric-header-logo[data-logo-tone='black'] {
+  filter: brightness(0) saturate(0);
+}
+
+.fabric-logo-link:hover .fabric-header-logo,
+.fabric-logo-link:focus-visible .fabric-header-logo {
+  filter: none;
+}
+
 .fabric-field-label {
   margin-bottom: 0.35rem;
   display: block;

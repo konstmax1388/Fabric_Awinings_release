@@ -476,7 +476,7 @@ export function ProductPage() {
                   to="/#calculator"
                   className="fabric-strap-btn inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)] sm:w-auto"
                 >
-                  Рассчитать по размерам
+                  Нужен индивидуальный заказ?
                 </Link>
               ) : null}
             </div>
