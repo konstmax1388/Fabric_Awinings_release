@@ -76,12 +76,8 @@ def _first_city_code_excluding_sender(
     return None
 
 
-def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | None:
-    """
-    Код города получателя по коду ПВЗ из GET /v2/deliverypoints.
-    Нужен, чтобы не совпадали to_location и from_location из‑за неточного совпадения города в /location/cities
-    (например «Иваново» и склад в соседнем городе дают один code — тогда СДЭК отвечает multivalued / пустой address).
-    """
+def _get_pvz_catalog_row(settings: SiteSettings, pvz_code: str) -> dict[str, Any] | None:
+    """Строка справочника GET /v2/deliverypoints по коду пункта (для города и/или адреса ПВЗ)."""
     pc = (pvz_code or "").strip()
     if len(pc) < 2:
         return None
@@ -129,7 +125,17 @@ def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | Non
             pick = row
             break
     first = pick if pick is not None else (rows[0] if isinstance(rows[0], dict) else None)
-    if not isinstance(first, dict):
+    return first if isinstance(first, dict) else None
+
+
+def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | None:
+    """
+    Код города получателя по коду ПВЗ из GET /v2/deliverypoints.
+    Нужен, чтобы не совпадали to_location и from_location из‑за неточного совпадения города в /location/cities
+    (например «Иваново» и склад в соседнем городе дают один code — тогда СДЭК отвечает multivalued / пустой address).
+    """
+    first = _get_pvz_catalog_row(settings, pvz_code)
+    if not first:
         return None
     loc = first.get("location")
     if not isinstance(loc, dict):
@@ -144,6 +150,25 @@ def _city_code_from_pvz_code(settings: SiteSettings, pvz_code: str) -> int | Non
         return c if c > 0 else None
     except (TypeError, ValueError):
         return None
+
+
+def _pvz_address_line_from_catalog_or_snapshot(
+    settings: SiteSettings, pvz_code: str, snapshot_cdek_address: str, city_hint: str
+) -> str:
+    row = _get_pvz_catalog_row(settings, pvz_code)
+    loc = (
+        row.get("location")
+        if isinstance(row, dict) and isinstance(row.get("location"), dict)
+        else {}
+    )
+    line = (str(loc.get("address_full") or loc.get("address") or "")).strip()
+    if not line:
+        line = (snapshot_cdek_address or "").strip()
+    if not line:
+        ch = (city_hint or "").strip()
+        if ch and pvz_code:
+            line = f"{ch}, ПВЗ {pvz_code}"
+    return line[:500]
 
 
 def _tariff_code_from_snapshot(order: CartOrder, settings: SiteSettings) -> int | None:
@@ -407,10 +432,19 @@ def _extract_cdek_payload(order: CartOrder, settings: SiteSettings) -> dict[str,
         if not pvz_code:
             return None
         payload["tariff_code"] = int(DEFAULT_OFFICE_TARIFF_CODE)
-        # Один код города «откуда» и «куда» (напр. склад и ПВЗ в Иваново) — to_location+delivery_point даёт 400 multivalued.
+        # Разные коды города: стандартно code + delivery_point.
+        # Один код (склад и ПВЗ в одном НП): нельзя одновременно delivery_point и to_location без адреса (400 + пустой address);
+        # нельзя и code+point как у «двух адресов» — только to_location с непустым address по ПВЗ, без delivery_point.
         if int(to_code) != int(from_code):
             payload["to_location"] = {"code": int(to_code)}
-        payload["delivery_point"] = pvz_code
+            payload["delivery_point"] = pvz_code
+        else:
+            pvz_addr = _pvz_address_line_from_catalog_or_snapshot(
+                settings, pvz_code, cdek_line, to_city
+            ).strip()
+            if not pvz_addr:
+                return None
+            payload["to_location"] = {"code": int(to_code), "address": pvz_addr}
     elif destination_mode == "door":
         if not addr:
             return None
