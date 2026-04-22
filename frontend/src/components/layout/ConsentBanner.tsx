@@ -58,7 +58,7 @@ export function ConsentBanner() {
     <AnimatePresence>
       {visible ? (
         <motion.aside
-          className="fixed inset-x-0 bottom-0 z-[70] px-4 pb-4 md:px-6 md:pb-6"
+          className="fixed inset-x-0 bottom-0 z-[70] px-4 pb-3 md:px-6 md:pb-4"
           role="dialog"
           aria-label="Согласие на обработку персональных данных"
           initial={reduceMotion ? undefined : { y: 36, opacity: 0 }}
@@ -66,14 +66,18 @@ export function ConsentBanner() {
           exit={reduceMotion ? undefined : { y: 18, opacity: 0 }}
           transition={{ duration: 0.28, ease: [0.2, 1, 0.32, 1] }}
         >
-          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border bg-bg-base/95 p-4 shadow-2xl backdrop-blur md:p-5">
+          <div className="mx-auto w-full max-w-5xl rounded-2xl border border-border bg-bg-base/95 p-3.5 shadow-2xl backdrop-blur md:p-4">
             <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]"
-                checked={checked}
-                onChange={(e) => setChecked(e.target.checked)}
-              />
+              <span className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={checked}
+                  onChange={(e) => setChecked(e.target.checked)}
+                />
+                <span className="block h-5 w-5 rounded-md border border-border bg-bg-base transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent peer-checked:border-accent peer-checked:bg-accent/20" />
+                <span className="pointer-events-none absolute left-[5px] top-[2px] h-2.5 w-1.5 rotate-45 border-b-2 border-r-2 border-transparent transition peer-checked:border-accent" />
+              </span>
               <span className="font-body text-sm leading-relaxed text-text">
                 Я ознакомлен(а) и согласен(на) с{' '}
                 <a href={privacyPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
@@ -85,7 +89,7 @@ export function ConsentBanner() {
                 </a>
               </span>
             </label>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <div className="mt-3.5 flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
                 onClick={onAccept}
@@ -102,7 +106,7 @@ export function ConsentBanner() {
                 Отказаться
               </button>
             </div>
-            <p className="mt-3 font-body text-xs text-text-subtle">
+            <p className="mt-2.5 font-body text-xs text-text-subtle">
               Дополнительно: <a href={termsPath} target="_blank" rel="noopener noreferrer" className="hover:underline">Пользовательское соглашение</a>{' '}
               и <a href={offerPath} target="_blank" rel="noopener noreferrer" className="hover:underline">Публичная оферта</a>.
             </p>

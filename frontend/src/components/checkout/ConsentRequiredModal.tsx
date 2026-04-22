@@ -35,12 +35,16 @@ export function ConsentRequiredModal(props: Props) {
             <div className="fabric-card w-full max-w-lg p-5 sm:p-6">
               <h2 className="font-heading text-xl text-text">Для оформления заказа необходимо согласие на обработку персональных данных.</h2>
               <label className="mt-4 flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]"
-                  checked={checked}
-                  onChange={(e) => onToggle(e.target.checked)}
-                />
+                <span className="relative mt-0.5 shrink-0">
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    checked={checked}
+                    onChange={(e) => onToggle(e.target.checked)}
+                  />
+                  <span className="block h-5 w-5 rounded-md border border-border bg-bg-base transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent peer-checked:border-accent peer-checked:bg-accent/20" />
+                  <span className="pointer-events-none absolute left-[5px] top-[2px] h-2.5 w-1.5 rotate-45 border-b-2 border-r-2 border-transparent transition peer-checked:border-accent" />
+                </span>
                 <span className="font-body text-sm text-text">
                   Я ознакомлен(а) и согласен(на) с{' '}
                   <a href={privacyPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
