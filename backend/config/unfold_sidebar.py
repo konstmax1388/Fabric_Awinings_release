@@ -83,6 +83,11 @@ def build_unfold_sidebar() -> list[dict]:
                     "icon": "article",
                     "link": reverse_lazy("admin:api_blogpost_changelist"),
                 },
+                {
+                    "title": _("Статичные страницы"),
+                    "icon": "description",
+                    "link": reverse_lazy("admin:api_staticpage_changelist"),
+                },
             ],
         },
         {

@@ -297,7 +297,7 @@ export function SiteHeader() {
               type="button"
               key="mobile-menu-backdrop"
               className={[
-                'fixed inset-0 top-[73px] z-40 cursor-default backdrop-blur-[2px] md:hidden',
+                'fixed inset-0 top-[73px] z-40 cursor-default md:hidden',
                 theme === 'dark' ? 'bg-[#060a11]' : 'bg-[#0f172a]',
               ].join(' ')}
               initial={reduce ? undefined : { opacity: 0 }}
@@ -320,8 +320,8 @@ export function SiteHeader() {
               exit={reduce ? undefined : { x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             >
-              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border bg-bg-base/98">
-                <div className="fabric-liquid-glass-soft shrink-0 border-b border-border px-5 py-4">
+              <div className="flex h-full min-h-0 flex-col border-l border-border bg-bg-base">
+                <div className="shrink-0 border-b border-border bg-bg-base px-5 py-4">
                   <p className="font-heading text-lg font-semibold text-text">{navMenuTitle}</p>
                   <p className="mt-0.5 font-body text-xs text-text-muted">{navMenuSubtitle}</p>
                 </div>
@@ -380,7 +380,7 @@ export function SiteHeader() {
                     </span>
                     <span className="min-w-0 break-words">{phone}</span>
                   </a>
-                  <div className="fabric-liquid-glass-soft mt-4 rounded-2xl border border-border p-4 shadow-inner">
+                  <div className="mt-4 rounded-2xl border border-border bg-bg-base p-4">
                     <p className="mb-3 font-body text-xs font-semibold uppercase tracking-wider text-text-muted">
                       {buyOnMobileLabel}
                     </p>

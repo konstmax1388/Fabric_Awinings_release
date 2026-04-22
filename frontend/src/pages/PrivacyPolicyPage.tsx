@@ -42,7 +42,10 @@ export function PrivacyPolicyPage() {
               <header className="space-y-2">
                 <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">{page.title}</h1>
               </header>
-              <div className="cms-html" dangerouslySetInnerHTML={{ __html: page.bodyHtml }} />
+              <div
+                className="cms-html space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
+                dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+              />
             </article>
           </div>
         </main>
