@@ -1,6 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
 from .views_checkout import OzonPayWebhookView
@@ -20,6 +20,7 @@ from .views_account import (
     SiteSettingsPublicView,
     StaticPageDetailPublicView,
     StaticPageListPublicView,
+    TokenObtainPairThrottledView,
 )
 
 router = DefaultRouter()
@@ -48,7 +49,7 @@ urlpatterns = [
     path("leads/cart/", views.CartOrderCreateView.as_view(), name="lead-cart"),
     path("webhooks/ozon-pay/", OzonPayWebhookView.as_view(), name="webhook-ozon-pay"),
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
-    path("auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("auth/token/", TokenObtainPairThrottledView.as_view(), name="token_obtain_pair"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/me/", CurrentUserView.as_view(), name="auth_me"),
     path("auth/change-password/", ChangePasswordView.as_view(), name="auth_change_password"),

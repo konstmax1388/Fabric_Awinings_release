@@ -57,6 +57,8 @@ $remoteLines = @(
     "git fetch origin `"$branch`""
     "git checkout `"$branch`""
     "git reset --hard `"origin/$branch`""
+    "export GIT_SHA=`"`$(git rev-parse --short HEAD)`""
+    "export BUILD_TIME=`"`$(date -u +%Y-%m-%dT%H:%M:%SZ)`""
     "STAFF_TMP=`"/tmp/fabrika_staff_prev`""
     "rm -rf `"`$STAFF_TMP`""
     "if [ -f frontend/dist/staff/index.html ]; then mkdir -p `"`$STAFF_TMP`"; cp -a frontend/dist/staff/. `"`$STAFF_TMP`"/; fi"

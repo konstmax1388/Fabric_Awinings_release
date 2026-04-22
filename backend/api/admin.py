@@ -1345,6 +1345,8 @@ class SiteSettingsAdmin(ModelAdmin):
                 "fields": (
                     "analytics_yandex_enabled",
                     "analytics_yandex_counter_id",
+                    "analytics_head_snippet",
+                    "analytics_body_start_snippet",
                     "seo_allow_indexing",
                     "seo_region",
                     "seo_default_meta_description",
@@ -1353,7 +1355,8 @@ class SiteSettingsAdmin(ModelAdmin):
                 ),
                 "description": _(
                     "Настройки аналитики и базовых SEO-параметров витрины: включение Метрики, "
-                    "индексация, регион и суффикс заголовков."
+                    "индексация, регион и суффикс заголовков. Сниппеты можно вставить в начало <head> "
+                    "и сразу после <body> без правки кода."
                 ),
             },
         ),

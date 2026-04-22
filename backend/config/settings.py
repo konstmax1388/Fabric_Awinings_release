@@ -215,6 +215,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "lead_submit": "40/hour",
         "auth_register": "20/hour",
+        "auth_login": "30/hour",
         "staff_auth": "30/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -252,6 +253,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 _public_site = os.environ.get("DJANGO_PUBLIC_SITE_URL", "http://localhost:17300").rstrip("/")
 # Канонический origin витрины (sitemap.xml, абсолютные ссылки). Синхронизируйте с VITE_SITE_URL на фронте.
 PUBLIC_SITE_URL = _public_site
+GIT_SHA = (os.environ.get("GIT_SHA") or "").strip()
+BUILD_TIME = (os.environ.get("BUILD_TIME") or "").strip()
 
 # Astrum «Заявки с сайта» → Битрикс24: https://app-5.astrum.agency/documentation
 ASTRUM_CRM_API_URL = os.environ.get(
@@ -376,11 +379,17 @@ if not DEBUG:
             "true",
             "yes",
         )
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    X_FRAME_OPTIONS = "SAMEORIGIN"
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SECURE_HSTS_SECONDS = 0
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # Логирование: консоль; опционально файл DJANGO_LOG_FILE (ротация 5×5 МБ).
 _LOG_LEVEL = (os.environ.get("DJANGO_LOG_LEVEL") or "INFO").upper()

@@ -28,6 +28,7 @@ from .staff_views import (
     PortfolioProjectStaffViewSet,
     ReviewStaffViewSet,
     SiteEmailTemplateStaffViewSet,
+    StaticPageStaffViewSet,
     StaffMetricsOverviewView,
 )
 
@@ -42,6 +43,7 @@ router.register(r"portfolio-projects", PortfolioProjectStaffViewSet, basename="s
 router.register(r"reviews", ReviewStaffViewSet, basename="staff-reviews")
 router.register(r"blog-posts", BlogPostStaffViewSet, basename="staff-blog")
 router.register(r"email-templates", SiteEmailTemplateStaffViewSet, basename="staff-email-templates")
+router.register(r"static-pages", StaticPageStaffViewSet, basename="staff-static-pages")
 router.register(r"orders", CartOrderStaffViewSet, basename="staff-orders")
 router.register(r"leads/calculator", CalculatorLeadStaffViewSet, basename="staff-calculator-leads")
 router.register(r"users", UserStaffViewSet, basename="staff-users")

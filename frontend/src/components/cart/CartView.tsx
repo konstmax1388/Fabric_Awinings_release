@@ -151,7 +151,7 @@ export function CartView() {
               </Link>
             </div>
 
-            <aside className="lg:sticky lg:top-24 lg:w-full lg:max-w-sm lg:shrink-0">
+            <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1rem)] lg:w-full lg:max-w-sm lg:shrink-0">
               <div className="fabric-card p-5">
                 <h2 className="font-heading text-lg font-semibold text-text">{ui?.cartSummaryTitle || 'Итого'}</h2>
                 <dl className="mt-4 space-y-3 font-body text-sm">

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+import re
 
 from .slug_utils import ensure_slug_from_title
 
@@ -692,6 +693,18 @@ class SiteSettings(models.Model):
         default="",
         help_text="Только цифры, например 12345678.",
     )
+    analytics_head_snippet = models.TextField(
+        "Аналитика: сниппет в <head>",
+        blank=True,
+        default="",
+        help_text="HTML/JS, который будет вставлен в начало <head> на витрине.",
+    )
+    analytics_body_start_snippet = models.TextField(
+        "Аналитика: сниппет после <body>",
+        blank=True,
+        default="",
+        help_text="HTML/JS, который будет вставлен в начало <body> на витрине.",
+    )
     seo_allow_indexing = models.BooleanField(
         "SEO: разрешить индексацию",
         default=True,
@@ -1166,6 +1179,15 @@ class SiteSettings(models.Model):
 
     def __str__(self) -> str:
         return "Настройки сайта"
+
+    def clean(self):
+        super().clean()
+        counter = (self.analytics_yandex_counter_id or "").strip()
+        if self.analytics_yandex_enabled and counter and not re.fullmatch(r"\d+", counter):
+            raise ValidationError({"analytics_yandex_counter_id": "Разрешены только цифры."})
+        locale = (self.seo_locale or "").strip()
+        if locale and not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
+            raise ValidationError({"seo_locale": "Формат locale: xx_XX, например ru_RU."})
 
     @classmethod
     def get_solo(cls) -> "SiteSettings":

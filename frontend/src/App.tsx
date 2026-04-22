@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartProvider'
 import { YandexMetrika } from './components/analytics/YandexMetrika'
+import { AnalyticsSnippets } from './components/analytics/AnalyticsSnippets'
 import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
@@ -69,6 +70,7 @@ function AppShell() {
     <SiteSettingsProvider>
       <ScrollToTopOnRoute />
       <BrandingFavicon />
+      <AnalyticsSnippets />
       <YandexMetrika />
       <AuthProvider>
         <CartProvider>

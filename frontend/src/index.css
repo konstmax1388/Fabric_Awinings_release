@@ -32,6 +32,7 @@
   --h1-tracking: clamp(0.05em, 0.037em + 0.052vw, 0.1em);
   --body-size: clamp(1.0625rem, 1.0137rem + 0.208vw, 1.25rem);
   --price-size: clamp(3rem, 2.22rem + 3.33vw, 6rem);
+  --site-header-height: 88px;
 }
 
 :root[data-theme='light'] {

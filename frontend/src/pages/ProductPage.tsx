@@ -9,6 +9,7 @@ import { ProductGallery } from '../components/catalog/ProductGallery'
 import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { HeroCallbackModal } from '../components/home/HeroCallbackModal'
+import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
@@ -151,11 +152,12 @@ function MaterialLayersHint({
       </p>
       <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-[linear-gradient(160deg,#ebe4d8,#d9d0c3)]">
         {materialMap.imageUrl ? (
-          <img
+          <OptimizedImage
             src={materialMap.imageUrl}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
+            widths={[480, 960, 1280]}
+            sizes="(max-width: 1024px) 100vw, 60vw"
           />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/8" />
@@ -402,7 +404,7 @@ export function ProductPage() {
               aspect={productPhotoAspect}
             />
 
-            <div className="min-w-0 space-y-8 lg:sticky lg:top-28">
+            <div className="min-w-0 space-y-8 lg:sticky lg:top-[calc(var(--site-header-height)+1.25rem)]">
               <div>
                 <p className="font-body text-sm font-medium text-accent">{categoryLabel(product)}</p>
                 <ProductTeaserBadges teasers={product.teasers} className="mt-3" size="md" />

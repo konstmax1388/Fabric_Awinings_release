@@ -8,13 +8,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BlogPost, CallbackLead, PortfolioProject, Review, SiteEmailTemplate
+from .models import BlogPost, CallbackLead, PortfolioProject, Review, SiteEmailTemplate, StaticPage
 from .permissions import IsStaffUser
 from .staff_content_serializers import (
     BlogPostStaffSerializer,
     PortfolioProjectStaffSerializer,
     ReviewStaffSerializer,
     SiteEmailTemplateStaffSerializer,
+    StaticPageStaffSerializer,
 )
 from .staff_metrics import build_staff_metrics_overview
 from .staff_pagination import StaffPageNumberPagination
@@ -125,3 +126,22 @@ class SiteEmailTemplateStaffViewSet(
     search_fields = ("key", "subject")
     ordering_fields = ("key", "id")
     ordering = ("key",)
+
+
+@extend_schema_view(
+    list=extend_schema(tags=["staff"], summary="Статичные страницы: список"),
+    create=extend_schema(tags=["staff"], summary="Статичные страницы: создать"),
+    retrieve=extend_schema(tags=["staff"], summary="Статичные страницы: просмотр"),
+    update=extend_schema(tags=["staff"], summary="Статичные страницы: заменить"),
+    partial_update=extend_schema(tags=["staff"], summary="Статичные страницы: частично обновить"),
+    destroy=extend_schema(tags=["staff"], summary="Статичные страницы: удалить"),
+)
+class StaticPageStaffViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsStaffUser]
+    serializer_class = StaticPageStaffSerializer
+    queryset = StaticPage.objects.all()
+    pagination_class = StaffPageNumberPagination
+    filter_backends = [OrderingFilter, SearchFilter]
+    search_fields = ("title", "slug", "meta_title", "meta_description", "body")
+    ordering_fields = ("sort_order", "updated_at", "id", "title")
+    ordering = ("sort_order", "title")

@@ -9,6 +9,7 @@ from rest_framework import serializers
 from .admin_forms import TEASER_FORM_FIELDS, teasers_list_for_save
 from .models import Product, ProductCategory, ProductImage, ProductSpecification, ProductVariant
 from .staff_content_serializers import _abs_media, _apply_image_relative_path
+from .html_sanitize import sanitize_html_fragment
 
 
 ALLOWED_TEASERS = {k for k, _ in TEASER_FORM_FIELDS}
@@ -287,6 +288,10 @@ class ProductStaffSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict) -> Product:
         teasers_in = validated_data.pop("teasers", None)
         mp = validated_data.pop("marketplace_links", None)
+        if "description_html" in validated_data:
+            validated_data["description_html"] = sanitize_html_fragment(
+                str(validated_data.get("description_html") or "")
+            )
         instance = Product.objects.create(**validated_data)
         if mp is not None:
             instance.marketplace_links = mp
@@ -299,6 +304,10 @@ class ProductStaffSerializer(serializers.ModelSerializer):
     def update(self, instance: Product, validated_data: dict) -> Product:
         teasers_in = validated_data.pop("teasers", None)
         mp = validated_data.pop("marketplace_links", serializers.empty)
+        if "description_html" in validated_data:
+            validated_data["description_html"] = sanitize_html_fragment(
+                str(validated_data.get("description_html") or "")
+            )
         instance = super().update(instance, validated_data)
         if mp is not serializers.empty and mp is not None:
             instance.marketplace_links = mp

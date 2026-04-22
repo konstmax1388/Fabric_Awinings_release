@@ -120,6 +120,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
               width="100%"
               height="400"
               className="min-h-[320px] w-full border-0 md:min-h-[400px]"
+              loading="lazy"
               allowFullScreen
             />
           )}

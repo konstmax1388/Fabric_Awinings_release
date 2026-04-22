@@ -9,11 +9,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .home_defaults import stored_home_payload
 from .models import CartOrder, CustomerProfile, HomePageContent, ShippingAddress, SiteSettings, StaticPage
 from .permissions import MustNotBePasswordChangeOverdue
 from .throttles import AuthRegisterThrottle
+from .throttles import AuthLoginThrottle
 from .serializers import (
     ChangePasswordSerializer,
     CustomerOrderDetailSerializer,
@@ -130,6 +132,10 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class TokenObtainPairThrottledView(TokenObtainPairView):
+    throttle_classes = [AuthLoginThrottle]
 
 
 class ChangePasswordView(APIView):

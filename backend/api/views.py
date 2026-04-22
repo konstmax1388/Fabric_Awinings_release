@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from django.conf import settings
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
@@ -46,6 +47,9 @@ def health(request):
         {
             "status": "ok",
             "service": "fabric-awnings-api",
+            "version": getattr(settings, "APP_VERSION", "0.0.0"),
+            "gitSha": str(getattr(settings, "GIT_SHA", "") or ""),
+            "builtAt": str(getattr(settings, "BUILD_TIME", "") or ""),
             "time": timezone.now().isoformat(),
         }
     )

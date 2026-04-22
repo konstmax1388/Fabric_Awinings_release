@@ -102,6 +102,9 @@ function firstApiErrorText(value: unknown): string | null {
 export async function fetchHealth(): Promise<{
   status: string
   service: string
+  version?: string
+  gitSha?: string
+  builtAt?: string
   time: string
 } | null> {
   try {
@@ -620,6 +623,8 @@ export type MapFormSiteOverlay = Partial<NonNullable<HomePayload['mapForm']>>
 export type AnalyticsYandexDto = {
   enabled: boolean
   counterId: string
+  headSnippet?: string
+  bodyStartSnippet?: string
 }
 
 export type SeoDefaultsDto = {
@@ -956,6 +961,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
         return {
           enabled: a.enabled === true,
           counterId: typeof a.counterId === 'string' ? a.counterId : '',
+          headSnippet: typeof a.headSnippet === 'string' ? a.headSnippet : '',
+          bodyStartSnippet: typeof a.bodyStartSnippet === 'string' ? a.bodyStartSnippet : '',
         }
       })(),
       seoDefaults: (() => {

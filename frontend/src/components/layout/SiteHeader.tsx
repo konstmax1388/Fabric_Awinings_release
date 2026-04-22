@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
@@ -96,6 +96,7 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
 }
 
 export function SiteHeader() {
+  const headerRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
   const [logoBroken, setLogoBroken] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -147,6 +148,23 @@ export function SiteHeader() {
 
   useEffect(() => {
     const root = document.documentElement
+    const node = headerRef.current
+    if (!node) return
+    const update = () => {
+      root.style.setProperty('--site-header-height', `${Math.ceil(node.getBoundingClientRect().height)}px`)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(node)
+    window.addEventListener('resize', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
     root.setAttribute('data-theme', theme)
     try {
       window.localStorage.setItem('fabric:theme:v1', theme)
@@ -181,7 +199,7 @@ export function SiteHeader() {
 
   return (
     <>
-    <header className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
+    <header ref={headerRef} className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"

@@ -8,7 +8,8 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import BlogPost, PortfolioProject, Review, SiteEmailTemplate
+from .models import BlogPost, PortfolioProject, Review, SiteEmailTemplate, StaticPage
+from .html_sanitize import sanitize_html_fragment
 
 
 def _abs_media(request, f) -> str:
@@ -236,6 +237,8 @@ class BlogPostStaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict) -> BlogPost:
         c = validated_data.pop("coverImageRelativePath", None)
+        if "body" in validated_data:
+            validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
         instance = BlogPost.objects.create(**validated_data)
         try:
             _apply_image_relative_path(instance, "cover_image", c, "coverImageRelativePath")
@@ -247,6 +250,8 @@ class BlogPostStaffSerializer(serializers.ModelSerializer):
 
     def update(self, instance: BlogPost, validated_data: dict) -> BlogPost:
         c = validated_data.pop("coverImageRelativePath", None)
+        if "body" in validated_data:
+            validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
         instance = super().update(instance, validated_data)
         _apply_image_relative_path(instance, "cover_image", c, "coverImageRelativePath")
         instance.save()
@@ -267,3 +272,59 @@ class SiteEmailTemplateStaffSerializer(serializers.ModelSerializer):
             "subject": instance.subject,
             "body": instance.body,
         }
+
+
+class StaticPageStaffSerializer(serializers.ModelSerializer):
+    showInHeader = serializers.BooleanField(source="show_in_header")
+    showInFooter = serializers.BooleanField(source="show_in_footer")
+    headerLinkLabel = serializers.CharField(source="header_link_label", allow_blank=True, required=False)
+    footerLinkLabel = serializers.CharField(source="footer_link_label", allow_blank=True, required=False)
+    sortOrder = serializers.IntegerField(source="sort_order", min_value=0)
+    pageTitle = serializers.CharField(source="meta_title", allow_blank=True, required=False)
+    metaDescription = serializers.CharField(source="meta_description", allow_blank=True, required=False)
+    isPublished = serializers.BooleanField(source="is_published")
+
+    class Meta:
+        model = StaticPage
+        fields = (
+            "id",
+            "slug",
+            "title",
+            "pageTitle",
+            "metaDescription",
+            "body",
+            "showInHeader",
+            "showInFooter",
+            "headerLinkLabel",
+            "footerLinkLabel",
+            "sortOrder",
+            "isPublished",
+            "updated_at",
+        )
+        read_only_fields = ("id", "updated_at")
+
+    def to_representation(self, instance: StaticPage) -> dict[str, Any]:
+        return {
+            "id": str(instance.pk),
+            "slug": instance.slug,
+            "title": instance.title,
+            "pageTitle": instance.meta_title or "",
+            "metaDescription": instance.meta_description or "",
+            "body": instance.body or "",
+            "showInHeader": instance.show_in_header,
+            "showInFooter": instance.show_in_footer,
+            "headerLinkLabel": instance.header_link_label or "",
+            "footerLinkLabel": instance.footer_link_label or "",
+            "sortOrder": instance.sort_order,
+            "isPublished": instance.is_published,
+            "updatedAt": instance.updated_at.isoformat() if instance.updated_at else None,
+        }
+
+    def create(self, validated_data: dict) -> StaticPage:
+        validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
+        return super().create(validated_data)
+
+    def update(self, instance: StaticPage, validated_data: dict) -> StaticPage:
+        if "body" in validated_data:
+            validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
+        return super().update(instance, validated_data)

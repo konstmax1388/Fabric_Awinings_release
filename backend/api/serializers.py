@@ -14,6 +14,7 @@ from .validators import (
     normalize_ru_phone_optional,
     reject_honeypot,
 )
+from .html_sanitize import sanitize_html_fragment
 from .models import (
     BlogPost,
     CalculatorLead,
@@ -161,9 +162,7 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(ProductListSerializer):
-    descriptionHtml = serializers.CharField(
-        source="description_html", allow_blank=True, read_only=True
-    )
+    descriptionHtml = serializers.SerializerMethodField()
     variants = ProductVariantDetailSerializer(many=True, read_only=True)
     specifications = ProductSpecificationSerializer(many=True, read_only=True)
     defaultVariantId = serializers.SerializerMethodField()
@@ -177,6 +176,9 @@ class ProductDetailSerializer(ProductListSerializer):
             "defaultVariantId",
             "materialMap",
         )
+
+    def get_descriptionHtml(self, obj: Product) -> str:
+        return sanitize_html_fragment(obj.description_html or "")
 
     def get_defaultVariantId(self, obj: Product) -> str | None:
         d = obj.variants.filter(is_default=True).first()
@@ -326,8 +328,13 @@ class BlogPostListSerializer(serializers.ModelSerializer):
 
 
 class BlogPostDetailSerializer(BlogPostListSerializer):
+    body = serializers.SerializerMethodField()
+
     class Meta(BlogPostListSerializer.Meta):
         fields = BlogPostListSerializer.Meta.fields + ("body",)
+
+    def get_body(self, obj: BlogPost) -> str:
+        return sanitize_html_fragment(obj.body or "")
 
 
 class CalculatorLeadCreateSerializer(serializers.ModelSerializer):
@@ -876,6 +883,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         return {
             "enabled": bool(obj.analytics_yandex_enabled),
             "counterId": str(obj.analytics_yandex_counter_id or "").strip(),
+            "headSnippet": str(obj.analytics_head_snippet or "").strip(),
+            "bodyStartSnippet": str(obj.analytics_body_start_snippet or "").strip(),
         }
 
     def get_seoDefaults(self, obj: SiteSettings) -> dict:
@@ -892,7 +901,7 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
     path = serializers.SerializerMethodField()
     pageTitle = serializers.CharField(source="meta_title", read_only=True)
     metaDescription = serializers.CharField(source="meta_description", read_only=True)
-    bodyHtml = serializers.CharField(source="body", read_only=True)
+    bodyHtml = serializers.SerializerMethodField()
     showInHeader = serializers.BooleanField(source="show_in_header", read_only=True)
     showInFooter = serializers.BooleanField(source="show_in_footer", read_only=True)
     headerLinkLabel = serializers.CharField(source="header_link_label", read_only=True)
@@ -919,6 +928,9 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
 
     def get_path(self, obj: StaticPage) -> str:
         return f"/{obj.slug}"
+
+    def get_bodyHtml(self, obj: StaticPage) -> str:
+        return sanitize_html_fragment(obj.body or "")
 
 
 class RegisterSerializer(serializers.Serializer):
