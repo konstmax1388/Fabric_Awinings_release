@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { ContactsContentBlock } from '../contacts/ContactsContentBlock'
 import { SITE } from '../../config/site'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { constructorMapHeightPx, parseMapEmbed } from '../../lib/yandexMapEmbed'
 import { YandexConstructorMap } from './YandexConstructorMap'
 import {
@@ -19,7 +20,7 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem
 
 export function MapFormSection({ showHeading = true }: { showHeading?: boolean }) {
   const reduce = useReducedMotion()
-  const { home, address, mapForm } = useSiteSettings()
+  const { home, address, mapForm, staticPages } = useSiteSettings()
   const mf = { ...home?.mapForm, ...(mapForm ?? {}) }
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -42,6 +43,8 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
   const submitting = mf.submitting ?? 'Отправка…'
   const successMessage =
     mf.successMessage ?? 'Спасибо! Заявка принята. Перезвоним в рабочее время.'
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
 
   const addressLine = address?.trim() || SITE.address
 
@@ -180,11 +183,11 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
               {error ? <p className="mt-3 font-body text-sm text-red-600">{error}</p> : null}
               <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
                 Нажимая «{submitButton}», вы соглашаетесь с{' '}
-                <Link to="/privacy" className="text-accent hover:underline">
+                <Link to={privacyPath} className="text-accent hover:underline">
                   политикой конфиденциальности
                 </Link>{' '}
                 и{' '}
-                <Link to="/offer" className="text-accent hover:underline">
+                <Link to={offerPath} className="text-accent hover:underline">
                   публичной офертой
                 </Link>
                 .

@@ -7,6 +7,7 @@ import {
   clamp,
 } from '../../lib/calculator'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import {
   COMMENT_MAX_LEN,
   formatRuPhoneMask,
@@ -19,7 +20,7 @@ import { submitCalculatorLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 
 export function PriceCalculatorSection() {
-  const { home } = useSiteSettings()
+  const { home, staticPages } = useSiteSettings()
   const c = home?.calculator ?? {}
   const cfg = useMemo(() => calculatorRuntimeFromHome(home?.calculator), [home?.calculator])
   const materials = cfg.materials
@@ -156,6 +157,8 @@ export function PriceCalculatorSection() {
   const consentPrivacyLink = c.consentPrivacyLinkLabel ?? 'политикой конфиденциальности'
   const consentAnd = c.consentAndLabel ?? 'и'
   const consentOfferLink = c.consentOfferLinkLabel ?? 'публичной офертой'
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
 
   return (
     <motion.section
@@ -415,11 +418,11 @@ export function PriceCalculatorSection() {
                 )}
                 <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
                   {consentPrefix}{' '}
-                  <Link to="/privacy" className="text-accent hover:underline">
+                  <Link to={privacyPath} className="text-accent hover:underline">
                     {consentPrivacyLink}
                   </Link>{' '}
                   {consentAnd}{' '}
-                  <Link to="/offer" className="text-accent hover:underline">
+                  <Link to={offerPath} className="text-accent hover:underline">
                     {consentOfferLink}
                   </Link>
                   .

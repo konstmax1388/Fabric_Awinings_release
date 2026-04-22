@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { type FormEventHandler, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { fetchReviews, postReviewSubmission, type ReviewItem } from '../../lib/api'
 import {
   easeOutSoft,
@@ -27,7 +28,7 @@ function Stars({ rating }: { rating: number }) {
 export function ReviewsSection() {
   const REVIEW_PREVIEW_LIMIT = 190
   const reduce = useReducedMotion()
-  const { home } = useSiteSettings()
+  const { home, staticPages } = useSiteSettings()
   const rv = home?.reviews
   const heading = rv?.heading ?? 'Отзывы клиентов'
   const subheading = rv?.subheading ?? 'Реальные заказчики B2B и частные лица.'
@@ -44,6 +45,7 @@ export function ReviewsSection() {
   const consentPrefix =
     rv?.consentPrefix ?? 'Согласен на публикацию отзыва и обработку персональных данных согласно'
   const consentLinkLabel = rv?.consentLinkLabel ?? 'политике конфиденциальности'
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
   const submitButton = rv?.submitButton ?? 'Отправить отзыв'
   const submittingLabel = rv?.submitting ?? 'Отправка...'
   const successMessage =
@@ -229,7 +231,7 @@ export function ReviewsSection() {
             />
             <label htmlFor="review-consent">
               {consentPrefix}{' '}
-              <Link to="/privacy" className="text-accent hover:underline">
+              <Link to={privacyPath} className="text-accent hover:underline">
                 {consentLinkLabel}
               </Link>
               .

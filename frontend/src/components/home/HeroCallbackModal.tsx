@@ -12,6 +12,8 @@ import {
 import { submitCallbackLead } from '../../lib/leads'
 import type { HeroCallbackModalTexts } from '../../types/homePage'
 import { easeOutSoft } from '../../lib/motion-presets'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 
 type Props = {
   open: boolean
@@ -20,6 +22,7 @@ type Props = {
 }
 
 export function HeroCallbackModal({ open, onClose, modal }: Props) {
+  const { staticPages } = useSiteSettings()
   const reduce = useReducedMotion()
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -66,6 +69,8 @@ export function HeroCallbackModal({ open, onClose, modal }: Props) {
   const submitBtn = modal.submitButton ?? 'Заказать звонок'
   const submitting = modal.submitting ?? 'Отправка…'
   const success = modal.successMessage ?? 'Спасибо! Мы перезвоним в рабочее время.'
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -168,11 +173,11 @@ export function HeroCallbackModal({ open, onClose, modal }: Props) {
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <p className="font-body text-xs leading-relaxed text-text-subtle">
                   Отправляя форму, вы принимаете{' '}
-                  <Link to="/privacy" className="text-accent hover:underline" onClick={onClose}>
+                  <Link to={privacyPath} className="text-accent hover:underline" onClick={onClose}>
                     политику конфиденциальности
                   </Link>{' '}
                   и{' '}
-                  <Link to="/offer" className="text-accent hover:underline" onClick={onClose}>
+                  <Link to={offerPath} className="text-accent hover:underline" onClick={onClose}>
                     публичную оферту
                   </Link>
                   .

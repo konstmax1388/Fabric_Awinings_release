@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { getPublicAdminLinks } from '../../config/adminLinks'
 import { GLOBAL_MARKETPLACE_URLS } from '../../config/site'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
@@ -57,6 +58,8 @@ export function SiteFooter() {
   const showStaffLinks = Boolean(reactAdminUrl || djangoAdminUrl)
   const [staffModalOpen, setStaffModalOpen] = useState(false)
   const footerStaticPages = staticPages.filter((p) => p.showInFooter)
+  const footerPrivacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const footerOfferPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
 
   return (
     <footer className="border-t border-border bg-bg-base">
@@ -213,10 +216,10 @@ export function SiteFooter() {
               ))
             ) : (
               <>
-                <Link to="/privacy" className="hover:text-accent">
+                <Link to={footerPrivacyPath} className="hover:text-accent">
                   {footerPrivacyLink}
                 </Link>
-                <Link to="/offer" className="hover:text-accent">
+                <Link to={footerOfferPath} className="hover:text-accent">
                   {footerOfferLink}
                 </Link>
               </>

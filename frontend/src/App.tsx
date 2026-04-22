@@ -46,12 +46,6 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((m) => ({ 
 const ContactsPage = lazy(() => import('./pages/ContactsPage').then((m) => ({ default: m.ContactsPage })))
 const BlogPage = lazy(() => import('./pages/BlogPage').then((m) => ({ default: m.BlogPage })))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((m) => ({ default: m.BlogPostPage })))
-const PrivacyPolicyPage = lazy(() =>
-  import('./pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })),
-)
-const PublicOfferPage = lazy(() =>
-  import('./pages/PublicOfferPage').then((m) => ({ default: m.PublicOfferPage })),
-)
 const StaticPageRoute = lazy(() =>
   import('./pages/StaticPageRoute').then((m) => ({ default: m.StaticPageRoute })),
 )
@@ -117,8 +111,6 @@ const router = createBrowserRouter([
       { path: '/contacts', element: <ContactsPage /> },
       { path: '/blog', element: <BlogPage /> },
       { path: '/blog/:slug', element: <BlogPostPage /> },
-      { path: '/privacy', element: <PrivacyPolicyPage /> },
-      { path: '/offer', element: <PublicOfferPage /> },
       { path: '/:slug', element: <StaticPageRoute /> },
       { path: '*', element: <NotFoundPage /> },
     ],

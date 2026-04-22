@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { useCart } from '../../hooks/useCart'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
 
@@ -19,7 +20,10 @@ function pluralPositions(n: number): string {
 /** Состав корзины; оформление — на `/checkout`. */
 export function CartView() {
   const { items, removeLine, setQty, totalQty, totalApprox } = useCart()
-  const { productPhotoAspect, home } = useSiteSettings()
+  const { productPhotoAspect, home, staticPages } = useSiteSettings()
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
+  const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
   const ui = home?.ui
 
   return (
@@ -168,6 +172,7 @@ export function CartView() {
                 </dl>
                 <p className="mt-3 rounded-xl bg-surface p-3 font-body text-xs leading-relaxed text-text-muted">
                   {ui?.cartSummaryDeliveryNote || 'Итоговая сумма появится после выбора и расчета доставки.'}
+                  {' '}Подробнее: <Link to={paymentDeliveryPath} className="text-accent hover:underline">Оплата и доставка</Link>.
                 </p>
                 <Link
                   to="/checkout"
@@ -180,11 +185,11 @@ export function CartView() {
                 </p>
                 <p className="mt-2 text-center font-body text-xs leading-relaxed text-text-subtle">
                   {ui?.cartTermsPrefix || 'Оформление заказа регулируется'}{' '}
-                  <Link to="/offer" className="text-accent hover:underline">
+                  <Link to={offerPath} className="text-accent hover:underline">
                     публичной офертой
                   </Link>{' '}
                   и{' '}
-                  <Link to="/privacy" className="text-accent hover:underline">
+                  <Link to={privacyPath} className="text-accent hover:underline">
                     политикой конфиденциальности
                   </Link>
                   .

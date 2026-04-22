@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../lib/legalPages'
 import { useCart } from '../hooks/useCart'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
@@ -56,7 +57,11 @@ type CdekMode = 'office' | 'door'
 export function CheckoutPage() {
   const { items, totalApprox, clear, totalQty } = useCart()
   const { user, accessToken } = useAuth()
-  const { checkout, loading: settingsLoading, seoDefaults } = useSiteSettings()
+  const { checkout, loading: settingsLoading, seoDefaults, staticPages } = useSiteSettings()
+  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
+  const termsPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.terms, '/')
+  const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
   const [step, setStep] = useState<Step>(1)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -901,12 +906,20 @@ export function CheckoutPage() {
               )}
               <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
                 Подтверждая заказ, вы принимаете{' '}
-                <Link to="/privacy" className="text-accent hover:underline">
+                <Link to={privacyPath} className="text-accent hover:underline">
                   политику конфиденциальности
                 </Link>{' '}
                 и{' '}
-                <Link to="/offer" className="text-accent hover:underline">
+                <Link to={offerPath} className="text-accent hover:underline">
                   публичную оферту
+                </Link>
+                ,{' '}
+                <Link to={termsPath} className="text-accent hover:underline">
+                  пользовательское соглашение
+                </Link>{' '}
+                и условия страницы{' '}
+                <Link to={paymentDeliveryPath} className="text-accent hover:underline">
+                  «Оплата и доставка»
                 </Link>
                 .
               </p>
