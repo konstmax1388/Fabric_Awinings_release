@@ -298,7 +298,7 @@ export function SiteHeader() {
               key="mobile-menu-backdrop"
               className={[
                 'fixed inset-0 top-[73px] z-40 cursor-default backdrop-blur-[2px] md:hidden',
-                theme === 'dark' ? 'bg-[#060a11]/90' : 'bg-[#0f172a]/56',
+                theme === 'dark' ? 'bg-[#060a11]/90' : 'bg-[#0f172a]/64',
               ].join(' ')}
               initial={reduce ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
