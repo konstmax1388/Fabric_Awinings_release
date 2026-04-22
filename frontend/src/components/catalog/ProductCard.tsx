@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { MARKETPLACES, type MarketplaceId } from '../../config/site'
 import type { Product } from '../../data/products'
 import { productCardImageFrameClass } from '../../lib/productPhotoAspect'
 import { useCart } from '../../hooks/useCart'
@@ -18,9 +19,10 @@ export function ProductCard({ product }: Props) {
   const { addProduct } = useCart()
   const { productPhotoAspect } = useSiteSettings()
   const frameClass = productCardImageFrameClass(productPhotoAspect)
-  const mpKeys = (Object.keys(product.marketplaceLinks) as (keyof typeof product.marketplaceLinks)[]).filter(
+  const mpKeysRaw = (Object.keys(product.marketplaceLinks) as MarketplaceId[]).filter(
     (k) => Boolean(product.marketplaceLinks[k]),
   )
+  const mpKeys = MARKETPLACES.map((m) => m.id).filter((id) => mpKeysRaw.includes(id))
   const cover = product.images[0]
   const [imgFailed, setImgFailed] = useState(false)
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)

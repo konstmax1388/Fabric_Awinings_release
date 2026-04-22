@@ -11,7 +11,7 @@ import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { MARKETPLACES } from '../config/site'
+import { MARKETPLACES, type MarketplaceId } from '../config/site'
 import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
 import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
@@ -172,7 +172,7 @@ function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product[
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
-  const { enabledMarketplaces, calculatorEnabled, productPhotoAspect, seoDefaults } = useSiteSettings()
+  const { calculatorEnabled, productPhotoAspect, seoDefaults } = useSiteSettings()
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -236,10 +236,15 @@ export function ProductPage() {
     })
   }, [product, galleryImages, displayPrice, seoDefaults.region])
 
-  const displayMpKeys = useMemo(
-    () => enabledMarketplaces.filter((id) => MARKETPLACES.some((m) => m.id === id)),
-    [enabledMarketplaces],
-  )
+  const displayMpKeys = useMemo(() => {
+    const merged = marketplaceMerged
+    const withUrl = (Object.keys(merged) as MarketplaceId[]).filter((id) => {
+      const u = merged[id]
+      return typeof u === 'string' && u.trim().length > 0
+    })
+    const order = MARKETPLACES.map((m) => m.id)
+    return order.filter((id) => withUrl.includes(id))
+  }, [marketplaceMerged])
 
   const specSectionsForDrawer = useMemo(() => {
     const specs = product?.specifications
@@ -461,15 +466,22 @@ export function ProductPage() {
 
               {product.materialMap ? <MaterialLayersHint materialMap={product.materialMap} /> : null}
 
-              <div className="fabric-card p-5 md:p-6">
-                <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
-                <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">
-                  Переход к покупке на выбранной площадке — в новой вкладке.
-                </p>
-                <div className="mt-4">
-                  <MarketplaceLinks hrefById={marketplaceMerged} linkKeys={displayMpKeys} />
+              {displayMpKeys.length > 0 ? (
+                <div className="fabric-card p-5 md:p-6">
+                  <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
+                  <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">
+                    Переход к покупке на выбранной площадке — в новой вкладке.
+                  </p>
+                  <div className="mt-4">
+                    <MarketplaceLinks
+                      compact
+                      ignoreEnabledFilter
+                      hrefById={marketplaceMerged}
+                      linkKeys={displayMpKeys}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               {calculatorEnabled ? (
                 <Link
