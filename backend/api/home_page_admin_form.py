@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from django import forms
@@ -9,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from unfold.widgets import UnfoldAdminImageFieldWidget
 
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
-from .home_defaults import default_home_payload, merged_home_payload
+from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
 from .models import HomePageContent
 
 HERO_ACTION_CHOICES = (
@@ -31,6 +32,39 @@ HERO_HEIGHT_MODE_CHOICES = (
 CALCULATOR_MODE_CHOICES = (
     ("calculator", _("Конструктор (калькулятор)")),
     ("request_form", _("Форма заявки на индивидуальный проект")),
+)
+
+CALC_PRICING_MODEL_CHOICES = (
+    (
+        "area_plus_options",
+        _(
+            "Площадь + опции: (м² × цена материала) + сумма опций "
+            "(пример: 12 м² × 3 200 + 2 500 = 40 900 ₽)"
+        ),
+    ),
+    (
+        "area_only",
+        _(
+            "Только площадь: м² × цена материала "
+            "(пример: 12 м² × 3 200 = 38 400 ₽)"
+        ),
+    ),
+    (
+        "options_only",
+        _(
+            "Только опции: сумма выбранных опций "
+            "(пример: 1 200 + 2 500 = 3 700 ₽)"
+        ),
+    ),
+)
+
+CALC_ROUND_STEP_CHOICES = (
+    (1, "1 ₽"),
+    (10, "10 ₽"),
+    (50, "50 ₽"),
+    (100, "100 ₽"),
+    (500, "500 ₽"),
+    (1000, "1 000 ₽"),
 )
 
 _W = (
@@ -387,6 +421,164 @@ class HomePageContentAdminForm(forms.ModelForm):
     calc_request_benefit_2 = _req_txt(_("Форма заявки: преимущество 2"))
     calc_request_benefit_3 = _req_txt(_("Форма заявки: преимущество 3"))
 
+    calc_pricing_model = forms.ChoiceField(
+        label=_("Модель расчёта"),
+        choices=CALC_PRICING_MODEL_CHOICES,
+        initial="area_plus_options",
+        widget=forms.Select(attrs={"class": _W}),
+        help_text=_(
+            "Выберите формулу: площадь+опции / только площадь / только опции. "
+            "После расчёта для любой модели применяется округление до шага и нижняя граница «Минимальная сумма»."
+        ),
+    )
+    calc_range_len_min = forms.FloatField(
+        label=_("Длина: минимум (м)"),
+        required=True,
+        min_value=0.1,
+        max_value=500.0,
+        initial=1.0,
+        widget=forms.NumberInput(attrs={"class": _W, "step": "0.1"}),
+    )
+    calc_range_len_max = forms.FloatField(
+        label=_("Длина: максимум (м)"),
+        required=True,
+        min_value=0.1,
+        max_value=500.0,
+        initial=30.0,
+        widget=forms.NumberInput(attrs={"class": _W, "step": "0.1"}),
+    )
+    calc_range_wid_min = forms.FloatField(
+        label=_("Ширина: минимум (м)"),
+        required=True,
+        min_value=0.1,
+        max_value=500.0,
+        initial=1.0,
+        widget=forms.NumberInput(attrs={"class": _W, "step": "0.1"}),
+    )
+    calc_range_wid_max = forms.FloatField(
+        label=_("Ширина: максимум (м)"),
+        required=True,
+        min_value=0.1,
+        max_value=500.0,
+        initial=20.0,
+        widget=forms.NumberInput(attrs={"class": _W, "step": "0.1"}),
+    )
+    calc_min_total_rub = forms.IntegerField(
+        label=_("Минимальная сумма (₽), не ниже"),
+        required=True,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_round_step = forms.TypedChoiceField(
+        label=_("Округление итоговой суммы до"),
+        coerce=int,
+        choices=CALC_ROUND_STEP_CHOICES,
+        initial=1,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+
+    calc_m0_id = _txt(_("Материал 1: id (латиница, опционально)"))
+    calc_m0_label = _txt(_("Материал 1: подпись"))
+    calc_m0_price_m2 = forms.IntegerField(
+        label=_("Материал 1: цена ₽/м²"),
+        required=False,
+        min_value=0,
+        initial=3200,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_m1_id = _txt(_("Материал 2: id"))
+    calc_m1_label = _txt(_("Материал 2: подпись"))
+    calc_m1_price_m2 = forms.IntegerField(
+        label=_("Материал 2: цена ₽/м²"),
+        required=False,
+        min_value=0,
+        initial=4100,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_m2_id = _txt(_("Материал 3: id"))
+    calc_m2_label = _txt(_("Материал 3: подпись"))
+    calc_m2_price_m2 = forms.IntegerField(
+        label=_("Материал 3: цена ₽/м²"),
+        required=False,
+        min_value=0,
+        initial=2800,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_m3_id = _txt(_("Материал 4: id"))
+    calc_m3_label = _txt(_("Материал 4: подпись"))
+    calc_m3_price_m2 = forms.IntegerField(
+        label=_("Материал 4: цена ₽/м²"),
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_m4_id = _txt(_("Материал 5: id"))
+    calc_m4_label = _txt(_("Материал 5: подпись"))
+    calc_m4_price_m2 = forms.IntegerField(
+        label=_("Материал 5: цена ₽/м²"),
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+
+    calc_o0_id = _txt(_("Опция 1: id"))
+    calc_o0_label = _txt(_("Опция 1: подпись"))
+    calc_o0_price = forms.IntegerField(
+        label=_("Опция 1: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=1200,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_o1_id = _txt(_("Опция 2: id"))
+    calc_o1_label = _txt(_("Опция 2: подпись"))
+    calc_o1_price = forms.IntegerField(
+        label=_("Опция 2: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=2500,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_o2_id = _txt(_("Опция 3: id"))
+    calc_o2_label = _txt(_("Опция 3: подпись"))
+    calc_o2_price = forms.IntegerField(
+        label=_("Опция 3: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=1800,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_o3_id = _txt(_("Опция 4: id"))
+    calc_o3_label = _txt(_("Опция 4: подпись"))
+    calc_o3_price = forms.IntegerField(
+        label=_("Опция 4: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_o4_id = _txt(_("Опция 5: id"))
+    calc_o4_label = _txt(_("Опция 5: подпись"))
+    calc_o4_price = forms.IntegerField(
+        label=_("Опция 5: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+    calc_o5_id = _txt(_("Опция 6: id"))
+    calc_o5_label = _txt(_("Опция 6: подпись"))
+    calc_o5_price = forms.IntegerField(
+        label=_("Опция 6: надбавка ₽"),
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": _W}),
+    )
+
     # --- portfolio ---
     port_heading = _req_txt(_("Заголовок"))
     port_subheading = _area(_("Подзаголовок"), rows=2)
@@ -640,6 +832,55 @@ class HomePageContentAdminForm(forms.ModelForm):
         ):
             self.initial.setdefault(suffix, calc.get(key, ""))
 
+        pm = calc.get("pricingModel")
+        self.initial.setdefault(
+            "calc_pricing_model",
+            pm if pm in ("area_plus_options", "area_only", "options_only") else "area_plus_options",
+        )
+        try:
+            self.initial.setdefault("calc_range_len_min", float(calc.get("lengthMinM", 1)))
+        except (TypeError, ValueError):
+            self.initial.setdefault("calc_range_len_min", 1.0)
+        try:
+            self.initial.setdefault("calc_range_len_max", float(calc.get("lengthMaxM", 30)))
+        except (TypeError, ValueError):
+            self.initial.setdefault("calc_range_len_max", 30.0)
+        try:
+            self.initial.setdefault("calc_range_wid_min", float(calc.get("widthMinM", 1)))
+        except (TypeError, ValueError):
+            self.initial.setdefault("calc_range_wid_min", 1.0)
+        try:
+            self.initial.setdefault("calc_range_wid_max", float(calc.get("widthMaxM", 20)))
+        except (TypeError, ValueError):
+            self.initial.setdefault("calc_range_wid_max", 20.0)
+        try:
+            self.initial.setdefault("calc_min_total_rub", int(calc.get("minimumTotalRub", 0)))
+        except (TypeError, ValueError):
+            self.initial.setdefault("calc_min_total_rub", 0)
+        try:
+            rs = int(calc.get("roundingStep", 1))
+        except (TypeError, ValueError):
+            rs = 1
+        self.initial.setdefault("calc_round_step", rs if rs in (1, 10, 50, 100, 500, 1000) else 1)
+        mats = calc.get("materials") if isinstance(calc.get("materials"), list) else []
+        for i in range(5):
+            row = mats[i] if i < len(mats) and isinstance(mats[i], dict) else {}
+            self.initial.setdefault(f"calc_m{i}_id", str(row.get("id", "") or "").strip())
+            self.initial.setdefault(f"calc_m{i}_label", str(row.get("label", "") or "").strip())
+            try:
+                self.initial.setdefault(f"calc_m{i}_price_m2", int(row.get("pricePerM2", 0)))
+            except (TypeError, ValueError):
+                self.initial.setdefault(f"calc_m{i}_price_m2", 0)
+        opts = calc.get("options") if isinstance(calc.get("options"), list) else []
+        for i in range(6):
+            row = opts[i] if i < len(opts) and isinstance(opts[i], dict) else {}
+            self.initial.setdefault(f"calc_o{i}_id", str(row.get("id", "") or "").strip())
+            self.initial.setdefault(f"calc_o{i}_label", str(row.get("label", "") or "").strip())
+            try:
+                self.initial.setdefault(f"calc_o{i}_price", int(row.get("price", 0)))
+            except (TypeError, ValueError):
+                self.initial.setdefault(f"calc_o{i}_price", 0)
+
         port = m.get("portfolio") or {}
         self.initial.setdefault("port_heading", port.get("heading", ""))
         self.initial.setdefault("port_subheading", port.get("subheading", ""))
@@ -793,6 +1034,34 @@ class HomePageContentAdminForm(forms.ModelForm):
             "subheading": cd["feat_subheading"].strip(),
             "catalogCta": cd["feat_catalog_cta"].strip(),
         }
+        calc_materials: list[dict[str, Any]] = []
+        for i in range(5):
+            label = str(cd.get(f"calc_m{i}_label") or "").strip()
+            if not label:
+                continue
+            try:
+                ppm = int(cd.get(f"calc_m{i}_price_m2") or 0)
+            except (TypeError, ValueError):
+                ppm = 0
+            if ppm <= 0:
+                continue
+            raw_id = str(cd.get(f"calc_m{i}_id") or "").strip()
+            mid = _calc_safe_id(raw_id, f"mat{i}")
+            calc_materials.append({"id": mid, "label": label, "pricePerM2": ppm})
+        calc_options: list[dict[str, Any]] = []
+        for i in range(6):
+            label = str(cd.get(f"calc_o{i}_label") or "").strip()
+            if not label:
+                continue
+            try:
+                pr = int(cd.get(f"calc_o{i}_price") or 0)
+            except (TypeError, ValueError):
+                pr = 0
+            if pr < 0:
+                continue
+            raw_id = str(cd.get(f"calc_o{i}_id") or "").strip()
+            oid = _calc_safe_id(raw_id, f"opt{i}")
+            calc_options.append({"id": oid, "label": label, "price": pr})
         base["calculator"] = {
             "mode": cd["calc_mode"],
             "heading": cd["calc_heading"].strip(),
@@ -817,6 +1086,15 @@ class HomePageContentAdminForm(forms.ModelForm):
             "requestFormBenefit1": cd["calc_request_benefit_1"].strip(),
             "requestFormBenefit2": cd["calc_request_benefit_2"].strip(),
             "requestFormBenefit3": cd["calc_request_benefit_3"].strip(),
+            "pricingModel": cd["calc_pricing_model"],
+            "lengthMinM": float(cd["calc_range_len_min"]),
+            "lengthMaxM": float(cd["calc_range_len_max"]),
+            "widthMinM": float(cd["calc_range_wid_min"]),
+            "widthMaxM": float(cd["calc_range_wid_max"]),
+            "minimumTotalRub": int(cd["calc_min_total_rub"]),
+            "roundingStep": int(cd["calc_round_step"]),
+            "materials": calc_materials,
+            "options": calc_options,
         }
         raw_filters = [x.strip() for x in cd["port_filters"].split(",") if x.strip()]
         base["portfolio"] = {
@@ -880,6 +1158,82 @@ class HomePageContentAdminForm(forms.ModelForm):
         }
         return base
 
+    def clean(self):
+        cleaned = super().clean()
+        if "calc_range_len_min" not in self.fields:
+            return cleaned
+        lmin, lmax = cleaned.get("calc_range_len_min"), cleaned.get("calc_range_len_max")
+        wmin, wmax = cleaned.get("calc_range_wid_min"), cleaned.get("calc_range_wid_max")
+        try:
+            if lmin is not None and lmax is not None and float(lmin) >= float(lmax):
+                self.add_error(
+                    "calc_range_len_max",
+                    _("Максимум длины должен быть больше минимума."),
+                )
+        except (TypeError, ValueError):
+            pass
+        try:
+            if wmin is not None and wmax is not None and float(wmin) >= float(wmax):
+                self.add_error(
+                    "calc_range_wid_max",
+                    _("Максимум ширины должен быть больше минимума."),
+                )
+        except (TypeError, ValueError):
+            pass
+        mat_ids: dict[str, str] = {}
+        mat_valid = 0
+        for i in range(5):
+            label = str(cleaned.get(f"calc_m{i}_label") or "").strip()
+            raw_p = cleaned.get(f"calc_m{i}_price_m2")
+            try:
+                ppm = int(raw_p) if raw_p is not None and raw_p != "" else 0
+            except (TypeError, ValueError):
+                ppm = 0
+            if not label or ppm <= 0:
+                continue
+            mat_valid += 1
+            raw_id = str(cleaned.get(f"calc_m{i}_id") or "").strip()
+            mid = _calc_safe_id(raw_id, f"mat{i}")
+            prev = mat_ids.get(mid)
+            if prev is not None:
+                self.add_error(
+                    f"calc_m{i}_id",
+                    _("Повторяющийся id «%(id)s» (уже задан в %(field)s).")
+                    % {"id": mid, "field": prev},
+                )
+            else:
+                mat_ids[mid] = f"calc_m{i}_id"
+        if mat_valid == 0:
+            self.add_error(
+                "calc_m0_label",
+                _("Нужен хотя бы один материал с подписью и ценой ₽/м² больше 0."),
+            )
+        opt_ids: dict[str, str] = {}
+        for i in range(6):
+            label = str(cleaned.get(f"calc_o{i}_label") or "").strip()
+            raw_p = cleaned.get(f"calc_o{i}_price")
+            try:
+                pr = int(raw_p) if raw_p is not None and raw_p != "" else 0
+            except (TypeError, ValueError):
+                pr = 0
+            if not label:
+                continue
+            if pr < 0:
+                self.add_error(f"calc_o{i}_price", _("Цена опции не может быть отрицательной."))
+                continue
+            raw_id = str(cleaned.get(f"calc_o{i}_id") or "").strip()
+            oid = _calc_safe_id(raw_id, f"opt{i}")
+            prev = opt_ids.get(oid)
+            if prev is not None:
+                self.add_error(
+                    f"calc_o{i}_id",
+                    _("Повторяющийся id «%(id)s» (уже задан в %(field)s).")
+                    % {"id": oid, "field": prev},
+                )
+            else:
+                opt_ids[oid] = f"calc_o{i}_id"
+        return cleaned
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.payload = self._build_payload(self.cleaned_data)
@@ -901,6 +1255,18 @@ def full_cleaned_dict_for_home_payload(instance: HomePageContent) -> dict[str, A
         init = getattr(field, "initial", None)
         if isinstance(field, forms.IntegerField):
             data[name] = 0 if init is None else init
+        elif isinstance(field, forms.FloatField):
+            data[name] = float(init) if init is not None else 0.0
+        elif isinstance(field, forms.TypedChoiceField):
+            if init is not None:
+                data[name] = init
+            else:
+                data[name] = field.choices[0][0]
+        elif isinstance(field, forms.ChoiceField):
+            if init is not None:
+                data[name] = init
+            else:
+                data[name] = field.choices[0][0]
         else:
             data[name] = "" if init is None else init
     return data

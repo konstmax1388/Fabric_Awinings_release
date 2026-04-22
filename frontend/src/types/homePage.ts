@@ -128,6 +128,15 @@ export type HomePayload = {
     requestFormBenefit1?: string
     requestFormBenefit2?: string
     requestFormBenefit3?: string
+    pricingModel?: 'area_plus_options' | 'area_only' | 'options_only'
+    lengthMinM?: number
+    lengthMaxM?: number
+    widthMinM?: number
+    widthMaxM?: number
+    minimumTotalRub?: number
+    roundingStep?: number
+    materials?: Array<{ id?: string; label?: string; pricePerM2?: number }>
+    options?: Array<{ id?: string; label?: string; price?: number }>
   }
   portfolio?: {
     heading?: string

@@ -1,11 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  CALC_MATERIALS,
-  CALC_OPTIONS,
-  calcTentPrice,
-  type CalcMaterialId,
+  calcTentPriceFromConfig,
+  calculatorRuntimeFromHome,
+  clamp,
 } from '../../lib/calculator'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import {
@@ -22,10 +21,13 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-prese
 export function PriceCalculatorSection() {
   const { home } = useSiteSettings()
   const c = home?.calculator ?? {}
+  const cfg = useMemo(() => calculatorRuntimeFromHome(home?.calculator), [home?.calculator])
+  const materials = cfg.materials
+  const options = cfg.options
 
   const [length, setLength] = useState(3)
   const [width, setWidth] = useState(2)
-  const [materialId, setMaterialId] = useState<CalcMaterialId>(CALC_MATERIALS[0].id)
+  const [materialId, setMaterialId] = useState(() => materials[0]?.id ?? '')
   const [opts, setOpts] = useState<Set<string>>(new Set())
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -35,9 +37,21 @@ export function PriceCalculatorSection() {
   const [error, setError] = useState<string | null>(null)
   const reduce = useReducedMotion()
 
+  useEffect(() => {
+    setLength((v) => clamp(Number(v), cfg.lengthMinM, cfg.lengthMaxM))
+    setWidth((v) => clamp(Number(v), cfg.widthMinM, cfg.widthMaxM))
+  }, [cfg.lengthMinM, cfg.lengthMaxM, cfg.widthMinM, cfg.widthMaxM])
+
+  useEffect(() => {
+    const first = materials[0]?.id ?? ''
+    if (!materialId || !materials.some((m) => m.id === materialId)) {
+      setMaterialId(first)
+    }
+  }, [materials, materialId])
+
   const price = useMemo(
-    () => calcTentPrice(length, width, materialId, opts),
-    [length, width, materialId, opts],
+    () => calcTentPriceFromConfig(cfg, length, width, materialId, opts),
+    [cfg, length, width, materialId, opts],
   )
 
   const toggleOpt = (id: string) => {
@@ -66,8 +80,8 @@ export function PriceCalculatorSection() {
       setError(`Комментарий не длиннее ${COMMENT_MAX_LEN} символов`)
       return
     }
-    const mat = CALC_MATERIALS.find((m) => m.id === materialId) ?? CALC_MATERIALS[0]
-    const optionLabels = CALC_OPTIONS.filter((o) => opts.has(o.id)).map((o) => o.label)
+    const mat = materials.find((m) => m.id === materialId) ?? materials[0]
+    const optionLabels = options.filter((o) => opts.has(o.id)).map((o) => o.label)
     setSending(true)
     try {
       const { ok } = await submitCalculatorLead({
@@ -115,6 +129,11 @@ export function PriceCalculatorSection() {
     c.successMessage ??
     'Спасибо! Параметры отправлены. Перезвоним в рабочее время и уточним детали.'
   const mode = c.mode === 'request_form' ? 'request_form' : 'calculator'
+
+  const lenSpan = cfg.lengthMaxM - cfg.lengthMinM
+  const widSpan = cfg.widthMaxM - cfg.widthMinM
+  const lenPct = lenSpan > 0 ? ((length - cfg.lengthMinM) / lenSpan) * 100 : 50
+  const widPct = widSpan > 0 ? ((width - cfg.widthMinM) / widSpan) * 100 : 50
   const requestTitle = c.requestFormTitle ?? 'Индивидуальный проект под вашу задачу'
   const requestSubtitle =
     c.requestFormSubtitle ??
@@ -161,10 +180,13 @@ export function PriceCalculatorSection() {
                 <span className="mb-2 block font-body text-sm font-medium text-text">{lengthLabel}</span>
                 <input
                   type="number"
-                  min={0}
+                  min={cfg.lengthMinM}
+                  max={cfg.lengthMaxM}
                   step={0.1}
                   value={length}
-                  onChange={(e) => setLength(Number(e.target.value))}
+                  onChange={(e) =>
+                    setLength(clamp(Number(e.target.value), cfg.lengthMinM, cfg.lengthMaxM))
+                  }
                   className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                 />
               </label>
@@ -172,10 +194,13 @@ export function PriceCalculatorSection() {
                 <span className="mb-2 block font-body text-sm font-medium text-text">{widthLabel}</span>
                 <input
                   type="number"
-                  min={0}
+                  min={cfg.widthMinM}
+                  max={cfg.widthMaxM}
                   step={0.1}
                   value={width}
-                  onChange={(e) => setWidth(Number(e.target.value))}
+                  onChange={(e) =>
+                    setWidth(clamp(Number(e.target.value), cfg.widthMinM, cfg.widthMaxM))
+                  }
                   className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                 />
               </label>
@@ -184,10 +209,10 @@ export function PriceCalculatorSection() {
               <span className="mb-2 block font-body text-sm font-medium text-text">{materialLabel}</span>
               <select
                 value={materialId}
-                onChange={(e) => setMaterialId(e.target.value as CalcMaterialId)}
+                onChange={(e) => setMaterialId(e.target.value)}
                 className="h-14 w-full rounded-2xl border border-border bg-surface px-5 font-body text-text outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
               >
-                {CALC_MATERIALS.map((m) => (
+                {materials.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}
                   </option>
@@ -197,7 +222,7 @@ export function PriceCalculatorSection() {
             <div className="mt-4">
               <span className="mb-3 block font-body text-sm font-medium text-text">{optionsLabel}</span>
               <div className="flex flex-col gap-3">
-                {CALC_OPTIONS.map((o) => (
+                {options.map((o) => (
                   <label
                     key={o.id}
                     className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-light px-4 py-3 transition hover:border-accent/40"
@@ -225,34 +250,34 @@ export function PriceCalculatorSection() {
                 <span className="mb-1 block font-body text-sm text-text-muted">{lengthLabel}</span>
                 <input
                   type="range"
-                  min={1}
-                  max={30}
+                  min={cfg.lengthMinM}
+                  max={cfg.lengthMaxM}
                   step={0.1}
-                  value={Math.max(1, Math.min(30, length))}
+                  value={clamp(length, cfg.lengthMinM, cfg.lengthMaxM)}
                   onChange={(e) => setLength(Number(e.target.value))}
                   className="w-full accent-accent"
                 />
                 <div className="mt-1 flex justify-between font-body text-xs text-text-subtle">
-                  <span>1 м</span>
+                  <span>{cfg.lengthMinM} м</span>
                   <span>{length.toFixed(1)} м</span>
-                  <span>30 м</span>
+                  <span>{cfg.lengthMaxM} м</span>
                 </div>
               </label>
               <label className="block">
                 <span className="mb-1 block font-body text-sm text-text-muted">{widthLabel}</span>
                 <input
                   type="range"
-                  min={1}
-                  max={20}
+                  min={cfg.widthMinM}
+                  max={cfg.widthMaxM}
                   step={0.1}
-                  value={Math.max(1, Math.min(20, width))}
+                  value={clamp(width, cfg.widthMinM, cfg.widthMaxM)}
                   onChange={(e) => setWidth(Number(e.target.value))}
                   className="w-full accent-accent"
                 />
                 <div className="mt-1 flex justify-between font-body text-xs text-text-subtle">
-                  <span>1 м</span>
+                  <span>{cfg.widthMinM} м</span>
                   <span>{width.toFixed(1)} м</span>
-                  <span>20 м</span>
+                  <span>{cfg.widthMaxM} м</span>
                 </div>
               </label>
             </div>
@@ -263,7 +288,9 @@ export function PriceCalculatorSection() {
                   <div className="h-2 rounded-full bg-border-light">
                     <div
                       className="h-full rounded-full bg-accent transition-all"
-                      style={{ width: `${Math.max(5, Math.min(100, (length / 30) * 100))}%` }}
+                      style={{
+                        width: `${Math.max(5, Math.min(100, lenPct))}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -272,7 +299,9 @@ export function PriceCalculatorSection() {
                   <div className="h-2 rounded-full bg-border-light">
                     <div
                       className="h-full rounded-full bg-secondary transition-all"
-                      style={{ width: `${Math.max(5, Math.min(100, (width / 20) * 100))}%` }}
+                      style={{
+                        width: `${Math.max(5, Math.min(100, widPct))}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -303,11 +332,11 @@ export function PriceCalculatorSection() {
             {mode === 'calculator' ? (
               <>
                 <p className="font-body text-sm text-text-muted">{estimateLabel}</p>
-                <div className="relative mt-2 min-h-[2.5rem] md:min-h-[3rem]">
+                <div className="relative mt-2 min-h-[2.25rem] min-w-0 md:min-h-[2.75rem]">
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.p
                       key={price}
-                      className="fabric-price text-accent"
+                      className="max-w-full break-words font-heading text-2xl font-extrabold leading-[1.15] tracking-tight text-accent tabular-nums sm:text-3xl md:text-[1.85rem] lg:text-4xl"
                       initial={reduce ? false : { opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={reduce ? undefined : { opacity: 0, y: -6 }}

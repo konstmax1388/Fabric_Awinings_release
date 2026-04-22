@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -172,6 +173,23 @@ def default_home_payload() -> dict[str, Any]:
             "requestFormBenefit1": "Персональный расчёт под ваш проект",
             "requestFormBenefit2": "Подбор материалов и конструктивных решений",
             "requestFormBenefit3": "Выезд на замер и сопровождение до монтажа",
+            "pricingModel": "area_plus_options",
+            "lengthMinM": 1.0,
+            "lengthMaxM": 30.0,
+            "widthMinM": 1.0,
+            "widthMaxM": 20.0,
+            "minimumTotalRub": 0,
+            "roundingStep": 1,
+            "materials": [
+                {"id": "pvc", "label": "ПВХ 650 г/м²", "pricePerM2": 3200},
+                {"id": "canvas", "label": "Ткань акрил", "pricePerM2": 4100},
+                {"id": "mesh", "label": "Сетка теневая", "pricePerM2": 2800},
+            ],
+            "options": [
+                {"id": "eyelets", "label": "Люверсы по периметру", "price": 1200},
+                {"id": "seams", "label": "Усиленные швы", "price": 2500},
+                {"id": "pockets", "label": "Карманы под стойки", "price": 1800},
+            ],
         },
         "portfolio": {
             "heading": "Портфолио",
@@ -277,6 +295,89 @@ def _normalize_problem_solution_cards(home: dict[str, Any]) -> None:
         c.setdefault("iconImageUrl", "")
 
 
+def _calc_safe_id(raw: str, fallback: str) -> str:
+    s = (raw or "").strip().lower()
+    s = re.sub(r"[^a-z0-9_-]+", "-", s).strip("-")
+    if not s or len(s) > 48:
+        return fallback
+    return s
+
+
+def _normalize_calculator(home: dict[str, Any]) -> None:
+    calc = home.get("calculator")
+    defaults = default_home_payload()["calculator"]
+    if not isinstance(calc, dict):
+        home["calculator"] = deepcopy(defaults)
+        return
+    if calc.get("pricingModel") not in ("area_plus_options", "area_only", "options_only"):
+        calc["pricingModel"] = "area_plus_options"
+    for key, fb in (
+        ("lengthMinM", defaults["lengthMinM"]),
+        ("lengthMaxM", defaults["lengthMaxM"]),
+        ("widthMinM", defaults["widthMinM"]),
+        ("widthMaxM", defaults["widthMaxM"]),
+        ("minimumTotalRub", defaults["minimumTotalRub"]),
+        ("roundingStep", defaults["roundingStep"]),
+    ):
+        try:
+            v = float(calc[key]) if "M" in key else int(calc[key])
+        except (TypeError, ValueError, KeyError):
+            v = fb
+        if "M" in key:
+            calc[key] = max(0.1, float(v))
+        elif key == "roundingStep":
+            step = int(v)
+            calc[key] = step if step in (1, 10, 50, 100, 500, 1000) else int(defaults["roundingStep"])
+        else:
+            calc[key] = max(0, int(v))
+    mats = calc.get("materials")
+    cleaned_m: list[dict[str, Any]] = []
+    if isinstance(mats, list):
+        for idx, m in enumerate(mats):
+            if not isinstance(m, dict):
+                continue
+            label = str(m.get("label", "")).strip()
+            try:
+                ppm = int(m.get("pricePerM2", 0))
+            except (TypeError, ValueError):
+                ppm = 0
+            if label and ppm > 0:
+                mid = _calc_safe_id(str(m.get("id", "")).strip(), f"mat{idx}")
+                cleaned_m.append({"id": mid, "label": label, "pricePerM2": ppm})
+    if not cleaned_m:
+        calc["materials"] = deepcopy(defaults["materials"])
+    else:
+        calc["materials"] = cleaned_m
+    opts = calc.get("options")
+    cleaned_o: list[dict[str, Any]] = []
+    if isinstance(opts, list):
+        for idx, o in enumerate(opts):
+            if not isinstance(o, dict):
+                continue
+            label = str(o.get("label", "")).strip()
+            try:
+                pr = int(o.get("price", 0))
+            except (TypeError, ValueError):
+                pr = 0
+            if label and pr >= 0:
+                oid = _calc_safe_id(str(o.get("id", "")).strip(), f"opt{idx}")
+                cleaned_o.append({"id": oid, "label": label, "price": pr})
+    if not cleaned_o:
+        calc["options"] = deepcopy(defaults["options"])
+    else:
+        calc["options"] = cleaned_o
+    try:
+        if float(calc["lengthMinM"]) >= float(calc["lengthMaxM"]):
+            calc["lengthMinM"], calc["lengthMaxM"] = defaults["lengthMinM"], defaults["lengthMaxM"]
+    except (TypeError, ValueError):
+        calc["lengthMinM"], calc["lengthMaxM"] = defaults["lengthMinM"], defaults["lengthMaxM"]
+    try:
+        if float(calc["widthMinM"]) >= float(calc["widthMaxM"]):
+            calc["widthMinM"], calc["widthMaxM"] = defaults["widthMinM"], defaults["widthMaxM"]
+    except (TypeError, ValueError):
+        calc["widthMinM"], calc["widthMaxM"] = defaults["widthMinM"], defaults["widthMaxM"]
+
+
 def _normalize_hero_slides(home: dict[str, Any]) -> None:
     hero = home.get("hero")
     if not isinstance(hero, dict):
@@ -296,6 +397,7 @@ def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
     _normalize_problem_solution_cards(out)
     _normalize_hero_slides(out)
+    _normalize_calculator(out)
     return out
 
 
@@ -304,4 +406,5 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deepcopy(stored) if isinstance(stored, dict) else {}
     _normalize_problem_solution_cards(out)
     _normalize_hero_slides(out)
+    _normalize_calculator(out)
     return out
