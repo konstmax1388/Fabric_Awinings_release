@@ -199,7 +199,10 @@ export function SiteHeader() {
 
   return (
     <>
-    <header ref={headerRef} className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
+    <header
+      ref={headerRef}
+      className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90 md:fixed md:top-0"
+    >
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"
@@ -413,6 +416,7 @@ export function SiteHeader() {
         ) : null}
       </AnimatePresence>
     </header>
+      <div className="hidden md:block" style={{ height: 'var(--site-header-height)' }} aria-hidden />
       <nav
         className={[
           'fixed inset-x-0 bottom-0 z-40 md:hidden',
