@@ -8,6 +8,7 @@ import { ProductDetailsDrawer } from '../components/catalog/ProductDetailsDrawer
 import { ProductGallery } from '../components/catalog/ProductGallery'
 import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
+import { HeroCallbackModal } from '../components/home/HeroCallbackModal'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
@@ -187,6 +188,7 @@ export function ProductPage() {
   const [related, setRelated] = useState<Product[]>([])
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [customOrderOpen, setCustomOrderOpen] = useState(false)
   const site = publicSiteUrl()
 
   useEffect(() => {
@@ -502,12 +504,13 @@ export function ProductPage() {
               ) : null}
 
               {calculatorEnabled ? (
-                <Link
-                  to="/#calculator"
+                <button
+                  type="button"
+                  onClick={() => setCustomOrderOpen(true)}
                   className="fabric-strap-btn inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)] sm:w-auto"
                 >
                   {ui?.productCustomOrderCta || 'Нужен индивидуальный заказ?'}
-                </Link>
+                </button>
               ) : null}
             </div>
           </div>
@@ -538,6 +541,11 @@ export function ProductPage() {
         specSections={specSectionsForDrawer}
         descriptionHtml={product.descriptionHtml?.trim() ? product.descriptionHtml : null}
         descriptionPlain={product.description ?? ''}
+      />
+      <HeroCallbackModal
+        open={customOrderOpen}
+        onClose={() => setCustomOrderOpen(false)}
+        modal={home?.hero?.callbackModal ?? {}}
       />
 
       <SiteFooter />
