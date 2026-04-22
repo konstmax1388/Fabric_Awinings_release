@@ -73,11 +73,16 @@ export function PriceCalculatorSection() {
       return
     }
     if (!isCompleteRuPhone(phone)) {
-      setError('Введите полный номер телефона')
+      setError(c.errorPhoneIncomplete ?? 'Введите полный номер телефона')
       return
     }
     if (comment.trim().length > COMMENT_MAX_LEN) {
-      setError(`Комментарий не длиннее ${COMMENT_MAX_LEN} символов`)
+      setError(
+        (c.errorCommentTooLong ?? 'Комментарий не длиннее {max} символов').replace(
+          '{max}',
+          String(COMMENT_MAX_LEN),
+        ),
+      )
       return
     }
     const mat = materials.find((m) => m.id === materialId) ?? materials[0]
@@ -98,9 +103,9 @@ export function PriceCalculatorSection() {
       if (ok) {
         setDone(true)
         setComment('')
-      } else setError('Не удалось отправить. Позвоните нам или напишите на почту.')
+      } else setError(c.errorSubmitFailed ?? 'Не удалось отправить. Позвоните нам или напишите на почту.')
     } catch {
-      setError('Ошибка сети. Попробуйте позже.')
+      setError(c.errorNetwork ?? 'Ошибка сети. Попробуйте позже.')
     } finally {
       setSending(false)
     }
@@ -143,6 +148,14 @@ export function PriceCalculatorSection() {
     c.requestFormBenefit2 ?? 'Подбор материалов и конструктивных решений',
     c.requestFormBenefit3 ?? 'Выезд на замер и сопровождение до монтажа',
   ].map((item) => item.trim()).filter(Boolean)
+  const step1Title = c.step1Title ?? '1. Форма и материал'
+  const step2Title = c.step2Title ?? '2. Размер и масштаб'
+  const virtualRulerTitle = c.virtualRulerTitle ?? 'Виртуальная рулетка'
+  const requestBadge = c.requestBadge ?? 'Индивидуальный проект'
+  const consentPrefix = c.consentPrefix ?? 'Нажимая кнопку, вы соглашаетесь с'
+  const consentPrivacyLink = c.consentPrivacyLinkLabel ?? 'политикой конфиденциальности'
+  const consentAnd = c.consentAndLabel ?? 'и'
+  const consentOfferLink = c.consentOfferLinkLabel ?? 'публичной офертой'
 
   return (
     <motion.section
@@ -174,7 +187,7 @@ export function PriceCalculatorSection() {
           {mode === 'calculator' ? (
             <>
           <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
-            <p className="mb-3 font-heading text-lg font-semibold text-text">1. Форма и материал</p>
+            <p className="mb-3 font-heading text-lg font-semibold text-text">{step1Title}</p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block font-body text-sm font-medium text-text">{lengthLabel}</span>
@@ -244,7 +257,7 @@ export function PriceCalculatorSection() {
           </section>
 
           <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
-            <p className="mb-3 font-heading text-lg font-semibold text-text">2. Размер и масштаб</p>
+            <p className="mb-3 font-heading text-lg font-semibold text-text">{step2Title}</p>
             <div className="space-y-4">
               <label className="block">
                 <span className="mb-1 block font-body text-sm text-text-muted">{lengthLabel}</span>
@@ -282,7 +295,7 @@ export function PriceCalculatorSection() {
               </label>
             </div>
             <div className="mt-5 rounded-xl border border-border-light bg-surface p-4">
-              <p className="font-body text-xs uppercase tracking-wide text-text-subtle">Виртуальная рулетка</p>
+              <p className="font-body text-xs uppercase tracking-wide text-text-subtle">{virtualRulerTitle}</p>
               <div className="mt-3 grid grid-cols-[1fr_auto] gap-3">
                 <div>
                   <div className="h-2 rounded-full bg-border-light">
@@ -312,7 +325,7 @@ export function PriceCalculatorSection() {
             </>
           ) : (
             <section className="rounded-2xl border border-border-light bg-bg-base p-5 md:p-7">
-              <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent">Индивидуальный проект</p>
+              <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent">{requestBadge}</p>
               <h3 className="mt-3 font-heading text-2xl text-text md:text-3xl">{requestTitle}</h3>
               <p className="mt-3 max-w-2xl font-body text-sm text-text-muted md:text-base">{requestSubtitle}</p>
               <div className="mt-5 grid gap-3">
@@ -401,13 +414,13 @@ export function PriceCalculatorSection() {
                   </p>
                 )}
                 <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
-                  Нажимая кнопку, вы соглашаетесь с{' '}
+                  {consentPrefix}{' '}
                   <Link to="/privacy" className="text-accent hover:underline">
-                    политикой конфиденциальности
+                    {consentPrivacyLink}
                   </Link>{' '}
-                  и{' '}
+                  {consentAnd}{' '}
                   <Link to="/offer" className="text-accent hover:underline">
-                    публичной офертой
+                    {consentOfferLink}
                   </Link>
                   .
                 </p>

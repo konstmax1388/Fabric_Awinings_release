@@ -29,6 +29,7 @@ from .models import (
     Review,
     ShippingAddress,
     SiteSettings,
+    StaticPage,
 )
 
 
@@ -885,6 +886,39 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "titleSuffix": (obj.seo_title_suffix or "").strip(),
             "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
         }
+
+
+class StaticPagePublicSerializer(serializers.ModelSerializer):
+    path = serializers.SerializerMethodField()
+    pageTitle = serializers.CharField(source="meta_title", read_only=True)
+    metaDescription = serializers.CharField(source="meta_description", read_only=True)
+    bodyHtml = serializers.CharField(source="body", read_only=True)
+    showInHeader = serializers.BooleanField(source="show_in_header", read_only=True)
+    showInFooter = serializers.BooleanField(source="show_in_footer", read_only=True)
+    headerLinkLabel = serializers.CharField(source="header_link_label", read_only=True)
+    footerLinkLabel = serializers.CharField(source="footer_link_label", read_only=True)
+    sortOrder = serializers.IntegerField(source="sort_order", read_only=True)
+    updatedAt = serializers.DateTimeField(source="updated_at", format="%Y-%m-%dT%H:%M:%S%z", read_only=True)
+
+    class Meta:
+        model = StaticPage
+        fields = (
+            "slug",
+            "path",
+            "title",
+            "pageTitle",
+            "metaDescription",
+            "bodyHtml",
+            "showInHeader",
+            "showInFooter",
+            "headerLinkLabel",
+            "footerLinkLabel",
+            "sortOrder",
+            "updatedAt",
+        )
+
+    def get_path(self, obj: StaticPage) -> str:
+        return f"/{obj.slug}"
 
 
 class RegisterSerializer(serializers.Serializer):

@@ -25,6 +25,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export function ReviewsSection() {
+  const REVIEW_PREVIEW_LIMIT = 190
   const reduce = useReducedMotion()
   const { home } = useSiteSettings()
   const rv = home?.reviews
@@ -32,9 +33,27 @@ export function ReviewsSection() {
   const subheading = rv?.subheading ?? 'Реальные заказчики B2B и частные лица.'
   const loadingText = rv?.loading ?? 'Загрузка отзывов…'
   const videoCaption = rv?.videoCaption ?? 'Видеоотзыв'
+  const readMoreLabel = rv?.readMoreLabel ?? 'Читать весь отзыв'
+  const collapseLabel = rv?.collapseLabel ?? 'Свернуть отзыв'
+  const formHeading = rv?.formHeading ?? 'Оставить отзыв'
+  const formSubheading =
+    rv?.formSubheading ?? 'Публикуем только после проверки менеджером и подтверждения согласия.'
+  const namePlaceholder = rv?.namePlaceholder ?? 'Имя'
+  const cityPlaceholder = rv?.cityPlaceholder ?? 'Город'
+  const textPlaceholder = rv?.textPlaceholder ?? 'Текст отзыва'
+  const consentPrefix =
+    rv?.consentPrefix ?? 'Согласен на публикацию отзыва и обработку персональных данных согласно'
+  const consentLinkLabel = rv?.consentLinkLabel ?? 'политике конфиденциальности'
+  const submitButton = rv?.submitButton ?? 'Отправить отзыв'
+  const submittingLabel = rv?.submitting ?? 'Отправка...'
+  const successMessage =
+    rv?.successMessage ?? 'Спасибо! Отзыв получен и отправлен менеджеру на модерацию.'
+  const errorMessage =
+    rv?.errorMessage ?? 'Не удалось отправить отзыв. Проверьте поля и попробуйте еще раз.'
 
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({})
   const [sending, setSending] = useState(false)
   const [submitOk, setSubmitOk] = useState<string>('')
   const [submitErr, setSubmitErr] = useState<string>('')
@@ -72,11 +91,15 @@ export function ReviewsSection() {
     })
     setSending(false)
     if (!ok) {
-      setSubmitErr('Не удалось отправить отзыв. Проверьте поля и попробуйте еще раз.')
+      setSubmitErr(errorMessage)
       return
     }
     setForm({ name: '', city: '', text: '', publicationConsent: false })
-    setSubmitOk('Спасибо! Отзыв получен и отправлен менеджеру на модерацию.')
+    setSubmitOk(successMessage)
+  }
+
+  const toggleReviewExpand = (reviewId: string) => {
+    setExpandedReviews((prev) => ({ ...prev, [reviewId]: !prev[reviewId] }))
   }
 
   return (
@@ -115,6 +138,14 @@ export function ReviewsSection() {
               transition={{ type: 'spring', stiffness: 400, damping: 28 }}
               className="flex h-full flex-col rounded-2xl border border-border-light bg-surface p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:p-6"
             >
+              {(() => {
+                const text = (r.text || '').trim()
+                const isLong = text.length > REVIEW_PREVIEW_LIMIT
+                const isExpanded = Boolean(expandedReviews[r.id])
+                const previewText = isLong ? `${text.slice(0, REVIEW_PREVIEW_LIMIT).trimEnd()}...` : text
+                const shownText = isExpanded ? text : previewText
+                return (
+                  <>
               <div className="flex items-start gap-3">
                 <OptimizedImage
                   src={r.photo}
@@ -136,8 +167,17 @@ export function ReviewsSection() {
                 </div>
               </div>
               <p className="mt-4 flex-1 font-body text-sm leading-relaxed text-text-muted md:text-[15px]">
-                «{r.text}»
+                «{shownText}»
               </p>
+              {isLong ? (
+                <button
+                  type="button"
+                  onClick={() => toggleReviewExpand(r.id)}
+                  className="mt-1 self-start font-body text-xs font-semibold text-accent transition hover:underline"
+                >
+                  {isExpanded ? collapseLabel : readMoreLabel}
+                </button>
+              ) : null}
               {r.video && (
                 <div className="relative mt-4 aspect-video overflow-hidden rounded-xl bg-text/10">
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -150,19 +190,20 @@ export function ReviewsSection() {
                   </p>
                 </div>
               )}
+                  </>
+                )
+              })()}
             </motion.article>
           ))}
         </motion.div>
       )}
       <div className="mt-10 rounded-2xl border border-border-light bg-surface p-5 md:p-6">
-        <h3 className="font-heading text-2xl font-semibold text-text">Оставить отзыв</h3>
-        <p className="mt-2 text-sm text-text-muted">
-          Публикуем только после проверки менеджером и подтверждения согласия.
-        </p>
+        <h3 className="font-heading text-2xl font-semibold text-text">{formHeading}</h3>
+        <p className="mt-2 text-sm text-text-muted">{formSubheading}</p>
         <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
           <input
             className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            placeholder="Имя"
+            placeholder={namePlaceholder}
             value={form.name}
             onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))}
             required
@@ -171,7 +212,7 @@ export function ReviewsSection() {
           />
           <input
             className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            placeholder="Город"
+            placeholder={cityPlaceholder}
             value={form.city}
             onChange={(e) => setForm((v) => ({ ...v, city: e.target.value }))}
             required
@@ -187,16 +228,16 @@ export function ReviewsSection() {
               required
             />
             <label htmlFor="review-consent">
-              Согласен на публикацию отзыва и обработку персональных данных согласно{' '}
+              {consentPrefix}{' '}
               <Link to="/privacy" className="text-accent hover:underline">
-                политике конфиденциальности
+                {consentLinkLabel}
               </Link>
               .
             </label>
           </div>
           <textarea
             className="md:col-span-2 min-h-28 rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
-            placeholder="Текст отзыва"
+            placeholder={textPlaceholder}
             value={form.text}
             onChange={(e) => setForm((v) => ({ ...v, text: e.target.value }))}
             required
@@ -209,7 +250,7 @@ export function ReviewsSection() {
               disabled={sending}
               className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-surface disabled:opacity-60"
             >
-              {sending ? 'Отправка...' : 'Отправить отзыв'}
+              {sending ? submittingLabel : submitButton}
             </button>
             {submitOk ? <p className="text-sm text-emerald-700">{submitOk}</p> : null}
             {submitErr ? <p className="text-sm text-rose-700">{submitErr}</p> : null}

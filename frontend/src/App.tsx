@@ -51,6 +51,9 @@ const PrivacyPolicyPage = lazy(() =>
 const PublicOfferPage = lazy(() =>
   import('./pages/PublicOfferPage').then((m) => ({ default: m.PublicOfferPage })),
 )
+const StaticPageRoute = lazy(() =>
+  import('./pages/StaticPageRoute').then((m) => ({ default: m.StaticPageRoute })),
+)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
 
 function RouteFallback() {
@@ -114,6 +117,7 @@ const router = createBrowserRouter([
       { path: '/blog/:slug', element: <BlogPostPage /> },
       { path: '/privacy', element: <PrivacyPolicyPage /> },
       { path: '/offer', element: <PublicOfferPage /> },
+      { path: '/:slug', element: <StaticPageRoute /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

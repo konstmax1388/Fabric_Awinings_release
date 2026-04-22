@@ -1,9 +1,56 @@
 import { Helmet } from 'react-helmet-async'
+import { startTransition, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
 
 export function PublicOfferPage() {
+  const [page, setPage] = useState<StaticPageDto | null | undefined>(undefined)
+
+  useEffect(() => {
+    let cancelled = false
+    startTransition(() => setPage(undefined))
+    fetchStaticPageBySlug('offer').then((p) => {
+      if (!cancelled) setPage(p)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (page) {
+    const title = page.pageTitle?.trim() || `${page.title} — Фабрика Тентов`
+    const desc = page.metaDescription?.trim() || page.title
+    return (
+      <>
+        <Helmet>
+          <title>{title}</title>
+          <meta name="description" content={desc} />
+        </Helmet>
+        <SiteHeader />
+        <main className="fabric-page">
+          <div className="fabric-page-main min-h-[60vh] w-full max-w-[960px]">
+            <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
+              <Link to="/" className="hover:text-accent">
+                Главная
+              </Link>
+              <span className="mx-2">/</span>
+              <span className="text-text">{page.title}</span>
+            </nav>
+            <article className="fabric-card mt-8 space-y-6 p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
+              <header className="space-y-2">
+                <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">{page.title}</h1>
+              </header>
+              <div className="cms-html" dangerouslySetInnerHTML={{ __html: page.bodyHtml }} />
+            </article>
+          </div>
+        </main>
+        <SiteFooter />
+      </>
+    )
+  }
+
   return (
     <>
       <Helmet>

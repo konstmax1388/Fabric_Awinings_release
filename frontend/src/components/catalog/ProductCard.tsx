@@ -17,7 +17,8 @@ export function ProductCard({ product }: Props) {
   const reduce = useReducedMotion()
   const navigate = useNavigate()
   const { addProduct } = useCart()
-  const { productPhotoAspect } = useSiteSettings()
+  const { productPhotoAspect, home } = useSiteSettings()
+  const ui = home?.ui
   const frameClass = productCardImageFrameClass(productPhotoAspect)
   const mpKeysRaw = (Object.keys(product.marketplaceLinks) as MarketplaceId[]).filter(
     (k) => Boolean(product.marketplaceLinks[k]),
@@ -27,8 +28,10 @@ export function ProductCard({ product }: Props) {
   const [imgFailed, setImgFailed] = useState(false)
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)
   const autoBadges = [
-    'Всё в наличии',
-    new Date().getMonth() <= 1 || new Date().getMonth() >= 10 ? 'Сезонное предложение' : '',
+    ui?.productBadgeInStock || 'Всё в наличии',
+    new Date().getMonth() <= 1 || new Date().getMonth() >= 10
+      ? ui?.productBadgeSeasonal || 'Сезонное предложение'
+      : '',
   ].filter(Boolean)
 
   return (
@@ -51,7 +54,7 @@ export function ProductCard({ product }: Props) {
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-4 text-center">
-              <span className="font-body text-xs font-medium text-text-subtle">Нет фото</span>
+              <span className="font-body text-xs font-medium text-text-subtle">{ui?.productNoPhoto || 'Нет фото'}</span>
               <span className="line-clamp-2 font-body text-[11px] text-text-muted">{product.title}</span>
             </div>
           )}
@@ -60,7 +63,7 @@ export function ProductCard({ product }: Props) {
       </Link>
       <div className="flex flex-1 flex-col p-4 md:p-5">
         <p className="font-body text-xs font-semibold uppercase tracking-wide text-accent">
-          Цена {product.priceFrom.toLocaleString('ru-RU')} ₽
+          {ui?.productPricePrefix || 'Цена'} {product.priceFrom.toLocaleString('ru-RU')} ₽
         </p>
         <Link to={`/catalog/${product.slug}`} className="group mt-1 block">
           <h2 className="line-clamp-2 font-heading text-lg font-semibold leading-snug text-text group-hover:text-accent md:text-xl">
@@ -82,11 +85,11 @@ export function ProductCard({ product }: Props) {
           transition={cardHoverTransition}
           className="fabric-strap-btn mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_12px_0_rgba(200,155,83,0.28)] transition hover:bg-[#d4ad72] hover:shadow-[0_6px_16px_0_rgba(200,155,83,0.32)]"
         >
-          В корзину
+          {ui?.productAddToCart || 'В корзину'}
         </motion.button>
         {addedPromptOpen && (
           <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.48)] md:inset-x-auto md:right-6 md:mx-0 md:w-[460px]">
-            <p className="font-body text-sm font-medium text-text">Товар добавлен в корзину</p>
+            <p className="font-body text-sm font-medium text-text">{ui?.productAddedTitle || 'Товар добавлен в корзину'}</p>
             <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
             <div className="mt-3 flex gap-2">
               <button
@@ -94,14 +97,14 @@ export function ProductCard({ product }: Props) {
                 onClick={() => setAddedPromptOpen(false)}
                 className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
               >
-                Продолжить покупки
+                {ui?.productContinueShopping || 'Продолжить покупки'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/cart')}
                 className="fabric-strap-btn inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] transition hover:bg-[#d4ad72]"
               >
-                Перейти в корзину
+                {ui?.productGoToCart || 'Перейти в корзину'}
               </button>
             </div>
           </div>
@@ -109,7 +112,7 @@ export function ProductCard({ product }: Props) {
         {mpKeys.length > 0 && (
           <div className="mt-4 border-t border-border-light pt-3">
             <p className="mb-2 font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">
-              На маркетплейсах
+              {ui?.productMarketplacesTitle || 'На маркетплейсах'}
             </p>
             <MarketplaceLinks
               compact

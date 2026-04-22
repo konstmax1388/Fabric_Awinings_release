@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .home_defaults import stored_home_payload
-from .models import CartOrder, CustomerProfile, HomePageContent, ShippingAddress, SiteSettings
+from .models import CartOrder, CustomerProfile, HomePageContent, ShippingAddress, SiteSettings, StaticPage
 from .permissions import MustNotBePasswordChangeOverdue
 from .throttles import AuthRegisterThrottle
 from .serializers import (
@@ -22,6 +22,7 @@ from .serializers import (
     RegisterSerializer,
     ShippingAddressSerializer,
     SiteSettingsPublicSerializer,
+    StaticPagePublicSerializer,
 )
 
 
@@ -92,6 +93,24 @@ class HomePageContentPublicView(APIView):
                     else:
                         card["iconImageUrl"] = ""
         return Response({"home": home})
+
+
+class StaticPageListPublicView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        rows = StaticPage.objects.filter(is_published=True).order_by("sort_order", "title")
+        return Response({"results": StaticPagePublicSerializer(rows, many=True).data})
+
+
+class StaticPageDetailPublicView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug: str):
+        page = StaticPage.objects.filter(is_published=True, slug=slug).first()
+        if not page:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(StaticPagePublicSerializer(page).data)
 
 
 class RegisterView(APIView):

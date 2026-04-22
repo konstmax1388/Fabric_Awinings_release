@@ -62,3 +62,24 @@ def test_fetch_cards_v4_batch_skips_malformed_products(monkeypatch):
     out = wb_import.fetch_cards_v4_batch([999001], require_all=True)
     assert 999001 in out
     assert out[999001]["id"] == 999001
+
+
+def test_resolve_basket_media_supports_extended_baskets(monkeypatch):
+    nm = 877415789
+    vol = nm // 100_000
+    part = nm // 1000
+
+    def fake_probe(url, **kwargs):
+        expected = f"https://basket-39.wbbasket.ru/vol{vol}/part{part}/{nm}/images/big/1.webp"
+        return url == expected
+
+    monkeypatch.setattr(wb_import, "_probe_product_image_url", fake_probe)
+    basket, ext = wb_import.resolve_basket_media(nm)
+    assert basket == 39
+    assert ext == "webp"
+
+
+def test_resolve_basket_media_raises_if_not_found(monkeypatch):
+    monkeypatch.setattr(wb_import, "_probe_product_image_url", lambda *args, **kwargs: False)
+    with pytest.raises(WbImportError, match="Не удалось найти CDN для артикула 123456"):
+        wb_import.resolve_basket_media(123456)

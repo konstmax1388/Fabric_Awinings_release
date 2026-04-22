@@ -5,9 +5,30 @@ type StaffEntryModalProps = {
   onClose: () => void
   reactAdminUrl: string | null
   djangoAdminUrl: string | null
+  closeOverlayAriaLabel: string
+  closeButtonAriaLabel: string
+  title: string
+  subtitle: string
+  managerLabel: string
+  managerHint: string
+  adminLabel: string
+  adminHint: string
 }
 
-export function StaffEntryModal({ open, onClose, reactAdminUrl, djangoAdminUrl }: StaffEntryModalProps) {
+export function StaffEntryModal({
+  open,
+  onClose,
+  reactAdminUrl,
+  djangoAdminUrl,
+  closeOverlayAriaLabel,
+  closeButtonAriaLabel,
+  title,
+  subtitle,
+  managerLabel,
+  managerHint,
+  adminLabel,
+  adminHint,
+}: StaffEntryModalProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -43,7 +64,7 @@ export function StaffEntryModal({ open, onClose, reactAdminUrl, djangoAdminUrl }
       <button
         type="button"
         className="absolute inset-0 bg-text/35 backdrop-blur-[3px] transition-opacity"
-        aria-label="Закрыть окно"
+        aria-label={closeOverlayAriaLabel}
         onClick={onClose}
       />
       <div
@@ -58,15 +79,15 @@ export function StaffEntryModal({ open, onClose, reactAdminUrl, djangoAdminUrl }
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 id={titleId} className="font-heading text-lg font-semibold tracking-tight text-text sm:text-xl">
-                  Вход для сотрудников
+                  {title}
                 </h2>
-                <p className="mt-1 font-body text-sm text-text-muted">Выберите панель — откроется в новой вкладке.</p>
+                <p className="mt-1 font-body text-sm text-text-muted">{subtitle}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:bg-border-light hover:text-text"
-                aria-label="Закрыть"
+                aria-label={closeButtonAriaLabel}
               >
                 <span className="text-xl leading-none" aria-hidden>
                   ×
@@ -88,9 +109,9 @@ export function StaffEntryModal({ open, onClose, reactAdminUrl, djangoAdminUrl }
                   aria-hidden
                 />
                 <span className="block font-body text-[15px] font-semibold leading-snug text-text group-hover:text-accent">
-                  Панель менеджера{' '}
+                  {managerLabel}{' '}
                   <span className="font-medium text-text-muted group-hover:text-text/90">
-                    (Каталог, заказы, контент)
+                    {managerHint}
                   </span>
                 </span>
               </a>
@@ -108,10 +129,10 @@ export function StaffEntryModal({ open, onClose, reactAdminUrl, djangoAdminUrl }
                   aria-hidden
                 />
                 <span className="block font-body text-[15px] font-semibold leading-snug text-text group-hover:text-secondary">
-                  Настройки сайта
+                  {adminLabel}
                 </span>
                 <span className="mt-1 block font-body text-xs text-text-subtle">
-                  Полный доступ к моделям и сервисным страницам
+                  {adminHint}
                 </span>
               </a>
             ) : null}

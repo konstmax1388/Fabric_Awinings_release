@@ -3,11 +3,13 @@ import { SITE } from '../config/site'
 import type { MarketplaceId } from '../config/site'
 import type { HomePayload } from '../types/homePage'
 import {
+  fetchStaticPages,
   fetchHomePageContent,
   fetchSiteSettings,
   type AnalyticsYandexDto,
   type MapFormSiteOverlay,
   type SeoDefaultsDto,
+  type StaticPageDto,
 } from '../lib/api'
 import {
   DEFAULT_PRODUCT_PHOTO_ASPECT,
@@ -50,6 +52,7 @@ export type SiteSettingsContextValue = {
   loading: boolean
   analyticsYandex: AnalyticsYandexDto
   seoDefaults: SeoDefaultsDto
+  staticPages: StaticPageDto[]
 }
 
 const defaultEnabled: MarketplaceId[] = ['wb', 'ozon']
@@ -91,6 +94,7 @@ const initialValue: SiteSettingsContextValue = {
     titleSuffix: '',
     locale: 'ru_RU',
   },
+  staticPages: [],
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue>(initialValue)
@@ -130,10 +134,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
     counterId: '',
   })
   const [seoDefaults, setSeoDefaults] = useState<SeoDefaultsDto>(initialValue.seoDefaults)
+  const [staticPages, setStaticPages] = useState<StaticPageDto[]>([])
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([fetchSiteSettings(), fetchHomePageContent()]).then(([s, h]) => {
+    Promise.all([fetchSiteSettings(), fetchHomePageContent(), fetchStaticPages()]).then(([s, h, pages]) => {
       if (cancelled) return
       if (s) {
         if (s.enabledMarketplaces?.length) setEnabled(s.enabledMarketplaces as MarketplaceId[])
@@ -185,6 +190,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         }
       }
       setHome(h)
+      setStaticPages(Array.isArray(pages) ? pages : [])
       setLoading(false)
     })
     return () => {
@@ -224,6 +230,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       loading,
       analyticsYandex,
       seoDefaults,
+      staticPages,
     }),
     [
       enabledMarketplaces,
@@ -256,6 +263,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       loading,
       analyticsYandex,
       seoDefaults,
+      staticPages,
     ],
   )
 

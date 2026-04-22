@@ -19,14 +19,15 @@ function pluralPositions(n: number): string {
 /** Состав корзины; оформление — на `/checkout`. */
 export function CartView() {
   const { items, removeLine, setQty, totalQty, totalApprox } = useCart()
-  const { productPhotoAspect } = useSiteSettings()
+  const { productPhotoAspect, home } = useSiteSettings()
+  const ui = home?.ui
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1">
-      <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Корзина</h1>
+      <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">{ui?.cartPageTitle || 'Корзина'}</h1>
       <p className="mt-2 max-w-2xl font-body text-sm leading-relaxed text-text-muted">
-        Здесь только выбранные позиции. Ориентировочная сумма по ценам из каталога; точную стоимость согласуем
-        после замера или по вашим размерам.
+        {ui?.cartPageIntro ||
+          'Здесь только выбранные позиции. Ориентировочная сумма по ценам из каталога; точную стоимость согласуем после замера или по вашим размерам.'}
       </p>
 
       <div className="mt-8 flex min-h-0 flex-1 flex-col">
@@ -44,22 +45,22 @@ export function CartView() {
                 />
               </svg>
             </div>
-            <p className="mt-6 font-heading text-lg font-semibold text-text">В корзине пока пусто</p>
+            <p className="mt-6 font-heading text-lg font-semibold text-text">{ui?.cartEmptyTitle || 'В корзине пока пусто'}</p>
             <p className="mt-2 max-w-sm font-body text-sm text-text-muted">
-              Перейдите в каталог и добавьте тенты или навесы — кнопка «В корзину» на карточке товара.
+              {ui?.cartEmptyText || 'Перейдите в каталог и добавьте тенты или навесы — кнопка «В корзину» на карточке товара.'}
             </p>
             <Link
               to="/catalog"
               className="fabric-strap-btn mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body text-sm font-medium text-[#0d121c]"
             >
-              Перейти в каталог
+              {ui?.cartEmptyCta || 'Перейти в каталог'}
             </Link>
           </div>
         ) : (
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
             <div className="min-w-0 flex-1">
               <h2 className="font-body text-sm font-semibold uppercase tracking-wide text-text-subtle">
-                Товары · {totalQty} {pluralPositions(totalQty)}
+                {ui?.cartItemsTitle || 'Товары'} · {totalQty} {pluralPositions(totalQty)}
               </h2>
               <ul className="fabric-card mt-4 flex flex-col divide-y divide-border">
                 {items.map((line) => {
@@ -80,7 +81,7 @@ export function CartView() {
                           />
                         ) : (
                           <span className="flex h-full items-center justify-center font-body text-xs text-text-subtle">
-                            Нет фото
+                            {ui?.cartNoPhoto || 'Нет фото'}
                           </span>
                         )}
                       </Link>
@@ -94,7 +95,8 @@ export function CartView() {
                               {line.title}
                             </Link>
                             <p className="mt-1 font-body text-sm text-text-muted">
-                              Цена в каталоге — {formatRub(line.priceFrom)} за единицу
+                              {ui?.cartPricePerUnitPrefix || 'Цена в каталоге —'} {formatRub(line.priceFrom)}{' '}
+                              {ui?.cartPricePerUnitSuffix || 'за единицу'}
                             </p>
                           </div>
                           <p className="shrink-0 font-heading text-base font-semibold text-text sm:text-right">
@@ -103,7 +105,7 @@ export function CartView() {
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
-                          <span className="font-body text-xs text-text-subtle">Количество</span>
+                          <span className="font-body text-xs text-text-subtle">{ui?.cartQtyLabel || 'Количество'}</span>
                           <div className="inline-flex items-center rounded-xl border border-border bg-bg-base/80 p-0.5">
                             <button
                               type="button"
@@ -111,7 +113,7 @@ export function CartView() {
                               onClick={() =>
                                 line.qty <= 1 ? removeLine(line.lineId) : setQty(line.lineId, line.qty - 1)
                               }
-                              aria-label={line.qty <= 1 ? 'Удалить позицию из корзины' : 'Уменьшить количество'}
+                              aria-label={ui?.cartRemoveOrDecreaseAria || 'Удалить позицию из корзины или уменьшить количество'}
                             >
                               −
                             </button>
@@ -122,7 +124,7 @@ export function CartView() {
                               type="button"
                               className="flex h-10 w-10 items-center justify-center rounded-lg text-lg leading-none text-text hover:bg-surface"
                               onClick={() => setQty(line.lineId, line.qty + 1)}
-                              aria-label="Увеличить количество"
+                              aria-label={ui?.cartIncreaseAria || 'Увеличить количество'}
                             >
                               +
                             </button>
@@ -132,7 +134,7 @@ export function CartView() {
                             onClick={() => removeLine(line.lineId)}
                             className="ml-auto font-body text-sm text-text-muted underline-offset-2 hover:text-accent hover:underline sm:ml-0"
                           >
-                            Убрать из корзины
+                            {ui?.cartRemoveLine || 'Убрать из корзины'}
                           </button>
                         </div>
                       </div>
@@ -145,39 +147,39 @@ export function CartView() {
                 to="/catalog"
                 className="mt-4 inline-flex items-center font-body text-sm font-medium text-accent hover:underline"
               >
-                ← Добавить ещё из каталога
+                {ui?.cartAddMoreCta || '← Добавить ещё из каталога'}
               </Link>
             </div>
 
             <aside className="lg:sticky lg:top-24 lg:w-full lg:max-w-sm lg:shrink-0">
               <div className="fabric-card p-5">
-                <h2 className="font-heading text-lg font-semibold text-text">Итого</h2>
+                <h2 className="font-heading text-lg font-semibold text-text">{ui?.cartSummaryTitle || 'Итого'}</h2>
                 <dl className="mt-4 space-y-3 font-body text-sm">
                   <div className="flex justify-between gap-4 text-text-muted">
-                    <dt>Позиций в заказе</dt>
+                    <dt>{ui?.cartSummaryItemsLabel || 'Позиций в заказе'}</dt>
                     <dd className="font-medium tabular-nums text-text">{totalQty}</dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border-light pt-3">
-                    <dt className="font-medium text-text">Ориентировочно</dt>
+                    <dt className="font-medium text-text">{ui?.cartSummaryApproxLabel || 'Ориентировочно'}</dt>
                     <dd className="font-heading text-xl font-semibold tabular-nums text-text">
                       {formatRub(totalApprox)}
                     </dd>
                   </div>
                 </dl>
                 <p className="mt-3 rounded-xl bg-surface p-3 font-body text-xs leading-relaxed text-text-muted">
-                  Итоговая сумма появится после выбора и расчета доставки.
+                  {ui?.cartSummaryDeliveryNote || 'Итоговая сумма появится после выбора и расчета доставки.'}
                 </p>
                 <Link
                   to="/checkout"
                   className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
                 >
-                  Оформить заказ
+                  {ui?.cartCheckoutButton || 'Оформить заказ'}
                 </Link>
                 <p className="mt-3 text-center font-body text-xs text-text-subtle">
-                  Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.
+                  {ui?.cartCheckoutFootnote || 'Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.'}
                 </p>
                 <p className="mt-2 text-center font-body text-xs leading-relaxed text-text-subtle">
-                  Оформление заказа регулируется{' '}
+                  {ui?.cartTermsPrefix || 'Оформление заказа регулируется'}{' '}
                   <Link to="/offer" className="text-accent hover:underline">
                     публичной офертой
                   </Link>{' '}

@@ -128,6 +128,18 @@ export type HomePayload = {
     requestFormBenefit1?: string
     requestFormBenefit2?: string
     requestFormBenefit3?: string
+    step1Title?: string
+    step2Title?: string
+    virtualRulerTitle?: string
+    requestBadge?: string
+    errorPhoneIncomplete?: string
+    errorCommentTooLong?: string
+    errorSubmitFailed?: string
+    errorNetwork?: string
+    consentPrefix?: string
+    consentPrivacyLinkLabel?: string
+    consentAndLabel?: string
+    consentOfferLinkLabel?: string
     pricingModel?: 'area_plus_options' | 'area_only' | 'options_only'
     lengthMinM?: number
     lengthMaxM?: number
@@ -141,6 +153,8 @@ export type HomePayload = {
   portfolio?: {
     heading?: string
     subheading?: string
+    pageHeading?: string
+    pageSubheading?: string
     filters?: string[]
     loading?: string
     empty?: string
@@ -157,6 +171,19 @@ export type HomePayload = {
     subheading?: string
     loading?: string
     videoCaption?: string
+    readMoreLabel?: string
+    collapseLabel?: string
+    formHeading?: string
+    formSubheading?: string
+    namePlaceholder?: string
+    cityPlaceholder?: string
+    textPlaceholder?: string
+    consentPrefix?: string
+    consentLinkLabel?: string
+    submitButton?: string
+    submitting?: string
+    successMessage?: string
+    errorMessage?: string
   }
   blog?: {
     heading?: string
@@ -184,5 +211,97 @@ export type HomePayload = {
     loadingFeatured?: string
     buyOnMarketplaces?: string
     buyOnMarketplacesMobile?: string
+    navHome?: string
+    navCatalog?: string
+    navPortfolio?: string
+    navContacts?: string
+    navBlog?: string
+    navCart?: string
+    navAccount?: string
+    navMenuTitle?: string
+    navMenuSubtitle?: string
+    mobileBarProfile?: string
+    footerNavTitle?: string
+    footerMarketplacesTitle?: string
+    footerSocialTitle?: string
+    footerContactsTitle?: string
+    footerPaymentTitle?: string
+    footerDeliveryTitle?: string
+    footerStaffLogin?: string
+    footerPrivacyLink?: string
+    footerOfferLink?: string
+    footerCopyrightSuffix?: string
+    headerMainMenuAria?: string
+    headerThemeToLightAria?: string
+    headerThemeToDarkAria?: string
+    headerThemeLightTitle?: string
+    headerThemeDarkTitle?: string
+    headerMenuOpenAria?: string
+    headerMenuCloseAria?: string
+    headerMobileMenuAria?: string
+    headerBottomNavAria?: string
+    staffModalCloseOverlayAria?: string
+    staffModalCloseButtonAria?: string
+    staffModalTitle?: string
+    staffModalSubtitle?: string
+    staffModalManagerLabel?: string
+    staffModalManagerHint?: string
+    staffModalAdminLabel?: string
+    staffModalAdminHint?: string
+    introAriaLabel?: string
+    introTag1?: string
+    introTag2?: string
+    introTag3?: string
+    introTitle?: string
+    introSubtitle?: string
+    introStage1?: string
+    introStage2?: string
+    introStage3?: string
+    introSkipButton?: string
+    productNoPhoto?: string
+    productPricePrefix?: string
+    productAddToCart?: string
+    productAddedTitle?: string
+    productContinueShopping?: string
+    productGoToCart?: string
+    productMarketplacesTitle?: string
+    productBadgeInStock?: string
+    productBadgeSeasonal?: string
+    cartPageTitle?: string
+    cartPageIntro?: string
+    cartEmptyTitle?: string
+    cartEmptyText?: string
+    cartEmptyCta?: string
+    cartItemsTitle?: string
+    cartNoPhoto?: string
+    cartPricePerUnitPrefix?: string
+    cartPricePerUnitSuffix?: string
+    cartQtyLabel?: string
+    cartRemoveOrDecreaseAria?: string
+    cartIncreaseAria?: string
+    cartRemoveLine?: string
+    cartAddMoreCta?: string
+    cartSummaryTitle?: string
+    cartSummaryItemsLabel?: string
+    cartSummaryApproxLabel?: string
+    cartSummaryDeliveryNote?: string
+    cartCheckoutButton?: string
+    cartCheckoutFootnote?: string
+    cartTermsPrefix?: string
+    productNotFoundTitle?: string
+    productNotFoundText?: string
+    productBackToCatalog?: string
+    productBreadcrumbAria?: string
+    productBreadcrumbHome?: string
+    productBreadcrumbCatalog?: string
+    productPriceLabel?: string
+    productVariantLabel?: string
+    productDetailsButton?: string
+    productMarketplacesCardTitle?: string
+    productMarketplacesCardHint?: string
+    productCustomOrderCta?: string
+    productRelatedTitle?: string
+    productRelatedSubtitlePrefix?: string
+    productMaterialMapSubtitleFallback?: string
   }
 }

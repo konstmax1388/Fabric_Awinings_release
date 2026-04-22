@@ -420,6 +420,30 @@ class HomePageContentAdminForm(forms.ModelForm):
     calc_request_benefit_1 = _req_txt(_("Форма заявки: преимущество 1"))
     calc_request_benefit_2 = _req_txt(_("Форма заявки: преимущество 2"))
     calc_request_benefit_3 = _req_txt(_("Форма заявки: преимущество 3"))
+    calc_step_1_title = _req_txt(_("Калькулятор: заголовок шага 1"))
+    calc_step_2_title = _req_txt(_("Калькулятор: заголовок шага 2"))
+    calc_virtual_ruler_title = _req_txt(_("Калькулятор: подпись виртуальной рулетки"))
+    calc_request_badge = _req_txt(_("Форма заявки: бейдж"))
+    calc_error_phone_incomplete = _req_txt(_("Калькулятор: ошибка неполного телефона"))
+    calc_error_comment_too_long = _req_txt(_("Калькулятор: ошибка длинного комментария ({max})"))
+    calc_error_submit_failed = _req_txt(_("Калькулятор: ошибка «не удалось отправить»"))
+    calc_error_network = _req_txt(_("Калькулятор: ошибка сети"))
+    calc_consent_prefix = _req_txt(_("Калькулятор: согласие — текст до ссылки 1"))
+    calc_consent_privacy_link = _req_txt(_("Калькулятор: согласие — ссылка 1"))
+    calc_consent_and = _req_txt(_("Калькулятор: согласие — связка между ссылками"))
+    calc_consent_offer_link = _req_txt(_("Калькулятор: согласие — ссылка 2"))
+    calc_step_1_title = _req_txt(_("Калькулятор: заголовок шага 1"))
+    calc_step_2_title = _req_txt(_("Калькулятор: заголовок шага 2"))
+    calc_virtual_ruler_title = _req_txt(_("Калькулятор: заголовок «виртуальная рулетка»"))
+    calc_request_badge = _req_txt(_("Форма заявки: бейдж сверху"))
+    calc_error_phone_incomplete = _req_txt(_("Калькулятор: ошибка неполного телефона"))
+    calc_error_comment_too_long = _req_txt(_("Калькулятор: ошибка длинного комментария ({max})"))
+    calc_error_submit_failed = _req_txt(_("Калькулятор: ошибка «не удалось отправить»"))
+    calc_error_network = _req_txt(_("Калькулятор: ошибка сети"))
+    calc_consent_prefix = _req_txt(_("Калькулятор: текст согласия до ссылки 1"))
+    calc_consent_privacy_link = _req_txt(_("Калькулятор: ссылка 1 (политика)"))
+    calc_consent_and = _req_txt(_("Калькулятор: связка между ссылками"))
+    calc_consent_offer_link = _req_txt(_("Калькулятор: ссылка 2 (оферта)"))
 
     calc_pricing_model = forms.ChoiceField(
         label=_("Модель расчёта"),
@@ -582,6 +606,8 @@ class HomePageContentAdminForm(forms.ModelForm):
     # --- portfolio ---
     port_heading = _req_txt(_("Заголовок"))
     port_subheading = _area(_("Подзаголовок"), rows=2)
+    port_page_heading = _req_txt(_("Страница портфолио: заголовок"))
+    port_page_subheading = _area(_("Страница портфолио: подзаголовок"), rows=2)
     port_filters = forms.CharField(
         label=_("Фильтры (через запятую)"),
         required=True,
@@ -622,6 +648,19 @@ class HomePageContentAdminForm(forms.ModelForm):
     rev_subheading = _area(_("Подзаголовок"), rows=2)
     rev_loading = _req_txt(_("Текст «загрузка»"))
     rev_video_caption = _req_txt(_("Подпись к видеоотзыву"))
+    rev_read_more_label = _req_txt(_("Кнопка длинного отзыва: «читать весь»"))
+    rev_collapse_label = _req_txt(_("Кнопка длинного отзыва: «свернуть»"))
+    rev_form_heading = _req_txt(_("Форма отзыва: заголовок"))
+    rev_form_subheading = _area(_("Форма отзыва: подзаголовок"), rows=2)
+    rev_name_placeholder = _req_txt(_("Форма отзыва: плейсхолдер имени"))
+    rev_city_placeholder = _req_txt(_("Форма отзыва: плейсхолдер города"))
+    rev_text_placeholder = _req_txt(_("Форма отзыва: плейсхолдер текста"))
+    rev_consent_prefix = _req_txt(_("Форма отзыва: текст согласия до ссылки"))
+    rev_consent_link_label = _req_txt(_("Форма отзыва: текст ссылки согласия"))
+    rev_submit_button = _req_txt(_("Форма отзыва: кнопка отправки"))
+    rev_submitting = _req_txt(_("Форма отзыва: текст при отправке"))
+    rev_success_message = _area(_("Форма отзыва: сообщение после успеха"), rows=2)
+    rev_error_message = _area(_("Форма отзыва: сообщение при ошибке"), rows=2)
 
     # --- blog ---
     blog_heading = _req_txt(_("Заголовок"))
@@ -656,6 +695,98 @@ class HomePageContentAdminForm(forms.ModelForm):
     ui_loading_featured = _req_txt(_("Текст загрузки подборки на главной"))
     ui_buy_marketplaces = _req_txt(_("Подпись маркетплейсов (десктоп)"))
     ui_buy_marketplaces_mobile = _req_txt(_("Подпись маркетплейсов (мобильная)"))
+    ui_nav_home = _req_txt(_("Навигация: «Главная»"))
+    ui_nav_catalog = _req_txt(_("Навигация: «Каталог»"))
+    ui_nav_portfolio = _req_txt(_("Навигация: «Портфолио»"))
+    ui_nav_contacts = _req_txt(_("Навигация: «Контакты»"))
+    ui_nav_blog = _req_txt(_("Навигация: «Блог»"))
+    ui_nav_cart = _req_txt(_("Навигация: «Корзина»"))
+    ui_nav_account = _req_txt(_("Навигация: «Личный кабинет»"))
+    ui_nav_menu_title = _req_txt(_("Мобильное меню: заголовок"))
+    ui_nav_menu_subtitle = _req_txt(_("Мобильное меню: подзаголовок"))
+    ui_mobile_bar_profile = _req_txt(_("Нижняя навигация (моб.): «Профиль»"))
+    ui_footer_nav_title = _req_txt(_("Подвал: заголовок «Навигация»"))
+    ui_footer_marketplaces_title = _req_txt(_("Подвал: заголовок «Маркетплейсы»"))
+    ui_footer_social_title = _req_txt(_("Подвал: заголовок «Соцсети»"))
+    ui_footer_contacts_title = _req_txt(_("Подвал: заголовок «Контакты»"))
+    ui_footer_payment_title = _req_txt(_("Подвал: заголовок «Оплата»"))
+    ui_footer_delivery_title = _req_txt(_("Подвал: заголовок «Доставка»"))
+    ui_footer_staff_login = _req_txt(_("Подвал: ссылка «Вход для сотрудников»"))
+    ui_footer_privacy_link = _req_txt(_("Подвал: ссылка «Политика конфиденциальности»"))
+    ui_footer_offer_link = _req_txt(_("Подвал: ссылка «Публичная оферта»"))
+    ui_footer_copyright_suffix = _req_txt(_("Подвал: текст после названия компании в копирайте"))
+    ui_header_main_menu_aria = _req_txt(_("Шапка (десктоп): aria-label меню"))
+    ui_header_theme_to_light_aria = _req_txt(_("Шапка: aria-label кнопки «светлая тема»"))
+    ui_header_theme_to_dark_aria = _req_txt(_("Шапка: aria-label кнопки «тёмная тема»"))
+    ui_header_theme_light_title = _req_txt(_("Шапка: title кнопки «светлая тема»"))
+    ui_header_theme_dark_title = _req_txt(_("Шапка: title кнопки «тёмная тема»"))
+    ui_header_menu_open_aria = _req_txt(_("Шапка (моб.): aria-label кнопки «открыть меню»"))
+    ui_header_menu_close_aria = _req_txt(_("Шапка (моб.): aria-label кнопки «закрыть меню»"))
+    ui_header_mobile_menu_aria = _req_txt(_("Шапка (моб.): aria-label контейнера меню"))
+    ui_header_bottom_nav_aria = _req_txt(_("Шапка (моб.): aria-label нижней навигации"))
+    ui_staff_modal_close_overlay_aria = _req_txt(_("Модалка входа: aria-label фона закрытия"))
+    ui_staff_modal_close_button_aria = _req_txt(_("Модалка входа: aria-label кнопки закрытия"))
+    ui_staff_modal_title = _req_txt(_("Модалка входа: заголовок"))
+    ui_staff_modal_subtitle = _req_txt(_("Модалка входа: подзаголовок"))
+    ui_staff_modal_manager_label = _req_txt(_("Модалка входа: карточка «Панель менеджера»"))
+    ui_staff_modal_manager_hint = _req_txt(_("Модалка входа: подпись к панели менеджера"))
+    ui_staff_modal_admin_label = _req_txt(_("Модалка входа: карточка «Настройки сайта»"))
+    ui_staff_modal_admin_hint = _req_txt(_("Модалка входа: подпись к настройкам сайта"))
+    ui_intro_aria_label = _req_txt(_("Splash: aria-label экрана"))
+    ui_intro_tag_1 = _req_txt(_("Splash: верхний тег 1"))
+    ui_intro_tag_2 = _req_txt(_("Splash: верхний тег 2"))
+    ui_intro_tag_3 = _req_txt(_("Splash: верхний тег 3"))
+    ui_intro_title = _req_txt(_("Splash: заголовок"))
+    ui_intro_subtitle = _req_txt(_("Splash: подзаголовок"))
+    ui_intro_stage_1 = _req_txt(_("Splash: этап 1"))
+    ui_intro_stage_2 = _req_txt(_("Splash: этап 2"))
+    ui_intro_stage_3 = _req_txt(_("Splash: этап 3"))
+    ui_intro_skip_button = _req_txt(_("Splash: кнопка пропуска"))
+    ui_product_no_photo = _req_txt(_("Товар: текст при отсутствии фото"))
+    ui_product_price_prefix = _req_txt(_("Товар: префикс цены"))
+    ui_product_add_to_cart = _req_txt(_("Товар: кнопка «в корзину»"))
+    ui_product_added_title = _req_txt(_("Товар: заголовок «добавлено в корзину»"))
+    ui_product_continue_shopping = _req_txt(_("Товар: кнопка «продолжить покупки»"))
+    ui_product_go_to_cart = _req_txt(_("Товар: кнопка «перейти в корзину»"))
+    ui_product_marketplaces_title = _req_txt(_("Товар: заголовок маркетплейсов"))
+    ui_product_badge_in_stock = _req_txt(_("Товар: автобейдж «в наличии»"))
+    ui_product_badge_seasonal = _req_txt(_("Товар: автобейдж «сезонное»"))
+    ui_cart_page_title = _req_txt(_("Корзина: заголовок страницы"))
+    ui_cart_page_intro = _area(_("Корзина: подзаголовок страницы"), rows=3)
+    ui_cart_empty_title = _req_txt(_("Корзина: пусто — заголовок"))
+    ui_cart_empty_text = _area(_("Корзина: пусто — текст"), rows=3)
+    ui_cart_empty_cta = _req_txt(_("Корзина: пусто — кнопка"))
+    ui_cart_items_title = _req_txt(_("Корзина: заголовок списка товаров"))
+    ui_cart_no_photo = _req_txt(_("Корзина: текст при отсутствии фото"))
+    ui_cart_price_per_unit_prefix = _req_txt(_("Корзина: префикс «цена за единицу»"))
+    ui_cart_price_per_unit_suffix = _req_txt(_("Корзина: суффикс «цена за единицу»"))
+    ui_cart_qty_label = _req_txt(_("Корзина: подпись количества"))
+    ui_cart_remove_or_decrease_aria = _req_txt(_("Корзина: aria кнопки минус/удалить"))
+    ui_cart_increase_aria = _req_txt(_("Корзина: aria кнопки плюс"))
+    ui_cart_remove_line = _req_txt(_("Корзина: кнопка «убрать»"))
+    ui_cart_add_more_cta = _req_txt(_("Корзина: ссылка «добавить ещё»"))
+    ui_cart_summary_title = _req_txt(_("Корзина: заголовок итога"))
+    ui_cart_summary_items_label = _req_txt(_("Корзина: метка «позиций в заказе»"))
+    ui_cart_summary_approx_label = _req_txt(_("Корзина: метка «ориентировочно»"))
+    ui_cart_summary_delivery_note = _req_txt(_("Корзина: пояснение по доставке"))
+    ui_cart_checkout_button = _req_txt(_("Корзина: кнопка оформления"))
+    ui_cart_checkout_footnote = _req_txt(_("Корзина: примечание под кнопкой"))
+    ui_cart_terms_prefix = _req_txt(_("Корзина: префикс перед ссылками оферты/политики"))
+    ui_product_not_found_title = _req_txt(_("Карточка товара: заголовок «не найдено»"))
+    ui_product_not_found_text = _req_txt(_("Карточка товара: текст «не найдено»"))
+    ui_product_back_to_catalog = _req_txt(_("Карточка товара: кнопка «в каталог»"))
+    ui_product_breadcrumb_aria = _req_txt(_("Карточка товара: aria хлебных крошек"))
+    ui_product_breadcrumb_home = _req_txt(_("Карточка товара: крошка «главная»"))
+    ui_product_breadcrumb_catalog = _req_txt(_("Карточка товара: крошка «каталог»"))
+    ui_product_price_label = _req_txt(_("Карточка товара: подпись цены"))
+    ui_product_variant_label = _req_txt(_("Карточка товара: подпись варианта"))
+    ui_product_details_button = _req_txt(_("Карточка товара: кнопка деталей"))
+    ui_product_marketplaces_card_title = _req_txt(_("Карточка товара: заголовок блока маркетплейсов"))
+    ui_product_marketplaces_card_hint = _req_txt(_("Карточка товара: подпись блока маркетплейсов"))
+    ui_product_custom_order_cta = _req_txt(_("Карточка товара: CTA индивидуального заказа"))
+    ui_product_related_title = _req_txt(_("Карточка товара: заголовок похожих"))
+    ui_product_related_subtitle_prefix = _req_txt(_("Карточка товара: префикс подзаголовка похожих"))
+    ui_product_material_map_subtitle_fallback = _req_txt(_("Карточка товара: fallback подписи карты материалов"))
 
     class Meta:
         model = HomePageContent
@@ -829,6 +960,18 @@ class HomePageContentAdminForm(forms.ModelForm):
             ("requestFormBenefit1", "calc_request_benefit_1"),
             ("requestFormBenefit2", "calc_request_benefit_2"),
             ("requestFormBenefit3", "calc_request_benefit_3"),
+            ("step1Title", "calc_step_1_title"),
+            ("step2Title", "calc_step_2_title"),
+            ("virtualRulerTitle", "calc_virtual_ruler_title"),
+            ("requestBadge", "calc_request_badge"),
+            ("errorPhoneIncomplete", "calc_error_phone_incomplete"),
+            ("errorCommentTooLong", "calc_error_comment_too_long"),
+            ("errorSubmitFailed", "calc_error_submit_failed"),
+            ("errorNetwork", "calc_error_network"),
+            ("consentPrefix", "calc_consent_prefix"),
+            ("consentPrivacyLinkLabel", "calc_consent_privacy_link"),
+            ("consentAndLabel", "calc_consent_and"),
+            ("consentOfferLinkLabel", "calc_consent_offer_link"),
         ):
             self.initial.setdefault(suffix, calc.get(key, ""))
 
@@ -884,6 +1027,8 @@ class HomePageContentAdminForm(forms.ModelForm):
         port = m.get("portfolio") or {}
         self.initial.setdefault("port_heading", port.get("heading", ""))
         self.initial.setdefault("port_subheading", port.get("subheading", ""))
+        self.initial.setdefault("port_page_heading", port.get("pageHeading", ""))
+        self.initial.setdefault("port_page_subheading", port.get("pageSubheading", ""))
         flt = port.get("filters")
         if isinstance(flt, list):
             self.initial.setdefault("port_filters", ", ".join(str(x) for x in flt))
@@ -919,6 +1064,19 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("rev_subheading", rev.get("subheading", ""))
         self.initial.setdefault("rev_loading", rev.get("loading", ""))
         self.initial.setdefault("rev_video_caption", rev.get("videoCaption", ""))
+        self.initial.setdefault("rev_read_more_label", rev.get("readMoreLabel", ""))
+        self.initial.setdefault("rev_collapse_label", rev.get("collapseLabel", ""))
+        self.initial.setdefault("rev_form_heading", rev.get("formHeading", ""))
+        self.initial.setdefault("rev_form_subheading", rev.get("formSubheading", ""))
+        self.initial.setdefault("rev_name_placeholder", rev.get("namePlaceholder", ""))
+        self.initial.setdefault("rev_city_placeholder", rev.get("cityPlaceholder", ""))
+        self.initial.setdefault("rev_text_placeholder", rev.get("textPlaceholder", ""))
+        self.initial.setdefault("rev_consent_prefix", rev.get("consentPrefix", ""))
+        self.initial.setdefault("rev_consent_link_label", rev.get("consentLinkLabel", ""))
+        self.initial.setdefault("rev_submit_button", rev.get("submitButton", ""))
+        self.initial.setdefault("rev_submitting", rev.get("submitting", ""))
+        self.initial.setdefault("rev_success_message", rev.get("successMessage", ""))
+        self.initial.setdefault("rev_error_message", rev.get("errorMessage", ""))
 
         blog = m.get("blog") or {}
         self.initial.setdefault("blog_heading", blog.get("heading", ""))
@@ -944,6 +1102,98 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("ui_loading_featured", ui.get("loadingFeatured", ""))
         self.initial.setdefault("ui_buy_marketplaces", ui.get("buyOnMarketplaces", ""))
         self.initial.setdefault("ui_buy_marketplaces_mobile", ui.get("buyOnMarketplacesMobile", ""))
+        self.initial.setdefault("ui_nav_home", ui.get("navHome", ""))
+        self.initial.setdefault("ui_nav_catalog", ui.get("navCatalog", ""))
+        self.initial.setdefault("ui_nav_portfolio", ui.get("navPortfolio", ""))
+        self.initial.setdefault("ui_nav_contacts", ui.get("navContacts", ""))
+        self.initial.setdefault("ui_nav_blog", ui.get("navBlog", ""))
+        self.initial.setdefault("ui_nav_cart", ui.get("navCart", ""))
+        self.initial.setdefault("ui_nav_account", ui.get("navAccount", ""))
+        self.initial.setdefault("ui_nav_menu_title", ui.get("navMenuTitle", ""))
+        self.initial.setdefault("ui_nav_menu_subtitle", ui.get("navMenuSubtitle", ""))
+        self.initial.setdefault("ui_mobile_bar_profile", ui.get("mobileBarProfile", ""))
+        self.initial.setdefault("ui_footer_nav_title", ui.get("footerNavTitle", ""))
+        self.initial.setdefault("ui_footer_marketplaces_title", ui.get("footerMarketplacesTitle", ""))
+        self.initial.setdefault("ui_footer_social_title", ui.get("footerSocialTitle", ""))
+        self.initial.setdefault("ui_footer_contacts_title", ui.get("footerContactsTitle", ""))
+        self.initial.setdefault("ui_footer_payment_title", ui.get("footerPaymentTitle", ""))
+        self.initial.setdefault("ui_footer_delivery_title", ui.get("footerDeliveryTitle", ""))
+        self.initial.setdefault("ui_footer_staff_login", ui.get("footerStaffLogin", ""))
+        self.initial.setdefault("ui_footer_privacy_link", ui.get("footerPrivacyLink", ""))
+        self.initial.setdefault("ui_footer_offer_link", ui.get("footerOfferLink", ""))
+        self.initial.setdefault("ui_footer_copyright_suffix", ui.get("footerCopyrightSuffix", ""))
+        self.initial.setdefault("ui_header_main_menu_aria", ui.get("headerMainMenuAria", ""))
+        self.initial.setdefault("ui_header_theme_to_light_aria", ui.get("headerThemeToLightAria", ""))
+        self.initial.setdefault("ui_header_theme_to_dark_aria", ui.get("headerThemeToDarkAria", ""))
+        self.initial.setdefault("ui_header_theme_light_title", ui.get("headerThemeLightTitle", ""))
+        self.initial.setdefault("ui_header_theme_dark_title", ui.get("headerThemeDarkTitle", ""))
+        self.initial.setdefault("ui_header_menu_open_aria", ui.get("headerMenuOpenAria", ""))
+        self.initial.setdefault("ui_header_menu_close_aria", ui.get("headerMenuCloseAria", ""))
+        self.initial.setdefault("ui_header_mobile_menu_aria", ui.get("headerMobileMenuAria", ""))
+        self.initial.setdefault("ui_header_bottom_nav_aria", ui.get("headerBottomNavAria", ""))
+        self.initial.setdefault("ui_staff_modal_close_overlay_aria", ui.get("staffModalCloseOverlayAria", ""))
+        self.initial.setdefault("ui_staff_modal_close_button_aria", ui.get("staffModalCloseButtonAria", ""))
+        self.initial.setdefault("ui_staff_modal_title", ui.get("staffModalTitle", ""))
+        self.initial.setdefault("ui_staff_modal_subtitle", ui.get("staffModalSubtitle", ""))
+        self.initial.setdefault("ui_staff_modal_manager_label", ui.get("staffModalManagerLabel", ""))
+        self.initial.setdefault("ui_staff_modal_manager_hint", ui.get("staffModalManagerHint", ""))
+        self.initial.setdefault("ui_staff_modal_admin_label", ui.get("staffModalAdminLabel", ""))
+        self.initial.setdefault("ui_staff_modal_admin_hint", ui.get("staffModalAdminHint", ""))
+        self.initial.setdefault("ui_intro_aria_label", ui.get("introAriaLabel", ""))
+        self.initial.setdefault("ui_intro_tag_1", ui.get("introTag1", ""))
+        self.initial.setdefault("ui_intro_tag_2", ui.get("introTag2", ""))
+        self.initial.setdefault("ui_intro_tag_3", ui.get("introTag3", ""))
+        self.initial.setdefault("ui_intro_title", ui.get("introTitle", ""))
+        self.initial.setdefault("ui_intro_subtitle", ui.get("introSubtitle", ""))
+        self.initial.setdefault("ui_intro_stage_1", ui.get("introStage1", ""))
+        self.initial.setdefault("ui_intro_stage_2", ui.get("introStage2", ""))
+        self.initial.setdefault("ui_intro_stage_3", ui.get("introStage3", ""))
+        self.initial.setdefault("ui_intro_skip_button", ui.get("introSkipButton", ""))
+        self.initial.setdefault("ui_product_no_photo", ui.get("productNoPhoto", ""))
+        self.initial.setdefault("ui_product_price_prefix", ui.get("productPricePrefix", ""))
+        self.initial.setdefault("ui_product_add_to_cart", ui.get("productAddToCart", ""))
+        self.initial.setdefault("ui_product_added_title", ui.get("productAddedTitle", ""))
+        self.initial.setdefault("ui_product_continue_shopping", ui.get("productContinueShopping", ""))
+        self.initial.setdefault("ui_product_go_to_cart", ui.get("productGoToCart", ""))
+        self.initial.setdefault("ui_product_marketplaces_title", ui.get("productMarketplacesTitle", ""))
+        self.initial.setdefault("ui_product_badge_in_stock", ui.get("productBadgeInStock", ""))
+        self.initial.setdefault("ui_product_badge_seasonal", ui.get("productBadgeSeasonal", ""))
+        self.initial.setdefault("ui_cart_page_title", ui.get("cartPageTitle", ""))
+        self.initial.setdefault("ui_cart_page_intro", ui.get("cartPageIntro", ""))
+        self.initial.setdefault("ui_cart_empty_title", ui.get("cartEmptyTitle", ""))
+        self.initial.setdefault("ui_cart_empty_text", ui.get("cartEmptyText", ""))
+        self.initial.setdefault("ui_cart_empty_cta", ui.get("cartEmptyCta", ""))
+        self.initial.setdefault("ui_cart_items_title", ui.get("cartItemsTitle", ""))
+        self.initial.setdefault("ui_cart_no_photo", ui.get("cartNoPhoto", ""))
+        self.initial.setdefault("ui_cart_price_per_unit_prefix", ui.get("cartPricePerUnitPrefix", ""))
+        self.initial.setdefault("ui_cart_price_per_unit_suffix", ui.get("cartPricePerUnitSuffix", ""))
+        self.initial.setdefault("ui_cart_qty_label", ui.get("cartQtyLabel", ""))
+        self.initial.setdefault("ui_cart_remove_or_decrease_aria", ui.get("cartRemoveOrDecreaseAria", ""))
+        self.initial.setdefault("ui_cart_increase_aria", ui.get("cartIncreaseAria", ""))
+        self.initial.setdefault("ui_cart_remove_line", ui.get("cartRemoveLine", ""))
+        self.initial.setdefault("ui_cart_add_more_cta", ui.get("cartAddMoreCta", ""))
+        self.initial.setdefault("ui_cart_summary_title", ui.get("cartSummaryTitle", ""))
+        self.initial.setdefault("ui_cart_summary_items_label", ui.get("cartSummaryItemsLabel", ""))
+        self.initial.setdefault("ui_cart_summary_approx_label", ui.get("cartSummaryApproxLabel", ""))
+        self.initial.setdefault("ui_cart_summary_delivery_note", ui.get("cartSummaryDeliveryNote", ""))
+        self.initial.setdefault("ui_cart_checkout_button", ui.get("cartCheckoutButton", ""))
+        self.initial.setdefault("ui_cart_checkout_footnote", ui.get("cartCheckoutFootnote", ""))
+        self.initial.setdefault("ui_cart_terms_prefix", ui.get("cartTermsPrefix", ""))
+        self.initial.setdefault("ui_product_not_found_title", ui.get("productNotFoundTitle", ""))
+        self.initial.setdefault("ui_product_not_found_text", ui.get("productNotFoundText", ""))
+        self.initial.setdefault("ui_product_back_to_catalog", ui.get("productBackToCatalog", ""))
+        self.initial.setdefault("ui_product_breadcrumb_aria", ui.get("productBreadcrumbAria", ""))
+        self.initial.setdefault("ui_product_breadcrumb_home", ui.get("productBreadcrumbHome", ""))
+        self.initial.setdefault("ui_product_breadcrumb_catalog", ui.get("productBreadcrumbCatalog", ""))
+        self.initial.setdefault("ui_product_price_label", ui.get("productPriceLabel", ""))
+        self.initial.setdefault("ui_product_variant_label", ui.get("productVariantLabel", ""))
+        self.initial.setdefault("ui_product_details_button", ui.get("productDetailsButton", ""))
+        self.initial.setdefault("ui_product_marketplaces_card_title", ui.get("productMarketplacesCardTitle", ""))
+        self.initial.setdefault("ui_product_marketplaces_card_hint", ui.get("productMarketplacesCardHint", ""))
+        self.initial.setdefault("ui_product_custom_order_cta", ui.get("productCustomOrderCta", ""))
+        self.initial.setdefault("ui_product_related_title", ui.get("productRelatedTitle", ""))
+        self.initial.setdefault("ui_product_related_subtitle_prefix", ui.get("productRelatedSubtitlePrefix", ""))
+        self.initial.setdefault("ui_product_material_map_subtitle_fallback", ui.get("productMaterialMapSubtitleFallback", ""))
 
     def _build_payload(self, cd: dict[str, Any]) -> dict[str, Any]:
         base = default_home_payload()
@@ -1086,6 +1336,18 @@ class HomePageContentAdminForm(forms.ModelForm):
             "requestFormBenefit1": cd["calc_request_benefit_1"].strip(),
             "requestFormBenefit2": cd["calc_request_benefit_2"].strip(),
             "requestFormBenefit3": cd["calc_request_benefit_3"].strip(),
+            "step1Title": cd["calc_step_1_title"].strip(),
+            "step2Title": cd["calc_step_2_title"].strip(),
+            "virtualRulerTitle": cd["calc_virtual_ruler_title"].strip(),
+            "requestBadge": cd["calc_request_badge"].strip(),
+            "errorPhoneIncomplete": cd["calc_error_phone_incomplete"].strip(),
+            "errorCommentTooLong": cd["calc_error_comment_too_long"].strip(),
+            "errorSubmitFailed": cd["calc_error_submit_failed"].strip(),
+            "errorNetwork": cd["calc_error_network"].strip(),
+            "consentPrefix": cd["calc_consent_prefix"].strip(),
+            "consentPrivacyLinkLabel": cd["calc_consent_privacy_link"].strip(),
+            "consentAndLabel": cd["calc_consent_and"].strip(),
+            "consentOfferLinkLabel": cd["calc_consent_offer_link"].strip(),
             "pricingModel": cd["calc_pricing_model"],
             "lengthMinM": float(cd["calc_range_len_min"]),
             "lengthMaxM": float(cd["calc_range_len_max"]),
@@ -1100,6 +1362,8 @@ class HomePageContentAdminForm(forms.ModelForm):
         base["portfolio"] = {
             "heading": cd["port_heading"].strip(),
             "subheading": cd["port_subheading"].strip(),
+            "pageHeading": cd["port_page_heading"].strip(),
+            "pageSubheading": cd["port_page_subheading"].strip(),
             "filters": raw_filters or default_home_payload()["portfolio"]["filters"],
             "loading": cd["port_loading"].strip(),
             "empty": cd["port_empty"].strip(),
@@ -1130,6 +1394,19 @@ class HomePageContentAdminForm(forms.ModelForm):
             "subheading": cd["rev_subheading"].strip(),
             "loading": cd["rev_loading"].strip(),
             "videoCaption": cd["rev_video_caption"].strip(),
+            "readMoreLabel": cd["rev_read_more_label"].strip(),
+            "collapseLabel": cd["rev_collapse_label"].strip(),
+            "formHeading": cd["rev_form_heading"].strip(),
+            "formSubheading": cd["rev_form_subheading"].strip(),
+            "namePlaceholder": cd["rev_name_placeholder"].strip(),
+            "cityPlaceholder": cd["rev_city_placeholder"].strip(),
+            "textPlaceholder": cd["rev_text_placeholder"].strip(),
+            "consentPrefix": cd["rev_consent_prefix"].strip(),
+            "consentLinkLabel": cd["rev_consent_link_label"].strip(),
+            "submitButton": cd["rev_submit_button"].strip(),
+            "submitting": cd["rev_submitting"].strip(),
+            "successMessage": cd["rev_success_message"].strip(),
+            "errorMessage": cd["rev_error_message"].strip(),
         }
         base["blog"] = {
             "heading": cd["blog_heading"].strip(),
@@ -1155,6 +1432,98 @@ class HomePageContentAdminForm(forms.ModelForm):
             "loadingFeatured": cd["ui_loading_featured"].strip(),
             "buyOnMarketplaces": cd["ui_buy_marketplaces"].strip(),
             "buyOnMarketplacesMobile": cd["ui_buy_marketplaces_mobile"].strip(),
+            "navHome": cd["ui_nav_home"].strip(),
+            "navCatalog": cd["ui_nav_catalog"].strip(),
+            "navPortfolio": cd["ui_nav_portfolio"].strip(),
+            "navContacts": cd["ui_nav_contacts"].strip(),
+            "navBlog": cd["ui_nav_blog"].strip(),
+            "navCart": cd["ui_nav_cart"].strip(),
+            "navAccount": cd["ui_nav_account"].strip(),
+            "navMenuTitle": cd["ui_nav_menu_title"].strip(),
+            "navMenuSubtitle": cd["ui_nav_menu_subtitle"].strip(),
+            "mobileBarProfile": cd["ui_mobile_bar_profile"].strip(),
+            "footerNavTitle": cd["ui_footer_nav_title"].strip(),
+            "footerMarketplacesTitle": cd["ui_footer_marketplaces_title"].strip(),
+            "footerSocialTitle": cd["ui_footer_social_title"].strip(),
+            "footerContactsTitle": cd["ui_footer_contacts_title"].strip(),
+            "footerPaymentTitle": cd["ui_footer_payment_title"].strip(),
+            "footerDeliveryTitle": cd["ui_footer_delivery_title"].strip(),
+            "footerStaffLogin": cd["ui_footer_staff_login"].strip(),
+            "footerPrivacyLink": cd["ui_footer_privacy_link"].strip(),
+            "footerOfferLink": cd["ui_footer_offer_link"].strip(),
+            "footerCopyrightSuffix": cd["ui_footer_copyright_suffix"].strip(),
+            "headerMainMenuAria": cd["ui_header_main_menu_aria"].strip(),
+            "headerThemeToLightAria": cd["ui_header_theme_to_light_aria"].strip(),
+            "headerThemeToDarkAria": cd["ui_header_theme_to_dark_aria"].strip(),
+            "headerThemeLightTitle": cd["ui_header_theme_light_title"].strip(),
+            "headerThemeDarkTitle": cd["ui_header_theme_dark_title"].strip(),
+            "headerMenuOpenAria": cd["ui_header_menu_open_aria"].strip(),
+            "headerMenuCloseAria": cd["ui_header_menu_close_aria"].strip(),
+            "headerMobileMenuAria": cd["ui_header_mobile_menu_aria"].strip(),
+            "headerBottomNavAria": cd["ui_header_bottom_nav_aria"].strip(),
+            "staffModalCloseOverlayAria": cd["ui_staff_modal_close_overlay_aria"].strip(),
+            "staffModalCloseButtonAria": cd["ui_staff_modal_close_button_aria"].strip(),
+            "staffModalTitle": cd["ui_staff_modal_title"].strip(),
+            "staffModalSubtitle": cd["ui_staff_modal_subtitle"].strip(),
+            "staffModalManagerLabel": cd["ui_staff_modal_manager_label"].strip(),
+            "staffModalManagerHint": cd["ui_staff_modal_manager_hint"].strip(),
+            "staffModalAdminLabel": cd["ui_staff_modal_admin_label"].strip(),
+            "staffModalAdminHint": cd["ui_staff_modal_admin_hint"].strip(),
+            "introAriaLabel": cd["ui_intro_aria_label"].strip(),
+            "introTag1": cd["ui_intro_tag_1"].strip(),
+            "introTag2": cd["ui_intro_tag_2"].strip(),
+            "introTag3": cd["ui_intro_tag_3"].strip(),
+            "introTitle": cd["ui_intro_title"].strip(),
+            "introSubtitle": cd["ui_intro_subtitle"].strip(),
+            "introStage1": cd["ui_intro_stage_1"].strip(),
+            "introStage2": cd["ui_intro_stage_2"].strip(),
+            "introStage3": cd["ui_intro_stage_3"].strip(),
+            "introSkipButton": cd["ui_intro_skip_button"].strip(),
+            "productNoPhoto": cd["ui_product_no_photo"].strip(),
+            "productPricePrefix": cd["ui_product_price_prefix"].strip(),
+            "productAddToCart": cd["ui_product_add_to_cart"].strip(),
+            "productAddedTitle": cd["ui_product_added_title"].strip(),
+            "productContinueShopping": cd["ui_product_continue_shopping"].strip(),
+            "productGoToCart": cd["ui_product_go_to_cart"].strip(),
+            "productMarketplacesTitle": cd["ui_product_marketplaces_title"].strip(),
+            "productBadgeInStock": cd["ui_product_badge_in_stock"].strip(),
+            "productBadgeSeasonal": cd["ui_product_badge_seasonal"].strip(),
+            "cartPageTitle": cd["ui_cart_page_title"].strip(),
+            "cartPageIntro": cd["ui_cart_page_intro"].strip(),
+            "cartEmptyTitle": cd["ui_cart_empty_title"].strip(),
+            "cartEmptyText": cd["ui_cart_empty_text"].strip(),
+            "cartEmptyCta": cd["ui_cart_empty_cta"].strip(),
+            "cartItemsTitle": cd["ui_cart_items_title"].strip(),
+            "cartNoPhoto": cd["ui_cart_no_photo"].strip(),
+            "cartPricePerUnitPrefix": cd["ui_cart_price_per_unit_prefix"].strip(),
+            "cartPricePerUnitSuffix": cd["ui_cart_price_per_unit_suffix"].strip(),
+            "cartQtyLabel": cd["ui_cart_qty_label"].strip(),
+            "cartRemoveOrDecreaseAria": cd["ui_cart_remove_or_decrease_aria"].strip(),
+            "cartIncreaseAria": cd["ui_cart_increase_aria"].strip(),
+            "cartRemoveLine": cd["ui_cart_remove_line"].strip(),
+            "cartAddMoreCta": cd["ui_cart_add_more_cta"].strip(),
+            "cartSummaryTitle": cd["ui_cart_summary_title"].strip(),
+            "cartSummaryItemsLabel": cd["ui_cart_summary_items_label"].strip(),
+            "cartSummaryApproxLabel": cd["ui_cart_summary_approx_label"].strip(),
+            "cartSummaryDeliveryNote": cd["ui_cart_summary_delivery_note"].strip(),
+            "cartCheckoutButton": cd["ui_cart_checkout_button"].strip(),
+            "cartCheckoutFootnote": cd["ui_cart_checkout_footnote"].strip(),
+            "cartTermsPrefix": cd["ui_cart_terms_prefix"].strip(),
+            "productNotFoundTitle": cd["ui_product_not_found_title"].strip(),
+            "productNotFoundText": cd["ui_product_not_found_text"].strip(),
+            "productBackToCatalog": cd["ui_product_back_to_catalog"].strip(),
+            "productBreadcrumbAria": cd["ui_product_breadcrumb_aria"].strip(),
+            "productBreadcrumbHome": cd["ui_product_breadcrumb_home"].strip(),
+            "productBreadcrumbCatalog": cd["ui_product_breadcrumb_catalog"].strip(),
+            "productPriceLabel": cd["ui_product_price_label"].strip(),
+            "productVariantLabel": cd["ui_product_variant_label"].strip(),
+            "productDetailsButton": cd["ui_product_details_button"].strip(),
+            "productMarketplacesCardTitle": cd["ui_product_marketplaces_card_title"].strip(),
+            "productMarketplacesCardHint": cd["ui_product_marketplaces_card_hint"].strip(),
+            "productCustomOrderCta": cd["ui_product_custom_order_cta"].strip(),
+            "productRelatedTitle": cd["ui_product_related_title"].strip(),
+            "productRelatedSubtitlePrefix": cd["ui_product_related_subtitle_prefix"].strip(),
+            "productMaterialMapSubtitleFallback": cd["ui_product_material_map_subtitle_fallback"].strip(),
         }
         return base
 

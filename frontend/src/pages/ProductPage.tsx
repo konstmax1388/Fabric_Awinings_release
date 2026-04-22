@@ -17,6 +17,7 @@ import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
+import type { HomePayload } from '../types/homePage'
 
 function categoryLabel(p: Product): string {
   return p.categoryTitle ?? CATEGORY_LABELS[p.category] ?? p.category
@@ -25,9 +26,11 @@ function categoryLabel(p: Product): string {
 function ProductCartControls({
   product,
   variant,
+  ui,
 }: {
   product: Product
   variant: ProductVariantRow | null
+  ui: HomePayload['ui'] | undefined
 }) {
   const reduce = useReducedMotion()
   const navigate = useNavigate()
@@ -42,7 +45,7 @@ function ProductCartControls({
           type="button"
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-lg hover:border-accent"
           onClick={() => setQty((q) => Math.max(1, q - 1))}
-          aria-label="Меньше"
+          aria-label={ui?.cartRemoveOrDecreaseAria || 'Удалить позицию из корзины или уменьшить количество'}
         >
           −
         </button>
@@ -51,7 +54,7 @@ function ProductCartControls({
           type="button"
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-lg hover:border-accent"
           onClick={() => setQty((q) => Math.min(99, q + 1))}
-          aria-label="Больше"
+          aria-label={ui?.cartIncreaseAria || 'Увеличить количество'}
         >
           +
         </button>
@@ -67,11 +70,11 @@ function ProductCartControls({
         transition={cardHoverTransition}
         className="inline-flex h-12 min-h-[44px] flex-1 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-surface shadow-[0_4px_8px_0_rgba(232,122,0,0.25)] hover:bg-[#c65f00] sm:flex-none sm:px-10"
       >
-        В корзину
+        {ui?.productAddToCart || 'В корзину'}
       </motion.button>
       {addedPromptOpen && (
         <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(560px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[500px]">
-          <p className="font-body text-sm font-medium text-text">Товар добавлен в корзину</p>
+          <p className="font-body text-sm font-medium text-text">{ui?.productAddedTitle || 'Товар добавлен в корзину'}</p>
           <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
           <div className="mt-3 flex gap-2">
             <button
@@ -79,14 +82,14 @@ function ProductCartControls({
               onClick={() => setAddedPromptOpen(false)}
               className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
             >
-              Продолжить покупки
+              {ui?.productContinueShopping || 'Продолжить покупки'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/cart')}
               className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-surface transition hover:bg-[#c65f00]"
             >
-              Перейти в корзину
+              {ui?.productGoToCart || 'Перейти в корзину'}
             </button>
           </div>
         </div>
@@ -129,7 +132,13 @@ function ProductPageSkeleton() {
   )
 }
 
-function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product['materialMap']> }) {
+function MaterialLayersHint({
+  materialMap,
+  subtitleFallback,
+}: {
+  materialMap: NonNullable<Product['materialMap']>
+  subtitleFallback: string
+}) {
   const layers = materialMap.layers
   const [active, setActive] = useState<string>(layers[0]?.id ?? '')
 
@@ -137,7 +146,7 @@ function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product[
     <div className="rounded-2xl border border-border-light bg-surface p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.06)]">
       <p className="font-heading text-base font-semibold text-text">{materialMap.title}</p>
       <p className="mt-1 font-body text-xs text-text-muted">
-        {materialMap.subtitle || 'Тапните по точке, чтобы увидеть слой конструкции.'}
+        {materialMap.subtitle || subtitleFallback}
       </p>
       <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-xl bg-[linear-gradient(160deg,#ebe4d8,#d9d0c3)]">
         {materialMap.imageUrl ? (
@@ -172,7 +181,8 @@ function MaterialLayersHint({ materialMap }: { materialMap: NonNullable<Product[
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
-  const { calculatorEnabled, productPhotoAspect, seoDefaults } = useSiteSettings()
+  const { calculatorEnabled, productPhotoAspect, seoDefaults, home } = useSiteSettings()
+  const ui = home?.ui
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -309,9 +319,9 @@ export function ProductPage() {
         <main className="fabric-page">
           <div className="fabric-page-main min-w-0 overflow-x-clip">
           <div className="fabric-card border-dashed px-6 py-10">
-            <h1 className="font-heading text-3xl font-bold text-text">Товар не найден</h1>
+            <h1 className="font-heading text-3xl font-bold text-text">{ui?.productNotFoundTitle || 'Товар не найден'}</h1>
             <p className="mt-3 font-body text-text-muted">
-              Позиция отсутствует в каталоге или ссылка устарела.
+              {ui?.productNotFoundText || 'Позиция отсутствует в каталоге или ссылка устарела.'}
             </p>
             <motion.div
               whileHover={reduce ? undefined : subtleButtonHover}
@@ -323,7 +333,7 @@ export function ProductPage() {
                 to="/catalog"
                 className="fabric-strap-btn mt-8 inline-flex h-12 items-center justify-center rounded-[40px] bg-accent px-8 font-body font-medium text-[#0d121c]"
               >
-                В каталог
+                {ui?.productBackToCatalog || 'В каталог'}
               </Link>
             </motion.div>
           </div>
@@ -366,16 +376,16 @@ export function ProductPage() {
         >
           <nav
             className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted"
-            aria-label="Навигация"
+            aria-label={ui?.productBreadcrumbAria || 'Навигация'}
           >
             <Link to="/" className="rounded-md px-1 hover:text-accent">
-              Главная
+              {ui?.productBreadcrumbHome || 'Главная'}
             </Link>
             <span className="text-text-subtle" aria-hidden>
               /
             </span>
             <Link to="/catalog" className="rounded-md px-1 hover:text-accent">
-              Каталог
+              {ui?.productBreadcrumbCatalog || 'Каталог'}
             </Link>
             <span className="text-text-subtle" aria-hidden>
               /
@@ -398,7 +408,7 @@ export function ProductPage() {
                   {product.title}
                 </h1>
                 <div className="mt-5 inline-flex items-baseline gap-2 rounded-2xl bg-accent/10 px-4 py-2.5">
-                  <span className="font-body text-sm font-medium text-text-muted">Цена</span>
+                  <span className="font-body text-sm font-medium text-text-muted">{ui?.productPriceLabel || 'Цена'}</span>
                   <span className="font-heading text-2xl font-bold tabular-nums text-accent md:text-3xl">
                     {displayPrice.toLocaleString('ru-RU')} ₽
                   </span>
@@ -408,7 +418,7 @@ export function ProductPage() {
               {product.variants && product.variants.length > 1 && (
                 <div>
                   <p className="font-body text-xs font-semibold uppercase tracking-wide text-text-subtle">
-                    Вариант
+                    {ui?.productVariantLabel || 'Вариант'}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {product.variants.map((v) => {
@@ -445,7 +455,7 @@ export function ProductPage() {
                   className="group flex w-full items-center justify-between gap-4 rounded-2xl border-2 border-accent/35 bg-gradient-to-br from-bg-base to-surface px-5 py-4 text-left shadow-[0_8px_28px_-12px_rgba(232,122,0,0.18)] transition hover:border-accent/60 hover:shadow-[0_12px_32px_-10px_rgba(232,122,0,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 md:max-w-xl"
                 >
                   <span className="font-heading text-base font-semibold text-text md:text-lg">
-                    Характеристики и описание
+                    {ui?.productDetailsButton || 'Характеристики и описание'}
                   </span>
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent transition group-hover:bg-accent/20"
@@ -462,15 +472,23 @@ export function ProductPage() {
                 key={`${product.slug}-${selectedVariant?.id ?? 'x'}`}
                 product={product}
                 variant={selectedVariant}
+                ui={ui}
               />
 
-              {product.materialMap ? <MaterialLayersHint materialMap={product.materialMap} /> : null}
+              {product.materialMap ? (
+                <MaterialLayersHint
+                  materialMap={product.materialMap}
+                  subtitleFallback={ui?.productMaterialMapSubtitleFallback || 'Тапните по точке, чтобы увидеть слой конструкции.'}
+                />
+              ) : null}
 
               {displayMpKeys.length > 0 ? (
                 <div className="fabric-card p-5 md:p-6">
-                  <p className="font-heading text-base font-semibold text-text">Маркетплейсы</p>
+                  <p className="font-heading text-base font-semibold text-text">
+                    {ui?.productMarketplacesCardTitle || 'Маркетплейсы'}
+                  </p>
                   <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">
-                    Переход к покупке на выбранной площадке — в новой вкладке.
+                    {ui?.productMarketplacesCardHint || 'Переход к покупке на выбранной площадке — в новой вкладке.'}
                   </p>
                   <div className="mt-4">
                     <MarketplaceLinks
@@ -488,7 +506,7 @@ export function ProductPage() {
                   to="/#calculator"
                   className="fabric-strap-btn inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)] sm:w-auto"
                 >
-                  Нужен индивидуальный заказ?
+                  {ui?.productCustomOrderCta || 'Нужен индивидуальный заказ?'}
                 </Link>
               ) : null}
             </div>
@@ -497,8 +515,12 @@ export function ProductPage() {
 
         {related.length > 0 && (
           <section className="mt-16 border-t border-border pt-14">
-            <h2 className="font-heading text-2xl font-bold text-text md:text-3xl">Похожие позиции</h2>
-            <p className="mt-2 font-body text-text-muted">Та же категория: {categoryLabel(product)}</p>
+            <h2 className="font-heading text-2xl font-bold text-text md:text-3xl">
+              {ui?.productRelatedTitle || 'Похожие позиции'}
+            </h2>
+            <p className="mt-2 font-body text-text-muted">
+              {ui?.productRelatedSubtitlePrefix || 'Та же категория:'} {categoryLabel(product)}
+            </p>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />

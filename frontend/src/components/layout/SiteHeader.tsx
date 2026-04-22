@@ -117,13 +117,33 @@ export function SiteHeader() {
     phoneHref,
     home,
     portfolioEnabled,
+    staticPages,
   } = useSiteSettings()
   const buyOnLabel = home?.ui?.buyOnMarketplaces ?? 'Купить на'
   const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
+  const navHomeLabel = home?.ui?.navHome ?? 'Главная'
+  const navCatalogLabel = home?.ui?.navCatalog ?? 'Каталог'
+  const navPortfolioLabel = home?.ui?.navPortfolio ?? 'Портфолио'
+  const navContactsLabel = home?.ui?.navContacts ?? 'Контакты'
+  const navCartLabel = home?.ui?.navCart ?? 'Корзина'
+  const navAccountLabel = home?.ui?.navAccount ?? 'Личный кабинет'
+  const navMenuTitle = home?.ui?.navMenuTitle ?? 'Меню'
+  const navMenuSubtitle = home?.ui?.navMenuSubtitle ?? 'Разделы сайта и контакты'
+  const mobileBarProfileLabel = home?.ui?.mobileBarProfile ?? 'Профиль'
+  const mainMenuAria = home?.ui?.headerMainMenuAria ?? 'Основное меню'
+  const themeToLightAria = home?.ui?.headerThemeToLightAria ?? 'Включить светлую тему'
+  const themeToDarkAria = home?.ui?.headerThemeToDarkAria ?? 'Включить тёмную тему'
+  const themeLightTitle = home?.ui?.headerThemeLightTitle ?? 'Светлая тема'
+  const themeDarkTitle = home?.ui?.headerThemeDarkTitle ?? 'Тёмная тема'
+  const menuOpenAria = home?.ui?.headerMenuOpenAria ?? 'Открыть меню'
+  const menuCloseAria = home?.ui?.headerMenuCloseAria ?? 'Закрыть меню'
+  const mobileMenuAria = home?.ui?.headerMobileMenuAria ?? 'Мобильное меню'
+  const bottomNavAria = home?.ui?.headerBottomNavAria ?? 'Нижняя навигация'
   const mergedMpUrls: Partial<Record<(typeof MARKETPLACES)[number]['id'], string>> = {
     ...GLOBAL_MARKETPLACE_URLS,
     ...globalMarketplaceUrls,
   }
+  const headerStaticPages = staticPages.filter((p) => p.showInHeader)
 
   useEffect(() => {
     const root = document.documentElement
@@ -161,7 +181,8 @@ export function SiteHeader() {
 
   return (
     <>
-    <header className="fabric-liquid-glass sticky top-0 z-50 border-b border-border bg-bg-base/90">
+    <div className="h-[73px] md:h-[87px]" aria-hidden />
+    <header className="fabric-liquid-glass fixed inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"
@@ -186,21 +207,26 @@ export function SiteHeader() {
           )}
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Основное меню">
+        <nav className="hidden items-center gap-8 md:flex" aria-label={mainMenuAria}>
           <NavLink to="/" end className={navLinkClass}>
-            Главная
+            {navHomeLabel}
           </NavLink>
           <NavLink to="/catalog" className={navLinkClass}>
-            Каталог
+            {navCatalogLabel}
           </NavLink>
           {portfolioEnabled ? (
             <NavLink to="/portfolio" className={navLinkClass}>
-              Портфолио
+              {navPortfolioLabel}
             </NavLink>
           ) : null}
           <NavLink to="/contacts" className={navLinkClass}>
-            Контакты
+            {navContactsLabel}
           </NavLink>
+          {headerStaticPages.map((p) => (
+            <NavLink key={p.slug} to={p.path} className={navLinkClass}>
+              {p.headerLinkLabel || p.title}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -208,8 +234,8 @@ export function SiteHeader() {
             type="button"
             className="fabric-theme-toggle hidden md:inline-flex"
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-            aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
-            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+            aria-label={theme === 'dark' ? themeToLightAria : themeToDarkAria}
+            title={theme === 'dark' ? themeLightTitle : themeDarkTitle}
           >
             <span aria-hidden>{theme === 'dark' ? '☾' : '☀'}</span>
           </button>
@@ -221,7 +247,7 @@ export function SiteHeader() {
               }`
             }
           >
-            Кабинет
+            {navAccountLabel}
           </NavLink>
           <CartHeaderLink />
           <div className="hidden items-center gap-2.5 md:flex">
@@ -243,7 +269,7 @@ export function SiteHeader() {
             type="button"
             className="relative flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl md:hidden"
             aria-expanded={open}
-            aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
+            aria-label={open ? menuCloseAria : menuOpenAria}
             onClick={() => setOpen((v) => !v)}
           >
             <motion.span
@@ -271,50 +297,63 @@ export function SiteHeader() {
             <motion.button
               type="button"
               key="mobile-menu-backdrop"
-              className="fixed inset-0 top-[73px] z-40 cursor-default bg-[#060a11]/82 backdrop-blur-[2px] md:hidden"
+              className={[
+                'fixed inset-0 top-[73px] z-40 cursor-default backdrop-blur-[2px] md:hidden',
+                theme === 'dark' ? 'bg-[#060a11]/90' : 'bg-[#0f172a]/56',
+              ].join(' ')}
               initial={reduce ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduce ? undefined : { opacity: 0 }}
               transition={{ duration: 0.2 }}
-              aria-label="Закрыть меню"
+              aria-label={menuCloseAria}
               onClick={() => setOpen(false)}
             />
             <motion.div
               key="mobile-menu-panel"
-              className="fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100dvw,400px)] flex-col md:hidden"
+              className={[
+                'fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100dvw,400px)] flex-col md:hidden',
+                theme === 'dark'
+                  ? 'shadow-[-16px_0_48px_rgba(0,0,0,0.52)]'
+                  : 'shadow-[-10px_0_36px_rgba(15,23,42,0.16)]',
+              ].join(' ')}
               initial={reduce ? undefined : { x: '100%' }}
               animate={{ x: 0, opacity: 1 }}
               exit={reduce ? undefined : { x: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             >
-              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border bg-bg-base/98 shadow-[-16px_0_48px_rgba(0,0,0,0.52)]">
+              <div className="fabric-liquid-glass flex h-full min-h-0 flex-col border-l border-border bg-bg-base/98">
                 <div className="fabric-liquid-glass-soft shrink-0 border-b border-border px-5 py-4">
-                  <p className="font-heading text-lg font-semibold text-text">Меню</p>
-                  <p className="mt-0.5 font-body text-xs text-text-muted">Разделы сайта и контакты</p>
+                  <p className="font-heading text-lg font-semibold text-text">{navMenuTitle}</p>
+                  <p className="mt-0.5 font-body text-xs text-text-muted">{navMenuSubtitle}</p>
                 </div>
                 <nav
                   className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-4 py-5"
-                  aria-label="Мобильное меню"
+                  aria-label={mobileMenuAria}
                 >
                   <NavLink to="/" end className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Главная
+                    {navHomeLabel}
                   </NavLink>
                   <NavLink to="/catalog" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Каталог
+                    {navCatalogLabel}
                   </NavLink>
                   {portfolioEnabled ? (
                     <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                      Портфолио
+                      {navPortfolioLabel}
                     </NavLink>
                   ) : null}
                   <NavLink to="/contacts" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Контакты
+                    {navContactsLabel}
                   </NavLink>
+                  {headerStaticPages.map((p) => (
+                    <NavLink key={p.slug} to={p.path} className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                      {p.headerLinkLabel || p.title}
+                    </NavLink>
+                  ))}
                   <NavLink to="/cart" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Корзина
+                    {navCartLabel}
                   </NavLink>
                   <NavLink to="/account" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Личный кабинет
+                    {navAccountLabel}
                   </NavLink>
                   <button
                     type="button"
@@ -364,7 +403,7 @@ export function SiteHeader() {
             ? 'border-border bg-bg-base/95 shadow-[0_-10px_32px_rgba(0,0,0,0.42)]'
             : 'border-border bg-bg-base/98 shadow-[0_-8px_28px_rgba(36,39,48,0.08)]',
         ].join(' ')}
-        aria-label="Нижняя навигация"
+        aria-label={bottomNavAria}
       >
         <div className="mx-auto flex max-w-[640px] items-end justify-between gap-0.5">
           <NavLink
@@ -380,7 +419,7 @@ export function SiteHeader() {
                 ].join(' ')}
               >
                 <MobileBarHomeIcon className={mobileBarIcon} />
-                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Главная</span>
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navHomeLabel}</span>
               </div>
             )}
           </NavLink>
@@ -396,7 +435,7 @@ export function SiteHeader() {
                 ].join(' ')}
               >
                 <MobileBarBagIcon className={mobileBarIcon} />
-                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Каталог</span>
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navCatalogLabel}</span>
               </div>
             )}
           </NavLink>
@@ -413,7 +452,7 @@ export function SiteHeader() {
                   ].join(' ')}
                 >
                   <MobileBarGridIcon className={mobileBarIcon} />
-                  <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Портфолио</span>
+                  <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navPortfolioLabel}</span>
                 </div>
               )}
             </NavLink>
@@ -439,7 +478,7 @@ export function SiteHeader() {
                     </span>
                   ) : null}
                 </span>
-                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Корзина</span>
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navCartLabel}</span>
               </div>
             )}
           </NavLink>
@@ -455,7 +494,7 @@ export function SiteHeader() {
                 ].join(' ')}
               >
                 <MobileBarUserIcon className={mobileBarIcon} />
-                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Профиль</span>
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{mobileBarProfileLabel}</span>
               </div>
             )}
           </NavLink>

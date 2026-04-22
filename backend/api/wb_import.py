@@ -115,8 +115,8 @@ def _probe_product_image_url(url: str, *, timeout: float = 12.0) -> bool:
     )
 
 
-# WB периодически добавляет шарды; 1..35 покрывает актуальные basket-XX.
-_MAX_BASKET = 35
+# WB периодически добавляет шарды; держим запас выше текущих корзин.
+_MAX_BASKET = 60
 
 
 def resolve_basket_media(nm: int, *, timeout: float = 12.0) -> tuple[int, str]:

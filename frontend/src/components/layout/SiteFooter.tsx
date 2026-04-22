@@ -21,7 +21,34 @@ export function SiteFooter() {
     footerTelegramUrl,
     showSocialLinks,
     portfolioEnabled,
+    home,
+    staticPages,
   } = useSiteSettings()
+  const ui = home?.ui ?? {}
+  const navHomeLabel = ui.navHome ?? 'Главная'
+  const navCatalogLabel = ui.navCatalog ?? 'Каталог'
+  const navPortfolioLabel = ui.navPortfolio ?? 'Портфолио'
+  const navContactsLabel = ui.navContacts ?? 'Контакты'
+  const navBlogLabel = ui.navBlog ?? 'Блог'
+  const footerNavTitle = ui.footerNavTitle ?? 'Навигация'
+  const footerMarketplacesTitle = ui.footerMarketplacesTitle ?? 'Маркетплейсы'
+  const footerSocialTitle = ui.footerSocialTitle ?? 'Соцсети'
+  const footerContactsTitle = ui.footerContactsTitle ?? 'Контакты'
+  const footerPaymentTitle = ui.footerPaymentTitle ?? 'Оплата'
+  const footerDeliveryTitle = ui.footerDeliveryTitle ?? 'Доставка'
+  const footerStaffLogin = ui.footerStaffLogin ?? 'Вход для сотрудников'
+  const footerPrivacyLink = ui.footerPrivacyLink ?? 'Политика конфиденциальности'
+  const footerOfferLink = ui.footerOfferLink ?? 'Публичная оферта'
+  const footerCopyrightSuffix = ui.footerCopyrightSuffix ?? 'Все права защищены.'
+  const staffModalCloseOverlayAria = ui.staffModalCloseOverlayAria ?? 'Закрыть окно'
+  const staffModalCloseButtonAria = ui.staffModalCloseButtonAria ?? 'Закрыть'
+  const staffModalTitle = ui.staffModalTitle ?? 'Вход для сотрудников'
+  const staffModalSubtitle = ui.staffModalSubtitle ?? 'Выберите панель — откроется в новой вкладке.'
+  const staffModalManagerLabel = ui.staffModalManagerLabel ?? 'Панель менеджера'
+  const staffModalManagerHint = ui.staffModalManagerHint ?? '(Каталог, заказы, контент)'
+  const staffModalAdminLabel = ui.staffModalAdminLabel ?? 'Настройки сайта'
+  const staffModalAdminHint =
+    ui.staffModalAdminHint ?? 'Полный доступ к моделям и сервисным страницам'
   const mergedMpUrls = { ...GLOBAL_MARKETPLACE_URLS, ...globalMarketplaceUrls }
   const vkHref = footerVkUrl?.trim() || '#'
   const tgHref = footerTelegramUrl?.trim() || '#'
@@ -29,6 +56,7 @@ export function SiteFooter() {
   const { reactAdminUrl, djangoAdminUrl } = useMemo(() => getPublicAdminLinks(), [])
   const showStaffLinks = Boolean(reactAdminUrl || djangoAdminUrl)
   const [staffModalOpen, setStaffModalOpen] = useState(false)
+  const footerStaticPages = staticPages.filter((p) => p.showInFooter)
 
   return (
     <footer className="border-t border-border bg-bg-base">
@@ -56,45 +84,45 @@ export function SiteFooter() {
             ) : null}
           </div>
           <div className="min-w-0 lg:max-w-[200px]">
-            <p className="font-body text-sm font-semibold text-text">Навигация</p>
+            <p className="font-body text-sm font-semibold text-text">{footerNavTitle}</p>
             <ul className="mt-4 flex flex-col gap-2 font-body text-sm text-text-muted">
               <li>
                 <Link to="/" className="hover:text-accent">
-                  Главная
+                  {navHomeLabel}
                 </Link>
               </li>
               <li>
                 <Link to="/catalog" className="hover:text-accent">
-                  Каталог
+                  {navCatalogLabel}
                 </Link>
               </li>
               {portfolioEnabled ? (
                 <li>
                   <Link to="/portfolio" className="hover:text-accent">
-                    Портфолио
+                    {navPortfolioLabel}
                   </Link>
                 </li>
               ) : null}
               <li>
                 <Link to="/contacts" className="hover:text-accent">
-                  Контакты
+                  {navContactsLabel}
                 </Link>
               </li>
               <li>
                 <Link to="/blog" className="hover:text-accent">
-                  Блог
+                  {navBlogLabel}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <p className="font-body text-sm font-semibold text-text">Маркетплейсы</p>
+            <p className="font-body text-sm font-semibold text-text">{footerMarketplacesTitle}</p>
             <div className="mt-4">
               <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
             </div>
             {showSocialLinks ? (
               <>
-                <p className="mt-6 font-body text-sm font-semibold text-text">Соцсети</p>
+                <p className="mt-6 font-body text-sm font-semibold text-text">{footerSocialTitle}</p>
                 <ul className="mt-2 flex flex-col gap-1 font-body text-sm text-text-muted">
                   <li>
                     <a href={vkHref} className="hover:text-accent" target="_blank" rel="noopener noreferrer">
@@ -111,7 +139,7 @@ export function SiteFooter() {
             ) : null}
           </div>
           <div>
-            <p className="font-body text-sm font-semibold text-text">Контакты</p>
+            <p className="font-body text-sm font-semibold text-text">{footerContactsTitle}</p>
             <ul className="mt-4 flex flex-col gap-2 font-body text-sm text-text-muted">
               <li>
                 <a href={phoneHref} className="hover:text-accent">
@@ -126,7 +154,7 @@ export function SiteFooter() {
               <li>{address}</li>
             </ul>
             <div className="mt-5">
-              <p className="font-body text-sm font-semibold text-text">Оплата</p>
+              <p className="font-body text-sm font-semibold text-text">{footerPaymentTitle}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <img src="/payments/ozon-bank-icon-logo.svg" alt="Ozon Bank" className="h-7 w-auto object-contain" />
                 <img src="/payments/mir-logo.svg" alt="МИР" className="h-7 w-auto object-contain" />
@@ -134,7 +162,7 @@ export function SiteFooter() {
               </div>
             </div>
             <div className="mt-4">
-              <p className="font-body text-sm font-semibold text-text">Доставка</p>
+              <p className="font-body text-sm font-semibold text-text">{footerDeliveryTitle}</p>
               <div className="mt-2 flex items-center gap-2">
                 <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-7 w-auto object-contain" />
               </div>
@@ -153,28 +181,46 @@ export function SiteFooter() {
                 className="inline-block h-1.5 w-1.5 rounded-full bg-accent/80 transition group-hover:bg-accent"
                 aria-hidden
               />
-              Вход для сотрудников
+              {footerStaffLogin}
             </button>
             <StaffEntryModal
               open={staffModalOpen}
               onClose={() => setStaffModalOpen(false)}
               reactAdminUrl={reactAdminUrl}
               djangoAdminUrl={djangoAdminUrl}
+              closeOverlayAriaLabel={staffModalCloseOverlayAria}
+              closeButtonAriaLabel={staffModalCloseButtonAria}
+              title={staffModalTitle}
+              subtitle={staffModalSubtitle}
+              managerLabel={staffModalManagerLabel}
+              managerHint={staffModalManagerHint}
+              adminLabel={staffModalAdminLabel}
+              adminHint={staffModalAdminHint}
             />
           </div>
         ) : null}
 
         <div className="mt-12 flex flex-col gap-4 border-t border-border pt-8 text-sm text-text-subtle md:flex-row md:items-center md:justify-between">
           <p>
-            © {new Date().getFullYear()} {siteName}. Все права защищены.
+            © {new Date().getFullYear()} {siteName}. {footerCopyrightSuffix}
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/privacy" className="hover:text-accent">
-              Политика конфиденциальности
-            </Link>
-            <Link to="/offer" className="hover:text-accent">
-              Публичная оферта
-            </Link>
+            {footerStaticPages.length > 0 ? (
+              footerStaticPages.map((p) => (
+                <Link key={p.slug} to={p.path} className="hover:text-accent">
+                  {p.footerLinkLabel || p.title}
+                </Link>
+              ))
+            ) : (
+              <>
+                <Link to="/privacy" className="hover:text-accent">
+                  {footerPrivacyLink}
+                </Link>
+                <Link to="/offer" className="hover:text-accent">
+                  {footerOfferLink}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

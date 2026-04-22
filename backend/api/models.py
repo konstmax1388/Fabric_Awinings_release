@@ -1271,6 +1271,38 @@ class HomePageContent(models.Model):
         return obj
 
 
+class StaticPage(models.Model):
+    slug = models.SlugField("Слаг", max_length=120, unique=True, db_index=True)
+    title = models.CharField("Заголовок страницы", max_length=255)
+    meta_title = models.CharField("SEO title", max_length=255, blank=True, default="")
+    meta_description = models.CharField("SEO description", max_length=500, blank=True, default="")
+    body = models.TextField(
+        "Содержимое (HTML или Markdown)",
+        blank=True,
+        default="",
+        help_text="Поддерживается HTML. Markdown можно хранить как текст и обработать на витрине при необходимости.",
+    )
+    is_published = models.BooleanField("Опубликовано", default=True, db_index=True)
+    show_in_header = models.BooleanField("Показывать ссылку в шапке", default=False)
+    show_in_footer = models.BooleanField("Показывать ссылку в подвале", default=True)
+    header_link_label = models.CharField("Текст ссылки в шапке", max_length=120, blank=True, default="")
+    footer_link_label = models.CharField("Текст ссылки в подвале", max_length=120, blank=True, default="")
+    sort_order = models.PositiveIntegerField("Порядок ссылок", default=100)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("sort_order", "title")
+        verbose_name = "Статичная страница"
+        verbose_name_plural = "Статичные страницы"
+
+    def __str__(self) -> str:
+        return self.title
+
+    def save(self, *args, **kwargs):
+        ensure_slug_from_title(self)
+        super().save(*args, **kwargs)
+
+
 class CustomerProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

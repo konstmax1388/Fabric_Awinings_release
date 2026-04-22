@@ -14,7 +14,10 @@ import { useSiteSettings } from '../context/SiteSettingsContext'
 export function PortfolioPage() {
   const reduce = useReducedMotion()
   const site = publicSiteUrl()
-  const { seoDefaults } = useSiteSettings()
+  const { seoDefaults, home } = useSiteSettings()
+  const portfolio = home?.portfolio ?? {}
+  const pageHeading = portfolio.pageHeading?.trim() || 'Портфолио'
+  const pageSubheading = portfolio.pageSubheading?.trim() || 'Реализованные проекты'
   const [projects, setProjects] = useState<PortfolioItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -52,10 +55,8 @@ export function PortfolioPage() {
           animate={reduce ? undefined : fadeUpVisible}
           transition={easeOutSoft}
         >
-          <h1 className="fabric-section-title">Портфолио</h1>
-          <p className="mt-4 max-w-xl font-body text-text-muted">
-            Реализованные проекты: до и после. Категории совпадают с фильтрами на главной.
-          </p>
+          <h1 className="fabric-section-title">{pageHeading}</h1>
+          <p className="mt-4 max-w-xl font-body text-text-muted">{pageSubheading}</p>
         </motion.div>
 
         {loading ? (

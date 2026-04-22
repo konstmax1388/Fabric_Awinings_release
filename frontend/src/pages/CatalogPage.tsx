@@ -186,8 +186,8 @@ export function CatalogPage() {
           <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{catalogIntro}</p>
         </motion.div>
 
-        <div className="mt-10 flex flex-col gap-10 lg:flex-row">
-          <aside className="fabric-card shrink-0 p-4 lg:w-56 lg:p-5">
+        <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-start">
+          <aside className="fabric-card shrink-0 self-start p-4 lg:sticky lg:top-24 lg:w-56 lg:p-5">
             <p className="font-body text-sm font-semibold text-text">Категория</p>
             <ul className="mt-3 flex flex-col gap-1 font-body text-sm">
               <li>

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 
 const INTRO_SEEN_KEY = 'fabric_intro_seen_v2'
 const INTRO_REDUCED_DURATION_MS = 1600
@@ -7,6 +8,19 @@ const INTRO_FINISH_DELAY_MS = 1350
 
 export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
   const reduce = useReducedMotion()
+  const { home } = useSiteSettings()
+  const ui = home?.ui ?? {}
+  const introAriaLabel = ui.introAriaLabel ?? 'Загрузка сайта'
+  const introTag1 = ui.introTag1 ?? 'Чертеж'
+  const introTag2 = ui.introTag2 ?? 'Точки крепления'
+  const introTag3 = ui.introTag3 ?? 'Премиум ПВХ'
+  const introTitle = ui.introTitle ?? 'Фабрика Тентов'
+  const introSubtitle =
+    ui.introSubtitle ?? 'Инженерная геометрия. Премиальная ткань. Точная посадка.'
+  const introStage1 = ui.introStage1 ?? 'Строим техно-схему'
+  const introStage2 = ui.introStage2 ?? 'Собираем каркас и узлы'
+  const introStage3 = ui.introStage3 ?? 'Натягиваем полотно и фиксируем'
+  const introSkipButton = ui.introSkipButton ?? 'Пропустить'
   const [visible, setVisible] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -94,7 +108,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
             }}
             exit={{ opacity: 0, transition: { duration: 1.2, ease: [0.4, 0, 0.2, 1] } }}
             role="dialog"
-            aria-label="Загрузка сайта"
+            aria-label={introAriaLabel}
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(232,122,0,0.14),transparent_58%)]" />
 
@@ -313,9 +327,9 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.85, delay: 2.2 }}
             >
-              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Чертеж</span>
-              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Точки крепления</span>
-              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">Премиум ПВХ</span>
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">{introTag1}</span>
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">{introTag2}</span>
+              <span className="rounded-full border border-white/25 bg-white/5 px-3 py-1 font-body text-white/80">{introTag3}</span>
             </motion.div>
 
             <motion.div
@@ -329,14 +343,14 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
                 }
               }}
             >
-              <p className="font-heading text-3xl font-semibold text-white md:text-4xl">Фабрика Тентов</p>
+              <p className="font-heading text-3xl font-semibold text-white md:text-4xl">{introTitle}</p>
               <p className="mt-2 font-body text-sm text-white/70 md:text-base">
-                Инженерная геометрия. Премиальная ткань. Точная посадка.
+                {introSubtitle}
               </p>
               <p className="mt-3 font-body text-xs tracking-wide text-accent/90 md:text-sm">
-                {stageIdx === 0 && 'Строим техно-схему'}
-                {stageIdx === 1 && 'Собираем каркас и узлы'}
-                {stageIdx === 2 && 'Натягиваем полотно и фиксируем'}
+                {stageIdx === 0 && introStage1}
+                {stageIdx === 1 && introStage2}
+                {stageIdx === 2 && introStage3}
               </p>
             </motion.div>
 
@@ -345,7 +359,7 @@ export function SiteIntroSplash({ children }: { children: React.ReactNode }) {
               onClick={() => setVisible(false)}
               className="absolute right-4 top-4 rounded-full border border-white/25 px-4 py-2 font-body text-sm text-white/85 transition hover:bg-white/10"
             >
-              Пропустить
+              {introSkipButton}
             </button>
           </motion.div>
         ) : null}

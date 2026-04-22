@@ -661,6 +661,21 @@ export type SiteSettingsDto = {
   seoDefaults?: SeoDefaultsDto
 }
 
+export type StaticPageDto = {
+  slug: string
+  path: string
+  title: string
+  pageTitle: string
+  metaDescription: string
+  bodyHtml: string
+  showInHeader: boolean
+  showInFooter: boolean
+  headerLinkLabel: string
+  footerLinkLabel: string
+  sortOrder: number
+  updatedAt: string
+}
+
 function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
   if (!raw || typeof raw !== 'object') return DEFAULT_CHECKOUT_PUBLIC
   const o = raw as Record<string, unknown>
@@ -968,6 +983,50 @@ export async function fetchHomePageContent(): Promise<HomePayload | null> {
     const data = await parseJson<{ home?: HomePayload }>(r)
     if (!data?.home || typeof data.home !== 'object') return null
     return data.home
+  } catch {
+    return null
+  }
+}
+
+function parseStaticPage(raw: unknown): StaticPageDto | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const slug = typeof r.slug === 'string' ? r.slug.trim() : ''
+  const title = typeof r.title === 'string' ? r.title : ''
+  if (!slug || !title) return null
+  return {
+    slug,
+    path: typeof r.path === 'string' && r.path.trim() ? r.path : `/${slug}`,
+    title,
+    pageTitle: typeof r.pageTitle === 'string' ? r.pageTitle : '',
+    metaDescription: typeof r.metaDescription === 'string' ? r.metaDescription : '',
+    bodyHtml: typeof r.bodyHtml === 'string' ? r.bodyHtml : '',
+    showInHeader: r.showInHeader === true,
+    showInFooter: r.showInFooter !== false,
+    headerLinkLabel: typeof r.headerLinkLabel === 'string' ? r.headerLinkLabel : '',
+    footerLinkLabel: typeof r.footerLinkLabel === 'string' ? r.footerLinkLabel : '',
+    sortOrder: typeof r.sortOrder === 'number' ? r.sortOrder : Number(r.sortOrder) || 0,
+    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : '',
+  }
+}
+
+export async function fetchStaticPages(): Promise<StaticPageDto[]> {
+  try {
+    const r = await fetch(`${apiBase()}/api/static-pages/`, { cache: 'no-store' })
+    const data = await parseJson<{ results?: unknown[] }>(r)
+    if (!Array.isArray(data?.results)) return []
+    return data.results.map(parseStaticPage).filter((p): p is StaticPageDto => p !== null)
+  } catch {
+    return []
+  }
+}
+
+export async function fetchStaticPageBySlug(slug: string): Promise<StaticPageDto | null> {
+  try {
+    const r = await fetch(`${apiBase()}/api/static-pages/${encodeURIComponent(slug)}/`, { cache: 'no-store' })
+    if (r.status === 404) return null
+    const data = await parseJson<unknown>(r)
+    return parseStaticPage(data)
   } catch {
     return null
   }

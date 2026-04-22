@@ -18,6 +18,8 @@ from .views_account import (
     RegisterView,
     ShippingAddressViewSet,
     SiteSettingsPublicView,
+    StaticPageDetailPublicView,
+    StaticPageListPublicView,
 )
 
 router = DefaultRouter()
@@ -38,6 +40,8 @@ urlpatterns = [
     path("cdek/pickup-points/", CdekPickupPointsView.as_view(), name="cdek-pickup-points"),
     path("cdek/address-suggest/", CdekYandexAddressSuggestView.as_view(), name="cdek-suggest-address"),
     path("home-content/", HomePageContentPublicView.as_view(), name="home-content"),
+    path("static-pages/", StaticPageListPublicView.as_view(), name="static-pages"),
+    path("static-pages/<slug:slug>/", StaticPageDetailPublicView.as_view(), name="static-page-detail"),
     path("leads/calculator/", views.CalculatorLeadCreateView.as_view(), name="lead-calculator"),
     path("leads/callback/", views.CallbackLeadCreateView.as_view(), name="lead-callback"),
     path("leads/review/", views.ReviewSubmissionCreateView.as_view(), name="lead-review"),
