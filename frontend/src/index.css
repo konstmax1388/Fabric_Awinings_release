@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-heading: 'Unbounded', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Raleway', system-ui, sans-serif;
 
   --color-bg-base: #0b1018;
   --color-accent: #c89b53;
@@ -17,8 +17,8 @@
 }
 
 :root {
-  --font-heading: 'Unbounded', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Raleway', system-ui, sans-serif;
   --radius-card: 16px;
   --radius-pill: 40px;
   --shadow-soft: 0 30px 80px -42px rgba(3, 8, 18, 0.92);
