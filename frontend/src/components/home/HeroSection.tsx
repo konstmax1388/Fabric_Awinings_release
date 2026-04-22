@@ -93,6 +93,7 @@ export function HeroSection() {
   const heroBg = hero?.bgImageUrl?.trim() || ''
   const heroTextTone = hero?.textTone === 'dark' ? 'dark' : 'light'
   const heroHeightMode = hero?.heightMode === 'wow' ? 'wow' : hero?.heightMode === 'normal' ? 'normal' : 'tall'
+  const uspAccentVariant = hero?.uspAccentVariant === 'shimmer' ? 'shimmer' : 'pulse'
 
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
@@ -311,12 +312,31 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className="mt-5 break-words font-heading text-sm uppercase tracking-[0.2em] text-accent sm:text-base"
+              className={`mt-5 inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-accent backdrop-blur-sm sm:px-4 sm:py-2 ${
+                uspAccentVariant === 'shimmer'
+                  ? 'relative overflow-hidden border-accent/60 bg-gradient-to-r from-accent/18 via-accent/10 to-accent/18 shadow-[0_0_34px_rgba(232,122,0,0.26)]'
+                  : 'border-accent/45 bg-accent/12 shadow-[0_0_28px_rgba(232,122,0,0.22)]'
+              }`}
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.06 }}
             >
-              {usp}
+              {uspAccentVariant === 'shimmer' ? (
+                <motion.span
+                  className="pointer-events-none absolute inset-y-0 -left-[40%] w-[38%] bg-gradient-to-r from-transparent via-white/55 to-transparent"
+                  animate={reduce ? undefined : { x: ['-30%', '320%'] }}
+                  transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 0.45 }}
+                  aria-hidden
+                />
+              ) : (
+                <motion.span
+                  className="inline-block h-2 w-2 shrink-0 rounded-full bg-accent"
+                  animate={reduce ? undefined : { opacity: [0.45, 1, 0.45], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                  aria-hidden
+                />
+              )}
+              <span className="relative z-[1] break-words font-heading text-xs uppercase tracking-[0.2em] sm:text-sm">{usp}</span>
             </motion.p>
           ) : null}
           <motion.h1

@@ -23,6 +23,7 @@ def default_home_payload() -> dict[str, Any]:
             "usp": "Производитель с фиксированными сроками и понятной сметой",
             "textTone": "light",
             "heightMode": "tall",
+            "uspAccentVariant": "pulse",
             "title": "Тенты на заказ",
             "subtitle": (
                 "Любая форма и размер: от навесов для техники до тентов для мероприятий. Своё производство — "
@@ -504,6 +505,8 @@ def _normalize_hero_slides(home: dict[str, Any]) -> None:
     hero = home.get("hero")
     if not isinstance(hero, dict):
         return
+    if hero.get("uspAccentVariant") not in ("pulse", "shimmer"):
+        hero["uspAccentVariant"] = "pulse"
     fallback_tone = hero.get("textTone") if hero.get("textTone") in ("light", "dark") else "light"
     slides = hero.get("slides")
     if not isinstance(slides, list):

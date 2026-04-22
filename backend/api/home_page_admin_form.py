@@ -29,6 +29,11 @@ HERO_HEIGHT_MODE_CHOICES = (
     ("wow", _("Максимальный (wow)")),
 )
 
+HERO_USP_ACCENT_VARIANT_CHOICES = (
+    ("pulse", _("Акцент с пульсирующей точкой")),
+    ("shimmer", _("Акцент с эффектом shimmer")),
+)
+
 CALCULATOR_MODE_CHOICES = (
     ("calculator", _("Конструктор (калькулятор)")),
     ("request_form", _("Форма заявки на индивидуальный проект")),
@@ -173,6 +178,11 @@ class HomePageContentAdminForm(forms.ModelForm):
     hero_height_mode = forms.ChoiceField(
         label=_("Высота Hero"),
         choices=HERO_HEIGHT_MODE_CHOICES,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    hero_usp_accent_variant = forms.ChoiceField(
+        label=_("УТП: визуальный акцент"),
+        choices=HERO_USP_ACCENT_VARIANT_CHOICES,
         widget=forms.Select(attrs={"class": _W}),
     )
     hero_title = _req_txt(_("Заголовок"))
@@ -827,6 +837,11 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("hero_text_tone", tone if tone in ("light", "dark") else "light")
         hmode = hero.get("heightMode")
         self.initial.setdefault("hero_height_mode", hmode if hmode in ("normal", "tall", "wow") else "tall")
+        usp_variant = hero.get("uspAccentVariant")
+        self.initial.setdefault(
+            "hero_usp_accent_variant",
+            usp_variant if usp_variant in ("pulse", "shimmer") else "pulse",
+        )
         self.initial.setdefault("hero_title", hero.get("title", ""))
         self.initial.setdefault("hero_subtitle", hero.get("subtitle", ""))
         self.initial.setdefault("hero_trust_line", hero.get("trustLine", ""))
@@ -1208,6 +1223,7 @@ class HomePageContentAdminForm(forms.ModelForm):
             "usp": cd["hero_usp"].strip(),
             "textTone": cd["hero_text_tone"],
             "heightMode": cd["hero_height_mode"],
+            "uspAccentVariant": cd["hero_usp_accent_variant"],
             "title": cd["hero_title"].strip(),
             "subtitle": cd["hero_subtitle"].strip(),
             "trustLine": cd["hero_trust_line"].strip(),

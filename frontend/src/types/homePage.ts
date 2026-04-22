@@ -37,6 +37,8 @@ export type HeroSlide = {
   textTone?: 'light' | 'dark'
 }
 
+export type HeroUspAccentVariant = 'pulse' | 'shimmer'
+
 export type HeroStat = {
   value?: string
   label?: string
@@ -54,6 +56,7 @@ export type HomePayload = {
     usp?: string
     textTone?: 'light' | 'dark'
     heightMode?: 'normal' | 'tall' | 'wow'
+    uspAccentVariant?: HeroUspAccentVariant
     title?: string
     subtitle?: string
     trustLine?: string

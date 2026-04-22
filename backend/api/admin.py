@@ -1905,6 +1905,7 @@ class HomePageContentAdmin(ModelAdmin):
                     "hero_usp",
                     "hero_text_tone",
                     "hero_height_mode",
+                    "hero_usp_accent_variant",
                     "hero_title",
                     "hero_subtitle",
                     "hero_trust_line",
