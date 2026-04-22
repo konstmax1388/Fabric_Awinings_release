@@ -86,7 +86,7 @@ const initialValue: SiteSettingsContextValue = {
   mapForm: null,
   home: null,
   loading: true,
-  analyticsYandex: { enabled: false, counterId: '' },
+  analyticsYandex: { enabled: false },
   seoDefaults: {
     allowIndexing: true,
     region: 'RU',
@@ -131,7 +131,6 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [analyticsYandex, setAnalyticsYandex] = useState<AnalyticsYandexDto>({
     enabled: false,
-    counterId: '',
   })
   const [seoDefaults, setSeoDefaults] = useState<SeoDefaultsDto>(initialValue.seoDefaults)
   const [staticPages, setStaticPages] = useState<StaticPageDto[]>([])
@@ -176,7 +175,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         if (s.analyticsYandex) {
           setAnalyticsYandex({
             enabled: s.analyticsYandex.enabled === true,
-            counterId: s.analyticsYandex.counterId ?? '',
+            headSnippet: s.analyticsYandex.headSnippet ?? '',
+            bodyStartSnippet: s.analyticsYandex.bodyStartSnippet ?? '',
           })
         }
         if (s.seoDefaults) {

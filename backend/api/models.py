@@ -1182,9 +1182,6 @@ class SiteSettings(models.Model):
 
     def clean(self):
         super().clean()
-        counter = (self.analytics_yandex_counter_id or "").strip()
-        if self.analytics_yandex_enabled and counter and not re.fullmatch(r"\d+", counter):
-            raise ValidationError({"analytics_yandex_counter_id": "Разрешены только цифры."})
         locale = (self.seo_locale or "").strip()
         if locale and not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
             raise ValidationError({"seo_locale": "Формат locale: xx_XX, например ru_RU."})

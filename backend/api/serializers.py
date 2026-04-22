@@ -891,7 +891,6 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     def get_analyticsYandex(self, obj: SiteSettings) -> dict:
         return {
             "enabled": bool(obj.analytics_yandex_enabled),
-            "counterId": str(obj.analytics_yandex_counter_id or "").strip(),
             "headSnippet": str(obj.analytics_head_snippet or "").strip(),
             "bodyStartSnippet": str(obj.analytics_body_start_snippet or "").strip(),
         }
