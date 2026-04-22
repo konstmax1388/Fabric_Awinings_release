@@ -284,7 +284,15 @@ export function CheckoutPage() {
     setStep(2)
   }
 
-  const goNextFromDelivery = (e: FormEvent) => {
+  const ensureConsentOrOpenModal = async (opts?: { pendingSubmit?: boolean }): Promise<boolean> => {
+    const currentPolicyVersion = await getCurrentPolicyVersion()
+    if (hasValidConsent(currentPolicyVersion)) return true
+    if (opts?.pendingSubmit) setPendingSubmitAfterConsent(true)
+    setConsentModalOpen(true)
+    return false
+  }
+
+  const goNextFromDelivery = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!settingsLoading && checkout.deliveryOptions.length === 0) {
@@ -333,6 +341,10 @@ export function CheckoutPage() {
         }
         return
       }
+    }
+    if (!(await ensureConsentOrOpenModal())) {
+      setError('Нужно согласие на обработку персональных данных, чтобы мы могли законно оформить заказ.')
+      return
     }
     setStep(3)
   }
@@ -397,10 +409,8 @@ export function CheckoutPage() {
         return
       }
     }
-    const currentPolicyVersion = await getCurrentPolicyVersion()
-    if (!hasValidConsent(currentPolicyVersion)) {
-      setPendingSubmitAfterConsent(true)
-      setConsentModalOpen(true)
+    if (!(await ensureConsentOrOpenModal({ pendingSubmit: true }))) {
+      setError('Нужно согласие на обработку персональных данных, чтобы мы могли законно оформить заказ.')
       return
     }
     setSending(true)

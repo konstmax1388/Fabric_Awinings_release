@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../../config/site'
@@ -88,26 +89,29 @@ export function ProductCard({ product }: Props) {
           {ui?.productAddToCart || 'В корзину'}
         </motion.button>
         {addedPromptOpen && (
-          <div className="fixed inset-x-4 bottom-4 z-[420] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.48)] md:inset-x-auto md:right-6 md:mx-0 md:w-[460px]">
-            <p className="font-body text-sm font-medium text-text">{ui?.productAddedTitle || 'Товар добавлен в корзину'}</p>
-            <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setAddedPromptOpen(false)}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
-              >
-                {ui?.productContinueShopping || 'Продолжить покупки'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/cart')}
-                className="fabric-strap-btn inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] transition hover:bg-[#d4ad72]"
-              >
-                {ui?.productGoToCart || 'Перейти в корзину'}
-              </button>
-            </div>
-          </div>
+          createPortal(
+            <div className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+6rem)] z-[520] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.48)] md:inset-x-auto md:bottom-4 md:right-6 md:mx-0 md:w-[460px]">
+              <p className="font-body text-sm font-medium text-text">{ui?.productAddedTitle || 'Товар добавлен в корзину'}</p>
+              <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAddedPromptOpen(false)}
+                  className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border font-body text-sm text-text transition hover:border-accent hover:text-accent"
+                >
+                  {ui?.productContinueShopping || 'Продолжить покупки'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/cart')}
+                  className="fabric-strap-btn inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] transition hover:bg-[#d4ad72]"
+                >
+                  {ui?.productGoToCart || 'Перейти в корзину'}
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )
         )}
         {mpKeys.length > 0 && (
           <div className="mt-4 border-t border-border-light pt-3">

@@ -67,6 +67,12 @@ export function ConsentBanner() {
           transition={{ duration: 0.28, ease: [0.2, 1, 0.32, 1] }}
         >
           <div className="mx-auto w-full max-w-5xl rounded-2xl border border-border bg-bg-base/95 p-3.5 shadow-2xl backdrop-blur md:p-4">
+            <p className="font-body text-sm font-semibold text-text">
+              Чтобы мы могли законно обработать заявку по 152-ФЗ, нужно ваше согласие.
+            </p>
+            <p className="mt-1 font-body text-xs text-text-muted">
+              Отметьте чекбокс и нажмите «Согласен(на)».
+            </p>
             <label className="flex items-start gap-3">
               <span className="relative mt-0.5 shrink-0">
                 <input
@@ -96,14 +102,14 @@ export function ConsentBanner() {
                 disabled={acceptDisabled}
                 className="fabric-strap-btn h-11 rounded-[40px] bg-accent px-6 font-body text-sm font-semibold text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-45"
               >
-                Принять
+                Согласен(на)
               </button>
               <button
                 type="button"
                 onClick={onDecline}
                 className="fabric-strap-btn h-11 rounded-[40px] border border-border px-6 font-body text-sm font-semibold text-text"
               >
-                Отказаться
+                Не сейчас
               </button>
             </div>
             <p className="mt-2.5 font-body text-xs text-text-subtle">

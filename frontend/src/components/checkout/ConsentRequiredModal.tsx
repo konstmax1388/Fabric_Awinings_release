@@ -33,7 +33,10 @@ export function ConsentRequiredModal(props: Props) {
             exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
           >
             <div className="fabric-card w-full max-w-lg p-5 sm:p-6">
-              <h2 className="font-heading text-xl text-text">Для оформления заказа необходимо согласие на обработку персональных данных.</h2>
+              <h2 className="font-heading text-xl text-text">Для продолжения оформления нужно согласие на обработку персональных данных.</h2>
+              <p className="mt-2 font-body text-sm text-text-muted">
+                Это юридическое требование 152-ФЗ. Без согласия мы не можем принять заказ.
+              </p>
               <label className="mt-4 flex items-start gap-3">
                 <span className="relative mt-0.5 shrink-0">
                   <input
@@ -63,7 +66,7 @@ export function ConsentRequiredModal(props: Props) {
                   disabled={!checked}
                   className="fabric-strap-btn h-11 rounded-[40px] bg-accent px-6 font-body text-sm font-semibold text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Подтвердить
+                  Согласен(на) и продолжить
                 </button>
                 <button
                   type="button"
