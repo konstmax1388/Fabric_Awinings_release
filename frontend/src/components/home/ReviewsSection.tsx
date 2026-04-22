@@ -113,7 +113,7 @@ export function ReviewsSection() {
                     }
               }
               transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex h-full flex-col rounded-2xl border border-border-light bg-[#F5F0E8] p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:bg-surface md:p-6"
+              className="flex h-full flex-col rounded-2xl border border-border-light bg-surface p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:p-6"
             >
               <div className="flex items-start gap-3">
                 <OptimizedImage

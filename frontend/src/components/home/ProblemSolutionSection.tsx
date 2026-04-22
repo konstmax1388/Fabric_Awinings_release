@@ -36,11 +36,11 @@ function ProblemSolutionIcon({ card }: { card: ProblemCard }) {
 
   const fa = (card.fontawesomeClass || '').trim()
   if (kind === 'fontawesome' && fa && isSafeFontAwesomeClass(fa)) {
-    return <i className={`${fa} text-xl text-secondary`} aria-hidden />
+    return <i className={`${fa} text-xl text-current`} aria-hidden />
   }
 
   return (
-    <span className="font-heading text-xl text-secondary" aria-hidden>
+    <span className="font-heading text-xl text-current" aria-hidden>
       {card.icon?.trim() || '•'}
     </span>
   )
@@ -84,21 +84,24 @@ export function ProblemSolutionSection() {
       >
         {items.map((card, idx) => (
           <motion.article
-            key={card.problem}
+            key={`${idx}-${card.problem}`}
             variants={staggerItem}
-            initial={reduce ? false : { opacity: 0, y: 18, scale: 0.985 }}
+            initial={reduce ? false : { opacity: 0, y: 22, scale: 0.98 }}
             whileInView={reduce ? undefined : { opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, amount: 0.18 }}
             whileHover={
               reduce
                 ? undefined
                 : {
-                    y: -6,
-                    boxShadow: '0 18px 36px -16px rgba(200,155,83,0.45)',
+                    y: -8,
+                    scale: 1.012,
+                    boxShadow:
+                      '0 22px 48px -18px rgba(200,155,83,0.38), 0 18px 36px -22px rgba(0,0,0,0.35)',
                   }
             }
-            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-            className="relative overflow-hidden rounded-2xl border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] transition-colors duration-300 hover:border-accent/45"
+            whileTap={reduce ? undefined : { scale: 0.99 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+            className="group relative cursor-default overflow-hidden rounded-2xl border border-border-light bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] transition-[border-color] duration-300 hover:border-accent/50"
             onMouseMove={
               reduce
                 ? undefined
@@ -125,23 +128,38 @@ export function ProblemSolutionSection() {
                     }))
             }
           >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 transition duration-500 ease-out group-hover:scale-x-100 group-hover:opacity-100 motion-reduce:hidden"
+            />
             {!reduce && spotlight[String(idx)]?.on ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-0 transition-opacity duration-150"
+                className="pointer-events-none absolute inset-0 z-[1] opacity-100 transition-opacity duration-200"
                 style={{
-                  background: `radial-gradient(180px circle at ${spotlight[String(idx)]?.x ?? 0}px ${spotlight[String(idx)]?.y ?? 0}px, rgba(200,155,83,0.2), transparent 72%)`,
+                  background: [
+                    `radial-gradient(240px circle at ${spotlight[String(idx)]?.x ?? 0}px ${spotlight[String(idx)]?.y ?? 0}px, rgba(255,255,255,0.07), transparent 58%)`,
+                    `radial-gradient(200px circle at ${spotlight[String(idx)]?.x ?? 0}px ${spotlight[String(idx)]?.y ?? 0}px, rgba(200,155,83,0.26), rgba(200,155,83,0.06) 42%, transparent 68%)`,
+                  ].join(', '),
                 }}
               />
             ) : null}
             <span
-              className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F5F0E8]"
+              className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl border border-border-light bg-[#F5F0E8] text-secondary shadow-inner transition duration-300 ease-out group-hover:scale-110 group-hover:-rotate-2 group-hover:border-accent/40 group-hover:bg-accent/15 group-hover:text-accent group-hover:shadow-[0_8px_20px_-10px_rgba(200,155,83,0.55)] motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0"
               aria-hidden
             >
               <ProblemSolutionIcon card={card} />
             </span>
-            <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">{card.problem}</h3>
-            <p className="relative z-10 mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{card.solution}</p>
+            <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text transition-colors duration-300 group-hover:text-accent motion-reduce:transition-none motion-reduce:group-hover:text-text">
+              {card.problem}
+            </h3>
+            <div
+              aria-hidden
+              className="relative z-10 mt-3 h-px w-10 bg-gradient-to-r from-accent/70 to-transparent transition-all duration-500 ease-out group-hover:w-16 group-hover:from-accent motion-reduce:transition-none motion-reduce:group-hover:w-10"
+            />
+            <p className="relative z-10 mt-3 font-body text-sm leading-relaxed text-text-muted transition-colors duration-300 group-hover:text-text motion-reduce:transition-none motion-reduce:group-hover:text-text-muted md:text-base">
+              {card.solution}
+            </p>
           </motion.article>
         ))}
       </motion.div>
