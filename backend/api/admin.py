@@ -65,6 +65,7 @@ from .models import (
     StaticPage,
     SiteEmailTemplate,
     SiteSettings,
+    ConsentLog,
 )
 
 
@@ -1172,6 +1173,59 @@ class CartOrderAdmin(ModelAdmin):
             )
         return format_html("{}{}", head, body)
 
+
+
+@admin.register(ConsentLog)
+class ConsentLogAdmin(ModelAdmin):
+    list_display = ("created_at", "consent_value", "policy_version", "ip_address", "short_url")
+    list_filter = ("consent_value", "policy_version", "created_at")
+    search_fields = ("ip_address", "user_agent", "url", "session_id", "policy_version")
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "ip_address",
+        "user_agent",
+        "consent_value",
+        "timestamp",
+        "policy_version",
+        "url",
+        "session_id",
+        "created_at",
+    )
+    fieldsets = (
+        (
+            _("Событие согласия"),
+            {
+                "fields": (
+                    "consent_value",
+                    "policy_version",
+                    "timestamp",
+                    "created_at",
+                    "url",
+                    "ip_address",
+                    "session_id",
+                    "user_agent",
+                )
+            },
+        ),
+    )
+
+    @display(description=_("URL"))
+    def short_url(self, obj: ConsentLog) -> str:
+        u = (obj.url or "").strip()
+        if len(u) > 90:
+            return f"{u[:87]}..."
+        return u or "—"
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        if request.method not in ("GET", "HEAD", "OPTIONS"):
+            return False
+        return super().has_change_permission(request, obj=obj)
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
 
 
 class SiteSettingsAdminForm(forms.ModelForm):

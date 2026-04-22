@@ -8,6 +8,7 @@ import { BrandingFavicon } from './components/layout/BrandingFavicon'
 import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { RouteTransition } from './components/layout/RouteTransition'
+import { ConsentBanner } from './components/layout/ConsentBanner'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RouteErrorPage } from './components/RouteErrorPage'
 import { RequireAuth } from './pages/account/RequireAuth'
@@ -72,6 +73,7 @@ function AppShell() {
           <Suspense fallback={<RouteFallback />}>
             <RouteTransition />
           </Suspense>
+          <ConsentBanner />
         </CartProvider>
       </AuthProvider>
     </SiteSettingsProvider>

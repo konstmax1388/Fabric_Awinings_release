@@ -224,6 +224,7 @@ REST_FRAMEWORK = {
         "auth_register": "20/hour",
         "auth_login": "30/hour",
         "staff_auth": "30/hour",
+        "consent_log": "120/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
@@ -273,6 +274,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 _public_site = os.environ.get("DJANGO_PUBLIC_SITE_URL", "http://localhost:17300").rstrip("/")
 # Канонический origin витрины (sitemap.xml, абсолютные ссылки). Синхронизируйте с VITE_SITE_URL на фронте.
 PUBLIC_SITE_URL = _public_site
+CURRENT_POLICY_VERSION = (os.environ.get("CURRENT_POLICY_VERSION") or "2026-04-22").strip()
 GIT_SHA = (os.environ.get("GIT_SHA") or "").strip() or REPO_GIT_SHA
 BUILD_TIME = (os.environ.get("BUILD_TIME") or "").strip()
 

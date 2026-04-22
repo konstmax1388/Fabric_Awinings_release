@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async'
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
@@ -11,9 +11,17 @@ import { CdekAddressCombobox } from '../components/checkout/CdekAddressCombobox'
 import { CdekCityCombobox } from '../components/checkout/CdekCityCombobox'
 import { CdekPickupListCustom } from '../components/checkout/CdekPickupListCustom'
 import { CdekWidgetMount } from '../components/checkout/CdekWidgetMount'
+import { ConsentRequiredModal } from '../components/checkout/ConsentRequiredModal'
 import { PickupInfoCard } from '../components/checkout/PickupInfoCard'
 import { CartReadonlyLinesList } from '../components/cart/CartReadonlyLinesList'
 import { apiBase } from '../lib/api'
+import {
+  getCurrentPolicyVersion,
+  hasValidConsent,
+  persistConsent,
+  trackConsentAnalytics,
+  trackConsentServer,
+} from '../lib/consent'
 import {
   COMMENT_MAX_LEN,
   formatRuPhoneMask,
@@ -62,6 +70,7 @@ export function CheckoutPage() {
   const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
   const termsPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.terms, '/')
   const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
+  const consentPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.consent, '/')
   const [step, setStep] = useState<Step>(1)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -90,6 +99,10 @@ export function CheckoutPage() {
     error?: string | null
     tracking?: string | null
   } | null>(null)
+  const [consentModalOpen, setConsentModalOpen] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [pendingSubmitAfterConsent, setPendingSubmitAfterConsent] = useState(false)
+  const submitFormRef = useRef<HTMLFormElement | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -384,6 +397,12 @@ export function CheckoutPage() {
         return
       }
     }
+    const currentPolicyVersion = await getCurrentPolicyVersion()
+    if (!hasValidConsent(currentPolicyVersion)) {
+      setPendingSubmitAfterConsent(true)
+      setConsentModalOpen(true)
+      return
+    }
     setSending(true)
     try {
       const delivery: Record<string, unknown> = {}
@@ -445,6 +464,20 @@ export function CheckoutPage() {
       setError('Ошибка сети. Попробуйте позже.')
     } finally {
       setSending(false)
+    }
+  }
+
+  const confirmConsentForCheckout = async () => {
+    if (!consentChecked) return
+    const currentPolicyVersion = await getCurrentPolicyVersion()
+    const stored = await persistConsent(true, currentPolicyVersion)
+    void trackConsentServer(true, stored.policyVersion)
+    trackConsentAnalytics('consent_accept')
+    setConsentModalOpen(false)
+    setConsentChecked(false)
+    if (pendingSubmitAfterConsent) {
+      setPendingSubmitAfterConsent(false)
+      submitFormRef.current?.requestSubmit()
     }
   }
 
@@ -943,7 +976,7 @@ export function CheckoutPage() {
           )}
 
           {step === 3 && (
-            <form onSubmit={submitOrder} className="flex flex-col">
+            <form ref={submitFormRef} onSubmit={submitOrder} className="flex flex-col">
               <h1 className="fabric-section-title text-2xl md:text-3xl">Подтверждение</h1>
               <div className="mt-4 rounded-2xl border border-border-light bg-bg-base p-4 font-body text-sm text-text-muted">
                 <p>
@@ -1078,6 +1111,19 @@ export function CheckoutPage() {
         </div>
       </main>
       <SiteFooter />
+      <ConsentRequiredModal
+        open={consentModalOpen}
+        checked={consentChecked}
+        privacyPath={privacyPath}
+        consentPath={consentPath}
+        onToggle={setConsentChecked}
+        onClose={() => {
+          setConsentModalOpen(false)
+          setConsentChecked(false)
+          setPendingSubmitAfterConsent(false)
+        }}
+        onConfirm={confirmConsentForCheckout}
+      />
     </>
   )
 }

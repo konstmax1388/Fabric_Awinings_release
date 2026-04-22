@@ -1322,6 +1322,25 @@ class StaticPage(models.Model):
         super().save(*args, **kwargs)
 
 
+class ConsentLog(models.Model):
+    ip_address = models.CharField("IP адрес", max_length=45)
+    user_agent = models.TextField("User-Agent")
+    consent_value = models.BooleanField("Согласие принято")
+    timestamp = models.DateTimeField("Метка времени клиента")
+    policy_version = models.CharField("Версия документов", max_length=20)
+    url = models.CharField("URL страницы", max_length=500)
+    session_id = models.CharField("ID сессии", max_length=128, blank=True, default="")
+    created_at = models.DateTimeField("Создано на сервере", auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Лог согласия на ПДн"
+        verbose_name_plural = "Логи согласий на ПДн"
+
+    def __str__(self) -> str:
+        return f"{'accept' if self.consent_value else 'decline'} {self.policy_version} {self.created_at:%Y-%m-%d %H:%M}"
+
+
 class CustomerProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

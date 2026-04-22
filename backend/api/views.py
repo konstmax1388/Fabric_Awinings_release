@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from django.db.models import Prefetch
 from django.conf import settings
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
@@ -21,9 +24,10 @@ from .models import (
     ProductSpecification,
     ProductVariant,
     Review,
+    ConsentLog,
 )
 from .pagination import ProductPagination
-from .throttles import LeadSubmissionThrottle
+from .throttles import ConsentLogThrottle, LeadSubmissionThrottle
 from .serializers import (
     BlogPostDetailSerializer,
     BlogPostListSerializer,
@@ -244,3 +248,59 @@ class CartOrderCreateView(generics.CreateAPIView):
         order.refresh_from_db()
         out = CartOrderResponseSerializer(order)
         return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+@csrf_exempt
+@api_view(["POST"])
+def log_consent(request):
+    if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+        return Response({"detail": "X-Requested-With required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    throttle = ConsentLogThrottle()
+    if not throttle.allow_request(request, log_consent):
+        return Response({"detail": "Too many requests."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    payload = request.data if isinstance(request.data, dict) else {}
+    consent_value = payload.get("consent")
+    policy_version = str(payload.get("policy_version") or "").strip()[:20]
+    url = str(payload.get("url") or "").strip()[:500]
+    timestamp_raw = str(payload.get("timestamp") or "").strip()
+    if not isinstance(consent_value, bool):
+        return Response({"detail": "consent must be boolean."}, status=status.HTTP_400_BAD_REQUEST)
+    if not policy_version:
+        return Response({"detail": "policy_version is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not url:
+        return Response({"detail": "url is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        client_ts = datetime.fromisoformat(timestamp_raw.replace("Z", "+00:00"))
+        if timezone.is_naive(client_ts):
+            client_ts = timezone.make_aware(client_ts, timezone.get_current_timezone())
+    except Exception:
+        client_ts = timezone.now()
+
+    xff = str(request.META.get("HTTP_X_FORWARDED_FOR") or "").strip()
+    ip_address = (xff.split(",")[0].strip() if xff else "") or str(request.META.get("REMOTE_ADDR") or "").strip()
+    ip_address = ip_address[:45]
+    user_agent = str(request.META.get("HTTP_USER_AGENT") or "").strip()
+    session_id = ""
+    try:
+        session_id = str(getattr(request.session, "session_key", "") or "")
+    except Exception:
+        session_id = ""
+
+    ConsentLog.objects.create(
+        ip_address=ip_address or "unknown",
+        user_agent=user_agent,
+        consent_value=consent_value,
+        timestamp=client_ts,
+        policy_version=policy_version,
+        url=url,
+        session_id=session_id[:128],
+    )
+    return Response({"ok": True}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+def current_policy_version(request):
+    return Response({"version": str(getattr(settings, "CURRENT_POLICY_VERSION", "") or "")})

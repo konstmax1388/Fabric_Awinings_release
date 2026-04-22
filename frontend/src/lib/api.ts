@@ -115,6 +115,41 @@ export async function fetchHealth(): Promise<{
   }
 }
 
+export type CurrentPolicyVersionDto = { version: string }
+
+export async function fetchCurrentPolicyVersion(): Promise<string | null> {
+  try {
+    const r = await fetch(`${apiBase()}/api/current-policy-version/`, { cache: 'no-store' })
+    const data = await parseJson<CurrentPolicyVersionDto>(r)
+    const version = data?.version?.trim()
+    return version ? version : null
+  } catch {
+    return null
+  }
+}
+
+export async function postConsentLog(body: {
+  consent: boolean
+  timestamp: string
+  policy_version: string
+  url: string
+}): Promise<boolean> {
+  try {
+    const r = await fetch(`${apiBase()}/api/log-consent/`, {
+      method: 'POST',
+      headers: withCsrf({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      }),
+      body: JSON.stringify(body),
+    })
+    return r.ok
+  } catch {
+    return false
+  }
+}
+
 export type Paginated<T> = {
   count: number
   next: string | null

@@ -29,3 +29,13 @@ class AuthLoginThrottle(SimpleRateThrottle):
             "scope": self.scope,
             "ident": self.get_ident(request),
         }
+
+
+class ConsentLogThrottle(SimpleRateThrottle):
+    scope = "consent_log"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {
+            "scope": self.scope,
+            "ident": self.get_ident(request),
+        }

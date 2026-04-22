@@ -34,6 +34,8 @@ router.register(r"addresses", ShippingAddressViewSet, basename="address")
 urlpatterns = [
     path("staff/v1/", include("api.staff_urls")),
     path("health/", views.health, name="health"),
+    path("log-consent/", views.log_consent, name="log-consent"),
+    path("current-policy-version/", views.current_policy_version, name="current-policy-version"),
     path("image-variant/", ImageVariantView.as_view(), name="image-variant"),
     path("site-settings/", SiteSettingsPublicView.as_view(), name="site-settings"),
     path("cdek-widget/service/", CdekWidgetServiceView.as_view(), name="cdek-widget-service"),
