@@ -109,7 +109,7 @@ export function HomePage() {
       <SiteHeader />
       <main className="fabric-page min-w-0 overflow-x-clip">
         {showFirstVisitPromo ? (
-          <section className="fabric-container pt-4 md:pt-6">
+          <section className="fabric-container hidden pt-4 md:block md:pt-6">
             <motion.div
               className="fabric-producer-note fabric-liquid-glass relative px-4 py-4 text-sm text-text md:px-5 md:py-4 md:text-base"
               initial={reduce ? false : { opacity: 0, y: -10, scale: 0.985 }}
