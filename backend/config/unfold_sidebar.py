@@ -160,6 +160,11 @@ def build_unfold_sidebar() -> list[dict]:
                     "icon": "phone_callback",
                     "link": reverse_lazy("admin:api_callbacklead_changelist"),
                 },
+                {
+                    "title": _("Логи согласий на ПДн"),
+                    "icon": "fact_check",
+                    "link": reverse_lazy("admin:api_consentlog_changelist"),
+                },
             ],
         },
         {
