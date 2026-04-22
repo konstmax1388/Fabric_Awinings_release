@@ -9,9 +9,9 @@ export function RouteTransition() {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={reduce ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={reduce ? undefined : { opacity: 0, y: -10 }}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={reduce ? undefined : { opacity: 0 }}
         transition={{ duration: 0.34, ease: [0.2, 1, 0.32, 1] }}
       >
         <Outlet />
