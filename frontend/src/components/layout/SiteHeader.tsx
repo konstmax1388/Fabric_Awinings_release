@@ -181,8 +181,7 @@ export function SiteHeader() {
 
   return (
     <>
-    <div className="h-[73px] md:h-[87px]" aria-hidden />
-    <header className="fabric-liquid-glass fixed inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
+    <header className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90">
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
           to="/"
