@@ -18,7 +18,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 from .unfold_sidebar import build_unfold_sidebar
-from .version import APP_VERSION
+from .version import APP_VERSION, GIT_SHA as REPO_GIT_SHA
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -253,7 +253,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 _public_site = os.environ.get("DJANGO_PUBLIC_SITE_URL", "http://localhost:17300").rstrip("/")
 # Канонический origin витрины (sitemap.xml, абсолютные ссылки). Синхронизируйте с VITE_SITE_URL на фронте.
 PUBLIC_SITE_URL = _public_site
-GIT_SHA = (os.environ.get("GIT_SHA") or "").strip()
+GIT_SHA = (os.environ.get("GIT_SHA") or "").strip() or REPO_GIT_SHA
 BUILD_TIME = (os.environ.get("BUILD_TIME") or "").strip()
 
 # Astrum «Заявки с сайта» → Битрикс24: https://app-5.astrum.agency/documentation
