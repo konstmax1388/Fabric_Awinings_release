@@ -415,8 +415,8 @@ export function HeroSection() {
                   key={`hero-stat-${idx}`}
                   className={`fabric-liquid-glass-soft rounded-xl px-3 py-2 text-center ${textClasses.chipBg}`}
                 >
-                  <p className={`font-heading text-lg ${textClasses.chip}`}>{item.value}</p>
-                  <p className={`font-body text-[11px] uppercase tracking-wider ${textClasses.chipLabel}`}>{item.label}</p>
+                  <p className="font-heading text-lg text-text">{item.value}</p>
+                  <p className="font-body text-[11px] uppercase tracking-wider text-text-muted">{item.label}</p>
                 </div>
               ))}
             </motion.div>
