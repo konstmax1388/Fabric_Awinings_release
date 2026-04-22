@@ -50,6 +50,8 @@ const StaticPageRoute = lazy(() =>
   import('./pages/StaticPageRoute').then((m) => ({ default: m.StaticPageRoute })),
 )
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+const LEGACY_PRIVACY_REDIRECT = '/politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh'
+const LEGACY_OFFER_REDIRECT = '/publichnaia-oferta'
 
 function RouteFallback() {
   return (
@@ -111,6 +113,8 @@ const router = createBrowserRouter([
       { path: '/contacts', element: <ContactsPage /> },
       { path: '/blog', element: <BlogPage /> },
       { path: '/blog/:slug', element: <BlogPostPage /> },
+      { path: '/privacy', element: <Navigate to={LEGACY_PRIVACY_REDIRECT} replace /> },
+      { path: '/offer', element: <Navigate to={LEGACY_OFFER_REDIRECT} replace /> },
       { path: '/:slug', element: <StaticPageRoute /> },
       { path: '*', element: <NotFoundPage /> },
     ],
