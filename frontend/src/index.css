@@ -300,7 +300,7 @@ body {
 }
 
 .fabric-header-logo {
-  transition: filter 240ms ease, transform 240ms ease, opacity 240ms ease;
+  transition: filter 1200ms ease, transform 320ms ease, opacity 320ms ease;
 }
 
 .fabric-header-logo[data-logo-tone='white'] {
