@@ -1,6 +1,26 @@
 import { useEffect } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 
+function materializeNode(node: Node): Node {
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return node.cloneNode(true)
+  }
+  const el = node as HTMLElement
+  if (el.tagName.toLowerCase() === 'script') {
+    const script = document.createElement('script')
+    for (const attr of Array.from(el.attributes)) {
+      script.setAttribute(attr.name, attr.value)
+    }
+    script.text = el.textContent || ''
+    return script
+  }
+  const copy = el.cloneNode(false) as HTMLElement
+  for (const child of Array.from(el.childNodes)) {
+    copy.appendChild(materializeNode(child))
+  }
+  return copy
+}
+
 function injectSnippet(raw: string, where: 'head' | 'body') {
   const html = (raw || '').trim()
   if (!html) return () => {}
@@ -11,7 +31,7 @@ function injectSnippet(raw: string, where: 'head' | 'body') {
 
   const nodes: Node[] = []
   for (const child of Array.from(root.childNodes)) {
-    const next = child.cloneNode(true)
+    const next = materializeNode(child)
     nodes.push(next)
   }
   const target = where === 'head' ? document.head : document.body
