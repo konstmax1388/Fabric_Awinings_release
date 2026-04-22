@@ -18,6 +18,51 @@ const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-accent/15 text-accent ring-1 ring-accent/30' : 'text-text hover:bg-primary/70'
   }`
 
+const mobileBarIcon = 'h-[22px] w-[22px] shrink-0'
+function MobileBarHomeIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z" />
+    </svg>
+  )
+}
+function MobileBarBagIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" />
+      <path d="M4.2 7.2h15.6l-1.4 8.5a2 2 0 0 1-2 1.6H7.5a2 2 0 0 1-1.9-1.4L4.2 7.2Z" />
+    </svg>
+  )
+}
+function MobileBarGridIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  )
+}
+function MobileBarCartIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6.5 6h12l-1.2 6H7.2L6.5 6Z" />
+      <path d="M6.5 6L5.5 3.5H3" />
+      <circle cx="9" cy="20" r="1" fill="currentColor" />
+      <circle cx="16" cy="20" r="1" fill="currentColor" />
+    </svg>
+  )
+}
+function MobileBarUserIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 21a8 8 0 0 0-16 0" />
+      <circle cx="12" cy="7.5" r="3.5" />
+    </svg>
+  )
+}
+
 function CartHeaderLink({ className = '' }: { className?: string }) {
   const { totalQty } = useCart()
   return (
@@ -107,6 +152,12 @@ export function SiteHeader() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+
+  const mobileBarTabActive =
+    theme === 'dark'
+      ? '-mb-0 -mt-2.5 rounded-t-[14px] border border-b-0 border-accent/30 bg-primary/85 px-1.5 pb-1.5 pt-2.5 text-accent shadow-[0_-6px_24px_rgba(200,155,83,0.14)]'
+      : '-mb-0 -mt-2.5 rounded-t-[14px] border border-b-0 border-accent/40 bg-surface px-1.5 pb-1.5 pt-2.5 text-accent shadow-[0_-4px_20px_rgba(180,134,58,0.1)]'
+  const mobileBarTabIdle = 'py-1.5 text-text-muted'
 
   return (
     <header className="fabric-liquid-glass sticky top-0 z-50 border-b border-border bg-bg-base/90">
@@ -303,71 +354,108 @@ export function SiteHeader() {
         ) : null}
       </AnimatePresence>
       <nav
-        className="fabric-liquid-glass fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg-base/98 px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] md:hidden"
+        className={[
+          'fixed inset-x-0 bottom-0 z-40 md:hidden',
+          'border-t pb-[calc(env(safe-area-inset-bottom)+0.5rem)]',
+          'px-1.5 pt-1',
+          theme === 'dark'
+            ? 'border-border bg-bg-base/95 shadow-[0_-10px_32px_rgba(0,0,0,0.42)]'
+            : 'border-border bg-bg-base/98 shadow-[0_-8px_28px_rgba(36,39,48,0.08)]',
+        ].join(' ')}
+        aria-label="Нижняя навигация"
       >
-        <div className="mx-auto flex max-w-[640px] items-stretch justify-between gap-1">
+        <div className="mx-auto flex max-w-[640px] items-end justify-between gap-0.5">
           <NavLink
             to="/"
             end
-            className={({ isActive }) =>
-              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
-              }`
-            }
+            className="flex min-w-0 flex-1 justify-center"
           >
-            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
-            <span>Главная</span>
+            {({ isActive }) => (
+              <div
+                className={[
+                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  isActive ? mobileBarTabActive : mobileBarTabIdle,
+                ].join(' ')}
+              >
+                <MobileBarHomeIcon className={mobileBarIcon} />
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Главная</span>
+              </div>
+            )}
           </NavLink>
           <NavLink
             to="/catalog"
-            className={({ isActive }) =>
-              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
-              }`
-            }
+            className="flex min-w-0 flex-1 justify-center"
           >
-            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
-            <span>Каталог</span>
+            {({ isActive }) => (
+              <div
+                className={[
+                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  isActive ? mobileBarTabActive : mobileBarTabIdle,
+                ].join(' ')}
+              >
+                <MobileBarBagIcon className={mobileBarIcon} />
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Каталог</span>
+              </div>
+            )}
           </NavLink>
           {portfolioEnabled ? (
             <NavLink
               to="/portfolio"
-              className={({ isActive }) =>
-                `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                  isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
-                }`
-              }
+              className="flex min-w-0 flex-1 justify-center"
             >
-              <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
-              <span>Портфолио</span>
+              {({ isActive }) => (
+                <div
+                  className={[
+                    'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                    isActive ? mobileBarTabActive : mobileBarTabIdle,
+                  ].join(' ')}
+                >
+                  <MobileBarGridIcon className={mobileBarIcon} />
+                  <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Портфолио</span>
+                </div>
+              )}
             </NavLink>
           ) : null}
           <NavLink
             to="/cart"
-            className={({ isActive }) =>
-              `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
-              }`
-            }
+            className="flex min-w-0 flex-1 justify-center"
           >
-            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
-            <span>Корзина</span>
-            {totalQty > 0 ? (
-              <span className="absolute right-3 top-1 rounded-full bg-accent px-1.5 text-[10px] text-white">
-                {totalQty > 99 ? '99+' : totalQty}
-              </span>
-            ) : null}
+            {({ isActive }) => (
+              <div
+                className={[
+                  'relative flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  isActive ? mobileBarTabActive : mobileBarTabIdle,
+                ].join(' ')}
+              >
+                <span className="relative inline-flex">
+                  <MobileBarCartIcon className={mobileBarIcon} />
+                  {totalQty > 0 ? (
+                    <span
+                      className="absolute -right-2 -top-0.5 min-w-[1.1rem] rounded-full bg-accent px-0.5 text-center font-body text-[9px] font-bold text-surface ring-1 ring-border/30"
+                    >
+                      {totalQty > 99 ? '99+' : totalQty}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Корзина</span>
+              </div>
+            )}
           </NavLink>
           <NavLink
             to="/account"
-            className={({ isActive }) =>
-              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-medium ${
-                isActive ? 'bg-accent/15 text-accent' : 'text-text-muted'
-              }`
-            }
+            className="flex min-w-0 flex-1 justify-center"
           >
-            <span className="inline-block h-1.5 w-6 rounded-full bg-current/80" aria-hidden />
-            <span>Профиль</span>
+            {({ isActive }) => (
+              <div
+                className={[
+                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  isActive ? mobileBarTabActive : mobileBarTabIdle,
+                ].join(' ')}
+              >
+                <MobileBarUserIcon className={mobileBarIcon} />
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">Профиль</span>
+              </div>
+            )}
           </NavLink>
         </div>
       </nav>
