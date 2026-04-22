@@ -75,7 +75,7 @@ function ProductCartControls({
         {ui?.productAddToCart || 'В корзину'}
       </motion.button>
       {addedPromptOpen && (
-        <div className="fixed inset-x-4 bottom-4 z-[160] mx-auto w-[min(560px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[500px]">
+        <div className="fixed inset-x-4 bottom-4 z-[420] mx-auto w-[min(560px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:right-6 md:mx-0 md:w-[500px]">
           <p className="font-body text-sm font-medium text-text">{ui?.productAddedTitle || 'Товар добавлен в корзину'}</p>
           <p className="mt-1 font-body text-xs text-text-muted">{product.title}</p>
           <div className="mt-3 flex gap-2">
