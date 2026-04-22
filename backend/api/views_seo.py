@@ -9,7 +9,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 
-from .models import BlogPost, Product
+from .models import BlogPost, Product, StaticPage
 
 
 def _site_base() -> str:
@@ -57,6 +57,10 @@ def sitemap_xml_view(request):
     for post in BlogPost.objects.filter(is_published=True).order_by("slug"):
         d = post.published_at or post.updated_at.date()
         urls_xml.append(_xml_url(f"{base}/blog/{post.slug}", d, "monthly", "0.75"))
+
+    for page in StaticPage.objects.filter(is_published=True).order_by("slug"):
+        lm = page.updated_at.date() if getattr(page, "updated_at", None) else today
+        urls_xml.append(_xml_url(f"{base}/{page.slug}", lm, "monthly", "0.7"))
 
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'

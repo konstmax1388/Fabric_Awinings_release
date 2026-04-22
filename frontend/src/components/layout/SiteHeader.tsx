@@ -315,9 +315,10 @@ export function SiteHeader() {
               type="button"
               key="mobile-menu-backdrop"
               className={[
-                'fixed inset-0 top-[73px] z-40 cursor-default md:hidden',
+                'fixed inset-0 z-40 cursor-default md:hidden',
                 theme === 'dark' ? 'bg-[#060a11]' : 'bg-[#0f172a]',
               ].join(' ')}
+              style={{ top: 'var(--site-header-height)' }}
               initial={reduce ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduce ? undefined : { opacity: 0 }}
@@ -328,11 +329,12 @@ export function SiteHeader() {
             <motion.div
               key="mobile-menu-panel"
               className={[
-                'fixed inset-y-0 right-0 top-[73px] z-[45] flex h-[calc(100dvh-73px)] w-full max-w-[min(100dvw,400px)] flex-col md:hidden',
+                'fixed inset-y-0 right-0 z-[45] flex w-full max-w-[min(100dvw,400px)] flex-col md:hidden',
                 theme === 'dark'
                   ? 'shadow-[-16px_0_48px_rgba(0,0,0,0.52)]'
                   : 'shadow-[-10px_0_36px_rgba(15,23,42,0.16)]',
               ].join(' ')}
+              style={{ top: 'var(--site-header-height)', height: 'calc(100dvh - var(--site-header-height))' }}
               initial={reduce ? undefined : { x: '100%' }}
               animate={{ x: 0, opacity: 1 }}
               exit={reduce ? undefined : { x: '100%' }}

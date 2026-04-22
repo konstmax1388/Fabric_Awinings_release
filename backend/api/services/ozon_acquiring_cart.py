@@ -29,13 +29,6 @@ def total_kopecks_from_cart_lines(lines: list[dict[str, Any]]) -> int:
 
 
 def _resolve_sku_for_line(line: dict[str, Any]) -> int | None:
-    raw = line.get("ozonSku")
-    if raw is not None and raw != "":
-        try:
-            return int(raw)
-        except (TypeError, ValueError):
-            pass
-
     pid = line.get("productId") or ""
     vid = (line.get("variantId") or "").strip()
     try:

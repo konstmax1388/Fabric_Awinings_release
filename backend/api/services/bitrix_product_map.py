@@ -25,6 +25,8 @@ def resolve_bitrix_catalog_id_for_cart_line(line: dict[str, Any]) -> int | None:
             .prefetch_related("variants")
             .first()
         )
+        if product is not None and slug and product.slug != slug:
+            return None
     if product is None and slug:
         product = (
             Product.objects.filter(slug=slug)
@@ -32,6 +34,8 @@ def resolve_bitrix_catalog_id_for_cart_line(line: dict[str, Any]) -> int | None:
             .first()
         )
     if product is None:
+        return None
+    if not product.is_published or not product.category.is_published:
         return None
 
     variants = list(product.variants.order_by("sort_order", "id"))

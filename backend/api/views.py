@@ -5,7 +5,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -89,11 +89,18 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         .all()
     )
     lookup_field = "slug"
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
+    search_fields = ["title", "slug", "variants__wb_nm_id", "bitrix_xml_id", "variants__bitrix_xml_id"]
     ordering_fields = ["price_from", "updated_at", "title", "created_at", "sort_order"]
     ordering = ["sort_order", "-updated_at"]
     pagination_class = ProductPagination
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.query_params.get("search"):
+            return qs.distinct()
+        return qs
 
     def get_serializer_class(self):
         if self.action == "retrieve":

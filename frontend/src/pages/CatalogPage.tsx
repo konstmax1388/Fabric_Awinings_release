@@ -36,6 +36,23 @@ function parsePage(raw: string | null): number {
   return Number.isFinite(n) && n >= 1 ? n : 1
 }
 
+function parseSearch(raw: string | null): string {
+  if (!raw) return ''
+  return raw.trim().slice(0, 120)
+}
+
+function buildPageWindow(current: number, total: number): Array<number | 'ellipsis-left' | 'ellipsis-right'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const out: Array<number | 'ellipsis-left' | 'ellipsis-right'> = [1]
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  if (start > 2) out.push('ellipsis-left')
+  for (let n = start; n <= end; n += 1) out.push(n)
+  if (end < total - 1) out.push('ellipsis-right')
+  out.push(total)
+  return out
+}
+
 function CatalogSkeletonGrid() {
   return (
     <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -62,6 +79,7 @@ export function CatalogPage() {
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
   const page = parsePage(search.get('page'))
+  const searchTerm = parseSearch(search.get('search'))
 
   /** Убираем из адреса устаревший `?category=` с кириллицей после смены слагов на латиницу. */
   useEffect(() => {
@@ -93,7 +111,7 @@ export function CatalogPage() {
       setLoading(true)
       setError(null)
     })
-    fetchProductsPage({ page, category, sort, pageSize: PAGE_SIZE }).then((res) => {
+    fetchProductsPage({ page, category, sort, search: searchTerm, pageSize: PAGE_SIZE }).then((res) => {
       if (cancelled) return
       if (!res) {
         setData(null)
@@ -107,10 +125,10 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [page, category, sort])
+  }, [page, category, sort, searchTerm])
 
   const setParams = useCallback(
-    (patch: { category?: ProductCategory | null; sort?: CatalogSortId; page?: number }) => {
+    (patch: { category?: ProductCategory | null; sort?: CatalogSortId; page?: number; search?: string }) => {
       const next = new URLSearchParams(search)
       if (patch.category === undefined) {
         /* skip */
@@ -124,6 +142,11 @@ export function CatalogPage() {
         if (patch.page <= 1) next.delete('page')
         else next.set('page', String(patch.page))
       }
+      if (patch.search !== undefined) {
+        const normalized = patch.search.trim()
+        if (normalized) next.set('search', normalized)
+        else next.delete('search')
+      }
       setSearch(next, { replace: true })
     },
     [search, setSearch],
@@ -133,6 +156,7 @@ export function CatalogPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const slice = data?.results ?? []
+  const pageWindow = useMemo(() => buildPageWindow(currentPage, totalPages), [currentPage, totalPages])
 
   useEffect(() => {
     if (data && page > totalPages && totalPages >= 1) {
@@ -232,13 +256,24 @@ export function CatalogPage() {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="font-body text-sm text-text-muted">
-                {loading
-                  ? 'Загрузка…'
-                  : error
-                    ? error
-                    : `Показано ${slice.length} из ${total}`}
-              </p>
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <p className="font-body text-sm text-text-muted">
+                  {loading
+                    ? 'Загрузка…'
+                    : error
+                      ? error
+                      : `Показано ${slice.length} из ${total}`}
+                </p>
+                <label className="flex min-w-0 flex-1 items-center gap-2 font-body text-sm text-text sm:max-w-md">
+                  <span className="text-text-muted">Поиск</span>
+                  <input
+                    value={searchTerm}
+                    onChange={(e) => setParams({ search: e.target.value, page: 1 })}
+                    placeholder="Название или артикул"
+                    className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 font-body text-text outline-none focus:border-accent"
+                  />
+                </label>
+              </div>
               <label className="flex items-center gap-2 font-body text-sm text-text">
                 <span className="text-text-muted">Сортировка</span>
                 <select
@@ -306,20 +341,26 @@ export function CatalogPage() {
                 >
                   Назад
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setParams({ page: n })}
-                    className={`flex h-10 min-w-10 items-center justify-center rounded-full font-body text-sm ${
-                      n === currentPage
-                        ? 'bg-accent text-surface'
-                        : 'border border-border hover:border-accent'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
+                {pageWindow.map((item, idx) =>
+                  typeof item === 'number' ? (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setParams({ page: item })}
+                      className={`flex h-10 min-w-10 items-center justify-center rounded-full font-body text-sm ${
+                        item === currentPage
+                          ? 'bg-accent text-surface'
+                          : 'border border-border hover:border-accent'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    <span key={`${item}-${idx}`} className="px-2 font-body text-sm text-text-muted">
+                      ...
+                    </span>
+                  ),
+                )}
                 <button
                   type="button"
                   disabled={currentPage >= totalPages}

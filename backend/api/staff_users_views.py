@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model
 
-from .permissions import IsStaffUser
+from .permissions import IsStaffUser, IsSuperUser
 from .staff_pagination import StaffPageNumberPagination
 from .staff_users_serializers import GroupStaffSerializer, SetPasswordStaffSerializer, UserStaffSerializer
 
@@ -28,7 +28,7 @@ User = get_user_model()
     destroy=extend_schema(tags=["staff"], summary="Пользователи: удалить"),
 )
 class UserStaffViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsStaffUser]
+    permission_classes = [IsAuthenticated, IsStaffUser, IsSuperUser]
     serializer_class = UserStaffSerializer
     queryset = User.objects.all().order_by("-date_joined")
     pagination_class = StaffPageNumberPagination
@@ -64,7 +64,7 @@ class UserStaffViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=["staff"], summary="Группы: удалить"),
 )
 class GroupStaffViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsStaffUser]
+    permission_classes = [IsAuthenticated, IsStaffUser, IsSuperUser]
     serializer_class = GroupStaffSerializer
     queryset = Group.objects.all().order_by("name")
     pagination_class = StaffPageNumberPagination

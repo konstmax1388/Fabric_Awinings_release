@@ -37,9 +37,11 @@ ALLOWED_TAGS = [
 ]
 
 ALLOWED_ATTRS = {
-    "*": ["class", "title"],
+    "*": ["title"],
     "a": ["href", "target", "rel"],
     "img": ["src", "alt", "width", "height", "loading", "decoding"],
+    "th": ["colspan", "rowspan", "scope"],
+    "td": ["colspan", "rowspan"],
 }
 
 ALLOWED_PROTOCOLS = ["http", "https", "mailto", "tel"]
@@ -56,4 +58,8 @@ def sanitize_html_fragment(value: str) -> str:
         protocols=ALLOWED_PROTOCOLS,
         strip=True,
     )
-    return bleach.linkify(cleaned)
+    return bleach.linkify(
+        cleaned,
+        callbacks=[bleach.callbacks.nofollow, bleach.callbacks.target_blank],
+        skip_tags=["pre", "code"],
+    )

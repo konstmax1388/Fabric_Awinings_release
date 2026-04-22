@@ -47,6 +47,13 @@ if not DEBUG:
             "не меньше 5 разных символов), не начинающуюся с django-insecure-, "
             "когда DJANGO_DEBUG=false."
         )
+    _required_env = ["DJANGO_ALLOWED_HOSTS", "DJANGO_CSRF_TRUSTED_ORIGINS", "DJANGO_PUBLIC_SITE_URL"]
+    _missing_env = [name for name in _required_env if not (os.environ.get(name) or "").strip()]
+    if _missing_env:
+        raise ImproperlyConfigured(
+            "Для production отсутствуют обязательные переменные окружения: "
+            + ", ".join(_missing_env)
+        )
 
 # Капча на /admin/login/: в проде (DEBUG=False) по умолчанию включена; при DEBUG=True — выкл.,
 # пока не задать DJANGO_ADMIN_CAPTCHA=true (удобно для локальной разработки).
@@ -220,6 +227,19 @@ REST_FRAMEWORK = {
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+try:
+    CDEK_WIDGET_SERVICE_RATE_LIMIT = max(
+        1, int((os.environ.get("CDEK_WIDGET_SERVICE_RATE_LIMIT") or "60").strip() or "60")
+    )
+except ValueError:
+    CDEK_WIDGET_SERVICE_RATE_LIMIT = 60
+try:
+    CDEK_WIDGET_SERVICE_RATE_WINDOW_SEC = max(
+        5, int((os.environ.get("CDEK_WIDGET_SERVICE_RATE_WINDOW_SEC") or "60").strip() or "60")
+    )
+except ValueError:
+    CDEK_WIDGET_SERVICE_RATE_WINDOW_SEC = 60
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Fabric Awnings API",

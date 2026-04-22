@@ -441,7 +441,11 @@ class CartOrderCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         from .models import SiteSettings
-        from .services.checkout_pricing import goods_subtotal_from_lines, quoted_cdek_delivery_rub
+        from .services.checkout_pricing import (
+            build_trusted_checkout_lines,
+            goods_subtotal_from_lines,
+            quoted_cdek_delivery_rub,
+        )
         from .services.checkout_rules import delivery_options_public, validate_delivery_and_payment
 
         s = SiteSettings.get_solo()
@@ -455,7 +459,12 @@ class CartOrderCreateSerializer(serializers.Serializer):
             s,
         )
         lines = attrs.get("lines") or []
-        goods_sub = goods_subtotal_from_lines([dict(x) for x in lines])
+        try:
+            trusted_lines = build_trusted_checkout_lines([dict(x) for x in lines])
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+        attrs["_trusted_lines"] = trusted_lines
+        goods_sub = goods_subtotal_from_lines(trusted_lines)
         min_rub = int(s.checkout_minimum_order_rub or 0)
         if min_rub > 0 and goods_sub < min_rub:
             est = f"{min_rub:,}".replace(",", " ")
@@ -539,7 +548,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
         while CartOrder.objects.filter(order_ref=ref).exists():
             ref = generate_order_ref()
         customer = validated_data["customer"]
-        lines_plain = [dict(x) for x in validated_data["lines"]]
+        lines_plain = validated_data.pop("_trusted_lines", None) or [dict(x) for x in validated_data["lines"]]
         goods_sub = goods_subtotal_from_lines(lines_plain)
         dm = validated_data.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
         pm = validated_data.get("paymentMethod", CartOrder.PaymentMethod.CASH_PICKUP)

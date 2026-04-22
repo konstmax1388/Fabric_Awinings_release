@@ -762,8 +762,30 @@ class BlogPostAdmin(ModelAdmin):
     )
 
 
+class StaticPageAdminForm(forms.ModelForm):
+    class Meta:
+        model = StaticPage
+        fields = "__all__"
+        widgets = {
+            "body": forms.Textarea(
+                attrs={
+                    "class": "vLargeTextField js-static-page-html-editor",
+                    "rows": 22,
+                    "data-editor": "static-page-html",
+                }
+            ),
+        }
+
+    class Media:
+        js = (
+            "https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js",
+            "admin/js/static_page_html_editor.js",
+        )
+
+
 @admin.register(StaticPage)
 class StaticPageAdmin(ModelAdmin):
+    form = StaticPageAdminForm
     list_display = ("title", "slug", "is_published", "show_in_header", "show_in_footer", "sort_order")
     list_filter = ("is_published", "show_in_header", "show_in_footer")
     search_fields = ("title", "slug", "meta_title", "meta_description", "body")

@@ -230,12 +230,20 @@ export function ProductPage() {
   const productJsonLd = useMemo(() => {
     if (product === undefined || product === null) return ''
     const img = galleryImages[0] || product.images[0]
+    const imageObjects = (galleryImages.length ? galleryImages : product.images)
+      .filter((u) => typeof u === 'string' && u.trim().length > 0)
+      .map((u) => ({
+        '@type': 'ImageObject',
+        url: u,
+      }))
+    const offerSku = selectedVariant?.id || product.id
     return JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.title,
       description: product.excerpt || product.description,
-      image: img ? [img] : undefined,
+      image: imageObjects.length ? imageObjects : img ? [img] : undefined,
+      sku: offerSku,
       category: categoryLabel(product),
       areaServed: {
         '@type': 'AdministrativeArea',
@@ -243,12 +251,13 @@ export function ProductPage() {
       },
       offers: {
         '@type': 'Offer',
+        sku: offerSku,
         priceCurrency: 'RUB',
-        price: displayPrice,
+        price: String(displayPrice),
         availability: 'https://schema.org/InStock',
       },
     })
-  }, [product, galleryImages, displayPrice, seoDefaults.region])
+  }, [product, galleryImages, displayPrice, seoDefaults.region, selectedVariant?.id])
 
   const displayMpKeys = useMemo(() => {
     const merged = marketplaceMerged

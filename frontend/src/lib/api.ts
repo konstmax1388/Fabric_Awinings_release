@@ -347,13 +347,16 @@ export async function fetchProductsPage(opts: {
   page: number
   category?: ProductCategory | null
   sort: CatalogSortApi
+  search?: string
   pageSize?: number
 }): Promise<Paginated<Product> | null> {
   const ordering = sortToOrdering(opts.sort)
+  const normalizedSearch = (opts.search || '').trim()
   const q = buildQuery({
     page: opts.page,
     page_size: opts.pageSize ?? 9,
     ...(opts.category ? { category: opts.category } : {}),
+    ...(normalizedSearch ? { search: normalizedSearch } : {}),
     ...(ordering ? { ordering } : {}),
   })
   try {

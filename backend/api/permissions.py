@@ -13,6 +13,16 @@ class IsStaffUser(BasePermission):
         return bool(user and user.is_authenticated and user.is_staff)
 
 
+class IsSuperUser(BasePermission):
+    """Доступ только для суперпользователей."""
+
+    message = "Требуются права суперпользователя."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        return bool(user and user.is_authenticated and user.is_superuser)
+
+
 class MustNotBePasswordChangeOverdue(BasePermission):
     """Блокирует доступ, если не сменили временный пароль после дедлайна (кроме смены пароля)."""
 
