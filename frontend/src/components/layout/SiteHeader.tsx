@@ -160,6 +160,7 @@ export function SiteHeader() {
   const mobileBarTabIdle = 'py-1.5 text-text-muted'
 
   return (
+    <>
     <header className="fabric-liquid-glass sticky top-0 z-50 border-b border-border bg-bg-base/90">
       <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:gap-4">
         <Link
@@ -353,6 +354,7 @@ export function SiteHeader() {
           </>
         ) : null}
       </AnimatePresence>
+    </header>
       <nav
         className={[
           'fixed inset-x-0 bottom-0 z-40 md:hidden',
@@ -459,6 +461,6 @@ export function SiteHeader() {
           </NavLink>
         </div>
       </nav>
-    </header>
+    </>
   )
 }
