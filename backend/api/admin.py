@@ -923,10 +923,10 @@ class CartOrderAdmin(ModelAdmin):
         (
             _("CRM: Битрикс24 (Astrum)"),
             {
-                "fields": ("crm_sync_summary", "resend_astrum_crm_button"),
+                "fields": ("resend_astrum_crm_button", "crm_sync_summary"),
                 "description": _(
-                    "После оформления заказ отправляется в приложение «Заявки с сайта»; ниже — итог и текст ошибки, если была. "
-                    "Ручная повторная отправка — кнопка внизу (при необходимости также команда retry_astrum_crm_orders)."
+                    "Ниже — кнопка с подписью «Отправить в CRM» (ручная повторная отправка в Astrum) и сводка статуса. "
+                    "По крону при ошибках: retry_astrum_crm_orders."
                 ),
             },
         ),
@@ -1248,7 +1248,7 @@ class CartOrderAdmin(ModelAdmin):
             )
         return HttpResponseRedirect(url_back)
 
-    @display(description=_("Повторная отправка в CRM (Astrum)"))
+    @display(description=_("Отправить в CRM"))
     def resend_astrum_crm_button(self, obj: CartOrder | None) -> str:
         if obj is None or not obj.pk:
             return "—"
@@ -1287,23 +1287,24 @@ class CartOrderAdmin(ModelAdmin):
             and (obj.bitrix_entity_id or "").strip()
             else format_html("")
         )
+        btn = escape(_("Отправить в CRM"))
         return format_html(
-            "{}{}"
-            '<form method="post" action="{}">'
+            "<div class=\"mb-0 max-w-xl\">{}{}"
+            "<form class=\"js-admin-cartorder-send-crm\" method=\"post\" action=\"{}\" id=\"admin_cartorder_resend_astrum\">"
             '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
-            '<button type="submit" class="inline-flex items-center gap-2 rounded-default border border-primary-600/40 '
-            "bg-primary-600 px-3 py-2 text-sm font-medium text-white "
-            "hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-500/40"
-            '">'
-            '<span class="material-symbols-outlined text-[18px]">sync</span>{}</button></form>'
-            '<p class="mt-2 max-w-2xl text-xs text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
+            "<button type=\"submit\" class=\"w-full min-h-[2.5rem] rounded-default border-0 font-semibold shadow-sm "
+            "text-white"
+            " bg-primary-600 px-5 py-2.5 text-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            " dark:ring-primary-500/50 sm:w-auto"
+            f">{btn}</button></form>"
+            "<p class=\"mt-2 text-xs text-font-subtle-light dark:text-font-subtle-dark\">{}</p></div>",
             warn_integr,
             warn_dup,
             url,
             get_token(request),
-            escape(_("Отправить в CRM")),
             _(
-                "Ручная повторная отправка в CRM (Astrum). При необходимости сначала поправьте e-mail, телефон и состав в заказе, затем нажмите."
+                "Повторная отправка заказа в CRM (приложение «Заявки с сайта»). "
+                "При необходимости сначала сохраните правки в заказе, затем нажмите кнопку."
             ),
         )
 
