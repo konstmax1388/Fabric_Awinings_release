@@ -2044,9 +2044,11 @@ class HomePageContentAdmin(ModelAdmin):
             {
                 "fields": tuple(hero_section_all_field_names(1)),
                 "description": _(
-                    "Первый экран — до шести слайдов. В разделе «Hero» (один пункт в меню) — слайды 1…6: тексты, "
-                    "чекбоксы видимости блоков, CTA, KPI, картинка/URL/видео. Раньше был единый «фон героя» — в базе он "
-                    "остаётся для совместимости API, пока у слайдов не заданы свои файлы. Галочками укажите, что показывать."
+                    "Слайд 1 (как и слайды 2–6 ниже): вверху — «слайд включён», затем чекбоксы «показать: верхний бейдж (строка над "
+                    "заголовком)», «строку доверия под кнопками», «метки доверия 1/2/3», «KPI 1/2/3» — и сразу под ними "
+                    "тексты (бейдж, УТП, заголовок, подзаголовок, доверие, KPI, CTA, попап, URL картинки/видео) и в конце "
+                    "строки — загрузка фона. Раньше был единый «фон героя» в базе — остаётся для API, пока на слайдах нет "
+                    "своих файлов. На витрине: «Тексты и блоки → Hero» (та же схема по слайдам) или эта полная карточка."
                 ),
             },
         ),
@@ -2054,6 +2056,9 @@ class HomePageContentAdmin(ModelAdmin):
             _("Hero: слайд 2"),
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
+                ),
                 "fields": tuple(hero_section_all_field_names(2)),
             },
         ),
@@ -2061,6 +2066,9 @@ class HomePageContentAdmin(ModelAdmin):
             _("Hero: слайд 3"),
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
+                ),
                 "fields": tuple(hero_section_all_field_names(3)),
             },
         ),
@@ -2068,6 +2076,9 @@ class HomePageContentAdmin(ModelAdmin):
             _("Hero: слайд 4"),
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
+                ),
                 "fields": tuple(hero_section_all_field_names(4)),
             },
         ),
@@ -2075,6 +2086,9 @@ class HomePageContentAdmin(ModelAdmin):
             _("Hero: слайд 5"),
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
+                ),
                 "fields": tuple(hero_section_all_field_names(5)),
             },
         ),
@@ -2082,6 +2096,9 @@ class HomePageContentAdmin(ModelAdmin):
             _("Hero: слайд 6"),
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
+                ),
                 "fields": tuple(hero_section_all_field_names(6)),
             },
         ),

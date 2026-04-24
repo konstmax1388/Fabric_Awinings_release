@@ -375,7 +375,7 @@ export function HeroSection() {
         ? 'min-h-[24rem] md:min-h-[30rem] lg:min-h-[34rem]'
         : 'min-h-[28rem] md:min-h-[35rem] lg:min-h-[40rem]'
 
-  const carouselNav =
+  const carouselArrows =
     slides.length > 1 && showCarouselArrows
       ? {
           prev: () =>
@@ -384,6 +384,9 @@ export function HeroSection() {
         }
       : null
 
+  const carouselArrowBtnClass =
+    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition hover:border-accent/45 hover:bg-white/12 hover:text-accent sm:h-9 sm:w-9'
+
   return (
     <section className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}>
       <HeroCallbackModal
@@ -391,34 +394,6 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={callbackModal}
       />
-      {carouselNav ? (
-        <div
-          className="pointer-events-none absolute inset-0 z-30 select-none"
-          role="group"
-          aria-label="Навигация по слайдам"
-        >
-          <button
-            type="button"
-            onClick={carouselNav.prev}
-            className="pointer-events-auto absolute left-1.5 top-1/2 z-30 -translate-y-1/2 rounded-full border border-white/25 bg-black/25 p-2.5 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/40 sm:left-3 sm:p-3"
-            aria-label="Предыдущий слайд"
-          >
-            <span className="block text-lg leading-none sm:text-xl" aria-hidden>
-              ‹
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={carouselNav.next}
-            className="pointer-events-auto absolute right-1.5 top-1/2 z-30 -translate-y-1/2 rounded-full border border-white/25 bg-black/25 p-2.5 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/40 sm:right-3 sm:p-3"
-            aria-label="Следующий слайд"
-          >
-            <span className="block text-lg leading-none sm:text-xl" aria-hidden>
-              ›
-            </span>
-          </button>
-        </div>
-      ) : null}
       {shouldShowVideo ? (
         <motion.video
           key={`hero-video-${currentSlide}`}
@@ -491,7 +466,11 @@ export function HeroSection() {
         animate={{ x: depth.textX, y: depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
-        <div className="max-w-2xl min-w-0">
+        <div
+          className={`max-w-2xl min-w-0 ${
+            slides.length > 1 ? 'pb-4 sm:pb-6' : ''
+          }`}
+        >
           {showEyebrowBlock && eyebrow ? (
             <motion.p
               className="fabric-hero-badge"
@@ -659,33 +638,87 @@ export function HeroSection() {
               ) : null}
             </motion.div>
           ) : null}
-          {slides.length > 1 ? (
-            <div className="mt-6 flex items-center gap-2">
-              {slides.map((_, idx) => (
-                <button
-                  key={`hero-slide-dot-${idx}`}
-                  type="button"
-                  aria-label={`Слайд ${idx + 1}`}
-                  aria-pressed={idx === currentSlide}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`h-2.5 rounded-full transition-all ${
-                    idx === currentSlide ? 'w-8 bg-accent' : `w-2.5 ${textClasses.slideDotOff}`
-                  }`}
-                />
-              ))}
-            </div>
-          ) : null}
         </div>
       </motion.div>
-      {slides.length > 1 && showCarouselProgress && !reduce ? (
+      {slides.length > 1 ? (
         <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-1 overflow-hidden rounded-b-[24px] bg-white/15"
-          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 flex flex-col items-stretch"
+          role="group"
+          aria-label="Слайды hero: точки и перелистывание"
         >
-          <div
-            className="h-full w-full origin-left bg-accent"
-            style={{ transform: `scaleX(${barProgress})` }}
-          />
+          <div className="pointer-events-auto flex justify-center px-3 pb-2.5 sm:px-4">
+            <div className="fabric-liquid-glass-soft inline-flex max-w-full min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-black/25 px-2 py-1.5 shadow-sm backdrop-blur-sm sm:gap-3 sm:px-2.5 sm:py-2">
+              {carouselArrows ? (
+                <button
+                  type="button"
+                  onClick={carouselArrows.prev}
+                  className={carouselArrowBtnClass}
+                  aria-label="Предыдущий слайд"
+                >
+                  <svg
+                    className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+              ) : null}
+              <div className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2">
+                {slides.map((_, idx) => (
+                  <button
+                    key={`hero-slide-dot-${idx}`}
+                    type="button"
+                    aria-label={`Слайд ${idx + 1}`}
+                    aria-pressed={idx === currentSlide}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`h-2.5 shrink-0 rounded-full transition-all ${
+                      idx === currentSlide
+                        ? 'w-8 bg-accent'
+                        : `w-2.5 ${textClasses.slideDotOff}`
+                    }`}
+                  />
+                ))}
+              </div>
+              {carouselArrows ? (
+                <button
+                  type="button"
+                  onClick={carouselArrows.next}
+                  className={carouselArrowBtnClass}
+                  aria-label="Следующий слайд"
+                >
+                  <svg
+                    className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {showCarouselProgress && !reduce ? (
+            <div
+              className="h-1 w-full overflow-hidden rounded-b-[24px] bg-white/12"
+              aria-hidden
+            >
+              <div
+                className="h-full w-full origin-left bg-accent/95"
+                style={{ transform: `scaleX(${barProgress})` }}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
