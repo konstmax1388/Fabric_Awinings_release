@@ -10,7 +10,7 @@ from typing import Any
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
-from config.hero_block_fields import hero_section_all_field_names
+from config.hero_block_fields import all_hero_section_field_names
 
 # slug → заголовок fieldset в админке, короткий заголовок в меню, иконка Material Symbols.
 SECTIONS: dict[str, dict[str, Any]] = {
@@ -19,34 +19,9 @@ SECTIONS: dict[str, dict[str, Any]] = {
         "nav": _("SEO и микроразметка"),
         "icon": "travel_explore",
     },
-    "hero1": {
+    "hero": {
         "title": _("Hero: слайд 1 (первый экран)"),
-        "nav": _("Hero, слайд 1"),
-        "icon": "imagesmode",
-    },
-    "hero2": {
-        "title": _("Hero: слайд 2"),
-        "nav": _("Hero, слайд 2"),
-        "icon": "view_carousel",
-    },
-    "hero3": {
-        "title": _("Hero: слайд 3"),
-        "nav": _("Hero, слайд 3"),
-        "icon": "view_carousel",
-    },
-    "hero4": {
-        "title": _("Hero: слайд 4"),
-        "nav": _("Hero, слайд 4"),
-        "icon": "view_carousel",
-    },
-    "hero5": {
-        "title": _("Hero: слайд 5"),
-        "nav": _("Hero, слайд 5"),
-        "icon": "view_carousel",
-    },
-    "hero6": {
-        "title": _("Hero: слайд 6"),
-        "nav": _("Hero, слайд 6"),
+        "nav": _("Hero"),
         "icon": "view_carousel",
     },
     "ps": {
@@ -116,12 +91,7 @@ SECTION_ORDER: tuple[str, ...] = tuple(SECTIONS.keys())
 # Виртуальные поля формы главной (и файлы hero_slide_*) по блокам.
 SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "meta": ("meta_title", "meta_description", "meta_org_name", "meta_org_description"),
-    "hero1": hero_section_all_field_names(1),
-    "hero2": hero_section_all_field_names(2),
-    "hero3": hero_section_all_field_names(3),
-    "hero4": hero_section_all_field_names(4),
-    "hero5": hero_section_all_field_names(5),
-    "hero6": hero_section_all_field_names(6),
+    "hero": all_hero_section_field_names(),
     "ps": (
         "ps_heading",
         "ps_subheading",

@@ -25,6 +25,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
 from django.contrib.admin.utils import quote, unquote
 
+from config.hero_block_fields import hero_section_all_field_names
 from config.homepage_nav import (
     SECTION_FIELDS as HP_SECTION_FIELDS,
     SECTION_ORDER as HP_SECTION_ORDER,
@@ -2030,50 +2031,50 @@ class HomePageContentAdmin(ModelAdmin):
             },
         ),
         hp_fieldset(
-            "hero1",
+            "hero",
             {
-                "fields": HP_SECTION_FIELDS["hero1"],
+                "fields": tuple(hero_section_all_field_names(1)),
                 "description": _(
-                    "Один из шести слайдов первого экрана. Раньше был отдельный «фон героя» — теперь фон и медиа задаются "
-                    "у каждого слайда (картинка/URL и при необходимости видео). Галочками отмечайте, какие блоки текста "
-                    "и сам слайд показывать на витрине. Старое поле «фон героя» в базе не выводится в форме: оно остаётся "
-                    "только для обратной совместимости API, пока на всех слайдах не заданы свои картинки."
+                    "Первый экран — до шести слайдов. В форме — раздел «Hero» (один пункт в меню): внутри группы "
+                    "«слайд 1»…«слайд 6» с полным текстом, CTA, статами, картинкой/URL/видео. Раньше был единый «фон героя»"
+                    " — в базе он остаётся для совместимости API, пока у всех слайдов не заданы свои картинки. Галочками "
+                    "укажите, какие фрагменты и весь слайд показывать на витрине."
                 ),
             },
         ),
-        hp_fieldset(
-            "hero2",
+        (
+            _("Hero: слайд 2"),
             {
                 "classes": ("collapse",),
-                "fields": HP_SECTION_FIELDS["hero2"],
+                "fields": tuple(hero_section_all_field_names(2)),
             },
         ),
-        hp_fieldset(
-            "hero3",
+        (
+            _("Hero: слайд 3"),
             {
                 "classes": ("collapse",),
-                "fields": HP_SECTION_FIELDS["hero3"],
+                "fields": tuple(hero_section_all_field_names(3)),
             },
         ),
-        hp_fieldset(
-            "hero4",
+        (
+            _("Hero: слайд 4"),
             {
                 "classes": ("collapse",),
-                "fields": HP_SECTION_FIELDS["hero4"],
+                "fields": tuple(hero_section_all_field_names(4)),
             },
         ),
-        hp_fieldset(
-            "hero5",
+        (
+            _("Hero: слайд 5"),
             {
                 "classes": ("collapse",),
-                "fields": HP_SECTION_FIELDS["hero5"],
+                "fields": tuple(hero_section_all_field_names(5)),
             },
         ),
-        hp_fieldset(
-            "hero6",
+        (
+            _("Hero: слайд 6"),
             {
                 "classes": ("collapse",),
-                "fields": HP_SECTION_FIELDS["hero6"],
+                "fields": tuple(hero_section_all_field_names(6)),
             },
         ),
         hp_fieldset(

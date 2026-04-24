@@ -53,3 +53,11 @@ def hero_section_virtual_field_names(n: int) -> tuple[str, ...]:
 
 def hero_section_all_field_names(n: int) -> tuple[str, ...]:
     return (*hero_section_virtual_field_names(n), f"hero_slide_{n}_image")
+
+
+def all_hero_section_field_names() -> tuple[str, ...]:
+    return tuple(
+        name
+        for n in range(1, HERO_SLIDE_COUNT + 1)
+        for name in hero_section_all_field_names(n)
+    )
