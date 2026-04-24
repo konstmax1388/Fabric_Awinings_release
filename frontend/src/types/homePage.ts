@@ -77,6 +77,8 @@ export type HomePayload = {
     orgName?: string
     orgDescription?: string
   }
+  /** Порядок и включение блоков главной (админка «Порядок и включение»). */
+  sectionLayout?: Array<{ id: string; enabled?: boolean }>
   hero?: {
     schemaVersion?: number
     /** Автосмена слайдов, мс (3–120 с в админке) */

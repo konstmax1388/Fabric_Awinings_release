@@ -26,6 +26,7 @@ from unfold.widgets import UnfoldAdminPasswordWidget
 from django.contrib.admin.utils import quote, unquote
 
 from config.hero_block_fields import hero_carousel_field_names, hero_section_all_field_names
+from config.home_section_layout import HOME_SECTION_LABELS, normalize_section_layout
 from config.homepage_nav import (
     SECTION_FIELDS as HP_SECTION_FIELDS,
     SECTION_ORDER as HP_SECTION_ORDER,
@@ -40,6 +41,7 @@ from config.sitesettings_nav import (
 )
 
 from .admin_forms import ProductAdminForm, teasers_list_for_save
+from .home_defaults import merged_home_payload
 from .home_page_admin_form import (
     HomePageContentAdminForm,
     HomePageSectionForm,
@@ -88,16 +90,25 @@ def _sitesettings_section_nav(current_slug: str) -> list[dict[str, Any]]:
     ]
 
 
-def _homepage_section_nav(current_slug: str) -> list[dict[str, Any]]:
-    return [
+def _homepage_section_nav(current: str) -> list[dict[str, Any]]:
+    """current: slug раздела (meta, hero, …) или \"layout\" для страницы порядка секций."""
+    layout_url = reverse("admin:api_homepagecontent_section_layout")
+    items: list[dict[str, Any]] = [
         {
-            "slug": s,
-            "title": HP_SECTIONS[s]["nav"],
-            "url": reverse("admin:api_homepagecontent_section", kwargs={"slug": s}),
-            "current": s == current_slug,
+            "title": str(_("Порядок и включение")),
+            "url": layout_url,
+            "current": current == "layout",
         }
-        for s in HP_SECTION_ORDER
     ]
+    for s in HP_SECTION_ORDER:
+        items.append(
+            {
+                "title": HP_SECTIONS[s]["nav"],
+                "url": reverse("admin:api_homepagecontent_section", kwargs={"slug": s}),
+                "current": s == current,
+            }
+        )
+    return items
 
 
 def _sitesettings_section_modelform_factory(request, fields: tuple[str, ...]):
@@ -2484,12 +2495,52 @@ class HomePageContentAdmin(ModelAdmin):
         info = self.opts.app_label, self.opts.model_name
         return [
             path(
+                "section-layout/",
+                self.admin_site.admin_view(self.section_layout_view),
+                name="%s_%s_section_layout" % info,
+            ),
+            path(
                 "section/<slug>/",
                 self.admin_site.admin_view(self.section_view),
                 name="%s_%s_section" % info,
             ),
             *super().get_urls(),
         ]
+
+    def section_layout_view(self, request):
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+        obj = HomePageContent.get_solo()
+        if request.method == "POST":
+            try:
+                data = json.loads((request.body or b"{}").decode() or "{}")
+            except (json.JSONDecodeError, TypeError, ValueError, UnicodeDecodeError):
+                return JsonResponse({"ok": False, "error": "json"}, status=400)
+            raw = data.get("sectionLayout") if isinstance(data, dict) else None
+            layout = normalize_section_layout(raw)
+            base = obj.payload if isinstance(obj.payload, dict) else {}
+            new_payload = {**base, "sectionLayout": layout}
+            obj.payload = new_payload
+            obj.save(update_fields=["payload"])
+            messages.success(request, _("Сохранено: порядок и включение секций."))
+            return JsonResponse({"ok": True, "sectionLayout": layout})
+        layout = merged_home_payload(obj.payload)["sectionLayout"]
+        labels = {k: str(v) for k, v in HOME_SECTION_LABELS.items()}
+        context = {
+            **self.admin_site.each_context(request),
+            "title": str(_("Порядок и включение секций главной")),
+            "section_title": str(_("Порядок и включение")),
+            "opts": self.model._meta,
+            "section_layout_data": {"layout": layout, "labels": labels},
+            "section_layout_post_url": reverse("admin:api_homepagecontent_section_layout"),
+            "section_index_url": reverse(
+                "admin:api_homepagecontent_section",
+                kwargs={"slug": HP_SECTION_ORDER[0]},
+            ),
+            "csrf_token": get_token(request),
+            "section_nav": _homepage_section_nav("layout"),
+        }
+        return TemplateResponse(request, "admin/api/home_section_layout.html", context)
 
     def section_view(self, request, slug: str):
         if slug not in HP_SECTION_FIELDS:

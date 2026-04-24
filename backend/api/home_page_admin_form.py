@@ -10,6 +10,8 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminImageFieldWidget
 
+from config.home_section_layout import normalize_section_layout
+
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
 from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
 from .home_hero_v2 import _cd_bool, apply_hero_v2_initial, build_hero_slide_from_cd, collect_hero_v2_class_fields
@@ -1145,7 +1147,11 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         self.initial.setdefault("ui_product_related_subtitle_prefix", ui.get("productRelatedSubtitlePrefix", ""))
         self.initial.setdefault("ui_product_material_map_subtitle_fallback", ui.get("productMaterialMapSubtitleFallback", ""))
 
-    def _build_payload(self, cd: dict[str, Any]) -> dict[str, Any]:
+    def _build_payload(
+        self,
+        cd: dict[str, Any],
+        previous_payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         base = default_home_payload()
         base["meta"] = {
             "title": cd["meta_title"].strip(),
@@ -1446,6 +1452,10 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "productRelatedSubtitlePrefix": cd["ui_product_related_subtitle_prefix"].strip(),
             "productMaterialMapSubtitleFallback": cd["ui_product_material_map_subtitle_fallback"].strip(),
         }
+        if previous_payload and isinstance(previous_payload, dict) and "sectionLayout" in previous_payload:
+            base["sectionLayout"] = normalize_section_layout(previous_payload.get("sectionLayout"))
+        else:
+            base["sectionLayout"] = normalize_section_layout(base.get("sectionLayout"))
         return base
 
     def clean(self):
@@ -1526,7 +1536,10 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.payload = self._build_payload(self.cleaned_data)
+        previous_payload: dict[str, Any] | None = None
+        if instance and getattr(instance, "pk", None) and isinstance(getattr(instance, "payload", None), dict):
+            previous_payload = instance.payload
+        instance.payload = self._build_payload(self.cleaned_data, previous_payload=previous_payload)
         if commit:
             instance.save()
         return instance
@@ -1583,10 +1596,13 @@ def _apply_image_field(instance: HomePageContent, cleaned_data: dict[str, Any], 
 def apply_homepage_section_save(instance: HomePageContent, cleaned_data: dict[str, Any]) -> None:
     """Обновить payload и при необходимости файлы модели после сохранения блока."""
     full_cd = full_cleaned_dict_for_home_payload(instance)
+    previous_payload: dict[str, Any] | None = (
+        instance.payload if isinstance(getattr(instance, "payload", None), dict) else None
+    )
     payload_keys = {k: v for k, v in cleaned_data.items() if k not in _MODEL_IMAGE_FIELDS}
     full_cd.update(payload_keys)
     ghost = HomePageContentAdminForm()
-    instance.payload = ghost._build_payload(full_cd)
+    instance.payload = ghost._build_payload(full_cd, previous_payload=previous_payload)
     for fname in _MODEL_IMAGE_FIELDS:
         _apply_image_field(instance, cleaned_data, fname)
     instance.save()

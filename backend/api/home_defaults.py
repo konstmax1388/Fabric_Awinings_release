@@ -6,11 +6,14 @@ import re
 from copy import deepcopy
 from typing import Any
 
+from config.home_section_layout import default_section_layout, normalize_section_layout
+
 from .home_hero_v2 import default_hero_v2_block, ensure_hero_v2
 
 
 def default_home_payload() -> dict[str, Any]:
     return {
+        "sectionLayout": default_section_layout(),
         "meta": {
             "title": "Фабрика Тентов — тенты, навесы, шатры",
             "description": (
@@ -485,6 +488,7 @@ def _normalize_hero_v2(home: dict[str, Any]) -> None:
 
 def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
+    out["sectionLayout"] = normalize_section_layout(out.get("sectionLayout"))
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)
@@ -497,4 +501,5 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)
+    out["sectionLayout"] = normalize_section_layout(out.get("sectionLayout"))
     return out

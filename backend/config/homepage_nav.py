@@ -438,7 +438,13 @@ def homepage_sidebar_block_items() -> list[dict[str, Any]]:
 
     reverse_lazy — см. site_settings_sidebar_block_items (Unfold + active).
     """
-    items: list[dict[str, Any]] = []
+    items: list[dict[str, Any]] = [
+        {
+            "title": _("Порядок и включение"),
+            "icon": "reorder",
+            "link": reverse_lazy("admin:api_homepagecontent_section_layout"),
+        }
+    ]
     for slug in SECTION_ORDER:
         meta = SECTIONS[slug]
         items.append(

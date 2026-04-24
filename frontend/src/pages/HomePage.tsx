@@ -16,12 +16,17 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { orderedVisibleHomeSectionIds, type HomeSectionId } from '../lib/homePageLayout'
 
 export function HomePage() {
   const site = publicSiteUrl()
   const { home, siteName, calculatorEnabled, portfolioEnabled, phone, address, seoDefaults } =
     useSiteSettings()
   const meta = home?.meta
+  const sectionOrder = useMemo(
+    () => orderedVisibleHomeSectionIds(home, { calculatorEnabled, portfolioEnabled }),
+    [home, calculatorEnabled, portfolioEnabled],
+  )
 
   const orgJsonLd = useMemo(() => {
     const desc =
@@ -73,6 +78,41 @@ export function HomePage() {
     seoDefaults.defaultMetaDescription?.trim() ||
     'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.'
 
+  const sectionById = (id: HomeSectionId) => {
+    switch (id) {
+      case 'hero':
+        return (
+          <div key="hero" className="pt-4 md:pt-6">
+            <HeroSection />
+          </div>
+        )
+      case 'purchasePaths':
+        return <PurchasePathsSection key="purchasePaths" />
+      case 'problemSolution':
+        return <ProblemSolutionSection key="problemSolution" />
+      case 'processTimeline':
+        return <ProcessTimelineSection key="processTimeline" />
+      case 'tentTypes':
+        return <TentTypesSection key="tentTypes" />
+      case 'featured':
+        return <FeaturedProductsSection key="featured" />
+      case 'calculator':
+        return <PriceCalculatorSection key="calculator" />
+      case 'portfolio':
+        return <PortfolioSection key="portfolio" />
+      case 'whyUs':
+        return <WhyUsSection key="whyUs" />
+      case 'reviews':
+        return <ReviewsSection key="reviews" />
+      case 'blog':
+        return <BlogPreviewSection key="blog" />
+      case 'mapForm':
+        return <MapFormSection key="mapForm" />
+      default:
+        return null
+    }
+  }
+
   return (
     <>
       <Helmet>
@@ -83,22 +123,7 @@ export function HomePage() {
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>
       <SiteHeader />
-      <main className="fabric-page min-w-0 overflow-x-clip">
-        <div className="pt-4 md:pt-6">
-          <HeroSection />
-        </div>
-        <PurchasePathsSection />
-        <ProblemSolutionSection />
-        <ProcessTimelineSection />
-        <TentTypesSection />
-        <FeaturedProductsSection />
-        {calculatorEnabled ? <PriceCalculatorSection /> : null}
-        {portfolioEnabled ? <PortfolioSection /> : null}
-        <WhyUsSection />
-        <ReviewsSection />
-        <BlogPreviewSection />
-        <MapFormSection />
-      </main>
+      <main className="fabric-page min-w-0 overflow-x-clip">{sectionOrder.map(sectionById)}</main>
       <SiteFooter />
     </>
   )
