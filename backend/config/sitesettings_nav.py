@@ -102,6 +102,7 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "analytics_yandex_enabled",
         "analytics_head_snippet",
         "analytics_body_start_snippet",
+        "body_end_snippet",
         "seo_allow_indexing",
         "seo_region",
         "seo_default_meta_description",

@@ -49,6 +49,7 @@ urlpatterns = [
     path("leads/callback/", views.CallbackLeadCreateView.as_view(), name="lead-callback"),
     path("leads/review/", views.ReviewSubmissionCreateView.as_view(), name="lead-review"),
     path("leads/cart/", views.CartOrderCreateView.as_view(), name="lead-cart"),
+    path("leads/one-click/", views.OneClickOrderCreateView.as_view(), name="lead-one-click"),
     path("webhooks/ozon-pay/", OzonPayWebhookView.as_view(), name="webhook-ozon-pay"),
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
     path("auth/token/", TokenObtainPairThrottledView.as_view(), name="token_obtain_pair"),

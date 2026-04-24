@@ -42,6 +42,7 @@ const AccountAddressesPage = lazy(() =>
 )
 const ProductPage = lazy(() => import('./pages/ProductPage').then((m) => ({ default: m.ProductPage })))
 const CatalogPage = lazy(() => import('./pages/CatalogPage').then((m) => ({ default: m.CatalogPage })))
+const SearchPage = lazy(() => import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })))
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })))
 const ContactsPage = lazy(() => import('./pages/ContactsPage').then((m) => ({ default: m.ContactsPage })))
 const BlogPage = lazy(() => import('./pages/BlogPage').then((m) => ({ default: m.BlogPage })))
@@ -109,6 +110,7 @@ const router = createBrowserRouter([
       },
       { path: '/catalog/:slug', element: <ProductPage /> },
       { path: '/catalog', element: <CatalogPage /> },
+      { path: '/search', element: <SearchPage /> },
       { path: '/portfolio', element: <PortfolioPage /> },
       { path: '/contacts', element: <ContactsPage /> },
       { path: '/blog', element: <BlogPage /> },

@@ -401,6 +401,10 @@ class CallbackLead(models.Model):
 class CartOrder(models.Model):
     """Локальное зеркало заказа. Синхронизация с Б24: приложение Astrum «Заявки с сайта» (см. docs/astrum-bitrix-crm.md)."""
 
+    class OrderSource(models.TextChoices):
+        CHECKOUT = "checkout", "Оформление (корзина)"
+        ONE_CLICK = "one_click", "Заказ в 1 клик"
+
     class FulfillmentStatus(models.TextChoices):
         RECEIVED = "received", "Принят с сайта"
         AWAITING_PAYMENT = "awaiting_payment", "Ожидает оплаты"
@@ -431,6 +435,13 @@ class CartOrder(models.Model):
         ERROR = "error", "Ошибка отправки"
 
     order_ref = models.CharField("Номер заказа", max_length=40, unique=True, db_index=True)
+    order_source = models.CharField(
+        "Источник заказа",
+        max_length=20,
+        choices=OrderSource.choices,
+        default=OrderSource.CHECKOUT,
+        db_index=True,
+    )
     customer_name = models.CharField("Имя покупателя", max_length=120)
     customer_phone = models.CharField("Телефон", max_length=40)
     customer_email = models.EmailField("Email", blank=True)
@@ -704,6 +715,12 @@ class SiteSettings(models.Model):
         blank=True,
         default="",
         help_text="HTML/JS, который будет вставлен в начало <body> на витрине.",
+    )
+    body_end_snippet = models.TextField(
+        "Сниппет перед </body> (виджет CRM, онлайн-чат)",
+        blank=True,
+        default="",
+        help_text="HTML/JS, в конец <body> на витрине (например, код кнопки с сайта Битрикс24).",
     )
     seo_allow_indexing = models.BooleanField(
         "SEO: разрешить индексацию",

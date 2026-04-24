@@ -50,6 +50,7 @@ class CalculatorLeadStaffSerializer(serializers.ModelSerializer):
 
 class CartOrderStaffSerializer(serializers.ModelSerializer):
     orderRef = serializers.CharField(source="order_ref", read_only=True)
+    orderSource = serializers.CharField(source="order_source", read_only=True)
     lines = serializers.JSONField(read_only=True)
     totalApprox = serializers.IntegerField(source="total_approx", read_only=True)
     managerLetter = serializers.CharField(source="manager_letter", read_only=True)
@@ -112,6 +113,7 @@ class CartOrderStaffSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "orderRef",
+            "orderSource",
             "customerName",
             "customerPhone",
             "customerEmail",
@@ -137,7 +139,7 @@ class CartOrderStaffSerializer(serializers.ModelSerializer):
             "bitrixSyncError",
             "bitrixSyncAttempts",
         )
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "orderSource")
 
     def to_representation(self, instance: CartOrder) -> dict[str, Any]:
         data = super().to_representation(instance)

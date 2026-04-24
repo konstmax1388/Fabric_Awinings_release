@@ -13,11 +13,13 @@ import { HeroCallbackModal } from '../components/home/HeroCallbackModal'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { OneClickOrderModal } from '../components/order/OneClickOrderModal'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../config/site'
 import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
 import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
+import { orderLineFromProduct } from '../lib/orderLinePayload'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
 import type { HomePayload } from '../types/homePage'
@@ -40,6 +42,12 @@ function ProductCartControls({
   const { addProduct } = useCart()
   const [qty, setQty] = useState(1)
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)
+  const [oneClickOpen, setOneClickOpen] = useState(false)
+  const oneLine = useMemo(
+    () => (product ? orderLineFromProduct(product, variant, qty) : null),
+    [product, variant, qty],
+  )
+  const oneClickLines = oneLine ? [oneLine] : []
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -75,6 +83,19 @@ function ProductCartControls({
       >
         {ui?.productAddToCart || 'В корзину'}
       </motion.button>
+      <button
+        type="button"
+        onClick={() => setOneClickOpen(true)}
+        className="inline-flex h-12 min-h-[44px] flex-1 items-center justify-center rounded-[40px] border-2 border-accent px-6 font-body font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)] sm:flex-none sm:px-8"
+      >
+        Купить в 1 клик
+      </button>
+      <OneClickOrderModal
+        open={oneClickOpen}
+        onClose={() => setOneClickOpen(false)}
+        lines={oneClickLines}
+        title="Купить в 1 клик"
+      />
       {addedPromptOpen && (
         createPortal(
           <div className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+6rem)] z-[520] mx-auto w-[min(560px,calc(100%-2rem))] rounded-2xl border border-border-light bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.24)] md:inset-x-auto md:bottom-4 md:right-6 md:mx-0 md:w-[500px]">

@@ -902,6 +902,7 @@ class CartOrderAdmin(ModelAdmin):
     search_fields = ("order_ref", "customer_name", "customer_phone", "customer_email", "bitrix_entity_id")
     readonly_fields = (
         "order_ref",
+        "order_source",
         "lines_table",
         "total_approx_display",
         "lines",
@@ -916,10 +917,10 @@ class CartOrderAdmin(ModelAdmin):
         (
             _("Заказ с сайта"),
             {
-                "fields": ("order_ref", "lines_table", "total_approx_display", "created_at"),
+                "fields": ("order_ref", "order_source", "lines_table", "total_approx_display", "created_at"),
                 "description": _(
-                    "Состав и сумма пришли с витрины. Ниже в свёрнутом блоке «Отладка» — те же позиции сырьём (JSON), "
-                    "как их передаёт сайт (англ. имена полей: title, qty, priceFrom, slug, productId, variantId)."
+                    "Состав и сумма пришли с витрины. «Заказ в 1 клик» — с карточки товара или корзины без доставки. "
+                    "Ниже в «Отладка» — JSON строк (title, qty, priceFrom, slug, productId, variantId)."
                 ),
             },
         ),
@@ -1566,6 +1567,7 @@ class SiteSettingsAdmin(ModelAdmin):
                     "analytics_yandex_enabled",
                     "analytics_head_snippet",
                     "analytics_body_start_snippet",
+                    "body_end_snippet",
                     "seo_allow_indexing",
                     "seo_region",
                     "seo_default_meta_description",
@@ -1574,8 +1576,8 @@ class SiteSettingsAdmin(ModelAdmin):
                 ),
                 "description": _(
                     "Настройки аналитики и базовых SEO-параметров витрины: включение Метрики через код-сниппет, "
-                    "индексация, регион и суффикс заголовков. Сниппеты можно вставить в начало <head> "
-                    "и сразу после <body> без правки кода."
+                    "индексация, регион и суффикс заголовков. Сниппеты: начало <head>, начало <body> и конец <body> "
+                    "(к виджету CRM / онлайн-чату) без правки кода витрины."
                 ),
             },
         ),

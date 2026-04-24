@@ -234,6 +234,17 @@ export function SiteHeader() {
           <NavLink to="/catalog" className={navLinkClass}>
             {navCatalogLabel}
           </NavLink>
+          <NavLink
+            to="/search"
+            className={({ isActive }) => `${navLinkClass({ isActive })} inline-flex items-center gap-1.5`}
+            aria-label="Поиск по каталогу"
+            title="Поиск"
+          >
+            <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden>
+              search
+            </span>
+            <span className="hidden lg:inline">Поиск</span>
+          </NavLink>
           {portfolioEnabled ? (
             <NavLink to="/portfolio" className={navLinkClass}>
               {navPortfolioLabel}
@@ -357,6 +368,9 @@ export function SiteHeader() {
                   </NavLink>
                   <NavLink to="/catalog" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
                     {navCatalogLabel}
+                  </NavLink>
+                  <NavLink to="/search" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
+                    Поиск
                   </NavLink>
                   {portfolioEnabled ? (
                     <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>

@@ -641,6 +641,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
 
         return CartOrder.objects.create(
             order_ref=ref,
+            order_source=CartOrder.OrderSource.CHECKOUT,
             user=user,
             customer_name=customer.get("name", "").strip(),
             customer_phone=customer.get("phone", "").strip(),
@@ -660,6 +661,97 @@ class CartOrderCreateSerializer(serializers.Serializer):
             delivery_snapshot=delivery_snapshot,
             acquiring_payload=acquiring if isinstance(acquiring, dict) else {},
             cdek_sync_status=cdek_sync_status,
+        )
+
+
+class OneClickOrderCreateSerializer(serializers.Serializer):
+    """Заказ в 1 клик: только контакт и товарные строки (без доставки и оплаты на сайте)."""
+
+    customer = serializers.DictField()
+    lines = CartLineInputSerializer(many=True)
+    totalApprox = serializers.IntegerField(min_value=0)
+
+    def validate(self, attrs):
+        from .models import SiteSettings
+        from .services.checkout_pricing import build_trusted_checkout_lines, goods_subtotal_from_lines
+
+        s = SiteSettings.get_solo()
+        lines = attrs.get("lines") or []
+        if not lines:
+            raise serializers.ValidationError({"lines": ["Нужна хотя бы одна позиция."]})
+        try:
+            trusted_lines = build_trusted_checkout_lines([dict(x) for x in lines])
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+        attrs["_trusted_lines"] = trusted_lines
+        goods_sub = goods_subtotal_from_lines(trusted_lines)
+        min_rub = int(s.checkout_minimum_order_rub or 0)
+        if min_rub > 0 and goods_sub < min_rub:
+            est = f"{min_rub:,}".replace(",", " ")
+            raise serializers.ValidationError(f"Минимальная сумма заказа (товары) — {est} ₽.")
+        ta = int(attrs.get("totalApprox") or 0)
+        if ta != goods_sub:
+            raise serializers.ValidationError(
+                {"totalApprox": "Сумма не совпала с расчётом по каталогу. Обновите страницу."}
+            )
+        return attrs
+
+    def validate_customer(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Некорректные данные")
+        if (value.get("website") or "").strip():
+            raise serializers.ValidationError("Проверка не пройдена")
+        name = clean_person_name(value.get("name") or "")
+        phone = normalize_ru_phone(value.get("phone") or "")
+        email = clean_customer_order_email(value.get("email") or "")
+        return {
+            "name": name,
+            "phone": phone,
+            "email": email,
+        }
+
+    def create(self, validated_data):
+        from .models import SiteSettings
+        from .services.checkout_pricing import goods_subtotal_from_lines
+        from .services.letters import build_one_click_letters
+        from .services.order_ref import generate_order_ref
+
+        request = self.context.get("request")
+        user = None
+        if request and request.user.is_authenticated:
+            user = request.user
+
+        ref = generate_order_ref()
+        while CartOrder.objects.filter(order_ref=ref).exists():
+            ref = generate_order_ref()
+        customer = validated_data["customer"]
+        lines_plain = validated_data.pop("_trusted_lines", None) or [dict(x) for x in validated_data["lines"]]
+        goods_sub = goods_subtotal_from_lines(lines_plain)
+        _ = SiteSettings.get_solo()
+
+        manager_letter, client_ack = build_one_click_letters(ref, customer, lines_plain, goods_sub)
+        return CartOrder.objects.create(
+            order_ref=ref,
+            order_source=CartOrder.OrderSource.ONE_CLICK,
+            user=user,
+            customer_name=customer.get("name", "").strip(),
+            customer_phone=customer.get("phone", "").strip(),
+            customer_email=(customer.get("email") or "").strip(),
+            customer_comment="",
+            lines=lines_plain,
+            total_approx=goods_sub,
+            goods_subtotal_approx=goods_sub,
+            delivery_price_rub=0,
+            manager_letter=manager_letter,
+            client_ack=client_ack,
+            delivery_method=CartOrder.DeliveryMethod.PICKUP,
+            payment_method=CartOrder.PaymentMethod.CASH_PICKUP,
+            payment_status=CartOrder.PaymentStatus.NOT_REQUIRED,
+            payment_provider="",
+            delivery_provider="pickup",
+            delivery_snapshot={},
+            acquiring_payload={},
+            cdek_sync_status=CartOrder.CdekSyncStatus.NOT_REQUIRED,
         )
 
 
@@ -893,6 +985,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "enabled": bool(obj.analytics_yandex_enabled),
             "headSnippet": str(obj.analytics_head_snippet or "").strip(),
             "bodyStartSnippet": str(obj.analytics_body_start_snippet or "").strip(),
+            "bodyEndSnippet": str(obj.body_end_snippet or "").strip(),
         }
 
     def get_seoDefaults(self, obj: SiteSettings) -> dict:

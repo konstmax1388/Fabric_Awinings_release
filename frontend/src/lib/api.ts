@@ -662,6 +662,8 @@ export type AnalyticsYandexDto = {
   enabled: boolean
   headSnippet?: string
   bodyStartSnippet?: string
+  /** HTML/JS в конец body (виджет CRM) */
+  bodyEndSnippet?: string
 }
 
 export type SeoDefaultsDto = {
@@ -999,6 +1001,7 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
           enabled: a.enabled === true,
           headSnippet: typeof a.headSnippet === 'string' ? a.headSnippet : '',
           bodyStartSnippet: typeof a.bodyStartSnippet === 'string' ? a.bodyStartSnippet : '',
+          bodyEndSnippet: typeof a.bodyEndSnippet === 'string' ? a.bodyEndSnippet : '',
         }
       })(),
       seoDefaults: (() => {
@@ -1393,5 +1396,52 @@ export async function postCartOrder(
     return { ok: true, ...data }
   } catch {
     return { ok: false, detail: 'Ошибка сети при оформлении заказа' }
+  }
+}
+
+export async function postOneClickOrder(body: {
+  customer: { name: string; phone: string; email: string; website?: string }
+  lines: {
+    productId: string
+    variantId?: string
+    slug: string
+    title: string
+    priceFrom: number
+    qty: number
+    image?: string
+    ozonSku?: number
+    cdekWeightGrams?: number | null
+    cdekLengthCm?: number | null
+    cdekWidthCm?: number | null
+    cdekHeightCm?: number | null
+  }[]
+  totalApprox: number
+}): Promise<{ ok: true; orderRef: string; clientAck: string } | { ok: false; detail: string }> {
+  try {
+    const headers: Record<string, string> = withCsrf({
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    })
+    const r = await fetch(`${apiBase()}/api/leads/one-click/`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+    if (!r.ok) {
+      const rForText = r.clone()
+      const err = await parseJsonAny<Record<string, unknown>>(r)
+      const detailRaw =
+        firstApiErrorText(err?.detail) ??
+        firstApiErrorText(err?.non_field_errors) ??
+        firstApiErrorText(err) ??
+        (await parseTextAny(rForText)) ??
+        ''
+      return { ok: false, detail: detailRaw || 'Не удалось отправить заявку' }
+    }
+    const data = await parseJson<{ orderRef: string; clientAck: string }>(r)
+    if (!data) return { ok: false, detail: 'Пустой ответ сервера' }
+    return { ok: true, orderRef: data.orderRef, clientAck: data.clientAck }
+  } catch {
+    return { ok: false, detail: 'Ошибка сети' }
   }
 }

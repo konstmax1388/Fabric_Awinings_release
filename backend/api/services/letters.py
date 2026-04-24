@@ -106,3 +106,75 @@ def build_cart_letters(
         "Спасибо за заказ!"
     )
     return manager_letter, client_ack
+
+
+def build_one_click_letters(
+    order_ref: str,
+    customer: dict,
+    lines: list[dict],
+    total_approx: int,
+) -> tuple[str, str]:
+    """Письмо менеджеру и краткое подтверждение для «заказа в 1 клик» (без доставки/оплаты на сайте)."""
+    name = customer.get("name", "").strip()
+    phone = customer.get("phone", "").strip()
+    email = (customer.get("email") or "").strip()
+
+    line_blocks = []
+    for line in lines:
+        d = dict(line)
+        title = d.get("title", "")
+        slug = d.get("slug", "")
+        qty = int(d.get("qty") or 0)
+        unit = int(d.get("priceFrom") or 0)
+        row_total = unit * qty
+        line_blocks.append(
+            f"• {title}\n"
+            f"  Ссылка: /catalog/{slug}\n"
+            f"  Количество: {qty}\n"
+            f"  Цена «от» за ед.: {_money(unit)} ₽\n"
+            f"  Сумма по строке: {_money(row_total)} ₽"
+        )
+    lines_block = "\n\n".join(line_blocks)
+    goods_sub = 0
+    for line in lines:
+        if not isinstance(line, dict):
+            continue
+        try:
+            unit = int(line.get("priceFrom") or 0)
+            qty = int(line.get("qty") or 0)
+        except (TypeError, ValueError):
+            continue
+        if qty >= 1 and unit >= 0:
+            goods_sub += unit * qty
+    goods_sub = max(0, goods_sub)
+
+    hdr: list[str] = [
+        "========== ЗАКАЗ В 1 КЛИК (витрина) ==========",
+        f"Номер: {order_ref}",
+        "",
+        "КЛИЕНТ",
+        f"Имя: {name}",
+        f"Телефон: {phone}",
+    ]
+    if email:
+        hdr.append(f"Email: {email}")
+    hdr.extend(
+        [
+            "",
+            "СОСТАВ",
+            lines_block,
+            "",
+            f"Сумма товаров (ориентировочно): {_money(goods_sub)} ₽",
+            f"Итого (ориентировочно): {_money(total_approx)} ₽",
+            "",
+            "Действие: связаться с клиентом, уточнить детали и оформить как обычный заказ.",
+            "=============================================",
+        ]
+    )
+    manager_letter = "\n".join(hdr)
+    client_ack = (
+        f"Уважаемый, {name}! Мы получили заявку «заказ в 1 клик». Менеджер свяжется с вами в рабочее время.\n"
+        f"Сумма по товарам (ориентировочно): {_money(total_approx)} ₽.\n\n"
+        "Спасибо за обращение!"
+    )
+    return manager_letter, client_ack

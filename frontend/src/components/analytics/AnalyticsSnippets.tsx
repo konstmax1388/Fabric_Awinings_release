@@ -45,6 +45,27 @@ function injectSnippet(raw: string, where: 'head' | 'body') {
   }
 }
 
+function injectSnippetBodyEnd(raw: string) {
+  const html = (raw || '').trim()
+  if (!html) return () => {}
+  const parser = new DOMParser()
+  const parsed = parser.parseFromString(`<div>${html}</div>`, 'text/html')
+  const root = parsed.body.firstElementChild
+  if (!root) return () => {}
+  const nodes: Node[] = []
+  for (const child of Array.from(root.childNodes)) {
+    nodes.push(materializeNode(child))
+  }
+  for (const node of nodes) {
+    document.body.appendChild(node)
+  }
+  return () => {
+    for (const node of nodes) {
+      if (node.parentNode) node.parentNode.removeChild(node)
+    }
+  }
+}
+
 export function AnalyticsSnippets() {
   const { loading, analyticsYandex } = useSiteSettings()
 
@@ -57,6 +78,11 @@ export function AnalyticsSnippets() {
       cleanupBody()
     }
   }, [loading, analyticsYandex.headSnippet, analyticsYandex.bodyStartSnippet])
+
+  useEffect(() => {
+    if (loading) return
+    return injectSnippetBodyEnd(analyticsYandex.bodyEndSnippet ?? '')
+  }, [loading, analyticsYandex.bodyEndSnippet])
 
   return null
 }

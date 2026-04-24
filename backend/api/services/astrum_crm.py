@@ -148,9 +148,20 @@ def build_astrum_payload(
         )
 
     prefix = cfg.deal_title_prefix or "Заказ с сайта"
-    deal_title = f"{prefix} {order.order_ref}"
+    is_one_click = order.order_source == CartOrder.OrderSource.ONE_CLICK
+    if is_one_click:
+        deal_title = f"Заказ в 1 клик {order.order_ref}"
+    else:
+        deal_title = f"{prefix} {order.order_ref}"
 
     comments_parts = [
+        *(
+            [
+                "Тип: заказ в 1 клик (оформление с карточки товара или из корзины, без выбора доставки).",
+            ]
+            if is_one_click
+            else []
+        ),
         f"Номер на сайте: {order.order_ref}",
         f"Сумма в CRM (без доставки): {max(0, int(order.total_approx or 0) - delivery_price)} ₽",
         f"Доставка (справочно): {delivery_price} ₽",

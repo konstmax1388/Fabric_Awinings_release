@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { OneClickOrderModal } from '../order/OneClickOrderModal'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { useCart } from '../../hooks/useCart'
+import { orderLinesFromCartItems } from '../../lib/orderLinePayload'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
 
 function formatRub(n: number) {
@@ -21,6 +24,7 @@ function pluralPositions(n: number): string {
 export function CartView() {
   const { items, removeLine, setQty, totalQty, totalApprox } = useCart()
   const { productPhotoAspect, home, staticPages } = useSiteSettings()
+  const [oneClickOpen, setOneClickOpen] = useState(false)
   const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
   const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
   const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
@@ -174,12 +178,25 @@ export function CartView() {
                   {ui?.cartSummaryDeliveryNote || 'Итоговая сумма появится после выбора и расчета доставки.'}
                   {' '}Подробнее: <Link to={paymentDeliveryPath} className="text-accent hover:underline">Оплата и доставка</Link>.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setOneClickOpen(true)}
+                  className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] border-2 border-accent font-body text-sm font-medium text-accent transition-colors hover:bg-[rgba(200,155,83,0.12)]"
+                >
+                  Купить в 1 клик
+                </button>
                 <Link
                   to="/checkout"
-                  className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
+                  className="fabric-strap-btn mt-3 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
                 >
                   {ui?.cartCheckoutButton || 'Оформить заказ'}
                 </Link>
+                <OneClickOrderModal
+                  open={oneClickOpen}
+                  onClose={() => setOneClickOpen(false)}
+                  lines={orderLinesFromCartItems(items)}
+                  title="Купить в 1 клик"
+                />
                 <p className="mt-3 text-center font-body text-xs text-text-subtle">
                   {ui?.cartCheckoutFootnote || 'Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.'}
                 </p>

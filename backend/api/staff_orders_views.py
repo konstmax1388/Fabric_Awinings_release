@@ -17,7 +17,7 @@ from .staff_pagination import StaffPageNumberPagination
 class CartOrderStaffFilter(filters.FilterSet):
     class Meta:
         model = CartOrder
-        fields = ("fulfillment_status", "payment_status", "bitrix_sync_status")
+        fields = ("fulfillment_status", "payment_status", "bitrix_sync_status", "order_source")
 
 
 @extend_schema_view(

@@ -35,6 +35,7 @@ from .serializers import (
     CallbackLeadCreateSerializer,
     CartOrderCreateSerializer,
     CartOrderResponseSerializer,
+    OneClickOrderCreateSerializer,
     PortfolioSerializer,
     ProductCategoryPublicSerializer,
     ProductDetailSerializer,
@@ -245,6 +246,61 @@ class CartOrderCreateView(generics.CreateAPIView):
             import logging
 
             logging.getLogger(__name__).exception("push_cart_order_to_astrum_crm")
+        order.refresh_from_db()
+        out = CartOrderResponseSerializer(order)
+        return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+class OneClickOrderCreateView(generics.CreateAPIView):
+    """Заказ в 1 клик: контакт + позиции (с карточки товара или из корзины)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [LeadSubmissionThrottle]
+    queryset = None
+    serializer_class = OneClickOrderCreateSerializer
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        try:
+            from .services.customer_account_from_order import link_cart_order_to_customer_account
+
+            link_cart_order_to_customer_account(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("link_cart_order_to_customer_account (one click)")
+        order.refresh_from_db()
+        try:
+            from .services.notification_email import notify_cart_order
+
+            notify_cart_order(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("notify_cart_order (one click)")
+        try:
+            from .services.notification_email import send_buyer_order_confirmation_email
+
+            send_buyer_order_confirmation_email(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("send_buyer_order_confirmation_email (one click)")
+        try:
+            from .services.astrum_crm import push_cart_order_to_astrum_crm
+
+            push_cart_order_to_astrum_crm(order)
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("push_cart_order_to_astrum_crm (one click)")
         order.refresh_from_db()
         out = CartOrderResponseSerializer(order)
         return Response(out.data, status=status.HTTP_201_CREATED)
