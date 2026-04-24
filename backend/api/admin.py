@@ -898,7 +898,6 @@ class CartOrderAdmin(ModelAdmin):
         "created_at",
         "bitrix_sync_attempts",
         "crm_sync_summary",
-        "resend_astrum_crm_button",
         "cdek_sync_attempts",
     )
     fieldsets = (
@@ -923,10 +922,11 @@ class CartOrderAdmin(ModelAdmin):
         (
             _("CRM: Битрикс24 (Astrum)"),
             {
-                "fields": ("resend_astrum_crm_button", "crm_sync_summary"),
+                "fields": ("crm_sync_summary",),
                 "description": _(
-                    "Ниже — кнопка с подписью «Отправить в CRM» (ручная повторная отправка в Astrum) и сводка статуса. "
-                    "По крону при ошибках: retry_astrum_crm_orders."
+                    "После оформления заказ отправляется в приложение «Заявки с сайта». В поле «Сводка по CRM» — статус, "
+                    "текст ошибки (если был) и кнопка «Отправить в CRM» для повторной ручной отправки (в одной строке со статусом, справа). "
+                    "По крону: retry_astrum_crm_orders."
                 ),
             },
         ),
@@ -957,7 +957,7 @@ class CartOrderAdmin(ModelAdmin):
                 "fields": ("bitrix_entity_id", "bitrix_sync_status", "bitrix_sync_error", "bitrix_sync_attempts"),
                 "classes": ("collapse",),
                 "description": _(
-                    "Обычно заполняются автоматически. Повторная отправка — кнопка «Отправить в CRM» выше или команда retry_astrum_crm_orders."
+                    "Обычно заполняются автоматически. Повторная отправка — кнопка «Отправить в CRM» в поле «Сводка по CRM» или команда retry_astrum_crm_orders."
                 ),
             },
         ),
@@ -1127,14 +1127,61 @@ class CartOrderAdmin(ModelAdmin):
                 _("Ошибка отображения колонки CRM (см. логи сервера)."),
             )
 
+    def _html_cartorder_send_crm(self, obj: CartOrder) -> str:
+        """Полный HTML кнопки «Отправить в CRM» (POST), для вставки в сводку CRM (один блок со статусом)."""
+        request = getattr(self, "_cartorder_change_request", None)
+        if request is None or not self.has_change_permission(request, obj):
+            return ""
+        url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resend_astrum_crm",
+            args=[quote(str(obj.pk))],
+        )
+        warn_integr = (
+            format_html(
+                '<p class="mb-1.5 text-xs text-amber-800 dark:text-amber-200">{}</p>',
+                _(
+                    "Интеграция Astrum не настроена (ключ, ответственный) — отправка не уйдёт, пока не задано в настройках или ASTRUM_CRM_*."
+                ),
+            )
+            if not astrum_crm_enabled()
+            else format_html("")
+        )
+        warn_dup = (
+            format_html(
+                '<p class="mb-1.5 text-xs text-amber-800 dark:text-amber-200">{}</p>',
+                _(
+                    "Уже в CRM: повтор может создать ещё одну сделку в Б24. Нажимайте намеренно (после правок в заказе при необходимости)."
+                ),
+            )
+            if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED
+            and (obj.bitrix_entity_id or "").strip()
+            else format_html("")
+        )
+        btn = escape(_("Отправить в CRM"))
+        return format_html(
+            '<div class="fabric-crm-astrum-send w-full min-w-0 sm:max-w-md">'
+            "{}{}"
+            "<form class=\"js-admin-cartorder-send-crm\" method=\"post\" action=\"{}\" id=\"admin_cartorder_resend_astrum_form\">"
+            "<input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"{}\">"
+            "<button type=\"submit\" class=\"fabric-crm-astrum-send__btn w-full min-h-[2.5rem] rounded-md border-0"
+            " bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow"
+            " hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:min-w-[12rem]\""
+            f">{btn}</button></form></div>",
+            warn_integr,
+            warn_dup,
+            url,
+            get_token(request),
+        )
+
     @display(description=_("Сводка по CRM"))
     def crm_sync_summary(self, obj: CartOrder | None) -> str:
         if obj is None or not obj.pk:
             return "—"
         label = obj.get_bitrix_sync_status_display()
         css, icon = self._crm_status_style(obj.bitrix_sync_status)
-        head = format_html(
-            '<div class="mb-3 flex flex-wrap items-center gap-2">'
+        send_html = self._html_cartorder_send_crm(obj)
+        status_row = format_html(
+            '<div class="flex min-w-0 flex-wrap items-center gap-2">'
             '<span class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium {}">'
             '<span class="material-symbols-outlined text-[20px]">{}</span>{}</span>'
             '<span class="text-sm text-font-subtle-light dark:text-font-subtle-dark">{} {}</span></div>',
@@ -1144,6 +1191,17 @@ class CartOrderAdmin(ModelAdmin):
             _("Попыток отправки:"),
             obj.bitrix_sync_attempts or 0,
         )
+        if send_html:
+            head = format_html(
+                "<div class=\"mb-3 flex w-full min-w-0 flex-col gap-3 border-b border-base-200 pb-3 dark:border-base-800 sm:flex-row"
+                " sm:items-start sm:justify-between sm:gap-4\">"
+                '{}<div class="w-full min-w-0 sm:max-w-sm sm:flex-1 sm:self-center sm:pl-2">'
+                "{}</div></div>",
+                status_row,
+                send_html,
+            )
+        else:
+            head = format_html('<div class="mb-3">{}</div>', status_row)
         if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED:
             eid = (obj.bitrix_entity_id or "").strip()
             if eid:
@@ -1247,66 +1305,6 @@ class CartOrderAdmin(ModelAdmin):
                 level=messages.ERROR,
             )
         return HttpResponseRedirect(url_back)
-
-    @display(description=_("Отправить в CRM"))
-    def resend_astrum_crm_button(self, obj: CartOrder | None) -> str:
-        if obj is None or not obj.pk:
-            return "—"
-        request = getattr(self, "_cartorder_change_request", None)
-        if request is None:
-            return "—"
-        if not self.has_change_permission(request, obj):
-            return format_html(
-                '<p class="text-sm text-font-subtle-light">{}</p>',
-                _("Нет права на изменение заказа — повторная отправка недоступна."),
-            )
-        url = reverse(
-            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resend_astrum_crm",
-            args=[quote(str(obj.pk))],
-        )
-        warn_integr = (
-            format_html(
-                '<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">{}</p>',
-                _(
-                    "Сейчас интеграция Astrum не настроена (ключ, ответственный). "
-                    "После нажатия отправка не уйдёт, пока не задано в «Настройках сайта» или ASTRUM_CRM_* — это ожидаемо."
-                ),
-            )
-            if not astrum_crm_enabled()
-            else format_html("")
-        )
-        warn_dup = (
-            format_html(
-                '<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">{}</p>',
-                _(
-                    "Заказ уже был в CRM. Повтор с этой кнопки снова вызовет приложение «Заявки с сайта» и может дать "
-                    "ещё одну сделку в Битрикс24 — пользуйтесь намеренно (например, после правок полей в заказе)."
-                ),
-            )
-            if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED
-            and (obj.bitrix_entity_id or "").strip()
-            else format_html("")
-        )
-        btn = escape(_("Отправить в CRM"))
-        return format_html(
-            "<div class=\"mb-0 max-w-xl\">{}{}"
-            "<form class=\"js-admin-cartorder-send-crm\" method=\"post\" action=\"{}\" id=\"admin_cartorder_resend_astrum\">"
-            '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
-            "<button type=\"submit\" class=\"w-full min-h-[2.5rem] rounded-default border-0 font-semibold shadow-sm "
-            "text-white"
-            " bg-primary-600 px-5 py-2.5 text-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            " dark:ring-primary-500/50 sm:w-auto"
-            f">{btn}</button></form>"
-            "<p class=\"mt-2 text-xs text-font-subtle-light dark:text-font-subtle-dark\">{}</p></div>",
-            warn_integr,
-            warn_dup,
-            url,
-            get_token(request),
-            _(
-                "Повторная отправка заказа в CRM (приложение «Заявки с сайта»). "
-                "При необходимости сначала сохраните правки в заказе, затем нажмите кнопку."
-            ),
-        )
 
 
 @admin.register(ConsentLog)

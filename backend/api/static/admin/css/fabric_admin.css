@@ -86,3 +86,10 @@ html.dark .admin-file-dropzone-root input[type="text"][disabled] {
   background-color: rgb(22 24 28) !important;
   color: rgb(180 175 168) !important;
 }
+
+/* CartOrder: кнопка «Отправить в CRM» внутри readonly (Unfold не должен блокировать клик) */
+#content-main .fabric-crm-astrum-send__btn,
+#content-main .js-admin-cartorder-send-crm button[type="submit"] {
+  pointer-events: auto;
+  cursor: pointer;
+}
