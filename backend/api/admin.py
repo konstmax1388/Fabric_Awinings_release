@@ -1223,18 +1223,6 @@ class CartOrderAdmin(ModelAdmin):
                 level=messages.WARNING,
             )
             return HttpResponseRedirect(url_back)
-        if order.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED and (
-            order.bitrix_entity_id or ""
-        ).strip():
-            self.message_user(
-                request,
-                _(
-                    "Заказ уже в CRM; повторно не отправляем, чтобы не плодить сделки. "
-                    "При сбое в Б24 правьте данные там вручную."
-                ),
-                level=messages.INFO,
-            )
-            return HttpResponseRedirect(url_back)
         if not astrum_crm_enabled():
             self.message_user(
                 request,
@@ -1272,28 +1260,35 @@ class CartOrderAdmin(ModelAdmin):
                 '<p class="text-sm text-font-subtle-light">{}</p>',
                 _("Нет права на изменение заказа — повторная отправка недоступна."),
             )
-        if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED and (
-            obj.bitrix_entity_id or ""
-        ).strip():
-            return format_html(
-                '<p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
-                _(
-                    "Заказ уже принят в CRM. Повтор не выполняем, чтобы не дублировать сделки. "
-                    "Правки — вручную в Битрикс24, если требуется."
-                ),
-            )
-        if not astrum_crm_enabled():
-            return format_html(
-                '<p class="text-sm text-amber-800 dark:text-amber-200">{}</p>',
-                _(
-                    "Интеграция Astrum выключена или не настроена (см. «Настройки сайта» и переменные ASTRUM_CRM_*)."
-                ),
-            )
         url = reverse(
             f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resend_astrum_crm",
             args=[quote(str(obj.pk))],
         )
+        warn_integr = (
+            format_html(
+                '<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">{}</p>',
+                _(
+                    "Сейчас интеграция Astrum не настроена (ключ, ответственный). "
+                    "После нажатия отправка не уйдёт, пока не задано в «Настройках сайта» или ASTRUM_CRM_* — это ожидаемо."
+                ),
+            )
+            if not astrum_crm_enabled()
+            else format_html("")
+        )
+        warn_dup = (
+            format_html(
+                '<p class="mb-2 text-sm text-amber-800 dark:text-amber-200">{}</p>',
+                _(
+                    "Заказ уже был в CRM. Повтор с этой кнопки снова вызовет приложение «Заявки с сайта» и может дать "
+                    "ещё одну сделку в Битрикс24 — пользуйтесь намеренно (например, после правок полей в заказе)."
+                ),
+            )
+            if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED
+            and (obj.bitrix_entity_id or "").strip()
+            else format_html("")
+        )
         return format_html(
+            "{}{}"
             '<form method="post" action="{}">'
             '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
             '<button type="submit" class="inline-flex items-center gap-2 rounded-default border border-primary-600/40 '
@@ -1302,11 +1297,13 @@ class CartOrderAdmin(ModelAdmin):
             '">'
             '<span class="material-symbols-outlined text-[18px]">sync</span>{}</button></form>'
             '<p class="mt-2 max-w-2xl text-xs text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
+            warn_integr,
+            warn_dup,
             url,
             get_token(request),
             escape(_("Отправить в CRM")),
             _(
-                "То же, что и при оформлении на сайте. Исправьте, при необходимости, e-mail/телефон в заказе, затем нажмите кнопку."
+                "Ручная повторная отправка в CRM (Astrum). При необходимости сначала поправьте e-mail, телефон и состав в заказе, затем нажмите."
             ),
         )
 
