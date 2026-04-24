@@ -82,7 +82,12 @@ class HomePageContentPublicView(APIView):
                     continue
                 fimg = getattr(h, f"hero_slide_{i + 1}_image", None)
                 if fimg:
-                    s["imageUrl"] = request.build_absolute_uri(fimg.url)
+                    media_url = request.build_absolute_uri(fimg.url)
+                    name = (getattr(fimg, "name", None) or "").lower()
+                    if name.endswith((".mp4", ".webm", ".ogv", ".ogg", ".mov", ".m4v")):
+                        s["videoUrl"] = media_url
+                    else:
+                        s["imageUrl"] = media_url
         s0 = slides[0] if isinstance(slides, list) and slides and isinstance(slides[0], dict) else None
         if s0 and (s0.get("imageUrl") or "").strip():
             hero["bgImageUrl"] = s0.get("imageUrl", "")

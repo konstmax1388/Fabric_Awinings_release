@@ -1248,43 +1248,43 @@ class HomePageContent(models.Model):
         null=True,
         help_text="Устаревшее поле: раньше один фон на весь hero. Сейчас — картинки в блоках «Hero, слайд 1…6».",
     )
-    hero_slide_1_image = models.ImageField(
-        "Hero, слайд 1: изображение",
+    hero_slide_1_image = models.FileField(
+        "Hero, слайд 1: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
     )
-    hero_slide_2_image = models.ImageField(
-        "Hero, слайд 2: изображение",
+    hero_slide_2_image = models.FileField(
+        "Hero, слайд 2: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
     )
-    hero_slide_3_image = models.ImageField(
-        "Hero, слайд 3: изображение",
+    hero_slide_3_image = models.FileField(
+        "Hero, слайд 3: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
     )
-    hero_slide_4_image = models.ImageField(
-        "Hero, слайд 4: изображение",
+    hero_slide_4_image = models.FileField(
+        "Hero, слайд 4: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
     )
-    hero_slide_5_image = models.ImageField(
-        "Hero, слайд 5: изображение",
+    hero_slide_5_image = models.FileField(
+        "Hero, слайд 5: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
     )
-    hero_slide_6_image = models.ImageField(
-        "Hero, слайд 6: изображение",
+    hero_slide_6_image = models.FileField(
+        "Hero, слайд 6: изображение или видео (файл)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,

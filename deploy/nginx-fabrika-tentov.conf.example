@@ -4,7 +4,7 @@
 server {
     listen 80;
     server_name fabrika-tentov.ru www.fabrika-tentov.ru;
-    client_max_body_size 32M;
+    client_max_body_size 100M;
 
     root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
 

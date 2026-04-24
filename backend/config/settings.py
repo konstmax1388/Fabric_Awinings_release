@@ -270,6 +270,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 # В продакшене при DEBUG=False файлы из /media/ отдаёт веб-сервер (nginx и т.п.), не Django.
+# Админка: hero (большие фото/ролики). Ограничение 413 чаще всего даёт nginx — поднимите client_max_body_size.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 32 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 32 * 1024 * 1024
 
 _public_site = os.environ.get("DJANGO_PUBLIC_SITE_URL", "http://localhost:17300").rstrip("/")
 # Канонический origin витрины (sitemap.xml, абсолютные ссылки). Синхронизируйте с VITE_SITE_URL на фронте.

@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import re
+from collections import OrderedDict
 from typing import Any
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from unfold.widgets import UnfoldAdminImageFieldWidget
+from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminImageFieldWidget
 
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
 from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
@@ -725,12 +726,24 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "ps3_icon_image",
         )
         widgets = {
-            "hero_slide_1_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "hero_slide_2_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "hero_slide_3_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "hero_slide_4_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "hero_slide_5_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "hero_slide_6_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_1_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
+            "hero_slide_2_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
+            "hero_slide_3_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
+            "hero_slide_4_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
+            "hero_slide_5_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
+            "hero_slide_6_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+            ),
             "ps0_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
             "ps1_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
             "ps2_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
@@ -741,8 +754,25 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         # JSON в БД собирается в save(); сырое поле payload не показываем.
         self.fields.pop("payload", None)
+        self._reorder_fields_for_homepage_editor()
         merged = merged_home_payload(self.instance.payload if self.instance.pk else None)
         self._apply_initial(merged)
+
+    def _reorder_fields_for_homepage_editor(self) -> None:
+        """Витринный порядок по блокам/слайдам, а не file-first (см. homepage_full_form_field_order)."""
+        if not self.fields:
+            return
+        from config.homepage_nav import homepage_full_form_field_order
+
+        desired = homepage_full_form_field_order()
+        out: OrderedDict[str, forms.Field] = OrderedDict()
+        for name in desired:
+            if name in self.fields:
+                out[name] = self.fields[name]
+        for name, f in self.fields.items():
+            if name not in out:
+                out[name] = f
+        self.fields = out
 
     def _apply_initial(self, m: dict[str, Any]) -> None:
         meta = m.get("meta") or {}

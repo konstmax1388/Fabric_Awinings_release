@@ -1,0 +1,41 @@
+# Зависимости (огромные, никогда не нужны целиком)
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env.local
+.env.*.local
+
+# Сборки и артефакты
+dist/
+build/
+.out/
+.next/
+.nuxt/
+.cache/
+
+# Логи и временные файлы
+*.log
+.tmp/
+tmp/
+
+# Системные папки IDE (не нужны AI)
+.idea/
+.vscode/
+.codebuddy/
+
+# Документация и тесты (если не работаете с ними сейчас)
+docs/
+*-test.js
+*.test.ts
+*.spec.ts
+__tests__/
+
+# Большие бинарные файлы
+*.png
+*.jpg
+*.ico
+*.pdf
+*.zip
+*.tar.gz

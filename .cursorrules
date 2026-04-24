@@ -1,0 +1,17 @@
+## CONTEXT OPTIMIZATION RULES
+
+### Token efficiency
+- Never include entire files unless explicitly requested
+- Reference specific functions/classes with @symbols, not whole modules
+- Use @Codebase only as last resort
+- Prefer @folder for scoped context over full project
+
+### History management
+- Summarize long discussions before continuing
+- Start new chat when topic changes completely
+- Keep conversations under 20 exchanges when possible
+
+### Response constraints
+- Provide minimal working examples, not full rewrites
+- Show only changed code sections with context lines
+- No explanatory essays unless asked for

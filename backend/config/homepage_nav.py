@@ -408,6 +408,19 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 
+def homepage_full_form_field_order() -> tuple[str, ...]:
+    """Порядок отображения полей формы «Главная (контент)» (editor / section).
+
+    Иначе ModelForm ставит model FileField (hero_slide_*_image и т.д.) в начало,
+    и чекбоксы «показать бейдж / доверие / KPI» оказываются ниже вместо логичного
+    сценария настроек (см. `SECTION_ORDER` + `SECTION_FIELDS` по слайдам).
+    """
+    names: list[str] = []
+    for slug in SECTION_ORDER:
+        names.extend(SECTION_FIELDS[slug])
+    return tuple(names)
+
+
 def hp_fieldset(slug: str, fieldset_options: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
     """Fieldset для HomePageContentAdmin: класс fs-id-<slug> (для совместимости)."""
     if slug not in SECTIONS:
