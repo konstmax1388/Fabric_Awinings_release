@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
@@ -79,12 +79,14 @@ export function HeroSection() {
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
   const slideT0Ref = useRef(0)
   const [barProgress, setBarProgress] = useState(0)
+  const slideCountRef = useRef(0)
 
   const isHeroV2 = Boolean(hero && (hero as { schemaVersion?: number }).schemaVersion === 2)
 
   const autoplayIntervalMs = useMemo(() => {
     if (!isHeroV2 || !hero) return 7000
-    const v = (hero as { autoplayIntervalMs?: number }).autoplayIntervalMs
+    const raw = (hero as { autoplayIntervalMs?: unknown }).autoplayIntervalMs
+    const v = typeof raw === 'string' ? Number(raw) : raw
     if (typeof v !== 'number' || !Number.isFinite(v)) return 7000
     return Math.max(3000, Math.min(120_000, v))
   }, [isHeroV2, hero])
@@ -102,10 +104,20 @@ export function HeroSection() {
     })
   }, [isHeroV2, hero?.slides])
 
+  /** Без картинки и без видео слайд на витрине не показываем (точки и прогресс только по таким). */
+  const v2VisibleSlides = useMemo((): HeroSlide[] | null => {
+    if (!v2EnabledSlides) return null
+    return v2EnabledSlides.filter((s) => {
+      const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
+      const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
+      return Boolean(imageUrl || videoUrl)
+    })
+  }, [v2EnabledSlides])
+
   const dataSrc: HeroSlide | (typeof hero) | null = !isHeroV2
     ? hero
-    : v2EnabledSlides && v2EnabledSlides.length > 0
-      ? v2EnabledSlides[currentSlide % v2EnabledSlides.length]
+    : v2VisibleSlides && v2VisibleSlides.length > 0
+      ? v2VisibleSlides[currentSlide % v2VisibleSlides.length]
       : null
 
   const title = isHeroV2
@@ -208,10 +220,10 @@ export function HeroSection() {
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
     if (isHeroV2) {
-      if (!v2EnabledSlides || !v2EnabledSlides.length) {
+      if (!v2VisibleSlides || !v2VisibleSlides.length) {
         return [] as { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' }[]
       }
-      return v2EnabledSlides.map((s) => {
+      return v2VisibleSlides.map((s) => {
         const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
         const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
         const textTone = s.textTone === 'dark' ? 'dark' : 'light'
@@ -233,7 +245,7 @@ export function HeroSection() {
     return heroBg
       ? [{ imageUrl: heroBg, videoUrl: '', textTone: heroTone as 'light' | 'dark' }]
       : []
-  }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2EnabledSlides])
+  }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2VisibleSlides])
 
   const hasSlides = slides.length > 0
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
@@ -265,13 +277,20 @@ export function HeroSection() {
   const hasTrustBlock =
     (showTrustBlockLine && Boolean(trustLine)) || (trustItems.length > 0 && hasVisibleTrustPills)
 
+  slideCountRef.current = slides.length
+
   useEffect(() => {
-    if (slides.length <= 1 || reduce) return
+    if (slides.length <= 1) return
     const id = window.setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
+      if (typeof document !== 'undefined' && document.hidden) return
+      setCurrentSlide((prev) => {
+        const n = slideCountRef.current
+        if (n < 2) return prev
+        return (prev + 1) % n
+      })
     }, autoplayIntervalMs)
     return () => window.clearInterval(id)
-  }, [slides.length, autoplayIntervalMs, reduce])
+  }, [slides.length, autoplayIntervalMs])
 
   useEffect(() => {
     if (slides.length <= 1) {
@@ -287,17 +306,18 @@ export function HeroSection() {
   }, [currentSlide, slides.length])
 
   useEffect(() => {
-    if (slides.length <= 1 || !showCarouselProgress || reduce) {
+    if (slides.length <= 1 || !showCarouselProgress) {
       setBarProgress(0)
       return
     }
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return
       setBarProgress(
         Math.min(1, (Date.now() - slideT0Ref.current) / Math.max(1, autoplayIntervalMs)),
       )
     }, 40)
     return () => window.clearInterval(id)
-  }, [slides.length, showCarouselProgress, reduce, currentSlide, autoplayIntervalMs])
+  }, [slides.length, showCarouselProgress, currentSlide, autoplayIntervalMs])
 
   useEffect(() => {
     if (!shouldShowVideo || hasStartedActiveVideo) return
@@ -387,6 +407,10 @@ export function HeroSection() {
   const carouselArrowBtnClass =
     'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition hover:border-accent/45 hover:bg-white/12 hover:text-accent sm:h-9 sm:w-9'
 
+  const mediaCrossfadeD = reduce ? 0.14 : 0.55
+  const textSlideD = reduce ? 0.12 : 0.45
+  const parallaxTransition = { type: 'spring' as const, stiffness: 62, damping: 16, mass: 1.2 }
+
   return (
     <section className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}>
       <HeroCallbackModal
@@ -394,55 +418,81 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={callbackModal}
       />
-      {shouldShowVideo ? (
-        <motion.video
-          key={`hero-video-${currentSlide}`}
-          className="absolute inset-0 h-full w-full object-cover"
-          src={activeVideoUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={activeImageUrl || undefined}
-          onError={() =>
-            setFailedVideoBySlide((prev) => ({
-              ...prev,
-              [currentSlide]: true,
-            }))
-          }
-          onPlaying={() =>
-            setStartedVideoBySlide((prev) => ({
-              ...prev,
-              [currentSlide]: true,
-            }))
-          }
-          onStalled={() =>
-            setFailedVideoBySlide((prev) => ({
-              ...prev,
-              [currentSlide]: true,
-            }))
-          }
-          onAbort={() =>
-            setFailedVideoBySlide((prev) => ({
-              ...prev,
-              [currentSlide]: true,
-            }))
-          }
-          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.04 }}
-          transition={{ type: 'spring', stiffness: 62, damping: 16, mass: 1.2 }}
-          aria-hidden
-        />
-      ) : activeImageUrl ? (
-        <motion.div
-          key={`hero-image-${currentSlide}`}
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${activeImageUrl})` }}
-          animate={{ x: depth.bgX, y: depth.bgY, scale: 1.04 }}
-          transition={{ type: 'spring', stiffness: 62, damping: 16, mass: 1.2 }}
-          aria-hidden
-        />
-      ) : null}
+      <div className="absolute inset-0 overflow-hidden" aria-hidden>
+        <AnimatePresence initial={false} mode="wait">
+          {shouldShowVideo ? (
+            <motion.video
+              key={`hero-video-${currentSlide}`}
+              className="absolute inset-0 h-full w-full object-cover"
+              src={activeVideoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              poster={activeImageUrl || undefined}
+              onError={() =>
+                setFailedVideoBySlide((prev) => ({
+                  ...prev,
+                  [currentSlide]: true,
+                }))
+              }
+              onPlaying={() =>
+                setStartedVideoBySlide((prev) => ({
+                  ...prev,
+                  [currentSlide]: true,
+                }))
+              }
+              onStalled={() =>
+                setFailedVideoBySlide((prev) => ({
+                  ...prev,
+                  [currentSlide]: true,
+                }))
+              }
+              onAbort={() =>
+                setFailedVideoBySlide((prev) => ({
+                  ...prev,
+                  [currentSlide]: true,
+                }))
+              }
+              initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.02 }}
+              animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
+              transition={
+                reduce
+                  ? { duration: mediaCrossfadeD }
+                  : {
+                      opacity: { duration: mediaCrossfadeD, ease: [0.2, 1, 0.32, 1] },
+                      x: parallaxTransition,
+                      y: parallaxTransition,
+                      scale: parallaxTransition,
+                    }
+              }
+              aria-hidden
+            />
+          ) : activeImageUrl ? (
+            <motion.div
+              key={`hero-image-${currentSlide}`}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${activeImageUrl})` }}
+              initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.03 }}
+              animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
+              transition={
+                reduce
+                  ? { duration: mediaCrossfadeD }
+                  : {
+                      opacity: { duration: mediaCrossfadeD, ease: [0.2, 1, 0.32, 1] },
+                      x: parallaxTransition,
+                      y: parallaxTransition,
+                      scale: parallaxTransition,
+                    }
+              }
+              aria-hidden
+            />
+          ) : null}
+        </AnimatePresence>
+      </div>
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent"
         animate={{ x: depth.gradX, y: depth.gradY }}
@@ -466,10 +516,14 @@ export function HeroSection() {
         animate={{ x: depth.textX, y: depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
-        <div
+        <motion.div
+          key={String(currentSlide)}
           className={`max-w-2xl min-w-0 ${
             slides.length > 1 ? 'pb-4 sm:pb-6' : ''
           }`}
+          initial={{ opacity: reduce ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: textSlideD, ease: [0.2, 1, 0.32, 1] }}
         >
           {showEyebrowBlock && eyebrow ? (
             <motion.p
@@ -638,7 +692,7 @@ export function HeroSection() {
               ) : null}
             </motion.div>
           ) : null}
-        </div>
+        </motion.div>
       </motion.div>
       {slides.length > 1 ? (
         <div
@@ -708,7 +762,7 @@ export function HeroSection() {
               ) : null}
             </div>
           </div>
-          {showCarouselProgress && !reduce ? (
+          {showCarouselProgress ? (
             <div
               className="h-1 w-full overflow-hidden rounded-b-[24px] bg-white/12"
               aria-hidden

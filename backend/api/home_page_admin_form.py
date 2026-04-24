@@ -161,12 +161,14 @@ _MODEL_IMAGE_FIELDS: tuple[str, ...] = (
 )
 
 
-class _HeroV2FormFieldsMixin(forms.Form):
-    pass
-
-
-for _hn, _hf in collect_hero_v2_class_fields().items():
-    setattr(_HeroV2FormFieldsMixin, _hn, _hf)
+# Важно: не через setattr после объявления класса — тогда Form.Meta не кладёт поля в
+# `declared_fields`, и ModelForm в итоге оставляет только `Meta.fields` модели
+# (карусель + файлы), без `hero_s{n}_*`.
+_HeroV2FormFieldsMixin = type(
+    "_HeroV2FormFieldsMixin",
+    (forms.Form,),
+    {**collect_hero_v2_class_fields(), "__module__": __name__},
+)
 
 
 class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
