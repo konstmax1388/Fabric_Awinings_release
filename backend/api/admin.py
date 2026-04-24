@@ -2513,7 +2513,11 @@ class HomePageContentAdmin(ModelAdmin):
         meta = HP_SECTIONS[slug]
         hero_field_groups = None
         if slug == "hero":
-            from config.hero_block_fields import HERO_SLIDE_COUNT, hero_carousel_field_names, hero_section_all_field_names
+            from config.hero_block_fields import (
+                HERO_SLIDE_COUNT,
+                hero_carousel_field_names,
+                hero_section_slide_content_field_names,
+            )
 
             hero_field_groups = []
             carousel_f = [form[n] for n in hero_carousel_field_names() if n in form.fields]
@@ -2521,15 +2525,37 @@ class HomePageContentAdmin(ModelAdmin):
                 hero_field_groups.append(
                     {
                         "title": str(_("Карусель (все слайды)")),
+                        "nav_label": str(_("Карусель")),
+                        "anchor": "hero-block-carousel",
+                        "hero_group_kind": "carousel",
                         "fields": carousel_f,
                     }
                 )
+            quick = []
             for n in range(1, HERO_SLIDE_COUNT + 1):
-                row_f = [form[fn] for fn in hero_section_all_field_names(n) if fn in form.fields]
+                en = f"hero_s{n}_enabled"
+                if en in form.fields:
+                    quick.append(form[en])
+            if quick:
+                hero_field_groups.append(
+                    {
+                        "title": str(_("Слайды: включение 1–6 (участвуют в карусели, если у слайда есть фото/видео)")),
+                        "nav_label": str(_("Вкл/выкл 1–6")),
+                        "anchor": "hero-block-slides-onoff",
+                        "hero_group_kind": "slide_toggles",
+                        "fields": quick,
+                    }
+                )
+            for n in range(1, HERO_SLIDE_COUNT + 1):
+                row_f = [form[fn] for fn in hero_section_slide_content_field_names(n) if fn in form.fields]
                 if row_f:
                     hero_field_groups.append(
                         {
                             "title": str(_("Слайд %s") % n),
+                            "nav_label": str(_("Слайд %s") % n),
+                            "anchor": f"hero-block-slide-{n}",
+                            "hero_group_kind": "slide",
+                            "slide_index": n,
                             "fields": row_f,
                         }
                     )

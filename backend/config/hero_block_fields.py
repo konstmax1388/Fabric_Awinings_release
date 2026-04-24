@@ -56,6 +56,12 @@ def hero_section_all_field_names(n: int) -> tuple[str, ...]:
     return (*hero_section_virtual_field_names(n), f"hero_slide_{n}_image")
 
 
+def hero_section_slide_content_field_names(n: int) -> tuple[str, ...]:
+    """Поля слайда без «слайд включён» — чекбокс выводится в отдельном верхнем блоке формы Hero."""
+    en = f"hero_s{n}_enabled"
+    return tuple(name for name in hero_section_all_field_names(n) if name != en)
+
+
 def hero_carousel_field_names() -> tuple[str, ...]:
     """Поля уровня всего hero (карусель), не слайда — в начале раздела «Hero» в админке."""
     return (

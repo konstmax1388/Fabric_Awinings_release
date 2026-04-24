@@ -95,36 +95,106 @@
     <form method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} class="flex flex-col gap-5">
       {% csrf_token %}
       {% if hero_field_groups %}
-      <p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">
-        {% trans "Сначала блок «Карусель» (интервал, стрелки, полоса). Затем слайды 1…6. В каждом слайде, сверху вниз: включение слайда; чекбоксы «показать бейдж», «строка доверия», «метки доверия 1–3», «KPI 1–3»; соответствующие текстовые поля; кнопки/попап; в конце — картинка/URL/видео и файл." %}
-      </p>
-      {% for group in hero_field_groups %}
-      <div class="flex flex-col gap-4 border-b border-base-200 pb-6 last:border-b-0 last:pb-0 dark:border-base-700">
-        <h2 class="text-base font-semibold text-font-important-light dark:text-font-important-dark md:text-lg">
-          {{ group.title }}
-        </h2>
-        <div class="flex flex-col gap-5">
-          {% for field in group.fields %}
-      <div class="flex flex-col gap-1.5">
-        {% if field.is_hidden %}
-          {{ field }}
+      <div class="flex flex-col gap-4">
+        <p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">
+          {% trans "Сверху — быстрые ссылки на блоки. «Карусель» — настройки карусели. «Вкл/выкл 1–6» — все переключатели слайдов в одном месте (тексты и медиа — в «Слайд 1»… «Слайд 6»). Секции слайдов свернуты: откройте нужную или перейдите по ссылке; при переходе по якорю (#…) секция раскроется." %}
+        </p>
+        <nav
+          class="sticky top-0 z-10 -mx-5 border-b border-base-200 bg-white/90 px-5 py-2.5 shadow-xs shadow-base-200/30 backdrop-blur dark:border-base-600 dark:bg-base-900/90 dark:shadow-none md:rounded-default md:border md:px-3"
+          aria-label="{% trans 'Быстрый переход по блокам героя' %}"
+        >
+          <ul class="flex max-h-[9.5rem] flex-col flex-wrap gap-x-3 gap-y-1.5 sm:max-h-[6rem] md:max-h-none md:flex-nowrap">
+            {% for g in hero_field_groups %}
+            <li class="text-xs md:text-sm">
+              <a
+                href="#{{ g.anchor }}"
+                class="text-primary-600 decoration-primary-200 underline-offset-2 hover:underline dark:text-primary-400 dark:decoration-primary-800"
+              >{{ g.nav_label|default:g.title }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+        {% for group in hero_field_groups %}
+        {% if group.hero_group_kind == "slide" %}
+        <details
+          id="{{ group.anchor }}"
+          class="group scroll-mt-20 rounded-default border border-base-200 bg-base-50/30 px-4 py-3 dark:border-base-600 dark:bg-base-900/20"
+          data-hero-slide-details
+          {% if group.slide_index == 1 %}open{% endif %}
+        >
+          <summary class="flex cursor-pointer list-none items-center gap-2 text-base font-semibold text-font-important-light marker:content-none dark:text-font-important-dark md:text-lg [&::-webkit-details-marker]:hidden">
+            <span class="min-w-0 flex-1">{{ group.title }}</span>
+            <span
+              class="material-symbols-outlined shrink-0 text-font-subtle-light transition-transform group-open:rotate-180 dark:text-font-subtle-dark"
+              aria-hidden="true"
+            >expand_more</span>
+          </summary>
+          <div class="mt-4 flex flex-col gap-5">
+            {% for field in group.fields %}
+            <div class="flex flex-col gap-1.5">
+              {% if field.is_hidden %}
+                {{ field }}
+              {% else %}
+                <label for="{{ field.id_for_label }}" class="text-sm font-medium text-font-important-light dark:text-font-important-dark">
+                  {{ field.label }}{% if field.field.required %}<span class="text-red-600 dark:text-red-400">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="max-w-4xl text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">{{ field.help_text }}</p>
+                {% endif %}
+                {% for err in field.errors %}
+                <p class="text-sm text-red-600 dark:text-red-400">{{ err }}</p>
+                {% endfor %}
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </details>
         {% else %}
-          <label for="{{ field.id_for_label }}" class="text-sm font-medium text-font-important-light dark:text-font-important-dark">
-            {{ field.label }}{% if field.field.required %}<span class="text-red-600 dark:text-red-400">*</span>{% endif %}
-          </label>
-          {{ field }}
-          {% if field.help_text %}
-          <p class="max-w-4xl text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">{{ field.help_text }}</p>
-          {% endif %}
-          {% for err in field.errors %}
-          <p class="text-sm text-red-600 dark:text-red-400">{{ err }}</p>
-          {% endfor %}
+        <section id="{{ group.anchor }}" class="scroll-mt-20 flex flex-col gap-4 border-b border-base-200 pb-6 last:border-b-0 dark:border-base-700">
+          <h2 class="text-base font-semibold text-font-important-light dark:text-font-important-dark md:text-lg">
+            {{ group.title }}
+          </h2>
+          <div class="flex flex-col gap-5">
+            {% for field in group.fields %}
+            <div class="flex flex-col gap-1.5">
+              {% if field.is_hidden %}
+                {{ field }}
+              {% else %}
+                <label for="{{ field.id_for_label }}" class="text-sm font-medium text-font-important-light dark:text-font-important-dark">
+                  {{ field.label }}{% if field.field.required %}<span class="text-red-600 dark:text-red-400">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="max-w-4xl text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">{{ field.help_text }}</p>
+                {% endif %}
+                {% for err in field.errors %}
+                <p class="text-sm text-red-600 dark:text-red-400">{{ err }}</p>
+                {% endfor %}
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </section>
         {% endif %}
+        {% endfor %}
       </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
+      {% if section_slug == "hero" %}
+      <script>
+        (function () {
+          function openFromHash() {
+            var m = (location.hash || "").match(/^#(hero-block-slide-\d+)$/);
+            if (!m) return;
+            var d = document.getElementById(m[1]);
+            if (d && d.tagName === "DETAILS") d.open = true;
+          }
+          if (document.readyState === "loading")
+            document.addEventListener("DOMContentLoaded", openFromHash);
+          else openFromHash();
+          window.addEventListener("hashchange", openFromHash);
+        })();
+      </script>
+      {% endif %}
       {% else %}
       {% for field in form %}
       <div class="flex flex-col gap-1.5">
