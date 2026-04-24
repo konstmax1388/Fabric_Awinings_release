@@ -31,17 +31,41 @@ export type HeroCallbackModalTexts = {
   successMessage?: string
 }
 
-export type HeroSlide = {
-  imageUrl?: string
-  videoUrl?: string
-  textTone?: 'light' | 'dark'
-}
-
 export type HeroUspAccentVariant = 'pulse' | 'shimmer'
 
 export type HeroStat = {
   value?: string
   label?: string
+}
+
+/** Слайд hero: v1 — только медиа; v2 — полные поля + imageUrl/videoUrl. */
+export type HeroSlide = {
+  enabled?: boolean
+  showEyebrow?: boolean
+  showTrustLine?: boolean
+  showTrustI0?: boolean
+  showTrustI1?: boolean
+  showTrustI2?: boolean
+  showStat0?: boolean
+  showStat1?: boolean
+  showStat2?: boolean
+  imageUrl?: string
+  videoUrl?: string
+  textTone?: 'light' | 'dark'
+  eyebrow?: string
+  usp?: string
+  heightMode?: 'normal' | 'tall' | 'wow'
+  uspAccentVariant?: HeroUspAccentVariant
+  title?: string
+  subtitle?: string
+  trustLine?: string
+  trustItems?: string[]
+  stats?: HeroStat[]
+  ctaPrimary?: string
+  ctaSecondary?: string
+  primaryAction?: HeroAction
+  secondaryAction?: HeroAction
+  callbackModal?: HeroCallbackModalTexts
 }
 
 export type HomePayload = {
@@ -52,6 +76,7 @@ export type HomePayload = {
     orgDescription?: string
   }
   hero?: {
+    schemaVersion?: number
     eyebrow?: string
     usp?: string
     textTone?: 'light' | 'dark'

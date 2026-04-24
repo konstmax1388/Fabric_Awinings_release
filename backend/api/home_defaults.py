@@ -6,6 +6,8 @@ import re
 from copy import deepcopy
 from typing import Any
 
+from .home_hero_v2 import default_hero_v2_block, ensure_hero_v2
+
 
 def default_home_payload() -> dict[str, Any]:
     return {
@@ -18,45 +20,7 @@ def default_home_payload() -> dict[str, Any]:
             "orgName": "Фабрика Тентов",
             "orgDescription": "Тенты, навесы, шатры и террасы под ключ.",
         },
-        "hero": {
-            "eyebrow": "Премиальные тентовые решения под ключ",
-            "usp": "Производитель с фиксированными сроками и понятной сметой",
-            "textTone": "light",
-            "heightMode": "tall",
-            "uspAccentVariant": "pulse",
-            "title": "Тенты на заказ",
-            "subtitle": (
-                "Любая форма и размер: от навесов для техники до тентов для мероприятий. Своё производство — "
-                "сроки и цена под контролем."
-            ),
-            "trustLine": "Нам доверяют бизнесы, частные заказчики и подрядчики по всей России",
-            "trustItems": ["Договор и гарантия", "Монтаж под ключ", "Сервис после сдачи"],
-            "stats": [
-                {"value": "12+", "label": "лет опыта"},
-                {"value": "4 000+", "label": "проектов"},
-                {"value": "24ч", "label": "первый ответ"},
-            ],
-            "ctaPrimary": "Открыть конструктор",
-            "ctaSecondary": "Смотреть каталог",
-            "primaryAction": {"type": "link", "href": ""},
-            "secondaryAction": {"type": "link", "href": ""},
-            "callbackModal": {
-                "title": "Обратный звонок",
-                "nameLabel": "Имя",
-                "phoneLabel": "Телефон",
-                "submitButton": "Заказать звонок",
-                "submitting": "Отправка…",
-                "successMessage": "Спасибо! Мы перезвоним в рабочее время.",
-            },
-            "bgImageUrl": "",
-            "slides": [
-                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
-                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
-                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
-                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
-                {"imageUrl": "", "videoUrl": "", "textTone": "light"},
-            ],
-        },
+        "hero": default_hero_v2_block(),
         "problemSolution": {
             "heading": "Решаем ваши задачи",
             "subheading": "Частые вопросы клиентов — и как мы на них отвечаем делом, а не обещаниями.",
@@ -501,27 +465,28 @@ def _normalize_calculator(home: dict[str, Any]) -> None:
         calc["widthMinM"], calc["widthMaxM"] = defaults["widthMinM"], defaults["widthMaxM"]
 
 
-def _normalize_hero_slides(home: dict[str, Any]) -> None:
+def _normalize_hero_v2(home: dict[str, Any]) -> None:
     hero = home.get("hero")
     if not isinstance(hero, dict):
         return
-    if hero.get("uspAccentVariant") not in ("pulse", "shimmer"):
-        hero["uspAccentVariant"] = "pulse"
-    fallback_tone = hero.get("textTone") if hero.get("textTone") in ("light", "dark") else "light"
+    ensure_hero_v2(hero)
     slides = hero.get("slides")
     if not isinstance(slides, list):
         return
     for slide in slides:
         if not isinstance(slide, dict):
             continue
-        if slide.get("textTone") not in ("light", "dark"):
-            slide["textTone"] = fallback_tone
+        if slide.get("uspAccentVariant") not in ("pulse", "shimmer"):
+            slide["uspAccentVariant"] = "pulse"
+        t = slide.get("textTone")
+        if t not in ("light", "dark"):
+            slide["textTone"] = "light"
 
 
 def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
     _normalize_problem_solution_cards(out)
-    _normalize_hero_slides(out)
+    _normalize_hero_v2(out)
     _normalize_calculator(out)
     return out
 
@@ -530,6 +495,6 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     """Только сохранённый JSON из админки (без подмешивания дефолтов)."""
     out = deepcopy(stored) if isinstance(stored, dict) else {}
     _normalize_problem_solution_cards(out)
-    _normalize_hero_slides(out)
+    _normalize_hero_v2(out)
     _normalize_calculator(out)
     return out

@@ -75,7 +75,18 @@ class HomePageContentPublicView(APIView):
         h = HomePageContent.get_solo()
         home = stored_home_payload(h.payload)
         hero = home.setdefault("hero", {})
-        if h.hero_background:
+        slides = hero.get("slides")
+        if isinstance(slides, list):
+            for i, s in enumerate(slides[:6]):
+                if not isinstance(s, dict):
+                    continue
+                fimg = getattr(h, f"hero_slide_{i + 1}_image", None)
+                if fimg:
+                    s["imageUrl"] = request.build_absolute_uri(fimg.url)
+        s0 = slides[0] if isinstance(slides, list) and slides and isinstance(slides[0], dict) else None
+        if s0 and (s0.get("imageUrl") or "").strip():
+            hero["bgImageUrl"] = s0.get("imageUrl", "")
+        elif h.hero_background:
             hero["bgImageUrl"] = request.build_absolute_uri(h.hero_background.url)
         else:
             hero["bgImageUrl"] = ""

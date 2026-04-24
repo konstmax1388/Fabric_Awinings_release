@@ -95,22 +95,6 @@
     <form method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} class="flex flex-col gap-5">
       {% csrf_token %}
       {% for field in form %}
-      {% if section_slug == "hero" and field.name == "hero_slide_1_image_url" %}
-      <div class="rounded-default border border-base-200 bg-base-50/60 p-4 dark:border-base-700 dark:bg-base-800/30">
-        <p class="mb-3 text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Слайд 1" %}</p>
-      {% elif section_slug == "hero" and field.name == "hero_slide_2_image_url" %}
-      <div class="rounded-default border border-base-200 bg-base-50/60 p-4 dark:border-base-700 dark:bg-base-800/30">
-        <p class="mb-3 text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Слайд 2" %}</p>
-      {% elif section_slug == "hero" and field.name == "hero_slide_3_image_url" %}
-      <div class="rounded-default border border-base-200 bg-base-50/60 p-4 dark:border-base-700 dark:bg-base-800/30">
-        <p class="mb-3 text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Слайд 3" %}</p>
-      {% elif section_slug == "hero" and field.name == "hero_slide_4_image_url" %}
-      <div class="rounded-default border border-base-200 bg-base-50/60 p-4 dark:border-base-700 dark:bg-base-800/30">
-        <p class="mb-3 text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Слайд 4" %}</p>
-      {% elif section_slug == "hero" and field.name == "hero_slide_5_image_url" %}
-      <div class="rounded-default border border-base-200 bg-base-50/60 p-4 dark:border-base-700 dark:bg-base-800/30">
-        <p class="mb-3 text-sm font-semibold text-font-important-light dark:text-font-important-dark">{% trans "Слайд 5" %}</p>
-      {% endif %}
       <div class="flex flex-col gap-1.5">
         {% if field.is_hidden %}
           {{ field }}
@@ -127,17 +111,6 @@
           {% endfor %}
         {% endif %}
       </div>
-      {% if section_slug == "hero" and field.name == "hero_slide_1_text_tone" %}
-      </div>
-      {% elif section_slug == "hero" and field.name == "hero_slide_2_text_tone" %}
-      </div>
-      {% elif section_slug == "hero" and field.name == "hero_slide_3_text_tone" %}
-      </div>
-      {% elif section_slug == "hero" and field.name == "hero_slide_4_text_tone" %}
-      </div>
-      {% elif section_slug == "hero" and field.name == "hero_slide_5_text_tone" %}
-      </div>
-      {% endif %}
       {% endfor %}
       <div class="flex flex-wrap items-center gap-3 border-t border-base-100 pt-5 dark:border-base-800">
         <button type="submit" class="inline-flex items-center justify-center rounded-default bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-600/40">

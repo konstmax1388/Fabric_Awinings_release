@@ -11,6 +11,8 @@ from unfold.widgets import UnfoldAdminImageFieldWidget
 
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
 from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
+from .home_hero_v2 import apply_hero_v2_initial, build_hero_slide_from_cd, collect_hero_v2_class_fields
+from .home_hero_v2 import iter_hero_slide_model_image_names
 from .models import HomePageContent
 
 HERO_ACTION_CHOICES = (
@@ -149,8 +151,8 @@ def _ps_problem_solution_card(cd: dict[str, Any], i: int) -> dict[str, Any]:
     }
 
 
-_MODEL_IMAGE_FIELDS = (
-    "hero_background",
+_MODEL_IMAGE_FIELDS: tuple[str, ...] = (
+    *iter_hero_slide_model_image_names(),
     "ps0_icon_image",
     "ps1_icon_image",
     "ps2_icon_image",
@@ -158,7 +160,15 @@ _MODEL_IMAGE_FIELDS = (
 )
 
 
-class HomePageContentAdminForm(forms.ModelForm):
+class _HeroV2FormFieldsMixin(forms.Form):
+    pass
+
+
+for _hn, _hf in collect_hero_v2_class_fields().items():
+    setattr(_HeroV2FormFieldsMixin, _hn, _hf)
+
+
+class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     """Все поля блоков + скрытый payload (перезаписывается при сохранении)."""
 
     # --- meta (SEO, микроразметка) ---
@@ -167,101 +177,7 @@ class HomePageContentAdminForm(forms.ModelForm):
     meta_org_name = _req_txt(_("Название организации (schema.org)"))
     meta_org_description = _area(_("Описание организации (schema.org)"), rows=2)
 
-    # --- hero ---
-    hero_eyebrow = _txt(_("Верхний бейдж (короткая строка над заголовком)"))
-    hero_usp = _txt(_("УТП (ключевое обещание)"))
-    hero_text_tone = forms.ChoiceField(
-        label=_("Цвет текста поверх слайда"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_height_mode = forms.ChoiceField(
-        label=_("Высота Hero"),
-        choices=HERO_HEIGHT_MODE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_usp_accent_variant = forms.ChoiceField(
-        label=_("УТП: визуальный акцент"),
-        choices=HERO_USP_ACCENT_VARIANT_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_title = _req_txt(_("Заголовок"))
-    hero_subtitle = _area(_("Подзаголовок"), rows=3)
-    hero_trust_line = _txt(_("Строка доверия под кнопками"))
-    hero_trust_i0 = _txt(_("Метка доверия 1"))
-    hero_trust_i1 = _txt(_("Метка доверия 2"))
-    hero_trust_i2 = _txt(_("Метка доверия 3"))
-    hero_stat_0_value = _txt(_("KPI 1: значение"))
-    hero_stat_0_label = _txt(_("KPI 1: подпись"))
-    hero_stat_1_value = _txt(_("KPI 2: значение"))
-    hero_stat_1_label = _txt(_("KPI 2: подпись"))
-    hero_stat_2_value = _txt(_("KPI 3: значение"))
-    hero_stat_2_label = _txt(_("KPI 3: подпись"))
-    hero_cta_primary = _req_txt(_("Кнопка: основная (текст)"))
-    hero_primary_action = forms.ChoiceField(
-        label=_("Основная кнопка: действие"),
-        choices=HERO_ACTION_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_primary_href = forms.CharField(
-        label=_("Основная кнопка: URL (только для «По ссылке»)"),
-        required=False,
-        widget=forms.TextInput(attrs={"class": _W}),
-        help_text=_("Путь на сайте или полный https://… Пусто — как раньше (калькулятор при включённом блоке, иначе каталог)."),
-    )
-    hero_cta_secondary = _req_txt(_("Кнопка: вторичная (текст)"))
-    hero_secondary_action = forms.ChoiceField(
-        label=_("Вторичная кнопка: действие"),
-        choices=HERO_ACTION_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_secondary_href = forms.CharField(
-        label=_("Вторичная кнопка: URL (только для «По ссылке»)"),
-        required=False,
-        widget=forms.TextInput(attrs={"class": _W}),
-        help_text=_("Пусто — ссылка на каталог, как раньше."),
-    )
-    hero_cb_title = _req_txt(_("Попап обратного звонка: заголовок"))
-    hero_cb_name_label = _req_txt(_("Попап: подпись поля «Имя»"))
-    hero_cb_phone_label = _req_txt(_("Попап: подпись поля «Телефон»"))
-    hero_cb_submit = _req_txt(_("Попап: текст кнопки отправки"))
-    hero_cb_submitting = _req_txt(_("Попап: текст при отправке"))
-    hero_cb_success = _area(_("Попап: сообщение после успеха"), rows=2)
-    hero_slide_1_image_url = _image_url(_("Слайд 1: URL изображения"))
-    hero_slide_1_video_url = _txt(_("Слайд 1: URL видео (mp4/webm, необязательно)"))
-    hero_slide_1_text_tone = forms.ChoiceField(
-        label=_("Слайд 1: цвет текста"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_slide_2_image_url = _image_url(_("Слайд 2: URL изображения"))
-    hero_slide_2_video_url = _txt(_("Слайд 2: URL видео (mp4/webm, необязательно)"))
-    hero_slide_2_text_tone = forms.ChoiceField(
-        label=_("Слайд 2: цвет текста"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_slide_3_image_url = _image_url(_("Слайд 3: URL изображения"))
-    hero_slide_3_video_url = _txt(_("Слайд 3: URL видео (mp4/webm, необязательно)"))
-    hero_slide_3_text_tone = forms.ChoiceField(
-        label=_("Слайд 3: цвет текста"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_slide_4_image_url = _image_url(_("Слайд 4: URL изображения"))
-    hero_slide_4_video_url = _txt(_("Слайд 4: URL видео (mp4/webm, необязательно)"))
-    hero_slide_4_text_tone = forms.ChoiceField(
-        label=_("Слайд 4: цвет текста"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
-    hero_slide_5_image_url = _image_url(_("Слайд 5: URL изображения"))
-    hero_slide_5_video_url = _txt(_("Слайд 5: URL видео (mp4/webm, необязательно)"))
-    hero_slide_5_text_tone = forms.ChoiceField(
-        label=_("Слайд 5: цвет текста"),
-        choices=HERO_TEXT_TONE_CHOICES,
-        widget=forms.Select(attrs={"class": _W}),
-    )
+    # --- hero: поля hero_s* в _HeroV2FormFieldsMixin (см. home_hero_v2) ---
 
     # --- problem / solution ---
     ps_heading = _req_txt(_("Заголовок секции"))
@@ -802,14 +718,19 @@ class HomePageContentAdminForm(forms.ModelForm):
         model = HomePageContent
         fields = (
             "payload",
-            "hero_background",
+            *iter_hero_slide_model_image_names(),
             "ps0_icon_image",
             "ps1_icon_image",
             "ps2_icon_image",
             "ps3_icon_image",
         )
         widgets = {
-            "hero_background": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_1_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_2_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_3_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_4_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_5_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "hero_slide_6_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
             "ps0_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
             "ps1_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
             "ps2_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
@@ -831,63 +752,7 @@ class HomePageContentAdminForm(forms.ModelForm):
         self.initial.setdefault("meta_org_description", meta.get("orgDescription", ""))
 
         hero = m.get("hero") or {}
-        self.initial.setdefault("hero_eyebrow", hero.get("eyebrow", ""))
-        self.initial.setdefault("hero_usp", hero.get("usp", ""))
-        tone = hero.get("textTone")
-        self.initial.setdefault("hero_text_tone", tone if tone in ("light", "dark") else "light")
-        hmode = hero.get("heightMode")
-        self.initial.setdefault("hero_height_mode", hmode if hmode in ("normal", "tall", "wow") else "tall")
-        usp_variant = hero.get("uspAccentVariant")
-        self.initial.setdefault(
-            "hero_usp_accent_variant",
-            usp_variant if usp_variant in ("pulse", "shimmer") else "pulse",
-        )
-        self.initial.setdefault("hero_title", hero.get("title", ""))
-        self.initial.setdefault("hero_subtitle", hero.get("subtitle", ""))
-        self.initial.setdefault("hero_trust_line", hero.get("trustLine", ""))
-        trust_items = hero.get("trustItems") if isinstance(hero.get("trustItems"), list) else []
-        for i in range(3):
-            item = trust_items[i] if i < len(trust_items) else ""
-            self.initial.setdefault(f"hero_trust_i{i}", str(item or "").strip())
-        stats = hero.get("stats") if isinstance(hero.get("stats"), list) else []
-        for i in range(3):
-            s = stats[i] if i < len(stats) and isinstance(stats[i], dict) else {}
-            self.initial.setdefault(f"hero_stat_{i}_value", str(s.get("value", "") or "").strip())
-            self.initial.setdefault(f"hero_stat_{i}_label", str(s.get("label", "") or "").strip())
-        self.initial.setdefault("hero_cta_primary", hero.get("ctaPrimary", ""))
-        self.initial.setdefault("hero_cta_secondary", hero.get("ctaSecondary", ""))
-        pa = hero.get("primaryAction") if isinstance(hero.get("primaryAction"), dict) else {}
-        ptype = pa.get("type")
-        self.initial.setdefault(
-            "hero_primary_action",
-            ptype if ptype in ("link", "callback") else "link",
-        )
-        self.initial.setdefault("hero_primary_href", (pa.get("href") or "").strip())
-        sa = hero.get("secondaryAction") if isinstance(hero.get("secondaryAction"), dict) else {}
-        stype = sa.get("type")
-        self.initial.setdefault(
-            "hero_secondary_action",
-            stype if stype in ("link", "callback") else "link",
-        )
-        self.initial.setdefault("hero_secondary_href", (sa.get("href") or "").strip())
-        cb = hero.get("callbackModal") if isinstance(hero.get("callbackModal"), dict) else {}
-        self.initial.setdefault("hero_cb_title", cb.get("title", ""))
-        self.initial.setdefault("hero_cb_name_label", cb.get("nameLabel", ""))
-        self.initial.setdefault("hero_cb_phone_label", cb.get("phoneLabel", ""))
-        self.initial.setdefault("hero_cb_submit", cb.get("submitButton", ""))
-        self.initial.setdefault("hero_cb_submitting", cb.get("submitting", ""))
-        self.initial.setdefault("hero_cb_success", cb.get("successMessage", ""))
-        slides = hero.get("slides") if isinstance(hero.get("slides"), list) else []
-        fallback_tone = tone if tone in ("light", "dark") else "light"
-        for i in range(5):
-            s = slides[i] if i < len(slides) and isinstance(slides[i], dict) else {}
-            self.initial.setdefault(f"hero_slide_{i + 1}_image_url", str(s.get("imageUrl", "") or "").strip())
-            self.initial.setdefault(f"hero_slide_{i + 1}_video_url", str(s.get("videoUrl", "") or "").strip())
-            slide_tone = s.get("textTone")
-            self.initial.setdefault(
-                f"hero_slide_{i + 1}_text_tone",
-                slide_tone if slide_tone in ("light", "dark") else fallback_tone,
-            )
+        apply_hero_v2_initial(self.initial, hero)
 
         ps = m.get("problemSolution") or {}
         self.initial.setdefault("ps_heading", ps.get("heading", ""))
@@ -1219,46 +1084,8 @@ class HomePageContentAdminForm(forms.ModelForm):
             "orgDescription": cd["meta_org_description"].strip(),
         }
         base["hero"] = {
-            "eyebrow": cd["hero_eyebrow"].strip(),
-            "usp": cd["hero_usp"].strip(),
-            "textTone": cd["hero_text_tone"],
-            "heightMode": cd["hero_height_mode"],
-            "uspAccentVariant": cd["hero_usp_accent_variant"],
-            "title": cd["hero_title"].strip(),
-            "subtitle": cd["hero_subtitle"].strip(),
-            "trustLine": cd["hero_trust_line"].strip(),
-            "trustItems": [cd[f"hero_trust_i{i}"].strip() for i in range(3)],
-            "stats": [
-                {"value": cd[f"hero_stat_{i}_value"].strip(), "label": cd[f"hero_stat_{i}_label"].strip()}
-                for i in range(3)
-            ],
-            "ctaPrimary": cd["hero_cta_primary"].strip(),
-            "ctaSecondary": cd["hero_cta_secondary"].strip(),
-            "primaryAction": {
-                "type": cd["hero_primary_action"],
-                "href": cd["hero_primary_href"].strip(),
-            },
-            "secondaryAction": {
-                "type": cd["hero_secondary_action"],
-                "href": cd["hero_secondary_href"].strip(),
-            },
-            "callbackModal": {
-                "title": cd["hero_cb_title"].strip(),
-                "nameLabel": cd["hero_cb_name_label"].strip(),
-                "phoneLabel": cd["hero_cb_phone_label"].strip(),
-                "submitButton": cd["hero_cb_submit"].strip(),
-                "submitting": cd["hero_cb_submitting"].strip(),
-                "successMessage": cd["hero_cb_success"].strip(),
-            },
-            "bgImageUrl": "",
-            "slides": [
-                {
-                    "imageUrl": cd[f"hero_slide_{i + 1}_image_url"].strip(),
-                    "videoUrl": cd[f"hero_slide_{i + 1}_video_url"].strip(),
-                    "textTone": cd[f"hero_slide_{i + 1}_text_tone"],
-                }
-                for i in range(5)
-            ],
+            "schemaVersion": 2,
+            "slides": [build_hero_slide_from_cd(cd, n) for n in range(1, 7)],
         }
         base["problemSolution"] = {
             "heading": cd["ps_heading"].strip(),
@@ -1652,6 +1479,11 @@ def full_cleaned_dict_for_home_payload(instance: HomePageContent) -> dict[str, A
                 data[name] = init
             else:
                 data[name] = field.choices[0][0]
+        elif isinstance(field, forms.BooleanField):
+            if init is not None:
+                data[name] = bool(init)
+            else:
+                data[name] = bool(getattr(field, "initial", False))
         else:
             data[name] = "" if init is None else init
     return data

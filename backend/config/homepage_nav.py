@@ -10,6 +10,8 @@ from typing import Any
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
+from config.hero_block_fields import hero_section_all_field_names
+
 # slug → заголовок fieldset в админке, короткий заголовок в меню, иконка Material Symbols.
 SECTIONS: dict[str, dict[str, Any]] = {
     "meta": {
@@ -17,10 +19,35 @@ SECTIONS: dict[str, dict[str, Any]] = {
         "nav": _("SEO и микроразметка"),
         "icon": "travel_explore",
     },
-    "hero": {
-        "title": _("Блок «Hero» (первый экран)"),
-        "nav": _("Hero (первый экран)"),
+    "hero1": {
+        "title": _("Hero: слайд 1 (первый экран)"),
+        "nav": _("Hero, слайд 1"),
         "icon": "imagesmode",
+    },
+    "hero2": {
+        "title": _("Hero: слайд 2"),
+        "nav": _("Hero, слайд 2"),
+        "icon": "view_carousel",
+    },
+    "hero3": {
+        "title": _("Hero: слайд 3"),
+        "nav": _("Hero, слайд 3"),
+        "icon": "view_carousel",
+    },
+    "hero4": {
+        "title": _("Hero: слайд 4"),
+        "nav": _("Hero, слайд 4"),
+        "icon": "view_carousel",
+    },
+    "hero5": {
+        "title": _("Hero: слайд 5"),
+        "nav": _("Hero, слайд 5"),
+        "icon": "view_carousel",
+    },
+    "hero6": {
+        "title": _("Hero: слайд 6"),
+        "nav": _("Hero, слайд 6"),
+        "icon": "view_carousel",
     },
     "ps": {
         "title": _("Блок «Проблема — решение» (4 карточки)"),
@@ -86,56 +113,15 @@ SECTIONS: dict[str, dict[str, Any]] = {
 
 SECTION_ORDER: tuple[str, ...] = tuple(SECTIONS.keys())
 
-# Виртуальные поля формы главной (+ hero_background модели) по блокам.
+# Виртуальные поля формы главной (и файлы hero_slide_*) по блокам.
 SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "meta": ("meta_title", "meta_description", "meta_org_name", "meta_org_description"),
-    "hero": (
-        "hero_eyebrow",
-        "hero_usp",
-        "hero_text_tone",
-        "hero_height_mode",
-        "hero_usp_accent_variant",
-        "hero_title",
-        "hero_subtitle",
-        "hero_trust_line",
-        "hero_trust_i0",
-        "hero_trust_i1",
-        "hero_trust_i2",
-        "hero_stat_0_value",
-        "hero_stat_0_label",
-        "hero_stat_1_value",
-        "hero_stat_1_label",
-        "hero_stat_2_value",
-        "hero_stat_2_label",
-        "hero_cta_primary",
-        "hero_primary_action",
-        "hero_primary_href",
-        "hero_cta_secondary",
-        "hero_secondary_action",
-        "hero_secondary_href",
-        "hero_cb_title",
-        "hero_cb_name_label",
-        "hero_cb_phone_label",
-        "hero_cb_submit",
-        "hero_cb_submitting",
-        "hero_cb_success",
-        "hero_slide_1_image_url",
-        "hero_slide_1_video_url",
-        "hero_slide_1_text_tone",
-        "hero_slide_2_image_url",
-        "hero_slide_2_video_url",
-        "hero_slide_2_text_tone",
-        "hero_slide_3_image_url",
-        "hero_slide_3_video_url",
-        "hero_slide_3_text_tone",
-        "hero_slide_4_image_url",
-        "hero_slide_4_video_url",
-        "hero_slide_4_text_tone",
-        "hero_slide_5_image_url",
-        "hero_slide_5_video_url",
-        "hero_slide_5_text_tone",
-        "hero_background",
-    ),
+    "hero1": hero_section_all_field_names(1),
+    "hero2": hero_section_all_field_names(2),
+    "hero3": hero_section_all_field_names(3),
+    "hero4": hero_section_all_field_names(4),
+    "hero5": hero_section_all_field_names(5),
+    "hero6": hero_section_all_field_names(6),
     "ps": (
         "ps_heading",
         "ps_subheading",

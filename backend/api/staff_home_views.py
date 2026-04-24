@@ -23,6 +23,12 @@ from .staff_utils import camel_to_snake, snake_to_camel
 
 _HP_IMAGE_RELATIVE: dict[str, str] = {
     "heroBackgroundRelativePath": "hero_background",
+    "heroSlide1ImageRelativePath": "hero_slide_1_image",
+    "heroSlide2ImageRelativePath": "hero_slide_2_image",
+    "heroSlide3ImageRelativePath": "hero_slide_3_image",
+    "heroSlide4ImageRelativePath": "hero_slide_4_image",
+    "heroSlide5ImageRelativePath": "hero_slide_5_image",
+    "heroSlide6ImageRelativePath": "hero_slide_6_image",
     "ps0IconImageRelativePath": "ps0_icon_image",
     "ps1IconImageRelativePath": "ps1_icon_image",
     "ps2IconImageRelativePath": "ps2_icon_image",
@@ -33,6 +39,12 @@ _HP_IMAGE_RELATIVE: dict[str, str] = {
 def _home_image_urls(request, obj: HomePageContent) -> dict[str, str]:
     return {
         "heroBackgroundUrl": _abs_media(request, obj.hero_background),
+        "heroSlide1ImageUrl": _abs_media(request, obj.hero_slide_1_image),
+        "heroSlide2ImageUrl": _abs_media(request, obj.hero_slide_2_image),
+        "heroSlide3ImageUrl": _abs_media(request, obj.hero_slide_3_image),
+        "heroSlide4ImageUrl": _abs_media(request, obj.hero_slide_4_image),
+        "heroSlide5ImageUrl": _abs_media(request, obj.hero_slide_5_image),
+        "heroSlide6ImageUrl": _abs_media(request, obj.hero_slide_6_image),
         "ps0IconImageUrl": _abs_media(request, obj.ps0_icon_image),
         "ps1IconImageUrl": _abs_media(request, obj.ps1_icon_image),
         "ps2IconImageUrl": _abs_media(request, obj.ps2_icon_image),

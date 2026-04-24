@@ -2030,61 +2030,50 @@ class HomePageContentAdmin(ModelAdmin):
             },
         ),
         hp_fieldset(
-            "hero",
+            "hero1",
             {
-                "fields": (
-                    "hero_eyebrow",
-                    "hero_usp",
-                    "hero_text_tone",
-                    "hero_height_mode",
-                    "hero_usp_accent_variant",
-                    "hero_title",
-                    "hero_subtitle",
-                    "hero_trust_line",
-                    "hero_trust_i0",
-                    "hero_trust_i1",
-                    "hero_trust_i2",
-                    "hero_stat_0_value",
-                    "hero_stat_0_label",
-                    "hero_stat_1_value",
-                    "hero_stat_1_label",
-                    "hero_stat_2_value",
-                    "hero_stat_2_label",
-                    "hero_cta_primary",
-                    "hero_primary_action",
-                    "hero_primary_href",
-                    "hero_cta_secondary",
-                    "hero_secondary_action",
-                    "hero_secondary_href",
-                    "hero_cb_title",
-                    "hero_cb_name_label",
-                    "hero_cb_phone_label",
-                    "hero_cb_submit",
-                    "hero_cb_submitting",
-                    "hero_cb_success",
-                    "hero_slide_1_image_url",
-                    "hero_slide_1_video_url",
-                    "hero_slide_1_text_tone",
-                    "hero_slide_2_image_url",
-                    "hero_slide_2_video_url",
-                    "hero_slide_2_text_tone",
-                    "hero_slide_3_image_url",
-                    "hero_slide_3_video_url",
-                    "hero_slide_3_text_tone",
-                    "hero_slide_4_image_url",
-                    "hero_slide_4_video_url",
-                    "hero_slide_4_text_tone",
-                    "hero_slide_5_image_url",
-                    "hero_slide_5_video_url",
-                    "hero_slide_5_text_tone",
-                    "hero_background",
-                ),
+                "fields": HP_SECTION_FIELDS["hero1"],
                 "description": _(
-                    "Кнопки: «По ссылке» — укажите путь (/catalog, /#calculator) или полный https://… "
-                    "Пустая ссылка при режиме «По ссылке» сохраняет прежнее поведение (основная — калькулятор или каталог, "
-                    "вторая — каталог). «Обратный звонок» открывает всплывающую форму; тексты формы — поля ниже. "
-                    "Для слайдов можно указывать image URL и/или video URL (mp4/webm), а также цвет текста для каждого слайда."
+                    "Один из шести слайдов первого экрана. Раньше был отдельный «фон героя» — теперь фон и медиа задаются "
+                    "у каждого слайда (картинка/URL и при необходимости видео). Галочками отмечайте, какие блоки текста "
+                    "и сам слайд показывать на витрине. Старое поле «фон героя» в базе не выводится в форме: оно остаётся "
+                    "только для обратной совместимости API, пока на всех слайдах не заданы свои картинки."
                 ),
+            },
+        ),
+        hp_fieldset(
+            "hero2",
+            {
+                "classes": ("collapse",),
+                "fields": HP_SECTION_FIELDS["hero2"],
+            },
+        ),
+        hp_fieldset(
+            "hero3",
+            {
+                "classes": ("collapse",),
+                "fields": HP_SECTION_FIELDS["hero3"],
+            },
+        ),
+        hp_fieldset(
+            "hero4",
+            {
+                "classes": ("collapse",),
+                "fields": HP_SECTION_FIELDS["hero4"],
+            },
+        ),
+        hp_fieldset(
+            "hero5",
+            {
+                "classes": ("collapse",),
+                "fields": HP_SECTION_FIELDS["hero5"],
+            },
+        ),
+        hp_fieldset(
+            "hero6",
+            {
+                "classes": ("collapse",),
+                "fields": HP_SECTION_FIELDS["hero6"],
             },
         ),
         hp_fieldset(

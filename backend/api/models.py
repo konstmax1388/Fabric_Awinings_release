@@ -1241,12 +1241,54 @@ class HomePageContent(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     payload = models.JSONField("Данные главной (JSON)", default=dict, blank=True)
     hero_background = models.ImageField(
-        "Фон героя (первый экран)",
+        "Фон героя (первый экран) — устар., см. слайд 1",
         upload_to="home/hero/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
-        help_text="Только загрузка файла. Без изображения на сайте используется запасной фон витрины.",
+        help_text="Устаревшее поле: раньше один фон на весь hero. Сейчас — картинки в блоках «Hero, слайд 1…6».",
+    )
+    hero_slide_1_image = models.ImageField(
+        "Hero, слайд 1: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    hero_slide_2_image = models.ImageField(
+        "Hero, слайд 2: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    hero_slide_3_image = models.ImageField(
+        "Hero, слайд 3: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    hero_slide_4_image = models.ImageField(
+        "Hero, слайд 4: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    hero_slide_5_image = models.ImageField(
+        "Hero, слайд 5: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    hero_slide_6_image = models.ImageField(
+        "Hero, слайд 6: изображение",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
     )
     ps0_icon_image = models.ImageField(
         "Карточка «Проблема—решение» 1: картинка вместо значка",

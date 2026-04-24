@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import type { HeroAction } from '../../types/homePage'
+import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
 import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, subtleButtonHover, cardHoverTransition } from '../../lib/motion-presets'
@@ -57,6 +57,13 @@ const secondaryBtnClass =
   'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-5 font-body text-base font-medium sm:px-8'
 const HERO_VIDEO_START_TIMEOUT_MS = 5000
 
+function slideOn(slide: HeroSlide | null | undefined, k: keyof HeroSlide): boolean {
+  if (!slide) return true
+  const v = slide[k as keyof typeof slide]
+  if (v === false) return false
+  return true
+}
+
 export function HeroSection() {
   const reduce = useReducedMotion()
   const { home, calculatorEnabled } = useSiteSettings()
@@ -71,62 +78,177 @@ export function HeroSection() {
   const [failedVideoBySlide, setFailedVideoBySlide] = useState<Record<number, boolean>>({})
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
 
-  const title = hero?.title ?? ''
-  const subtitle = hero?.subtitle ?? ''
-  const eyebrow = hero?.eyebrow?.trim() || ''
-  const usp = hero?.usp?.trim() || ''
-  const trustLine = hero?.trustLine?.trim() || ''
-  const trustItems = Array.isArray(hero?.trustItems)
-    ? hero.trustItems.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
-    : []
-  const heroStats = Array.isArray(hero?.stats)
-    ? hero.stats
+  const isHeroV2 = Boolean(hero && (hero as { schemaVersion?: number }).schemaVersion === 2)
+  const v2EnabledSlides = useMemo((): HeroSlide[] | null => {
+    if (!isHeroV2 || !Array.isArray(hero?.slides)) return null
+    return hero.slides.filter((s): s is HeroSlide => {
+      if (!s || typeof s !== 'object') return false
+      return s.enabled !== false
+    })
+  }, [isHeroV2, hero?.slides])
+
+  const dataSrc: HeroSlide | (typeof hero) | null = !isHeroV2
+    ? hero
+    : v2EnabledSlides && v2EnabledSlides.length > 0
+      ? v2EnabledSlides[currentSlide % v2EnabledSlides.length]
+      : null
+
+  const title = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.title ?? '')
+    : String(hero?.title ?? '')
+  const subtitle = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.subtitle ?? '')
+    : String(hero?.subtitle ?? '')
+  const eyebrow = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.eyebrow ?? '').trim()
+    : (hero?.eyebrow?.trim() || '')
+  const usp = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.usp ?? '').trim()
+    : String(hero?.usp ?? '')
+        .trim() || ''
+  const trustLine = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.trustLine ?? '').trim()
+    : String(hero?.trustLine ?? '')
+        .trim() || ''
+  const trustItems: string[] = (() => {
+    if (isHeroV2 && dataSrc) {
+      const t = (dataSrc as HeroSlide).trustItems
+      return Array.isArray(t)
+        ? t.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+        : []
+    }
+    if (Array.isArray(hero?.trustItems)) {
+      return hero.trustItems.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+    }
+    return []
+  })()
+  const showTrustI = (i: 0 | 1 | 2) =>
+    !isHeroV2
+      ? true
+      : slideOn(dataSrc as HeroSlide, i === 0 ? 'showTrustI0' : i === 1 ? 'showTrustI1' : 'showTrustI2')
+
+  const showTrustBlockLine = !isHeroV2 || slideOn(dataSrc as HeroSlide, 'showTrustLine')
+  const showEyebrowBlock = !isHeroV2 || slideOn(dataSrc as HeroSlide, 'showEyebrow')
+
+  const heroStats = (() => {
+    if (isHeroV2 && dataSrc) {
+      const st = (dataSrc as HeroSlide).stats
+      const s0 = (dataSrc as HeroSlide).showStat0
+      const s1 = (dataSrc as HeroSlide).showStat1
+      const s2 = (dataSrc as HeroSlide).showStat2
+      if (!Array.isArray(st)) return []
+      const out: { value: string; label: string }[] = []
+      ;[0, 1, 2].forEach((i) => {
+        const on = i === 0 ? s0 !== false : i === 1 ? s1 !== false : s2 !== false
+        if (!on) return
+        const item = st[i] as { value?: string; label?: string } | undefined
+        if (!item) return
+        const value = String(item.value || '').trim()
+        const label = String(item.label || '').trim()
+        if (value && label) out.push({ value, label })
+      })
+      return out
+    }
+    if (Array.isArray(hero?.stats)) {
+      return hero.stats
         .map((item) => ({
           value: String(item?.value || '').trim(),
           label: String(item?.label || '').trim(),
         }))
         .filter((item) => item.value && item.label)
         .slice(0, 3)
-    : []
-  const ctaPrimary = hero?.ctaPrimary ?? ''
-  const ctaSecondary = hero?.ctaSecondary ?? ''
+    }
+    return []
+  })()
+  const ctaPrimary = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.ctaPrimary ?? '')
+    : String(hero?.ctaPrimary ?? '')
+  const ctaSecondary = isHeroV2
+    ? String((dataSrc as HeroSlide | null)?.ctaSecondary ?? '')
+    : String(hero?.ctaSecondary ?? '')
   const heroBg = hero?.bgImageUrl?.trim() || ''
-  const heroTextTone = hero?.textTone === 'dark' ? 'dark' : 'light'
-  const heroHeightMode = hero?.heightMode === 'wow' ? 'wow' : hero?.heightMode === 'normal' ? 'normal' : 'tall'
-  const uspAccentVariant = hero?.uspAccentVariant === 'shimmer' ? 'shimmer' : 'pulse'
+  const heroTextToneN = (() => {
+    const t = isHeroV2 ? (dataSrc as HeroSlide | null)?.textTone : hero?.textTone
+    return t === 'dark' ? 'dark' : 'light'
+  })()
+  const heroHeightMode = isHeroV2
+    ? (dataSrc as HeroSlide | null)?.heightMode === 'wow'
+      ? 'wow'
+      : (dataSrc as HeroSlide | null)?.heightMode === 'normal'
+        ? 'normal'
+        : 'tall'
+    : hero?.heightMode === 'wow'
+      ? 'wow'
+      : hero?.heightMode === 'normal'
+        ? 'normal'
+        : 'tall'
+  const uspAccentVariant = isHeroV2
+    ? (dataSrc as HeroSlide | null)?.uspAccentVariant === 'shimmer'
+      ? 'shimmer'
+      : 'pulse'
+    : hero?.uspAccentVariant === 'shimmer'
+      ? 'shimmer'
+      : 'pulse'
 
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
+    if (isHeroV2) {
+      if (!v2EnabledSlides || !v2EnabledSlides.length) {
+        return [] as { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' }[]
+      }
+      return v2EnabledSlides.map((s) => {
+        const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
+        const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
+        const textTone = s.textTone === 'dark' ? 'dark' : 'light'
+        return { imageUrl, videoUrl, textTone }
+      })
+    }
+    const heroTone = hero?.textTone === 'dark' ? 'dark' : 'light'
     const normalized = raw
       .map((s) => {
         if (!s || typeof s !== 'object') return null
         const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
         const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
-        const textTone = s.textTone === 'dark' ? 'dark' : heroTextTone
+        const textTone = s.textTone === 'dark' ? 'dark' : heroTone
         if (!imageUrl && !videoUrl) return null
         return { imageUrl, videoUrl, textTone }
       })
       .filter((s): s is { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' } => s !== null)
     if (normalized.length) return normalized
-    return heroBg ? [{ imageUrl: heroBg, videoUrl: '', textTone: heroTextTone }] : []
-  }, [hero?.slides, heroBg, heroTextTone])
+    return heroBg
+      ? [{ imageUrl: heroBg, videoUrl: '', textTone: heroTone as 'light' | 'dark' }]
+      : []
+  }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2EnabledSlides])
 
   const hasSlides = slides.length > 0
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
   const activeImageUrl = activeSlide?.imageUrl || ''
   const activeVideoUrl = activeSlide?.videoUrl || ''
-  const activeSlideTextTone = activeSlide?.textTone ?? heroTextTone
+  const activeSlideTextTone = activeSlide?.textTone ?? heroTextToneN
   const shouldShowVideo = Boolean(activeVideoUrl) && !failedVideoBySlide[currentSlide]
   const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
 
-  const primaryAction = hero?.primaryAction
-  const secondaryAction = hero?.secondaryAction
+  const primaryAction = isHeroV2
+    ? (dataSrc as HeroSlide | null)?.primaryAction
+    : hero?.primaryAction
+  const secondaryAction = isHeroV2
+    ? (dataSrc as HeroSlide | null)?.secondaryAction
+    : hero?.secondaryAction
+  const callbackModal: HeroCallbackModalTexts = isHeroV2
+    ? (dataSrc as HeroSlide | null)?.callbackModal ?? {}
+    : hero?.callbackModal ?? {}
   const primaryIsCallback = primaryAction?.type === 'callback'
   const secondaryIsCallback = secondaryAction?.type === 'callback'
   const primaryHref = resolveLinkHref(primaryAction, calculatorEnabled, 'primary')
   const secondaryHref = resolveLinkHref(secondaryAction, calculatorEnabled, 'secondary')
 
   const openCallback = () => setCallbackOpen(true)
+
+  const hasVisibleTrustPills = trustItems.some(
+    (item, idx) => Boolean(item) && showTrustI(idx as 0 | 1 | 2),
+  )
+  const hasTrustBlock =
+    (showTrustBlockLine && Boolean(trustLine)) || (trustItems.length > 0 && hasVisibleTrustPills)
 
   useEffect(() => {
     if (slides.length <= 1) return
@@ -225,7 +347,7 @@ export function HeroSection() {
       <HeroCallbackModal
         open={callbackOpen}
         onClose={() => setCallbackOpen(false)}
-        modal={hero?.callbackModal ?? {}}
+        modal={callbackModal}
       />
       {shouldShowVideo ? (
         <motion.video
@@ -300,7 +422,7 @@ export function HeroSection() {
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
         <div className="max-w-2xl min-w-0">
-          {eyebrow ? (
+          {showEyebrowBlock && eyebrow ? (
             <motion.p
               className="fabric-hero-badge"
               initial={from}
@@ -441,24 +563,28 @@ export function HeroSection() {
               ))}
             </motion.div>
           ) : null}
-          {trustLine || trustItems.length ? (
+          {hasTrustBlock ? (
             <motion.div
               className="mt-6 space-y-3"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.4 }}
             >
-              {trustLine ? <p className={`font-body text-sm sm:text-base ${textClasses.subtle}`}>{trustLine}</p> : null}
-              {trustItems.length ? (
+              {showTrustBlockLine && trustLine ? (
+                <p className={`font-body text-sm sm:text-base ${textClasses.subtle}`}>{trustLine}</p>
+              ) : null}
+              {trustItems.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {trustItems.map((item, idx) => (
-                    <span
-                      key={`hero-trust-${idx}`}
-                      className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] leading-relaxed break-words ${textClasses.trustPill}`}
-                    >
-                      {item}
-                    </span>
-                  ))}
+                  {trustItems.map((item, idx) =>
+                    item && showTrustI(idx as 0 | 1 | 2) ? (
+                      <span
+                        key={`hero-trust-${idx}`}
+                        className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] leading-relaxed break-words ${textClasses.trustPill}`}
+                      >
+                        {item}
+                      </span>
+                    ) : null,
+                  )}
                 </div>
               ) : null}
             </motion.div>
