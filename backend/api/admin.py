@@ -1144,7 +1144,7 @@ class CartOrderAdmin(ModelAdmin):
                 ),
             )
             if not astrum_crm_enabled()
-            else format_html("")
+            else mark_safe("")
         )
         warn_dup = (
             format_html(
@@ -1155,7 +1155,7 @@ class CartOrderAdmin(ModelAdmin):
             )
             if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED
             and (obj.bitrix_entity_id or "").strip()
-            else format_html("")
+            else mark_safe("")
         )
         btn = escape(_("Отправить в CRM"))
         return format_html(
@@ -1225,7 +1225,7 @@ class CartOrderAdmin(ModelAdmin):
                     escape(hint),
                 )
                 if hint
-                else format_html("")
+                else mark_safe("")
             )
             body = format_html(
                 '{}<p class="mb-1 text-sm font-medium text-red-800 dark:text-red-200">{}</p>'
