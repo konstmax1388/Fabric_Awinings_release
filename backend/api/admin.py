@@ -20,9 +20,10 @@ from django.utils.html import escape, format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.middleware.csrf import get_token
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
-from django.contrib.admin.utils import quote
+from django.contrib.admin.utils import quote, unquote
 
 from config.homepage_nav import (
     SECTION_FIELDS as HP_SECTION_FIELDS,
@@ -44,6 +45,11 @@ from .home_page_admin_form import (
     apply_homepage_section_save,
 )
 from .product_wb_import import WbImportError, import_one_from_wb_url
+from api.services.astrum_crm import (
+    astrum_crm_enabled,
+    humanize_astrum_api_error_for_admin,
+    push_cart_order_to_astrum_crm,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -892,6 +898,7 @@ class CartOrderAdmin(ModelAdmin):
         "created_at",
         "bitrix_sync_attempts",
         "crm_sync_summary",
+        "resend_astrum_crm_button",
         "cdek_sync_attempts",
     )
     fieldsets = (
@@ -916,9 +923,10 @@ class CartOrderAdmin(ModelAdmin):
         (
             _("CRM: Битрикс24 (Astrum)"),
             {
-                "fields": ("crm_sync_summary",),
+                "fields": ("crm_sync_summary", "resend_astrum_crm_button"),
                 "description": _(
-                    "После оформления заказ отправляется в приложение «Заявки с сайта»; ниже — итог и текст ошибки, если была."
+                    "После оформления заказ отправляется в приложение «Заявки с сайта»; ниже — итог и текст ошибки, если была. "
+                    "Ручная повторная отправка — кнопка внизу (при необходимости также команда retry_astrum_crm_orders)."
                 ),
             },
         ),
@@ -949,7 +957,7 @@ class CartOrderAdmin(ModelAdmin):
                 "fields": ("bitrix_entity_id", "bitrix_sync_status", "bitrix_sync_error", "bitrix_sync_attempts"),
                 "classes": ("collapse",),
                 "description": _(
-                    "Обычно заполняются автоматически. Повторная отправка — команда retry_astrum_crm_orders или сохраните заказ после исправления интеграции."
+                    "Обычно заполняются автоматически. Повторная отправка — кнопка «Отправить в CRM» выше или команда retry_astrum_crm_orders."
                 ),
             },
         ),
@@ -1152,9 +1160,19 @@ class CartOrderAdmin(ModelAdmin):
                 )
         elif obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.ERROR:
             err = (obj.bitrix_sync_error or "").strip() or _("Текст ошибки не сохранён.")
+            hint = humanize_astrum_api_error_for_admin(err)
+            hint_block = (
+                format_html(
+                    '<p class="mb-2 text-sm text-amber-900 dark:text-amber-100/90">{}</p>',
+                    escape(hint),
+                )
+                if hint
+                else format_html("")
+            )
             body = format_html(
-                '<p class="mb-1 text-sm font-medium text-red-800 dark:text-red-200">{}</p>'
+                '{}<p class="mb-1 text-sm font-medium text-red-800 dark:text-red-200">{}</p>'
                 '<pre class="max-h-48 overflow-auto rounded-default border border-red-200 bg-red-50/80 p-3 text-xs whitespace-pre-wrap dark:border-red-900/50 dark:bg-red-950/30">{}</pre>',
+                hint_block,
                 _("Сообщение об ошибке:"),
                 escape(err),
             )
@@ -1173,6 +1191,124 @@ class CartOrderAdmin(ModelAdmin):
             )
         return format_html("{}{}", head, body)
 
+    def changeform_view(self, request, *args: Any, **kwargs: Any) -> Any:
+        self._cartorder_change_request = request
+        return super().changeform_view(request, *args, **kwargs)
+
+    def get_urls(self) -> list[Any]:
+        info = self.model._meta.app_label, self.model._meta.model_name
+        return [
+            path(
+                "<path:object_id>/resend-astrum-crm/",
+                self.admin_site.admin_view(self._resend_astrum_crm_view),
+                name=f"{info[0]}_{info[1]}_resend_astrum_crm",
+            ),
+            *super().get_urls(),
+        ]
+
+    def _resend_astrum_crm_view(
+        self, request: Any, object_id: str
+    ) -> HttpResponseRedirect:
+        order = self.get_object(request, unquote(object_id))
+        url_back = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change",
+            args=[str(order.pk)],
+        )
+        if not self.has_change_permission(request, order):
+            raise PermissionDenied
+        if request.method != "POST":
+            self.message_user(
+                request,
+                _("Повторная отправка в CRM: используйте кнопку «Отправить в CRM» (POST) на этой странице."),
+                level=messages.WARNING,
+            )
+            return HttpResponseRedirect(url_back)
+        if order.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED and (
+            order.bitrix_entity_id or ""
+        ).strip():
+            self.message_user(
+                request,
+                _(
+                    "Заказ уже в CRM; повторно не отправляем, чтобы не плодить сделки. "
+                    "При сбое в Б24 правьте данные там вручную."
+                ),
+                level=messages.INFO,
+            )
+            return HttpResponseRedirect(url_back)
+        if not astrum_crm_enabled():
+            self.message_user(
+                request,
+                _(
+                    "Интеграция Astrum не настроена: API-ключ и ответственный в «Настройках сайта» "
+                    "или переменные ASTRUM_CRM_* в окружении."
+                ),
+                level=messages.ERROR,
+            )
+            return HttpResponseRedirect(url_back)
+        push_cart_order_to_astrum_crm(order)
+        order.refresh_from_db()
+        if order.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED:
+            self.message_user(
+                request, _("Заказ успешно отправлен в CRM (Astrum)."), level=messages.SUCCESS
+            )
+        else:
+            err = (order.bitrix_sync_error or _("Без деталей, см. «Сводка по CRM»."))[:2000]
+            self.message_user(
+                request,
+                _("Повторная отправка в CRM не удалась: %s") % err,
+                level=messages.ERROR,
+            )
+        return HttpResponseRedirect(url_back)
+
+    @display(description=_("Повторная отправка в CRM (Astrum)"))
+    def resend_astrum_crm_button(self, obj: CartOrder | None) -> str:
+        if obj is None or not obj.pk:
+            return "—"
+        request = getattr(self, "_cartorder_change_request", None)
+        if request is None:
+            return "—"
+        if not self.has_change_permission(request, obj):
+            return format_html(
+                '<p class="text-sm text-font-subtle-light">{}</p>',
+                _("Нет права на изменение заказа — повторная отправка недоступна."),
+            )
+        if obj.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED and (
+            obj.bitrix_entity_id or ""
+        ).strip():
+            return format_html(
+                '<p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
+                _(
+                    "Заказ уже принят в CRM. Повтор не выполняем, чтобы не дублировать сделки. "
+                    "Правки — вручную в Битрикс24, если требуется."
+                ),
+            )
+        if not astrum_crm_enabled():
+            return format_html(
+                '<p class="text-sm text-amber-800 dark:text-amber-200">{}</p>',
+                _(
+                    "Интеграция Astrum выключена или не настроена (см. «Настройки сайта» и переменные ASTRUM_CRM_*)."
+                ),
+            )
+        url = reverse(
+            f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_resend_astrum_crm",
+            args=[quote(str(obj.pk))],
+        )
+        return format_html(
+            '<form method="post" action="{}">'
+            '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
+            '<button type="submit" class="inline-flex items-center gap-2 rounded-default border border-primary-600/40 '
+            "bg-primary-600 px-3 py-2 text-sm font-medium text-white "
+            "hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-500/40"
+            '">'
+            '<span class="material-symbols-outlined text-[18px]">sync</span>{}</button></form>'
+            '<p class="mt-2 max-w-2xl text-xs text-font-subtle-light dark:text-font-subtle-dark">{}</p>',
+            url,
+            get_token(request),
+            escape(_("Отправить в CRM")),
+            _(
+                "То же, что и при оформлении на сайте. Исправьте, при необходимости, e-mail/телефон в заказе, затем нажмите кнопку."
+            ),
+        )
 
 
 @admin.register(ConsentLog)

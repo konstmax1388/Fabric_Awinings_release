@@ -211,3 +211,56 @@ def test_push_http_error_sets_error(mock_post):
         order.refresh_from_db()
         assert order.bitrix_sync_status == CartOrder.BitrixSyncStatus.ERROR
         assert "Invalid" in order.bitrix_sync_error
+        mock_post.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_build_astrum_payload_without_contact_email_adds_note_to_comments():
+    order = CartOrder.objects.create(
+        order_ref="FAB-TEST-NOMAIL",
+        customer_name="Тест",
+        customer_phone="+79991234567",
+        customer_email="x@test.ru",
+        lines=[{"title": "Товар", "priceFrom": 100, "qty": 1}],
+        total_approx=100,
+    )
+    cfg = AstrumCrmRuntimeConfig(
+        api_key="k",
+        api_url="https://example.com/api/order",
+        assigned_default=1,
+        contact_behavior="SELECT_EXISTING",
+        entity_behavior="CREATE_ANYWAY",
+        deal_title_prefix="Заказ",
+        timeout=15,
+    )
+    p = build_astrum_payload(order, cfg, include_contact_email=False)
+    assert "email" not in p["contact"]
+    assert "x@test.ru" in p["deal"]["comments"]
+    assert "contact API не передавался" in p["deal"]["comments"]
+
+
+@pytest.mark.django_db
+@patch("api.services.astrum_crm._post_json")
+def test_push_retries_without_contact_email_after_api_rejects_email(mock_post):
+    err_body = (
+        '{"status_code":400,"detail":"Validation failed for POST /api/order",'
+        '"extra":[{"message":"Value error, Invalid email address: The domain name test.ru does not exist.",'
+        '"key":"contact.email"}]}'
+    )
+    mock_post.side_effect = [
+        (400, err_body, __import__("json").loads(err_body)),
+        (200, '{"id": "crm-42"}', {"id": "crm-42"}),
+    ]
+    _enable_astrum_in_db()
+    with override_settings(ASTRUM_CRM_API_KEY="", ASTRUM_CRM_ASSIGNED_DEFAULT=None):
+        order = _minimal_order()
+        order.customer_email = "buyer@test.ru"
+        order.save(update_fields=["customer_email"])
+        push_cart_order_to_astrum_crm(order)
+        order.refresh_from_db()
+        assert order.bitrix_sync_status == CartOrder.BitrixSyncStatus.SYNCED
+        assert order.bitrix_entity_id == "crm-42"
+        assert mock_post.call_count == 2
+        second_payload = mock_post.call_args_list[1][0][2]
+        assert "email" not in second_payload["contact"]
+        assert "buyer@test.ru" in second_payload["deal"]["comments"]

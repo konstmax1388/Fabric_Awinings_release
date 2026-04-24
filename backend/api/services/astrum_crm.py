@@ -89,12 +89,20 @@ def astrum_crm_enabled() -> bool:
     return resolve_astrum_crm_config() is not None
 
 
-def build_astrum_payload(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> dict[str, Any]:
+def build_astrum_payload(
+    order: CartOrder,
+    cfg: AstrumCrmRuntimeConfig,
+    *,
+    include_contact_email: bool = True,
+) -> dict[str, Any]:
     """Тело POST /api/order по спецификации Astrum.
 
-    В contact всегда передаётся email из заказа (после валидации при оформлении на сайте).
-    Сопоставление контакта в Б24 — по полю contact_behavior (по умолчанию по телефону/email).
+    По умолчанию в contact передаётся e-mail из заказа (как пришёл с витрины). Если посредник
+    отклоняет адрес (например, из‑за проверки DNS домена), при повторной отправке можно вызвать
+    с ``include_contact_email=False``: тогда e-mail в contact не уходит, но строка с адресом
+    добавляется в комментарий сделки, чтобы менеджер видел его вручную.
     """
+    ce = (order.customer_email or "").strip()
     lines = order.lines if isinstance(order.lines, list) else []
     products: list[dict[str, Any]] = []
     for row in lines:
@@ -154,14 +162,20 @@ def build_astrum_payload(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> dict[
     if order.manager_letter:
         comments_parts.append("")
         comments_parts.append(order.manager_letter)
+    if not include_contact_email and ce:
+        comments_parts.append("")
+        comments_parts.append(
+            f"E-mail с сайта: {ce[:500]} "
+            "(в поле contact API не передавался: посредник отклонил адрес по своим правилам; "
+            "на сайте адрес прошёл проверку — для связи используйте телефон или уточните почту у клиента.)"
+        )
     comments = "\n".join(comments_parts)[:50000]
 
     contact: dict[str, Any] = {
         "name": order.customer_name.strip()[:250],
         "phone": order.customer_phone.strip()[:80],
     }
-    ce = (order.customer_email or "").strip()
-    if ce:
+    if include_contact_email and ce:
         contact["email"] = ce[:250]
 
     return {
@@ -212,10 +226,63 @@ def _safe_json(text: str) -> dict[str, Any] | None:
         return None
 
 
+_ASTRUM_ADMIN_CONTACT_EMAIL_HINT = (
+    "Посредник (Astrum) отклонил e-mail в поле contact (часто из‑за проверки домена). "
+    "Система автоматически повторяет заявку без e-mail в API, а адрес с сайта добавляет в комментарий сделки. "
+    "Если эта подсказка сопровождает сохранённую ошибку — оба запроса не прошли; смотрите JSON ниже."
+)
+
+
+def _looks_like_astrum_contact_email_rejection(err_text: str) -> bool:
+    if "contact.email" not in err_text:
+        return False
+    t = err_text.lower()
+    return "invalid email" in t or "domain name" in t or "does not exist" in t
+
+
+def _should_retry_astrum_without_contact_email(
+    code: int, raw: str, data: dict[str, Any] | None
+) -> bool:
+    """Один повтор POST без contact.email, если ответ API явно про отклонение contact.email."""
+    if not (400 <= code < 500):
+        return False
+    s = (raw or "").strip()
+    if _looks_like_astrum_contact_email_rejection(s):
+        return True
+    if data and isinstance(data.get("extra"), list):
+        for item in data.get("extra") or []:
+            if isinstance(item, dict) and item.get("key") == "contact.email":
+                return True
+    return False
+
+
+def humanize_astrum_api_error_for_admin(raw: str) -> str:
+    """
+    Краткое пояснение к ответу Astrum/Б24 для сводки в админке; при отсутствии шаблона — пустая строка.
+    """
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    if _looks_like_astrum_contact_email_rejection(s):
+        return _ASTRUM_ADMIN_CONTACT_EMAIL_HINT
+    data = _safe_json(s) if s.lstrip().startswith("{") else None
+    if data and isinstance(data.get("extra"), list):
+        for item in data.get("extra") or []:
+            if not isinstance(item, dict) or item.get("key") != "contact.email":
+                continue
+            msg = str(item.get("message") or "")
+            t = msg.lower()
+            if "invalid" in t or "domain" in t:
+                return _ASTRUM_ADMIN_CONTACT_EMAIL_HINT
+    return ""
+
+
 def push_cart_order_to_astrum_crm(order: CartOrder) -> None:
     """
     Отправляет заказ в Astrum API и обновляет поля bitrix_* на CartOrder.
     При выключенной интеграции (нет ключа / assigned) — no-op, статус NOT_SENT.
+    При ответе 4xx с ошибкой contact.email повторяет запрос без поля e-mail в contact (один раз),
+    сохраняя адрес в комментарии сделки.
     """
     cfg = resolve_astrum_crm_config()
     if cfg is None:
@@ -228,7 +295,40 @@ def push_cart_order_to_astrum_crm(order: CartOrder) -> None:
         update_fields=["bitrix_sync_attempts", "bitrix_sync_status", "bitrix_sync_error"]
     )
 
-    payload = build_astrum_payload(order, cfg)
+    def _apply_http_success(http_code: int, body_data: dict[str, Any] | None, log_note: str = "") -> None:
+        ext_id = ""
+        if body_data is not None:
+            rid = body_data.get("id")
+            if rid is not None:
+                ext_id = str(rid)[:128]
+        order.bitrix_sync_status = CartOrder.BitrixSyncStatus.SYNCED
+        order.bitrix_entity_id = ext_id
+        order.bitrix_sync_error = ""
+        order.save(
+            update_fields=["bitrix_sync_status", "bitrix_entity_id", "bitrix_sync_error"]
+        )
+        logger.info(
+            "astrum_crm: заказ %s принят посредником, code=%s id=%s%s",
+            order.order_ref,
+            http_code,
+            ext_id or "—",
+            log_note,
+        )
+
+    def _apply_http_error(http_code: int, raw: str) -> None:
+        err_msg = raw[:2000] if raw else f"HTTP {http_code}"
+        order.bitrix_sync_status = CartOrder.BitrixSyncStatus.ERROR
+        order.bitrix_sync_error = err_msg
+        order.save(update_fields=["bitrix_sync_status", "bitrix_sync_error"])
+        logger.warning(
+            "astrum_crm: заказ %s ошибка HTTP %s: %s",
+            order.order_ref,
+            http_code,
+            err_msg[:500],
+        )
+
+    had_email = bool((order.customer_email or "").strip())
+    payload = build_astrum_payload(order, cfg, include_contact_email=True)
     try:
         code, raw, data = _post_json(
             cfg.api_url, cfg.api_key, payload, timeout=cfg.timeout
@@ -241,32 +341,33 @@ def push_cart_order_to_astrum_crm(order: CartOrder) -> None:
         return
 
     if 200 <= code < 300:
-        ext_id = ""
-        if data is not None:
-            rid = data.get("id")
-            if rid is not None:
-                ext_id = str(rid)[:128]
-        order.bitrix_sync_status = CartOrder.BitrixSyncStatus.SYNCED
-        order.bitrix_entity_id = ext_id
-        order.bitrix_sync_error = ""
-        order.save(
-            update_fields=["bitrix_sync_status", "bitrix_entity_id", "bitrix_sync_error"]
-        )
-        logger.info(
-            "astrum_crm: заказ %s принят посредником, code=%s id=%s",
-            order.order_ref,
-            code,
-            ext_id or "—",
-        )
+        _apply_http_success(code, data)
         return
 
-    err_msg = raw[:2000] if raw else f"HTTP {code}"
-    order.bitrix_sync_status = CartOrder.BitrixSyncStatus.ERROR
-    order.bitrix_sync_error = err_msg
-    order.save(update_fields=["bitrix_sync_status", "bitrix_sync_error"])
-    logger.warning(
-        "astrum_crm: заказ %s ошибка HTTP %s: %s",
-        order.order_ref,
-        code,
-        err_msg[:500],
-    )
+    if had_email and _should_retry_astrum_without_contact_email(code, raw, data):
+        logger.info(
+            "astrum_crm: повтор POST без contact.email для заказа %s (после HTTP %s)",
+            order.order_ref,
+            code,
+        )
+        payload2 = build_astrum_payload(order, cfg, include_contact_email=False)
+        try:
+            code2, raw2, data2 = _post_json(
+                cfg.api_url, cfg.api_key, payload2, timeout=cfg.timeout
+            )
+        except Exception:
+            logger.exception("astrum_crm: повторный запрос для заказа %s", order.order_ref)
+            order.bitrix_sync_status = CartOrder.BitrixSyncStatus.ERROR
+            order.bitrix_sync_error = "Исключение при HTTP-запросе (повтор без e-mail, см. логи сервера)."
+            order.save(update_fields=["bitrix_sync_status", "bitrix_sync_error"])
+            return
+
+        if 200 <= code2 < 300:
+            _apply_http_success(
+                code2, data2, log_note=" (второй запрос, без contact.email в теле API)"
+            )
+            return
+        _apply_http_error(code2, raw2)
+        return
+
+    _apply_http_error(code, raw)
