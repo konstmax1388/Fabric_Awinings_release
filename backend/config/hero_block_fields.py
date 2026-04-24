@@ -55,9 +55,21 @@ def hero_section_all_field_names(n: int) -> tuple[str, ...]:
     return (*hero_section_virtual_field_names(n), f"hero_slide_{n}_image")
 
 
+def hero_carousel_field_names() -> tuple[str, ...]:
+    """Поля уровня всего hero (карусель), не слайда — в начале раздела «Hero» в админке."""
+    return (
+        "hero_carousel_interval_sec",
+        "hero_carousel_show_arrows",
+        "hero_carousel_show_progress",
+    )
+
+
 def all_hero_section_field_names() -> tuple[str, ...]:
-    return tuple(
-        name
-        for n in range(1, HERO_SLIDE_COUNT + 1)
-        for name in hero_section_all_field_names(n)
+    return (
+        *hero_carousel_field_names(),
+        *(
+            name
+            for n in range(1, HERO_SLIDE_COUNT + 1)
+            for name in hero_section_all_field_names(n)
+        ),
     )

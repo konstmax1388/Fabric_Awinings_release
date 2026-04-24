@@ -94,6 +94,38 @@
   <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-700 dark:bg-base-900 md:p-6">
     <form method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} class="flex flex-col gap-5">
       {% csrf_token %}
+      {% if hero_field_groups %}
+      <p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">
+        {% trans "Ниже поля сгруппированы: карусель, затем слайд 1…6. В каждом слайде — сначала чекбоксы и тексты, в конце — загрузка фона/URL." %}
+      </p>
+      {% for group in hero_field_groups %}
+      <div class="flex flex-col gap-4 border-b border-base-200 pb-6 last:border-b-0 last:pb-0 dark:border-base-700">
+        <h2 class="text-base font-semibold text-font-important-light dark:text-font-important-dark md:text-lg">
+          {{ group.title }}
+        </h2>
+        <div class="flex flex-col gap-5">
+          {% for field in group.fields %}
+      <div class="flex flex-col gap-1.5">
+        {% if field.is_hidden %}
+          {{ field }}
+        {% else %}
+          <label for="{{ field.id_for_label }}" class="text-sm font-medium text-font-important-light dark:text-font-important-dark">
+            {{ field.label }}{% if field.field.required %}<span class="text-red-600 dark:text-red-400">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+          <p class="max-w-4xl text-xs leading-relaxed text-font-subtle-light dark:text-font-subtle-dark">{{ field.help_text }}</p>
+          {% endif %}
+          {% for err in field.errors %}
+          <p class="text-sm text-red-600 dark:text-red-400">{{ err }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
       {% for field in form %}
       <div class="flex flex-col gap-1.5">
         {% if field.is_hidden %}
@@ -112,6 +144,7 @@
         {% endif %}
       </div>
       {% endfor %}
+      {% endif %}
       <div class="flex flex-wrap items-center gap-3 border-t border-base-100 pt-5 dark:border-base-800">
         <button type="submit" class="inline-flex items-center justify-center rounded-default bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-600/40">
           {% trans "Сохранить" %}

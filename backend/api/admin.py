@@ -25,7 +25,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from unfold.widgets import UnfoldAdminPasswordWidget
 from django.contrib.admin.utils import quote, unquote
 
-from config.hero_block_fields import hero_section_all_field_names
+from config.hero_block_fields import hero_carousel_field_names, hero_section_all_field_names
 from config.homepage_nav import (
     SECTION_FIELDS as HP_SECTION_FIELDS,
     SECTION_ORDER as HP_SECTION_ORDER,
@@ -2030,15 +2030,23 @@ class HomePageContentAdmin(ModelAdmin):
                 "description": _("Title и description страницы, данные для schema.org LocalBusiness."),
             },
         ),
+        (
+            _("Hero: карусель (все слайды)"),
+            {
+                "fields": tuple(hero_carousel_field_names()),
+                "description": _(
+                    "Интервал автосмены, стрелки и полоска прогресса — на витрине, если в карусели больше одного слайда."
+                ),
+            },
+        ),
         hp_fieldset(
             "hero",
             {
                 "fields": tuple(hero_section_all_field_names(1)),
                 "description": _(
-                    "Первый экран — до шести слайдов. В форме — раздел «Hero» (один пункт в меню): внутри группы "
-                    "«слайд 1»…«слайд 6» с полным текстом, CTA, статами, картинкой/URL/видео. Раньше был единый «фон героя»"
-                    " — в базе он остаётся для совместимости API, пока у всех слайдов не заданы свои картинки. Галочками "
-                    "укажите, какие фрагменты и весь слайд показывать на витрине."
+                    "Первый экран — до шести слайдов. В разделе «Hero» (один пункт в меню) — слайды 1…6: тексты, "
+                    "чекбоксы видимости блоков, CTA, KPI, картинка/URL/видео. Раньше был единый «фон героя» — в базе он "
+                    "остаётся для совместимости API, пока у слайдов не заданы свои файлы. Галочками укажите, что показывать."
                 ),
             },
         ),
@@ -2486,6 +2494,28 @@ class HomePageContentAdmin(ModelAdmin):
         else:
             form = HomePageSectionForm(instance=obj, section_slug=slug)
         meta = HP_SECTIONS[slug]
+        hero_field_groups = None
+        if slug == "hero":
+            from config.hero_block_fields import HERO_SLIDE_COUNT, hero_carousel_field_names, hero_section_all_field_names
+
+            hero_field_groups = []
+            carousel_f = [form[n] for n in hero_carousel_field_names() if n in form.fields]
+            if carousel_f:
+                hero_field_groups.append(
+                    {
+                        "title": str(_("Карусель (все слайды)")),
+                        "fields": carousel_f,
+                    }
+                )
+            for n in range(1, HERO_SLIDE_COUNT + 1):
+                row_f = [form[fn] for fn in hero_section_all_field_names(n) if fn in form.fields]
+                if row_f:
+                    hero_field_groups.append(
+                        {
+                            "title": str(_("Слайд %s") % n),
+                            "fields": row_f,
+                        }
+                    )
         context = {
             **self.admin_site.each_context(request),
             "title": str(meta["title"]),
@@ -2493,6 +2523,7 @@ class HomePageContentAdmin(ModelAdmin):
             "opts": self.model._meta,
             "form": form,
             "section_slug": slug,
+            "hero_field_groups": hero_field_groups,
             "section_index_url": reverse(
                 "admin:api_homepagecontent_section",
                 kwargs={"slug": HP_SECTION_ORDER[0]},

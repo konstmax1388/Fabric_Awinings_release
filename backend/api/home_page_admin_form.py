@@ -12,7 +12,7 @@ from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminImageFieldWidg
 
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
 from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
-from .home_hero_v2 import apply_hero_v2_initial, build_hero_slide_from_cd, collect_hero_v2_class_fields
+from .home_hero_v2 import _cd_bool, apply_hero_v2_initial, build_hero_slide_from_cd, collect_hero_v2_class_fields
 from .home_hero_v2 import iter_hero_slide_model_image_names
 from .models import HomePageContent
 
@@ -177,6 +177,36 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     meta_description = _area(_("Описание (meta description)"), rows=3)
     meta_org_name = _req_txt(_("Название организации (schema.org)"))
     meta_org_description = _area(_("Описание организации (schema.org)"), rows=2)
+
+    # --- hero: карусель (корневой уровень в JSON hero) ---
+    hero_carousel_interval_sec = forms.IntegerField(
+        label=_("Hero: интервал автосмены слайдов (сек.)"),
+        min_value=3,
+        max_value=120,
+        initial=7,
+        help_text=_("Сколько секунд длится показ слайда до автоперелистывания (3–120)."),
+        widget=forms.NumberInput(attrs={"class": _W, "min": 3, "max": 120}),
+    )
+    hero_carousel_show_arrows = forms.BooleanField(
+        label=_("Hero: стрелки «назад / вперёд» на витрине"),
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "rounded border border-base-200 text-primary-600 focus:ring-2 focus:ring-primary-600/40"
+            }
+        ),
+    )
+    hero_carousel_show_progress = forms.BooleanField(
+        label=_("Hero: полоска прогресса до смены слайда"),
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "rounded border border-base-200 text-primary-600 focus:ring-2 focus:ring-primary-600/40"
+            }
+        ),
+    )
 
     # --- hero: поля hero_s* в _HeroV2FormFieldsMixin (см. home_hero_v2) ---
 
@@ -782,6 +812,14 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         self.initial.setdefault("meta_org_description", meta.get("orgDescription", ""))
 
         hero = m.get("hero") or {}
+        if isinstance(hero, dict) and hero.get("schemaVersion") == 2:
+            try:
+                sec = int(round((hero.get("autoplayIntervalMs") or 7000) / 1000))
+            except (TypeError, ValueError):
+                sec = 7
+            self.initial.setdefault("hero_carousel_interval_sec", max(3, min(120, sec)))
+            self.initial.setdefault("hero_carousel_show_arrows", hero.get("showCarouselArrows", True) is not False)
+            self.initial.setdefault("hero_carousel_show_progress", hero.get("showCarouselProgress", True) is not False)
         apply_hero_v2_initial(self.initial, hero)
 
         ps = m.get("problemSolution") or {}
@@ -1113,8 +1151,16 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "orgName": cd["meta_org_name"].strip(),
             "orgDescription": cd["meta_org_description"].strip(),
         }
+        try:
+            csec = int(cd.get("hero_carousel_interval_sec") or 7)
+        except (TypeError, ValueError):
+            csec = 7
+        csec = max(3, min(120, csec))
         base["hero"] = {
             "schemaVersion": 2,
+            "autoplayIntervalMs": csec * 1000,
+            "showCarouselArrows": _cd_bool(cd, "hero_carousel_show_arrows", True),
+            "showCarouselProgress": _cd_bool(cd, "hero_carousel_show_progress", True),
             "slides": [build_hero_slide_from_cd(cd, n) for n in range(1, 7)],
         }
         base["problemSolution"] = {

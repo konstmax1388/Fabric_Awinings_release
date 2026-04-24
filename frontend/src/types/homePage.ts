@@ -77,6 +77,10 @@ export type HomePayload = {
   }
   hero?: {
     schemaVersion?: number
+    /** Автосмена слайдов, мс (3–120 с в админке) */
+    autoplayIntervalMs?: number
+    showCarouselArrows?: boolean
+    showCarouselProgress?: boolean
     eyebrow?: string
     usp?: string
     textTone?: 'light' | 'dark'

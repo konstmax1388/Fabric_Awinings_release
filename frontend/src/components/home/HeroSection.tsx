@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
@@ -77,8 +77,23 @@ export function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [failedVideoBySlide, setFailedVideoBySlide] = useState<Record<number, boolean>>({})
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
+  const slideT0Ref = useRef(0)
+  const [barProgress, setBarProgress] = useState(0)
 
   const isHeroV2 = Boolean(hero && (hero as { schemaVersion?: number }).schemaVersion === 2)
+
+  const autoplayIntervalMs = useMemo(() => {
+    if (!isHeroV2 || !hero) return 7000
+    const v = (hero as { autoplayIntervalMs?: number }).autoplayIntervalMs
+    if (typeof v !== 'number' || !Number.isFinite(v)) return 7000
+    return Math.max(3000, Math.min(120_000, v))
+  }, [isHeroV2, hero])
+
+  const showCarouselArrows =
+    (hero as { showCarouselArrows?: boolean } | undefined)?.showCarouselArrows !== false
+  const showCarouselProgress =
+    (hero as { showCarouselProgress?: boolean } | undefined)?.showCarouselProgress !== false
+
   const v2EnabledSlides = useMemo((): HeroSlide[] | null => {
     if (!isHeroV2 || !Array.isArray(hero?.slides)) return null
     return hero.slides.filter((s): s is HeroSlide => {
@@ -251,12 +266,12 @@ export function HeroSection() {
     (showTrustBlockLine && Boolean(trustLine)) || (trustItems.length > 0 && hasVisibleTrustPills)
 
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (slides.length <= 1 || reduce) return
     const id = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 7000)
+    }, autoplayIntervalMs)
     return () => window.clearInterval(id)
-  }, [slides.length])
+  }, [slides.length, autoplayIntervalMs, reduce])
 
   useEffect(() => {
     if (slides.length <= 1) {
@@ -265,6 +280,24 @@ export function HeroSection() {
     }
     setCurrentSlide((prev) => (prev >= slides.length ? 0 : prev))
   }, [slides.length])
+
+  useEffect(() => {
+    slideT0Ref.current = Date.now()
+    setBarProgress(0)
+  }, [currentSlide, slides.length])
+
+  useEffect(() => {
+    if (slides.length <= 1 || !showCarouselProgress || reduce) {
+      setBarProgress(0)
+      return
+    }
+    const id = window.setInterval(() => {
+      setBarProgress(
+        Math.min(1, (Date.now() - slideT0Ref.current) / Math.max(1, autoplayIntervalMs)),
+      )
+    }, 40)
+    return () => window.clearInterval(id)
+  }, [slides.length, showCarouselProgress, reduce, currentSlide, autoplayIntervalMs])
 
   useEffect(() => {
     if (!shouldShowVideo || hasStartedActiveVideo) return
@@ -342,6 +375,15 @@ export function HeroSection() {
         ? 'min-h-[24rem] md:min-h-[30rem] lg:min-h-[34rem]'
         : 'min-h-[28rem] md:min-h-[35rem] lg:min-h-[40rem]'
 
+  const carouselNav =
+    slides.length > 1 && showCarouselArrows
+      ? {
+          prev: () =>
+            setCurrentSlide((i) => (i - 1 + slides.length) % slides.length),
+          next: () => setCurrentSlide((i) => (i + 1) % slides.length),
+        }
+      : null
+
   return (
     <section className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}>
       <HeroCallbackModal
@@ -349,6 +391,34 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={callbackModal}
       />
+      {carouselNav ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-30 select-none"
+          role="group"
+          aria-label="Навигация по слайдам"
+        >
+          <button
+            type="button"
+            onClick={carouselNav.prev}
+            className="pointer-events-auto absolute left-1.5 top-1/2 z-30 -translate-y-1/2 rounded-full border border-white/25 bg-black/25 p-2.5 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/40 sm:left-3 sm:p-3"
+            aria-label="Предыдущий слайд"
+          >
+            <span className="block text-lg leading-none sm:text-xl" aria-hidden>
+              ‹
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={carouselNav.next}
+            className="pointer-events-auto absolute right-1.5 top-1/2 z-30 -translate-y-1/2 rounded-full border border-white/25 bg-black/25 p-2.5 text-white shadow-sm backdrop-blur-sm transition hover:bg-black/40 sm:right-3 sm:p-3"
+            aria-label="Следующий слайд"
+          >
+            <span className="block text-lg leading-none sm:text-xl" aria-hidden>
+              ›
+            </span>
+          </button>
+        </div>
+      ) : null}
       {shouldShowVideo ? (
         <motion.video
           key={`hero-video-${currentSlide}`}
@@ -607,6 +677,17 @@ export function HeroSection() {
           ) : null}
         </div>
       </motion.div>
+      {slides.length > 1 && showCarouselProgress && !reduce ? (
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-1 overflow-hidden rounded-b-[24px] bg-white/15"
+          aria-hidden
+        >
+          <div
+            className="h-full w-full origin-left bg-accent"
+            style={{ transform: `scaleX(${barProgress})` }}
+          />
+        </div>
+      ) : null}
     </section>
   )
 }

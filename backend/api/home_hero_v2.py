@@ -134,8 +134,25 @@ def default_hero_v2_slide() -> dict[str, Any]:
     }
 
 
+HERO_V2_ROOT_KEYS: frozenset[str] = frozenset(
+    {
+        "schemaVersion",
+        "slides",
+        "autoplayIntervalMs",
+        "showCarouselArrows",
+        "showCarouselProgress",
+    }
+)
+
+
 def default_hero_v2_block() -> dict[str, Any]:
-    return {"schemaVersion": 2, "slides": [deepcopy(default_hero_v2_slide()) for _ in range(HERO_SLIDE_COUNT)]}
+    return {
+        "schemaVersion": 2,
+        "autoplayIntervalMs": 7000,
+        "showCarouselArrows": True,
+        "showCarouselProgress": True,
+        "slides": [deepcopy(default_hero_v2_slide()) for _ in range(HERO_SLIDE_COUNT)],
+    }
 
 
 def _slide_looks_v2(s: Any) -> bool:
@@ -207,8 +224,12 @@ def ensure_hero_v2(hero: Any) -> None:
         hero["schemaVersion"] = 2
         hero["slides"] = out_slides
         for k in list(hero.keys()):
-            if k not in ("schemaVersion", "slides"):
+            if k not in HERO_V2_ROOT_KEYS:
                 del hero[k]
+        dblk = default_hero_v2_block()
+        for key in ("autoplayIntervalMs", "showCarouselArrows", "showCarouselProgress"):
+            if key not in hero:
+                hero[key] = dblk[key]
         return
 
     old_slides = hero.get("slides")
@@ -221,7 +242,8 @@ def ensure_hero_v2(hero: Any) -> None:
         if i < len(old_slides):
             _overlay_light_slide_onto(s, old_slides[i])
         new_slides.append(s)
-    repl = {"schemaVersion": 2, "slides": new_slides}
+    repl = default_hero_v2_block()
+    repl["slides"] = new_slides
     hero.clear()
     hero.update(repl)
 
