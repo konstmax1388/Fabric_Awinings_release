@@ -122,6 +122,7 @@ def default_hero_v2_slide() -> dict[str, Any]:
         },
         "imageUrl": "",
         "videoUrl": "",
+        "overlayStrength": 85,
         "enabled": True,
         "showEyebrow": True,
         "showTrustLine": True,
@@ -252,6 +253,14 @@ def iter_hero_slide_model_image_names() -> tuple[str, ...]:
     return tuple(f"hero_slide_{i}_image" for i in range(1, HERO_SLIDE_COUNT + 1))
 
 
+def _overlay_strength_0_100(cd: dict[str, Any], p: str) -> int:
+    try:
+        v = int(cd.get(f"{p}overlay_strength", 85))
+    except (TypeError, ValueError):
+        v = 85
+    return max(0, min(100, v))
+
+
 def _cd_bool(cd: dict[str, Any], key: str, default: bool = True) -> bool:
     v = cd.get(key)
     if v is None:
@@ -277,6 +286,7 @@ def build_hero_slide_from_cd(cd: dict[str, Any], n: int) -> dict[str, Any]:
         "heightMode": cd.get(f"{p}height_mode")
         if cd.get(f"{p}height_mode") in ("normal", "tall", "wow")
         else "tall",
+        "overlayStrength": _overlay_strength_0_100(cd, p),
         "uspAccentVariant": cd.get(f"{p}usp_accent_variant")
         if cd.get(f"{p}usp_accent_variant") in ("pulse", "shimmer")
         else "pulse",
@@ -340,6 +350,11 @@ def _apply_hero_v2_to_initial_line(initial: dict[str, Any], slide: dict[str, Any
     initial.setdefault(f"{p}text_tone", t if t in ("light", "dark") else "light")
     h = s.get("heightMode")
     initial.setdefault(f"{p}height_mode", h if h in ("normal", "tall", "wow") else "tall")
+    try:
+        os0 = int(s.get("overlayStrength", 85))
+    except (TypeError, ValueError):
+        os0 = 85
+    initial.setdefault(f"{p}overlay_strength", max(0, min(100, os0)))
     u = s.get("uspAccentVariant")
     initial.setdefault(f"{p}usp_accent_variant", u if u in ("pulse", "shimmer") else "pulse")
     initial.setdefault(f"{p}title", s.get("title", d0.get("title", "")))
@@ -410,6 +425,22 @@ def _one_slide_char_fields_impl(n: int) -> dict[str, forms.Field]:
             choices=HERO_HEIGHT_MODE_CHOICES,
             initial="tall",
             widget=forms.Select(attrs={"class": _W}),
+        ),
+        f"{p}overlay_strength": forms.IntegerField(
+            label=_("Слайд %(n)s: затемнение фона (0–100, 0 = нет, ~85 как у шаблона)") % {"n": n},
+            required=False,
+            min_value=0,
+            max_value=100,
+            initial=85,
+            help_text=_("Линейный градиент и мягкий тёплый блик; при 0 — только фото/видео, без вуали."),
+            widget=forms.NumberInput(
+                attrs={
+                    "class": _W,
+                    "min": 0,
+                    "max": 100,
+                    "inputmode": "numeric",
+                }
+            ),
         ),
         f"{p}usp_accent_variant": forms.ChoiceField(
             label=_("Слайд %(n)s: акцент на УТП") % {"n": n},

@@ -79,6 +79,7 @@ export function HeroSection() {
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
   const slideT0Ref = useRef(0)
   const [barProgress, setBarProgress] = useState(0)
+  const [coarsePointer, setCoarsePointer] = useState(false)
   const slideCountRef = useRef(0)
 
   const isHeroV2 = Boolean(hero && (hero as { schemaVersion?: number }).schemaVersion === 2)
@@ -217,6 +218,21 @@ export function HeroSection() {
       ? 'shimmer'
       : 'pulse'
 
+  const heroOverlayStrength01 = useMemo((): number => {
+    if (isHeroV2 && dataSrc) {
+      const o = (dataSrc as HeroSlide).overlayStrength
+      if (o === 0) return 0
+      if (typeof o === 'string') {
+        const n = Number(o)
+        if (Number.isFinite(n)) return Math.max(0, Math.min(1, n / 100))
+      }
+      if (typeof o === 'number' && Number.isFinite(o)) {
+        return Math.max(0, Math.min(1, o / 100))
+      }
+    }
+    return 0.85
+  }, [isHeroV2, dataSrc])
+
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
     if (isHeroV2) {
@@ -331,6 +347,17 @@ export function HeroSection() {
     return () => window.clearTimeout(timerId)
   }, [currentSlide, hasStartedActiveVideo, shouldShowVideo])
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(pointer: coarse)')
+    const sync = () => {
+      setCoarsePointer(mq.matches)
+    }
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
     if (reduce) return
     const onScroll = () => setScrollY(window.scrollY)
     const onMove = (e: MouseEvent) => {
@@ -358,6 +385,14 @@ export function HeroSection() {
       gradY: mouse.y * 12 + scrollShift * 0.62,
     }
   }, [mouse.x, mouse.y, reduce, scrollY])
+
+  const gradParallax = useMemo(
+    () =>
+      reduce || coarsePointer
+        ? { x: 0, y: 0 }
+        : { x: depth.gradX, y: depth.gradY },
+    [reduce, coarsePointer, depth.gradX, depth.gradY],
+  )
 
   const textClasses =
     activeSlideTextTone === 'dark'
@@ -411,15 +446,22 @@ export function HeroSection() {
   const textSlideD = reduce ? 0.12 : 0.45
   const parallaxTransition = { type: 'spring' as const, stiffness: 62, damping: 16, mass: 1.2 }
 
+  const scrimA = heroOverlayStrength01
+  const showScrim = scrimA > 0.001
+
   return (
-    <section className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}>
+    <section
+      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+    >
       <HeroCallbackModal
         open={callbackOpen}
         onClose={() => setCallbackOpen(false)}
         modal={callbackModal}
       />
-      <div className="absolute inset-0 overflow-hidden" aria-hidden>
-        <AnimatePresence initial={false} mode="wait">
+      <div className="absolute inset-0 z-0 overflow-hidden rounded-[24px] isolate" aria-hidden>
+        <div className="absolute inset-0 overflow-hidden">
+          <AnimatePresence initial={false} mode="wait">
           {shouldShowVideo ? (
             <motion.video
               key={`hero-video-${currentSlide}`}
@@ -492,27 +534,49 @@ export function HeroSection() {
             />
           ) : null}
         </AnimatePresence>
+        </div>
+        {showScrim ? (
+          <>
+            <motion.div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: `linear-gradient(to right, rgba(26,26,26,${0.85 * scrimA}), rgba(26,26,26,${0.55 * scrimA}), transparent)`,
+              }}
+              initial={false}
+              animate={gradParallax}
+              transition={{ type: 'spring', stiffness: 56, damping: 14 }}
+              aria-hidden
+            />
+            <motion.div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: 'radial-gradient(circle at 76% 24%, rgba(232,122,0,0.2), transparent 42%)',
+              }}
+              initial={false}
+              animate={
+                reduce
+                  ? { opacity: 0.2 * scrimA }
+                  : { opacity: [0.12 * scrimA, 0.28 * scrimA, 0.12 * scrimA] }
+              }
+              transition={
+                reduce
+                  ? { duration: 0.15 }
+                  : { duration: 7.2, repeat: Infinity, ease: 'easeInOut' }
+              }
+              aria-hidden
+            />
+          </>
+        ) : null}
       </div>
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a]/85 via-[#1a1a1a]/55 to-transparent"
-        animate={{ x: depth.gradX, y: depth.gradY }}
-        transition={{ type: 'spring', stiffness: 56, damping: 14 }}
-      />
-      <motion.div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_24%,rgba(232,122,0,0.2),transparent_42%)]"
-        animate={{ opacity: [0.12, 0.28, 0.12] }}
-        transition={{ duration: 7.2, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden
-      />
-      <motion.div
-        className="fabric-liquid-glass pointer-events-none absolute inset-y-8 right-6 hidden w-[38%] rounded-[28px] lg:block"
+        className="fabric-liquid-glass pointer-events-none absolute inset-y-8 right-6 z-[5] hidden w-[38%] rounded-[28px] lg:block"
         initial={reduce ? false : { opacity: 0, x: 26 }}
         animate={reduce ? undefined : { opacity: 1, x: 0 }}
         transition={{ ...easeOutSoft, delay: 0.34 }}
         aria-hidden
       />
       <motion.div
-        className="relative px-4 py-16 md:px-10 md:py-24 lg:py-28"
+        className="relative z-10 px-4 py-16 md:px-10 md:py-24 lg:py-28"
         animate={{ x: depth.textX, y: depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >

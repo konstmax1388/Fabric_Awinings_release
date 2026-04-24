@@ -52,6 +52,8 @@ export type HeroSlide = {
   imageUrl?: string
   videoUrl?: string
   textTone?: 'light' | 'dark'
+  /** 0–100: сила вуали поверх фото/видео (линейный градиент + мягкий блик) */
+  overlayStrength?: number
   eyebrow?: string
   usp?: string
   heightMode?: 'normal' | 'tall' | 'wow'

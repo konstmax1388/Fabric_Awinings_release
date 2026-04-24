@@ -14,6 +14,7 @@ def hero_section_virtual_field_names(n: int) -> tuple[str, ...]:
         f"{p}usp",
         f"{p}text_tone",
         f"{p}height_mode",
+        f"{p}overlay_strength",
         f"{p}usp_accent_variant",
         f"{p}title",
         f"{p}subtitle",
