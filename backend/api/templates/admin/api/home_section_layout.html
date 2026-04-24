@@ -1,0 +1,220 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="px-4 py-2 text-sm">
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo;
+  <a href="{{ section_index_url }}">{{ opts.verbose_name }}</a>
+  &rsaquo;
+  {{ section_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" class="mx-auto flex max-w-5xl flex-col gap-5 pb-8">
+  <div class="flex flex-col gap-3 border-b border-base-200 pb-4 dark:border-base-700">
+    <h1 class="text-xl font-semibold tracking-tight text-font-important-light dark:text-font-important-dark md:text-2xl">
+      {{ title }}
+    </h1>
+    {% if section_nav %}
+    <nav class="-mx-1 flex flex-wrap gap-1.5 overflow-x-auto pb-1 md:gap-2" aria-label="{% trans 'Разделы этой модели' %}">
+      {% for row in section_nav %}
+      <a
+        href="{{ row.url }}"
+        class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition md:text-sm {% if row.current %}bg-primary-600 text-white shadow-xs{% else %}border border-base-200 bg-white text-font-default-light hover:border-primary-300 hover:text-primary-700 dark:border-base-600 dark:bg-base-900 dark:text-font-default-dark dark:hover:border-primary-500 dark:hover:text-primary-400{% endif %}"
+      >
+        {{ row.title }}
+      </a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
+
+  <p class="text-sm text-font-subtle-light dark:text-font-subtle-dark max-w-3xl">
+    {% trans "Перетащите строки, чтобы задать порядок на главной. Снимите флажок, чтобы полностью скрыть секцию. Калькулятор и портфолио дополнительно зависят от переключателей в «Настройки сайта»." %}
+  </p>
+
+  {{ section_layout_data|json_script:"fabric-home-section-layout-data" }}
+
+  <ul
+    id="fabric-home-section-layout-list"
+    class="list-none space-y-2 rounded-default border border-base-200 bg-white p-3 dark:border-base-600 dark:bg-base-900"
+  ></ul>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <button
+      type="button"
+      id="fabric-home-section-layout-save"
+      class="inline-flex items-center gap-2 rounded-default bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-primary-700"
+    >
+      <span class="material-symbols-outlined text-[20px]">save</span>
+      {% trans "Сохранить" %}
+    </button>
+    <p id="fabric-home-section-layout-status" class="text-sm text-font-subtle-light dark:text-font-subtle-dark" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const dataEl = document.getElementById("fabric-home-section-layout-data");
+  if (!dataEl) return;
+  const initial = JSON.parse(dataEl.textContent);
+  const list = document.getElementById("fabric-home-section-layout-list");
+  const saveBtn = document.getElementById("fabric-home-section-layout-save");
+  const statusEl = document.getElementById("fabric-home-section-layout-status");
+  const postUrl = "{{ section_layout_post_url|escapejs }}";
+  const csrf = "{{ csrf_token|escapejs }}";
+  const msgShow = "{{ _('показать')|escapejs }}";
+  const msgHide = "{{ _('скрыть')|escapejs }}";
+  const msgSaved = "{{ _('Сохранено')|escapejs }}";
+  const msgErr = "{{ _('Ошибка сохранения')|escapejs }}";
+  const msgWait = "…";
+
+  if (!list || !saveBtn) return;
+
+  const labels = initial.labels || {};
+  const layoutRows = (initial.layout || []).map(function (r) {
+    return { id: r.id, enabled: r.enabled !== false };
+  });
+  let dragged = null;
+
+  function rowEl(row) {
+    const li = document.createElement("li");
+    li.className =
+      "flex flex-wrap items-center gap-2 rounded-default border border-base-200 bg-base-50 px-2 py-2 select-none dark:border-base-600 dark:bg-base-800/60";
+    li.setAttribute("draggable", "true");
+    li.dataset.id = row.id;
+
+    const handle = document.createElement("span");
+    handle.setAttribute("aria-hidden", "true");
+    handle.className =
+      "material-symbols-outlined cursor-grab text-font-subtle-light text-[20px] dark:text-font-subtle-dark";
+    handle.textContent = "drag_indicator";
+    li.appendChild(handle);
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "h-4 w-4 rounded border-base-300 text-primary-600";
+    cb.checked = row.enabled;
+    function updateCbAria() {
+      cb.setAttribute("aria-label", (labels[row.id] || row.id) + " — " + (cb.checked ? msgShow : msgHide));
+    }
+    updateCbAria();
+    li.appendChild(cb);
+    cb.addEventListener("change", updateCbAria);
+
+    const lab = document.createElement("span");
+    lab.className = "min-w-0 flex-1 text-sm font-medium text-font-default-light dark:text-font-default-dark";
+    lab.textContent = labels[row.id] || row.id;
+    li.appendChild(lab);
+
+    const up = document.createElement("button");
+    up.type = "button";
+    up.className = "inline-flex h-8 w-8 items-center justify-center rounded border border-base-200 text-sm hover:bg-base-100 dark:border-base-600 dark:hover:bg-base-700";
+    up.setAttribute("aria-label", "{{ _('Вверх')|escapejs }}");
+    up.textContent = "↑";
+    const down = document.createElement("button");
+    down.type = "button";
+    down.className = up.className;
+    down.setAttribute("aria-label", "{{ _('Вниз')|escapejs }}");
+    down.textContent = "↓";
+    li.appendChild(up);
+    li.appendChild(down);
+
+    up.addEventListener("click", function (e) {
+      e.preventDefault();
+      const i = rowIndex(li);
+      if (i < 1) return;
+      list.insertBefore(li, list.children[i - 1] || li);
+    });
+    down.addEventListener("click", function (e) {
+      e.preventDefault();
+      const i = rowIndex(li);
+      const next = li.nextElementSibling;
+      if (!next) return;
+      list.insertBefore(next, li);
+    });
+
+    li.addEventListener("dragstart", function (e) {
+      dragged = li;
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+    });
+    li.addEventListener("dragend", function () {
+      dragged = null;
+    });
+    return li;
+  }
+
+  function rowIndex(li) {
+    return Array.prototype.indexOf.call(list.children, li);
+  }
+
+  function build() {
+    list.textContent = "";
+    layoutRows.forEach(function (r) {
+      list.appendChild(rowEl(r));
+    });
+  }
+
+  function collect() {
+    const out = [];
+    for (const li of list.children) {
+      const id = li.dataset.id;
+      const cb = li.querySelector('input[type="checkbox"]');
+      out.push({ id: id, enabled: cb && cb.checked });
+    }
+    return out;
+  }
+
+  list.addEventListener("dragover", function (e) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+  });
+  list.addEventListener("drop", function (e) {
+    e.preventDefault();
+    if (!dragged) return;
+    const after = (e.target && e.target.closest) ? e.target.closest("li") : null;
+    if (!after || !list.contains(after) || after === dragged) return;
+    const y = e.clientY;
+    const r = after.getBoundingClientRect();
+    if (y < r.top + r.height / 2) {
+      list.insertBefore(dragged, after);
+    } else {
+      const next = after.nextElementSibling;
+      if (next) {
+        list.insertBefore(dragged, next);
+      } else {
+        list.appendChild(dragged);
+      }
+    }
+  });
+
+  build();
+
+  saveBtn.addEventListener("click", function () {
+    if (statusEl) statusEl.textContent = msgWait;
+    const body = JSON.stringify({ sectionLayout: collect() });
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrf,
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    fetch(postUrl, { method: "POST", body: body, headers: headers, credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (statusEl) {
+          if (j && j.ok) statusEl.textContent = msgSaved;
+          else statusEl.textContent = msgErr;
+        }
+      })
+      .catch(function () {
+        if (statusEl) statusEl.textContent = msgErr;
+      });
+  });
+})();
+</script>
+{% endblock %}
