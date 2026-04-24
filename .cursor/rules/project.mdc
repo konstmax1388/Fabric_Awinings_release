@@ -10,3 +10,9 @@ alwaysApply: true
 # Обязательства
 - ВСЕГДА запусти `npm run typecheck` после изменения 3+ файлов
 - ВСЕГДА покажи план действий, прежде чем писать код
+- ПРИ КАЖДОМ `push + deploy` ОБЯЗАТЕЛЬНО повышай версию в файле `VERSION` и включай это изменение в релизный коммит
+
+# Git: куда пушить (прод тянет `origin/main`, не только `release`)
+- В репозитории два remotes: **`origin`** → `github.com/.../Fabric_Awinings`, **`release`** → `.../Fabric_Awinings_release`. Локальная `main` часто отслеживает `release/main`, но **деплой** (`deploy/sync-to-production.*`, **GitHub Action Deploy VPS** на сервере) выполняет `git fetch/reset` от **`origin/main`**.
+- ПОСЛЕ релизного коммита, если нужен выклад **на тот хост, где `origin` = Fabric_Awinings**, выполняй: **`git push release main` И `git push origin main`** (второе обязательно, иначе прод останется на старом SHA).
+- Кратко проверка: `git rev-parse release/main` и `git rev-parse origin/main` должны совпадать с `main` перед деплоем (иначе на сервере останется старый `origin/main`).
