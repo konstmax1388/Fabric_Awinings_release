@@ -2508,6 +2508,19 @@ class HomePageContentAdmin(ModelAdmin):
                 apply_homepage_section_save(obj, form.cleaned_data)
                 messages.success(request, _("Изменения сохранены."))
                 return redirect("admin:api_homepagecontent_section", slug=slug)
+            if slug == "hero":
+                messages.error(
+                    request,
+                    _(
+                        "Форма не сохранена: исправьте отмеченные поля. "
+                        "Секции слайдов с ошибками раскрыты; список проблем — вверху формы."
+                    ),
+                )
+            else:
+                messages.error(
+                    request,
+                    _("Форма не сохранена: исправьте отмеченные поля."),
+                )
         else:
             form = HomePageSectionForm(instance=obj, section_slug=slug)
         meta = HP_SECTIONS[slug]
@@ -2524,10 +2537,15 @@ class HomePageContentAdmin(ModelAdmin):
             if carousel_f:
                 hero_field_groups.append(
                     {
-                        "title": str(_("Карусель (все слайды)")),
+                        "title": str(_("Карусель: автопрокрутка и кнопки")),
                         "nav_label": str(_("Карусель")),
                         "anchor": "hero-block-carousel",
                         "hero_group_kind": "carousel",
+                        "card_hint": str(
+                            _(
+                                "Как быстро листаются слайды на главной, показывать ли стрелки и полоску прогресса."
+                            )
+                        ),
                         "fields": carousel_f,
                     }
                 )
@@ -2539,26 +2557,43 @@ class HomePageContentAdmin(ModelAdmin):
             if quick:
                 hero_field_groups.append(
                     {
-                        "title": str(_("Слайды: включение 1–6 (участвуют в карусели, если у слайда есть фото/видео)")),
+                        "title": str(_("Какие слайды включены (1–6)")),
                         "nav_label": str(_("Вкл/выкл 1–6")),
                         "anchor": "hero-block-slides-onoff",
                         "hero_group_kind": "slide_toggles",
+                        "card_hint": str(
+                            _(
+                                "В карусель попадают только включённые слайды, у которых задано изображение или видео."
+                            )
+                        ),
                         "fields": quick,
                     }
                 )
+            slide_group_rows = []
             for n in range(1, HERO_SLIDE_COUNT + 1):
                 row_f = [form[fn] for fn in hero_section_slide_content_field_names(n) if fn in form.fields]
                 if row_f:
-                    hero_field_groups.append(
-                        {
-                            "title": str(_("Слайд %s") % n),
-                            "nav_label": str(_("Слайд %s") % n),
-                            "anchor": f"hero-block-slide-{n}",
-                            "hero_group_kind": "slide",
-                            "slide_index": n,
-                            "fields": row_f,
-                        }
-                    )
+                    slide_group_rows.append((n, row_f))
+            any_hero_slide_has_errors = any(
+                any(bool(f.errors) for f in row_f) for _n, row_f in slide_group_rows
+            )
+            for n, row_f in slide_group_rows:
+                has_err = any(bool(f.errors) for f in row_f)
+                slide_expanded = has_err or (n == 1 and not any_hero_slide_has_errors)
+                hero_field_groups.append(
+                    {
+                        "title": str(_("Слайд %s: тексты, кнопки и медиа") % n),
+                        "nav_label": str(_("Слайд %s") % n),
+                        "anchor": f"hero-block-slide-{n}",
+                        "hero_group_kind": "slide",
+                        "slide_index": n,
+                        "slide_expanded": slide_expanded,
+                        "summary_hint": str(
+                            _("Заголовок, кнопки, попап, картинка или видео — по желанию, пустые поля допустимы.")
+                        ),
+                        "fields": row_f,
+                    }
+                )
         context = {
             **self.admin_site.each_context(request),
             "title": str(meta["title"]),

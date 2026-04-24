@@ -44,10 +44,6 @@ def _txt(label: str) -> forms.CharField:
     return forms.CharField(label=label, required=False, widget=forms.TextInput(attrs={"class": _W}))
 
 
-def _req_txt(label: str) -> forms.CharField:
-    return forms.CharField(label=label, required=True, widget=forms.TextInput(attrs={"class": _W}))
-
-
 def _area(label: str, rows: int = 3) -> forms.CharField:
     return forms.CharField(
         label=label,
@@ -449,7 +445,7 @@ def _one_slide_char_fields_impl(n: int) -> dict[str, forms.Field]:
             initial="pulse",
             widget=forms.Select(attrs={"class": _W}),
         ),
-        f"{p}title": _req_txt(_("Слайд %(n)s: заголовок") % {"n": n}),
+        f"{p}title": _txt(_("Слайд %(n)s: заголовок") % {"n": n}),
         f"{p}subtitle": _area(_("Слайд %(n)s: подзаголовок") % {"n": n}, rows=3),
         f"{p}show_trust_line": _check_box(
             _("Слайд %(n)s: показывать строку доверия под кнопками") % {"n": n}
@@ -470,7 +466,7 @@ def _one_slide_char_fields_impl(n: int) -> dict[str, forms.Field]:
         f"{p}show_stat_2": _check_box(_("Слайд %(n)s: показывать KPI 3 (значение и подпись)") % {"n": n}),
         f"{p}stat_2_value": _txt(_("Слайд %(n)s: KPI 3: значение") % {"n": n}),
         f"{p}stat_2_label": _txt(_("Слайд %(n)s: KPI 3: подпись") % {"n": n}),
-        f"{p}cta_primary": _req_txt(_("Слайд %(n)s: кнопка основная (текст)") % {"n": n}),
+        f"{p}cta_primary": _txt(_("Слайд %(n)s: кнопка основная (текст)") % {"n": n}),
         f"{p}primary_action": forms.ChoiceField(
             label=_("Слайд %(n)s: основная кнопка: действие") % {"n": n},
             required=False,
@@ -488,7 +484,7 @@ def _one_slide_char_fields_impl(n: int) -> dict[str, forms.Field]:
                 }
             ),
         ),
-        f"{p}cta_secondary": _req_txt(_("Слайд %(n)s: кнопка вторичная (текст)") % {"n": n}),
+        f"{p}cta_secondary": _txt(_("Слайд %(n)s: кнопка вторичная (текст)") % {"n": n}),
         f"{p}secondary_action": forms.ChoiceField(
             label=_("Слайд %(n)s: вторичная кнопка: действие") % {"n": n},
             required=False,
@@ -506,11 +502,11 @@ def _one_slide_char_fields_impl(n: int) -> dict[str, forms.Field]:
                 }
             ),
         ),
-        f"{p}cb_title": _req_txt(_("Слайд %(n)s: попап: заголовок") % {"n": n}),
-        f"{p}cb_name_label": _req_txt(_("Слайд %(n)s: попап: подпись «Имя»") % {"n": n}),
-        f"{p}cb_phone_label": _req_txt(_("Слайд %(n)s: попап: подпись «Телефон»") % {"n": n}),
-        f"{p}cb_submit": _req_txt(_("Слайд %(n)s: попап: кнопка отправки") % {"n": n}),
-        f"{p}cb_submitting": _req_txt(_("Слайд %(n)s: попап: текст при отправке") % {"n": n}),
+        f"{p}cb_title": _txt(_("Слайд %(n)s: попап: заголовок") % {"n": n}),
+        f"{p}cb_name_label": _txt(_("Слайд %(n)s: попап: подпись «Имя»") % {"n": n}),
+        f"{p}cb_phone_label": _txt(_("Слайд %(n)s: попап: подпись «Телефон»") % {"n": n}),
+        f"{p}cb_submit": _txt(_("Слайд %(n)s: попап: кнопка отправки") % {"n": n}),
+        f"{p}cb_submitting": _txt(_("Слайд %(n)s: попап: текст при отправке") % {"n": n}),
         f"{p}cb_success": _area(_("Слайд %(n)s: попап: сообщение после успеха") % {"n": n}, rows=2),
         f"{p}image_url": _image_url(n),
         f"{p}video_url": _txt(_("Слайд %(n)s: URL видео (mp4/webm, необязательно)") % {"n": n}),
