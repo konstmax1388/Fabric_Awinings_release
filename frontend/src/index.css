@@ -207,6 +207,12 @@ body {
   background: linear-gradient(120deg, rgba(180, 134, 58, 0.24), rgba(255, 255, 255, 0.65));
 }
 
+/* Hero: УТП — одна линия янтарным капсом над заголовком (как макет витрины) */
+.fabric-hero-usp {
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: weight;
+}
+
 :root[data-theme='light'] .fabric-hero-panel {
   border: 1px solid rgba(180, 134, 58, 0.26);
   background:

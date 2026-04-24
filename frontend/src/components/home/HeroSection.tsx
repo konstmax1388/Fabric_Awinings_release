@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
@@ -78,9 +78,12 @@ export function HeroSection() {
   const [failedVideoBySlide, setFailedVideoBySlide] = useState<Record<number, boolean>>({})
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
   const slideT0Ref = useRef(0)
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
+  const [heroVideoNode, setHeroVideoNode] = useState<HTMLVideoElement | null>(null)
   const [barProgress, setBarProgress] = useState(0)
   const [coarsePointer, setCoarsePointer] = useState(false)
   const slideCountRef = useRef(0)
+  const prevCallbackOpenRef = useRef(false)
 
   const isHeroV2 = Boolean(hero && (hero as { schemaVersion?: number }).schemaVersion === 2)
 
@@ -210,14 +213,6 @@ export function HeroSection() {
       : hero?.heightMode === 'normal'
         ? 'normal'
         : 'tall'
-  const uspAccentVariant = isHeroV2
-    ? (dataSrc as HeroSlide | null)?.uspAccentVariant === 'shimmer'
-      ? 'shimmer'
-      : 'pulse'
-    : hero?.uspAccentVariant === 'shimmer'
-      ? 'shimmer'
-      : 'pulse'
-
   const heroOverlayStrength01 = useMemo((): number => {
     if (isHeroV2 && dataSrc) {
       const o = (dataSrc as HeroSlide).overlayStrength
@@ -295,8 +290,11 @@ export function HeroSection() {
 
   slideCountRef.current = slides.length
 
+  /** Видео: смена слайда по onEnded, не по таймеру. Картинка / без ролика — по autoplayIntervalMs. */
+  const advanceByTimer = !shouldShowVideo
+
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (slides.length <= 1 || callbackOpen || !advanceByTimer) return
     const id = window.setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return
       setCurrentSlide((prev) => {
@@ -306,7 +304,7 @@ export function HeroSection() {
       })
     }, autoplayIntervalMs)
     return () => window.clearInterval(id)
-  }, [slides.length, autoplayIntervalMs])
+  }, [slides.length, autoplayIntervalMs, callbackOpen, advanceByTimer])
 
   useEffect(() => {
     if (slides.length <= 1) {
@@ -326,6 +324,29 @@ export function HeroSection() {
       setBarProgress(0)
       return
     }
+    if (callbackOpen) return
+    if (shouldShowVideo) {
+      const v = heroVideoNode
+      if (!v) {
+        return
+      }
+      const sync = () => {
+        if (document.hidden) return
+        const d = v.duration
+        if (typeof d === 'number' && d > 0 && Number.isFinite(d)) {
+          setBarProgress(Math.min(1, v.currentTime / d))
+        }
+      }
+      v.addEventListener('timeupdate', sync)
+      v.addEventListener('loadedmetadata', sync)
+      v.addEventListener('progress', sync)
+      sync()
+      return () => {
+        v.removeEventListener('timeupdate', sync)
+        v.removeEventListener('loadedmetadata', sync)
+        v.removeEventListener('progress', sync)
+      }
+    }
     const id = window.setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return
       setBarProgress(
@@ -333,7 +354,23 @@ export function HeroSection() {
       )
     }, 40)
     return () => window.clearInterval(id)
-  }, [slides.length, showCarouselProgress, currentSlide, autoplayIntervalMs])
+  }, [
+    slides.length,
+    showCarouselProgress,
+    currentSlide,
+    autoplayIntervalMs,
+    callbackOpen,
+    shouldShowVideo,
+    heroVideoNode,
+  ])
+
+  useEffect(() => {
+    if (prevCallbackOpenRef.current && !callbackOpen) {
+      slideT0Ref.current = Date.now()
+      setBarProgress(0)
+    }
+    prevCallbackOpenRef.current = callbackOpen
+  }, [callbackOpen])
 
   useEffect(() => {
     if (!shouldShowVideo || hasStartedActiveVideo) return
@@ -400,6 +437,7 @@ export function HeroSection() {
           heading: 'text-[#111827]',
           body: 'text-[#1f2937]/90',
           subtle: 'text-[#1f2937]/85',
+          uspLine: 'font-body font-bold text-amber-800',
           chip: 'text-[#111827]/90',
           chipLabel: 'text-[#111827]/75',
           chipBg: 'bg-white/65 border-black/10',
@@ -413,6 +451,8 @@ export function HeroSection() {
           heading: 'text-white',
           body: 'text-white/90',
           subtle: 'text-white/85',
+          uspLine:
+            'font-body font-bold text-[#FFC107] [text-shadow:0_1px_3px_rgba(0,0,0,0.7),0_0_1px_rgba(0,0,0,0.9)]',
           chip: 'text-white',
           chipLabel: 'text-white/75',
           chipBg: 'bg-white/8 border-white/18',
@@ -433,14 +473,19 @@ export function HeroSection() {
   const carouselArrows =
     slides.length > 1 && showCarouselArrows
       ? {
-          prev: () =>
-            setCurrentSlide((i) => (i - 1 + slides.length) % slides.length),
-          next: () => setCurrentSlide((i) => (i + 1) % slides.length),
+          prev: () => {
+            if (callbackOpen) return
+            setCurrentSlide((i) => (i - 1 + slides.length) % slides.length)
+          },
+          next: () => {
+            if (callbackOpen) return
+            setCurrentSlide((i) => (i + 1) % slides.length)
+          },
         }
       : null
 
   const carouselArrowBtnClass =
-    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition hover:border-accent/45 hover:bg-white/12 hover:text-accent sm:h-9 sm:w-9'
+    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition enabled:hover:border-accent/45 enabled:hover:bg-white/12 enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9'
 
   const mediaCrossfadeD = reduce ? 0.14 : 0.55
   const textSlideD = reduce ? 0.12 : 0.45
@@ -448,6 +493,23 @@ export function HeroSection() {
 
   const scrimA = heroOverlayStrength01
   const showScrim = scrimA > 0.001
+
+  const bindHeroVideoRef = (el: HTMLVideoElement | null) => {
+    heroVideoRef.current = el
+    setHeroVideoNode(el)
+  }
+
+  const onHeroVideoEnded = (e: SyntheticEvent<HTMLVideoElement>) => {
+    if (callbackOpen) return
+    const n = slideCountRef.current
+    if (n < 2) {
+      const v = e.currentTarget
+      v.currentTime = 0
+      void v.play()
+      return
+    }
+    setCurrentSlide((prev) => (prev + 1) % n)
+  }
 
   return (
     <section
@@ -465,14 +527,16 @@ export function HeroSection() {
           {shouldShowVideo ? (
             <motion.video
               key={`hero-video-${currentSlide}`}
+              ref={bindHeroVideoRef}
               className="absolute inset-0 h-full w-full object-cover"
               src={activeVideoUrl}
               autoPlay
               muted
-              loop
+              loop={false}
               playsInline
               preload="metadata"
               poster={activeImageUrl || undefined}
+              onEnded={onHeroVideoEnded}
               onError={() =>
                 setFailedVideoBySlide((prev) => ({
                   ...prev,
@@ -601,35 +665,18 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className={`mt-5 inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-accent backdrop-blur-sm sm:px-4 sm:py-2 ${
-                uspAccentVariant === 'shimmer'
-                  ? 'relative overflow-hidden border-accent/60 bg-gradient-to-r from-accent/18 via-accent/10 to-accent/18 shadow-[0_0_34px_rgba(232,122,0,0.26)]'
-                  : 'border-accent/45 bg-accent/12 shadow-[0_0_28px_rgba(232,122,0,0.22)]'
-              }`}
+              className={`fabric-hero-usp max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] md:text-sm md:tracking-[0.2em] ${
+                textClasses.uspLine
+              } ${showEyebrowBlock && eyebrow ? 'mt-3' : 'mt-0'}`}
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.06 }}
             >
-              {uspAccentVariant === 'shimmer' ? (
-                <motion.span
-                  className="pointer-events-none absolute inset-y-0 -left-[40%] w-[38%] bg-gradient-to-r from-transparent via-white/55 to-transparent"
-                  animate={reduce ? undefined : { x: ['-30%', '320%'] }}
-                  transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 0.45 }}
-                  aria-hidden
-                />
-              ) : (
-                <motion.span
-                  className="inline-block h-2 w-2 shrink-0 rounded-full bg-accent"
-                  animate={reduce ? undefined : { opacity: [0.45, 1, 0.45], scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                  aria-hidden
-                />
-              )}
-              <span className="relative z-[1] break-words font-heading text-xs uppercase tracking-[0.2em] sm:text-sm">{usp}</span>
+              {usp}
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 mt-4 break-words ${textClasses.heading}`}
+            className={`fabric-h1 break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
@@ -770,6 +817,7 @@ export function HeroSection() {
                 <button
                   type="button"
                   onClick={carouselArrows.prev}
+                  disabled={callbackOpen}
                   className={carouselArrowBtnClass}
                   aria-label="Предыдущий слайд"
                 >
@@ -794,8 +842,12 @@ export function HeroSection() {
                     type="button"
                     aria-label={`Слайд ${idx + 1}`}
                     aria-pressed={idx === currentSlide}
-                    onClick={() => setCurrentSlide(idx)}
-                    className={`h-2.5 shrink-0 rounded-full transition-all ${
+                    disabled={callbackOpen}
+                    onClick={() => {
+                      if (callbackOpen) return
+                      setCurrentSlide(idx)
+                    }}
+                    className={`h-2.5 shrink-0 rounded-full transition-all enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 ${
                       idx === currentSlide
                         ? 'w-8 bg-accent'
                         : `w-2.5 ${textClasses.slideDotOff}`
@@ -807,6 +859,7 @@ export function HeroSection() {
                 <button
                   type="button"
                   onClick={carouselArrows.next}
+                  disabled={callbackOpen}
                   className={carouselArrowBtnClass}
                   aria-label="Следующий слайд"
                 >
