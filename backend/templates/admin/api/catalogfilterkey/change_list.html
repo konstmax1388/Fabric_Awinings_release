@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% block object-tools %}
+  <ul class="object-tools">
+    <li>
+      <form method="post" action="{% url 'admin:api_catalogfilterkey_rebuild' %}">
+        {% csrf_token %}
+        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600 rounded shadow-sm hover:bg-primary-700">
+          {% trans "Сформировать из товаров" %}
+        </button>
+      </form>
+    </li>
+  </ul>
+  {{ block.super }}
+{% endblock %}
