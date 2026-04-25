@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildMainNavItems } from '../../lib/headerNav'
+import { buildMainNavItems, type MainNavItem } from '../../lib/headerNav'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
 import { MagneticHover } from '../motion/MagneticHover'
 import { useCart } from '../../hooks/useCart'
@@ -238,7 +238,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label={mainMenuAria}>
-          {mainNavItems.map((item) => (
+          {mainNavItems.map((item: MainNavItem) => (
             <NavLink key={item.key} to={item.to} end={item.end} className={navLinkClass}>
               {item.label}
             </NavLink>
@@ -361,7 +361,7 @@ export function SiteHeader() {
                   className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-4 py-5"
                   aria-label={mobileMenuAria}
                 >
-                  {mainNavItems.map((item) => (
+                  {mainNavItems.map((item: MainNavItem) => (
                     <NavLink
                       key={item.key}
                       to={item.to}
