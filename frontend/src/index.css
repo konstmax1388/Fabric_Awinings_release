@@ -486,6 +486,17 @@ main {
   }
 }
 
+/* Сниппет перед </body> (CRM/чат) — сдвиг кнопки «Наверх» выше, чтобы не перекрывать виджет. */
+html.fabric-has-body-end-widget .fabric-scroll-top {
+  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  html.fabric-has-body-end-widget .fabric-scroll-top {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer,
   .fabric-drift {

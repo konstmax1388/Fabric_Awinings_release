@@ -1402,6 +1402,10 @@ class SiteSettingsAdminForm(forms.ModelForm):
                 render_value=True,
                 attrs={"autocomplete": "new-password"},
             ),
+            "header_navigation": forms.Textarea(
+                attrs={"rows": 16, "class": "vLargeTextField", "style": "font-family:monospace;font-size:12px"},
+            ),
+            "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
         }
 
 
@@ -1557,6 +1561,23 @@ class SiteSettingsAdmin(ModelAdmin):
                 "description": _(
                     "Заголовок и тексты только для маршрута /contacts. "
                     "Телефон, email, адрес и настройки карты на главной — в блоке «Контакты на витрине»."
+                ),
+            },
+        ),
+        ss_fieldset(
+            "menu_reviews",
+            {
+                "fields": (
+                    "header_navigation",
+                    "reviews_yandex_profile_url",
+                    "reviews_yandex_widget_html",
+                ),
+                "description": _(
+                    "JSON: порядок и включение пунктов верхнего меню (ключи: home, catalog, portfolio, blog, reviews, contacts) "
+                    "и ссылка на витрину. Подписи по умолчанию — из «Главная страница (контент)», блок «Интерфейс витрин»; "
+                    "в JSON можно задать поле label на пункт. "
+                    "Отзывы с Яндекса на сайт без кода подгружаются только через виджет из кабинета организации (HTML) — "
+                    "такой блок на странице /reviews показывается первым; ниже — отзывы с сайта из админки."
                 ),
             },
         ),

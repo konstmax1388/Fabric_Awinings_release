@@ -1,10 +1,12 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { PERSONAL_DATA_LAW_152_FZ } from '../../lib/legalPages'
 
 type Props = {
   open: boolean
   checked: boolean
   privacyPath: string
   consentPath: string
+  offerPath: string
   onToggle: (next: boolean) => void
   onClose: () => void
   onConfirm: () => void
@@ -12,7 +14,7 @@ type Props = {
 
 export function ConsentRequiredModal(props: Props) {
   const reduceMotion = useReducedMotion()
-  const { open, checked, privacyPath, consentPath, onToggle, onClose, onConfirm } = props
+  const { open, checked, privacyPath, consentPath, offerPath, onToggle, onClose, onConfirm } = props
   return (
     <AnimatePresence>
       {open ? (
@@ -37,6 +39,7 @@ export function ConsentRequiredModal(props: Props) {
               <p className="mt-2 font-body text-sm text-text-muted">
                 Это юридическое требование 152-ФЗ. Без согласия мы не можем принять заказ.
               </p>
+              <p className="mt-2 font-body text-xs leading-relaxed text-text-muted">{PERSONAL_DATA_LAW_152_FZ}</p>
               <label className="mt-4 flex items-start gap-3">
                 <span className="relative mt-0.5 shrink-0">
                   <input
@@ -49,14 +52,19 @@ export function ConsentRequiredModal(props: Props) {
                   <span className="pointer-events-none absolute left-[5px] top-[2px] h-2.5 w-1.5 rotate-45 border-b-2 border-r-2 border-transparent transition peer-checked:border-accent" />
                 </span>
                 <span className="font-body text-sm text-text">
-                  Я ознакомлен(а) и согласен(на) с{' '}
+                  Оформляя заказ, вы принимаете{' '}
                   <a href={privacyPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                    Политикой конфиденциальности
+                    политику конфиденциальности
+                  </a>
+                  ,{' '}
+                  <a href={consentPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    согласие на обработку персональных данных
                   </a>{' '}
                   и{' '}
-                  <a href={consentPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                    Согласием на обработку персональных данных
+                  <a href={offerPath} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    публичную оферту
                   </a>
+                  . Подтверждаю ознакомление с документами.
                 </span>
               </label>
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">

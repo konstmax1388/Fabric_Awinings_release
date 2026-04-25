@@ -1,5 +1,15 @@
-import { useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { postOneClickOrder } from '../../lib/api'
+import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
+import {
+  HONEYPOT_FIELD,
+  formatRuPhoneMask,
+  isCompleteRuPhone,
+  nationalDigitsFromInput,
+  orderEmailError,
+  personNameError,
+  phoneForApi,
+} from '../../lib/formValidation'
 import { type OrderLineApiPayload, subtotalFromOrderLines } from '../../lib/orderLinePayload'
 
 type Props = {
@@ -10,11 +20,8 @@ type Props = {
   title?: string
 }
 
-const emailOk = (s: string) => {
-  const t = s.trim()
-  if (t.length < 5) return false
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(t)
-}
+/** Минимальная задержка от открытия формы до отправки (антибот). */
+const MIN_SUBMIT_MS = 1200
 
 function mapLinesForPost(lines: OrderLineApiPayload[]) {
   return lines.map((l) => ({ ...l }))
@@ -24,51 +31,97 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
+  const [honeypot, setHoneypot] = useState('')
+  const [nameErr, setNameErr] = useState<string | null>(null)
+  const [phoneErr, setPhoneErr] = useState<string | null>(null)
+  const [emailErr, setEmailErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  const openedAtRef = useRef(0)
   const total = subtotalFromOrderLines(lines)
 
-  if (!open) return null
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  useEffect(() => {
+    if (!open) return
+    openedAtRef.current = Date.now()
+    setHoneypot('')
+    setNameErr(null)
+    setPhoneErr(null)
+    setEmailErr(null)
     setErr(null)
-    if (!name.trim() || !phone.trim()) {
-      setErr('Укажите имя и телефон.')
-      return
-    }
-    if (!emailOk(email)) {
-      setErr('Укажите корректный e-mail.')
-      return
-    }
-    if (lines.length === 0) {
-      setErr('Нет товаров в заявке.')
-      return
-    }
-    setBusy(true)
-    const res = await postOneClickOrder({
-      customer: { name: name.trim(), phone: phone.trim(), email: email.trim(), website: '' },
-      lines: mapLinesForPost(lines),
-      totalApprox: total,
-    })
-    setBusy(false)
-    if (res.ok) {
-      setDone(res.clientAck || 'Заявка отправлена.')
-      return
-    }
-    setErr(res.detail)
-  }
+  }, [open])
 
-  const close = () => {
+  const onSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault()
+      setErr(null)
+      setNameErr(null)
+      setPhoneErr(null)
+      setEmailErr(null)
+
+      if (honeypot.trim()) {
+        return
+      }
+      if (Date.now() - openedAtRef.current < MIN_SUBMIT_MS) {
+        setErr('Подождите пару секунд и нажмите «Отправить» снова — так мы отсекаем автоматические заявки.')
+        return
+      }
+
+      const ne = personNameError(name)
+      if (ne) {
+        setNameErr(ne)
+        return
+      }
+      if (!isCompleteRuPhone(phone)) {
+        setPhoneErr('Введите полный номер мобильного или городского телефона России (10 цифр).')
+        return
+      }
+      const ee = orderEmailError(email)
+      if (ee) {
+        setEmailErr(ee)
+        return
+      }
+      if (lines.length === 0) {
+        setErr('Нет товаров в заявке.')
+        return
+      }
+
+      setBusy(true)
+      const res = await postOneClickOrder({
+        customer: {
+          name: name.trim(),
+          phone: phoneForApi(phone),
+          email: email.trim(),
+          [HONEYPOT_FIELD]: honeypot,
+        },
+        lines: mapLinesForPost(lines),
+        totalApprox: total,
+      })
+      setBusy(false)
+      if (res.ok) {
+        setDone(res.clientAck || 'Заявка отправлена.')
+        return
+      }
+      setErr(res.detail)
+    },
+    [name, phone, email, honeypot, lines, total],
+  )
+
+  const close = useCallback(() => {
     if (busy) return
     setName('')
     setPhone('')
     setEmail('')
+    setHoneypot('')
+    setNameErr(null)
+    setPhoneErr(null)
+    setEmailErr(null)
     setErr(null)
     setDone(null)
     onClose()
-  }
+  }, [busy, onClose])
+
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-[560] flex items-end justify-center p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="one-click-title">
@@ -97,7 +150,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
             </button>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="space-y-4 px-5 py-5">
+          <form onSubmit={onSubmit} className="space-y-4 px-5 py-5" noValidate>
             <p className="font-body text-xs text-text-subtle">Ориентировочно по товарам: {total.toLocaleString('ru-RU')} ₽</p>
             <div>
               <label className="font-body text-xs font-medium text-text-subtle" htmlFor="oc-name">
@@ -107,11 +160,22 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
                 id="oc-name"
                 className="mt-1.5 w-full rounded-xl border border-border bg-bg-base px-3 py-2.5 font-body text-sm text-text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setNameErr(null)
+                }}
+                maxLength={120}
                 required
                 autoComplete="name"
                 disabled={busy}
+                aria-invalid={Boolean(nameErr)}
+                aria-describedby={nameErr ? 'oc-name-err' : undefined}
               />
+              {nameErr ? (
+                <p id="oc-name-err" className="mt-1 font-body text-xs text-rose-600">
+                  {nameErr}
+                </p>
+              ) : null}
             </div>
             <div>
               <label className="font-body text-xs font-medium text-text-subtle" htmlFor="oc-phone">
@@ -121,32 +185,68 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
                 id="oc-phone"
                 className="mt-1.5 w-full rounded-xl border border-border bg-bg-base px-3 py-2.5 font-body text-sm text-text"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(formatRuPhoneMask(nationalDigitsFromInput(e.target.value)))
+                  setPhoneErr(null)
+                }}
                 required
+                type="tel"
                 inputMode="tel"
+                placeholder="+7 (900) 000-00-00"
                 autoComplete="tel"
                 disabled={busy}
+                aria-invalid={Boolean(phoneErr)}
+                aria-describedby={phoneErr ? 'oc-phone-err' : undefined}
               />
+              {phoneErr ? (
+                <p id="oc-phone-err" className="mt-1 font-body text-xs text-rose-600">
+                  {phoneErr}
+                </p>
+              ) : null}
             </div>
             <div>
               <label className="font-body text-xs font-medium text-text-subtle" htmlFor="oc-email">
-                E-mail
+                E-mail <span className="text-rose-600">*</span>
               </label>
               <input
                 id="oc-email"
                 className="mt-1.5 w-full rounded-xl border border-border bg-bg-base px-3 py-2.5 font-body text-sm text-text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setEmailErr(null)
+                }}
                 type="email"
+                maxLength={254}
                 required
                 autoComplete="email"
                 disabled={busy}
+                aria-invalid={Boolean(emailErr)}
+                aria-describedby={emailErr ? 'oc-email-err' : undefined}
               />
+              {emailErr ? (
+                <p id="oc-email-err" className="mt-1 font-body text-xs text-rose-600">
+                  {emailErr}
+                </p>
+              ) : null}
             </div>
             <div className="hidden" aria-hidden>
-              <label htmlFor="oc-web">Сайт</label>
-              <input id="oc-web" name="website" type="text" tabIndex={-1} autoComplete="off" />
+              <label htmlFor="oc-hp">Сайт</label>
+              <input
+                id="oc-hp"
+                name={HONEYPOT_FIELD}
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
             </div>
+            <FormPersonalDataConsent
+              variant="request"
+              onLinkClick={close}
+              tail="На сервере действуют лимит заявок с одного адреса и проверка контактных данных."
+            />
             {err ? <p className="font-body text-sm text-rose-600">{err}</p> : null}
             <div className="flex gap-2">
               <button

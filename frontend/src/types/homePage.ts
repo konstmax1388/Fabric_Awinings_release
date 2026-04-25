@@ -205,6 +205,14 @@ export type HomePayload = {
   reviews?: {
     heading?: string
     subheading?: string
+    /** Заголовок и текст тизера на главной (компактный блок). */
+    teaserTitle?: string
+    teaserSubtitle?: string
+    teaserCta?: string
+    teaserMaxItems?: number
+    /** Страница /reviews: заголовок и описание (мета / h1). */
+    pageTitle?: string
+    pageDescription?: string
     loading?: string
     videoCaption?: string
     readMoreLabel?: string
@@ -216,6 +224,8 @@ export type HomePayload = {
     textPlaceholder?: string
     consentPrefix?: string
     consentLinkLabel?: string
+    /** Подпись к чекбоксу: только публикация отзыва (152-ФЗ и ссылки — в FormPersonalDataConsent выше). */
+    publicationConsentLabel?: string
     submitButton?: string
     submitting?: string
     successMessage?: string
@@ -252,6 +262,7 @@ export type HomePayload = {
     navPortfolio?: string
     navContacts?: string
     navBlog?: string
+    navReviews?: string
     navCart?: string
     navAccount?: string
     navMenuTitle?: string
@@ -297,6 +308,8 @@ export type HomePayload = {
     productNoPhoto?: string
     productPricePrefix?: string
     productAddToCart?: string
+    /** Кнопка «в 1 клик» на карточке товара (каталог, главная, похожие). */
+    productOneClick?: string
     productAddedTitle?: string
     productContinueShopping?: string
     productGoToCart?: string

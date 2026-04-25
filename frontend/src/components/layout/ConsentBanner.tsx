@@ -9,7 +9,7 @@ import {
   trackConsentAnalytics,
   trackConsentServer,
 } from '../../lib/consent'
-import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
+import { LEGAL_SLUGS, PERSONAL_DATA_LAW_152_FZ, staticPagePathBySlug } from '../../lib/legalPages'
 
 export function ConsentBanner() {
   const reduceMotion = useReducedMotion()
@@ -70,8 +70,9 @@ export function ConsentBanner() {
             <p className="font-body text-sm font-semibold text-text">
               Чтобы мы могли законно обработать заявку по 152-ФЗ, нужно ваше согласие.
             </p>
+            <p className="mt-1 font-body text-xs leading-relaxed text-text-muted">{PERSONAL_DATA_LAW_152_FZ}</p>
             <p className="mt-1 font-body text-xs text-text-muted">
-              Отметьте чекбокс и нажмите «Согласен(на)».
+              Отметьте чекбокс и нажмите «Согласен(на)». Используя формы на сайте, вы принимаете политику конфиденциальности и публичную оферту.
             </p>
             <label className="flex items-start gap-3">
               <span className="relative mt-0.5 shrink-0">

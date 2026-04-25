@@ -703,6 +703,9 @@ export type SiteSettingsDto = {
   mapForm?: MapFormSiteOverlay
   analyticsYandex?: AnalyticsYandexDto
   seoDefaults?: SeoDefaultsDto
+  /** Нормализованный JSON из SiteSettings (порядок/вкл пунктов шапки). */
+  headerNavigation?: unknown
+  reviewsYandex?: { profileUrl: string; widgetHtml: string }
 }
 
 export type StaticPageDto = {
@@ -1015,6 +1018,18 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
             typeof s.defaultMetaDescription === 'string' ? s.defaultMetaDescription : '',
           titleSuffix: typeof s.titleSuffix === 'string' ? s.titleSuffix : '',
           locale: typeof s.locale === 'string' && s.locale.trim() ? s.locale : 'ru_RU',
+        }
+      })(),
+      headerNavigation: data.headerNavigation,
+      reviewsYandex: (() => {
+        const ry = data.reviewsYandex
+        if (!ry || typeof ry !== 'object' || Array.isArray(ry)) {
+          return { profileUrl: '', widgetHtml: '' }
+        }
+        const o = ry as Record<string, unknown>
+        return {
+          profileUrl: typeof o.profileUrl === 'string' ? o.profileUrl : '',
+          widgetHtml: typeof o.widgetHtml === 'string' ? o.widgetHtml : '',
         }
       })(),
     }
@@ -1428,6 +1443,12 @@ export async function postOneClickOrder(body: {
       body: JSON.stringify(body),
     })
     if (!r.ok) {
+      if (r.status === 429) {
+        return {
+          ok: false,
+          detail: 'Слишком много заявок с вашего адреса. Попробуйте позже или позвоните нам.',
+        }
+      }
       const rForText = r.clone()
       const err = await parseJsonAny<Record<string, unknown>>(r)
       const detailRaw =

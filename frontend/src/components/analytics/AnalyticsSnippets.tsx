@@ -84,5 +84,16 @@ export function AnalyticsSnippets() {
     return injectSnippetBodyEnd(analyticsYandex.bodyEndSnippet ?? '')
   }, [loading, analyticsYandex.bodyEndSnippet])
 
+  useEffect(() => {
+    if (loading) return
+    const root = document.documentElement
+    const has = Boolean((analyticsYandex.bodyEndSnippet ?? '').trim())
+    if (has) root.classList.add('fabric-has-body-end-widget')
+    else root.classList.remove('fabric-has-body-end-widget')
+    return () => {
+      root.classList.remove('fabric-has-body-end-widget')
+    }
+  }, [loading, analyticsYandex.bodyEndSnippet])
+
   return null
 }

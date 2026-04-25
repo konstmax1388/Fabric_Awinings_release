@@ -1190,6 +1190,27 @@ class SiteSettings(models.Model):
         help_text="Секрет для проверки requestSign в POST /api/webhooks/ozon-pay/. Env: OZON_PAY_WEBHOOK_SECRET.",
     )
 
+    header_navigation = models.JSONField(
+        "Навигация шапки (JSON)",
+        null=True,
+        blank=True,
+        default=None,
+        help_text='Порядок и включение пунктов: список объектов с полями key (home|catalog|portfolio|blog|reviews|contacts), enabled, order, label (подпись, необязательно). Пусто — настройки по умолчанию.',
+    )
+    reviews_yandex_profile_url = models.URLField(
+        "Отзывы: ссылка на карточку в Яндексе",
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Публичный URL организации (профиль в Яндексе). Ссылка «Все отзывы в Яндексе» на странице /reviews.",
+    )
+    reviews_yandex_widget_html = models.TextField(
+        "Отзывы: HTML виджета Яндекса",
+        blank=True,
+        default="",
+        help_text="Код вставки из кабинета организации (обычно iframe). Показывается на /reviews первым блоком. Автоматическая подгрузка отзывов по URL без виджета невозможна (ограничения Яндекса).",
+    )
+
     class Meta:
         verbose_name = "Настройки сайта"
         verbose_name_plural = "Настройки сайта"
@@ -1202,6 +1223,15 @@ class SiteSettings(models.Model):
         locale = (self.seo_locale or "").strip()
         if locale and not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
             raise ValidationError({"seo_locale": "Формат locale: xx_XX, например ru_RU."})
+        from config.header_nav import normalize_header_navigation
+
+        if self.header_navigation is not None:
+            self.header_navigation = normalize_header_navigation(self.header_navigation)
+        from .html_sanitize import sanitize_reviews_embed_html
+
+        self.reviews_yandex_widget_html = sanitize_reviews_embed_html(
+            str(self.reviews_yandex_widget_html or "")
+        )
 
     @classmethod
     def get_solo(cls) -> "SiteSettings":

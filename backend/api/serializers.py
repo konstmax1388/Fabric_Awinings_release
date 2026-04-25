@@ -811,6 +811,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     mapForm = serializers.SerializerMethodField()
     analyticsYandex = serializers.SerializerMethodField()
     seoDefaults = serializers.SerializerMethodField()
+    headerNavigation = serializers.SerializerMethodField()
+    reviewsYandex = serializers.SerializerMethodField()
 
     class Meta:
         model = SiteSettings
@@ -843,6 +845,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "mapForm",
             "analyticsYandex",
             "seoDefaults",
+            "headerNavigation",
+            "reviewsYandex",
         )
 
     def _absolute_media(self, request, f) -> str | None:
@@ -995,6 +999,17 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "defaultMetaDescription": (obj.seo_default_meta_description or "").strip(),
             "titleSuffix": (obj.seo_title_suffix or "").strip(),
             "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
+        }
+
+    def get_headerNavigation(self, obj: SiteSettings) -> list[dict[str, object]]:
+        from config.header_nav import normalize_header_navigation
+
+        return normalize_header_navigation(obj.header_navigation)
+
+    def get_reviewsYandex(self, obj: SiteSettings) -> dict[str, str]:
+        return {
+            "profileUrl": (obj.reviews_yandex_profile_url or "").strip(),
+            "widgetHtml": (obj.reviews_yandex_widget_html or "").strip(),
         }
 
 

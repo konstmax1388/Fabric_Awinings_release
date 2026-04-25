@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { type FormEvent, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { FormPersonalDataConsent } from '../../components/legal/FormPersonalDataConsent'
 import { SiteFooter } from '../../components/layout/SiteFooter'
 import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
@@ -138,6 +139,7 @@ export function AccountRegisterPage() {
               {error}
             </p>
           ) : null}
+          <FormPersonalDataConsent variant="form" className="font-body text-xs leading-relaxed text-text-subtle" />
           <button
             type="submit"
             disabled={busy || loading}

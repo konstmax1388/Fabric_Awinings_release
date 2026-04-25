@@ -26,6 +26,10 @@ SECTIONS: dict[str, dict[str, Any]] = {
     },
     "social": {"title": _("Подвал: соцсети"), "icon": "share"},
     "contacts_page": {"title": _("Страница «Контакты» (/contacts)"), "icon": "contact_page"},
+    "menu_reviews": {
+        "title": _("Шапка: пункты меню и отзывы (Яндекс)"),
+        "icon": "menu_open",
+    },
     "analytics_seo": {"title": _("Аналитика и SEO"), "icon": "query_stats"},
     "calculator": {"title": _("Блоки на главной: конструктор и портфолио"), "icon": "calculate"},
     "catalog": {"title": _("Каталог (/catalog)"), "icon": "storefront"},
@@ -97,6 +101,11 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "contacts_hours",
         "contacts_meta_description",
         "contacts_back_link_label",
+    ),
+    "menu_reviews": (
+        "header_navigation",
+        "reviews_yandex_profile_url",
+        "reviews_yandex_widget_html",
     ),
     "analytics_seo": (
         "analytics_yandex_enabled",

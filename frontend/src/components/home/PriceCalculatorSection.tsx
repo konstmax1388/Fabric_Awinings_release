@@ -1,13 +1,12 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   calcTentPriceFromConfig,
   calculatorRuntimeFromHome,
   clamp,
 } from '../../lib/calculator'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
+import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
 import {
   COMMENT_MAX_LEN,
   formatRuPhoneMask,
@@ -20,7 +19,7 @@ import { submitCalculatorLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 
 export function PriceCalculatorSection() {
-  const { home, staticPages } = useSiteSettings()
+  const { home } = useSiteSettings()
   const c = home?.calculator ?? {}
   const cfg = useMemo(() => calculatorRuntimeFromHome(home?.calculator), [home?.calculator])
   const materials = cfg.materials
@@ -153,13 +152,6 @@ export function PriceCalculatorSection() {
   const step2Title = c.step2Title ?? '2. Размер и масштаб'
   const virtualRulerTitle = c.virtualRulerTitle ?? 'Виртуальная рулетка'
   const requestBadge = c.requestBadge ?? 'Индивидуальный проект'
-  const consentPrefix = c.consentPrefix ?? 'Нажимая кнопку, вы соглашаетесь с'
-  const consentPrivacyLink = c.consentPrivacyLinkLabel ?? 'политикой конфиденциальности'
-  const consentAnd = c.consentAndLabel ?? 'и'
-  const consentOfferLink = c.consentOfferLinkLabel ?? 'публичной офертой'
-  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
-  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
-
   return (
     <motion.section
       id="calculator"
@@ -416,17 +408,7 @@ export function PriceCalculatorSection() {
                     {error}
                   </p>
                 )}
-                <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
-                  {consentPrefix}{' '}
-                  <Link to={privacyPath} className="text-accent hover:underline">
-                    {consentPrivacyLink}
-                  </Link>{' '}
-                  {consentAnd}{' '}
-                  <Link to={offerPath} className="text-accent hover:underline">
-                    {consentOfferLink}
-                  </Link>
-                  .
-                </p>
+                <FormPersonalDataConsent variant="form" className="mt-3 font-body text-xs leading-relaxed text-text-subtle" />
                 <motion.button
                   type="submit"
                   disabled={sending}

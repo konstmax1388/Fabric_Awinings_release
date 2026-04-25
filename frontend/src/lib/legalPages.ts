@@ -1,5 +1,9 @@
 import type { StaticPageDto } from './api'
 
+/** Текст для ссылок на 152-ФЗ в формах и при заказе. */
+export const PERSONAL_DATA_LAW_152_FZ =
+  'Персональные данные обрабатываются в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных».'
+
 export const LEGAL_SLUGS = {
   privacy: 'politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh',
   offer: 'publichnaia-oferta',

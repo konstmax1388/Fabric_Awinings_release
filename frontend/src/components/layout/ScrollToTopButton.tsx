@@ -27,7 +27,7 @@ export function ScrollToTopButton() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={reduce ? undefined : { opacity: 0, scale: 0.85, y: 8 }}
           transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-          className="fixed bottom-5 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-accent/30 bg-surface text-accent shadow-lg shadow-accent/15 ring-1 ring-border-light/80 transition hover:bg-accent hover:text-surface hover:shadow-accent/25 md:bottom-8 md:right-8 md:h-14 md:w-14"
+          className="fabric-scroll-top fixed bottom-5 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-accent/30 bg-surface text-accent shadow-lg shadow-accent/15 ring-1 ring-border-light/80 transition hover:bg-accent hover:text-surface hover:shadow-accent/25 md:bottom-8 md:right-8 md:h-14 md:w-14"
           aria-label="Наверх"
           onClick={goUp}
         >

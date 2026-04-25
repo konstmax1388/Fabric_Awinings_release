@@ -103,7 +103,7 @@ export function HomePage() {
       case 'whyUs':
         return <WhyUsSection key="whyUs" />
       case 'reviews':
-        return <ReviewsSection key="reviews" />
+        return <ReviewsSection key="reviews" mode="teaser" />
       case 'blog':
         return <BlogPreviewSection key="blog" />
       case 'mapForm':

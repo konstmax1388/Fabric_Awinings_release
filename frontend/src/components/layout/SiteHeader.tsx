@@ -1,12 +1,14 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildMainNavItems } from '../../lib/headerNav'
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
 import { MagneticHover } from '../motion/MagneticHover'
 import { useCart } from '../../hooks/useCart'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { HeaderSearchPanel } from './HeaderSearchPanel'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `font-body text-base font-medium tracking-wide transition-colors hover:text-accent ${
@@ -98,6 +100,11 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
 export function SiteHeader() {
   const headerRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const openHeaderSearch = useCallback(() => {
+    setOpen(false)
+    setSearchOpen(true)
+  }, [])
   const [logoBroken, setLogoBroken] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -119,13 +126,13 @@ export function SiteHeader() {
     home,
     portfolioEnabled,
     staticPages,
+    headerNavigation,
   } = useSiteSettings()
   const buyOnLabel = home?.ui?.buyOnMarketplaces ?? 'Купить на'
   const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
   const navHomeLabel = home?.ui?.navHome ?? 'Главная'
   const navCatalogLabel = home?.ui?.navCatalog ?? 'Каталог'
   const navPortfolioLabel = home?.ui?.navPortfolio ?? 'Портфолио'
-  const navContactsLabel = home?.ui?.navContacts ?? 'Контакты'
   const navCartLabel = home?.ui?.navCart ?? 'Корзина'
   const navAccountLabel = home?.ui?.navAccount ?? 'Личный кабинет'
   const navMenuTitle = home?.ui?.navMenuTitle ?? 'Меню'
@@ -144,7 +151,10 @@ export function SiteHeader() {
     ...GLOBAL_MARKETPLACE_URLS,
     ...globalMarketplaceUrls,
   }
-  const headerStaticPages = staticPages.filter((p) => p.showInHeader)
+  const mainNavItems = useMemo(
+    () => buildMainNavItems(headerNavigation, home?.ui, { portfolioEnabled, staticPages }),
+    [headerNavigation, home?.ui, portfolioEnabled, staticPages],
+  )
 
   useEffect(() => {
     const root = document.documentElement
@@ -228,34 +238,9 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label={mainMenuAria}>
-          <NavLink to="/" end className={navLinkClass}>
-            {navHomeLabel}
-          </NavLink>
-          <NavLink to="/catalog" className={navLinkClass}>
-            {navCatalogLabel}
-          </NavLink>
-          <NavLink
-            to="/search"
-            className={({ isActive }) => `${navLinkClass({ isActive })} inline-flex items-center gap-1.5`}
-            aria-label="Поиск по каталогу"
-            title="Поиск"
-          >
-            <span className="material-symbols-outlined text-[20px] leading-none" aria-hidden>
-              search
-            </span>
-            <span className="hidden lg:inline">Поиск</span>
-          </NavLink>
-          {portfolioEnabled ? (
-            <NavLink to="/portfolio" className={navLinkClass}>
-              {navPortfolioLabel}
-            </NavLink>
-          ) : null}
-          <NavLink to="/contacts" className={navLinkClass}>
-            {navContactsLabel}
-          </NavLink>
-          {headerStaticPages.map((p) => (
-            <NavLink key={p.slug} to={p.path} className={navLinkClass}>
-              {p.headerLinkLabel || p.title}
+          {mainNavItems.map((item) => (
+            <NavLink key={item.key} to={item.to} end={item.end} className={navLinkClass}>
+              {item.label}
             </NavLink>
           ))}
         </nav>
@@ -280,6 +265,19 @@ export function SiteHeader() {
           >
             {navAccountLabel}
           </NavLink>
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-text transition hover:bg-primary/70"
+            onClick={openHeaderSearch}
+            aria-label="Поиск по каталогу"
+            aria-haspopup="dialog"
+            aria-expanded={searchOpen}
+            title="Поиск"
+          >
+            <span className="material-symbols-outlined text-[24px] leading-none" aria-hidden>
+              search
+            </span>
+          </button>
           <CartHeaderLink />
           <div className="hidden items-center gap-2.5 md:flex">
             <span className="hidden shrink-0 font-body text-[11px] font-medium text-text-muted xl:inline">
@@ -363,26 +361,15 @@ export function SiteHeader() {
                   className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-4 py-5"
                   aria-label={mobileMenuAria}
                 >
-                  <NavLink to="/" end className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    {navHomeLabel}
-                  </NavLink>
-                  <NavLink to="/catalog" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    {navCatalogLabel}
-                  </NavLink>
-                  <NavLink to="/search" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    Поиск
-                  </NavLink>
-                  {portfolioEnabled ? (
-                    <NavLink to="/portfolio" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                      {navPortfolioLabel}
-                    </NavLink>
-                  ) : null}
-                  <NavLink to="/contacts" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                    {navContactsLabel}
-                  </NavLink>
-                  {headerStaticPages.map((p) => (
-                    <NavLink key={p.slug} to={p.path} className={mobileNavLinkClass} onClick={() => setOpen(false)}>
-                      {p.headerLinkLabel || p.title}
+                  {mainNavItems.map((item) => (
+                    <NavLink
+                      key={item.key}
+                      to={item.to}
+                      end={item.end}
+                      className={mobileNavLinkClass}
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.label}
                     </NavLink>
                   ))}
                   <NavLink to="/cart" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
@@ -537,6 +524,7 @@ export function SiteHeader() {
           </NavLink>
         </div>
       </nav>
+      <HeaderSearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }

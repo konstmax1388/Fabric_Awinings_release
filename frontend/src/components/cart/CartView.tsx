@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { OneClickOrderModal } from '../order/OneClickOrderModal'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
 import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { useCart } from '../../hooks/useCart'
 import { orderLinesFromCartItems } from '../../lib/orderLinePayload'
@@ -25,8 +26,6 @@ export function CartView() {
   const { items, removeLine, setQty, totalQty, totalApprox } = useCart()
   const { productPhotoAspect, home, staticPages } = useSiteSettings()
   const [oneClickOpen, setOneClickOpen] = useState(false)
-  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
-  const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
   const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
   const ui = home?.ui
 
@@ -200,17 +199,10 @@ export function CartView() {
                 <p className="mt-3 text-center font-body text-xs text-text-subtle">
                   {ui?.cartCheckoutFootnote || 'Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.'}
                 </p>
-                <p className="mt-2 text-center font-body text-xs leading-relaxed text-text-subtle">
-                  {ui?.cartTermsPrefix || 'Оформление заказа регулируется'}{' '}
-                  <Link to={offerPath} className="text-accent hover:underline">
-                    публичной офертой
-                  </Link>{' '}
-                  и{' '}
-                  <Link to={privacyPath} className="text-accent hover:underline">
-                    политикой конфиденциальности
-                  </Link>
-                  .
-                </p>
+                <FormPersonalDataConsent
+                  variant="order"
+                  className="mt-2 text-left font-body text-xs leading-relaxed text-text-subtle"
+                />
               </div>
             </aside>
           </div>

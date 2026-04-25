@@ -12,6 +12,7 @@ import { CdekCityCombobox } from '../components/checkout/CdekCityCombobox'
 import { CdekPickupListCustom } from '../components/checkout/CdekPickupListCustom'
 import { CdekWidgetMount } from '../components/checkout/CdekWidgetMount'
 import { ConsentRequiredModal } from '../components/checkout/ConsentRequiredModal'
+import { CheckoutOrderLegalNotice } from '../components/legal/FormPersonalDataConsent'
 import { PickupInfoCard } from '../components/checkout/PickupInfoCard'
 import { CartReadonlyLinesList } from '../components/cart/CartReadonlyLinesList'
 import { apiBase } from '../lib/api'
@@ -68,8 +69,6 @@ export function CheckoutPage() {
   const { checkout, loading: settingsLoading, seoDefaults, staticPages } = useSiteSettings()
   const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
   const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
-  const termsPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.terms, '/')
-  const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
   const consentPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.consent, '/')
   const [step, setStep] = useState<Step>(1)
   const [name, setName] = useState('')
@@ -947,25 +946,7 @@ export function CheckoutPage() {
                   {error}
                 </p>
               )}
-              <p className="mt-3 font-body text-xs leading-relaxed text-text-subtle">
-                Подтверждая заказ, вы принимаете{' '}
-                <Link to={privacyPath} className="text-accent hover:underline">
-                  политику конфиденциальности
-                </Link>{' '}
-                и{' '}
-                <Link to={offerPath} className="text-accent hover:underline">
-                  публичную оферту
-                </Link>
-                ,{' '}
-                <Link to={termsPath} className="text-accent hover:underline">
-                  пользовательское соглашение
-                </Link>{' '}
-                и условия страницы{' '}
-                <Link to={paymentDeliveryPath} className="text-accent hover:underline">
-                  «Оплата и доставка»
-                </Link>
-                .
-              </p>
+              <CheckoutOrderLegalNotice />
               <div className="mt-6 flex gap-3">
                 <button
                   type="button"
@@ -1126,6 +1107,7 @@ export function CheckoutPage() {
         checked={consentChecked}
         privacyPath={privacyPath}
         consentPath={consentPath}
+        offerPath={offerPath}
         onToggle={setConsentChecked}
         onClose={() => {
           setConsentModalOpen(false)

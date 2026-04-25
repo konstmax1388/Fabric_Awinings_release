@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { type FormEventHandler, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
+import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
 import { fetchReviews, postReviewSubmission, type ReviewItem } from '../../lib/api'
 import {
   easeOutSoft,
@@ -12,6 +12,9 @@ import {
   staggerItem,
 } from '../../lib/motion-presets'
 import { OptimizedImage } from '../ui/OptimizedImage'
+
+const REVIEW_PREVIEW_PAGE = 190
+const REVIEW_PREVIEW_TEASER = 100
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -25,13 +28,32 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-export function ReviewsSection() {
-  const REVIEW_PREVIEW_LIMIT = 190
+export type ReviewsSectionMode = 'teaser' | 'page'
+
+type Props = {
+  mode?: ReviewsSectionMode
+  /**
+   * Режим page: если выше отображён блок Яндекса, у страницы уже есть h1 — показать h2+подзаголовок
+   * перед сеткой отзывов с сайта. Иначе (только отзывы с сайта) — заголовок не дублируем: h1 на уровне страницы.
+   */
+  showListHeading?: boolean
+}
+
+export function ReviewsSection({ mode = 'page', showListHeading = true }: Props) {
+  const isTeaser = mode === 'teaser'
   const reduce = useReducedMotion()
-  const { home, staticPages } = useSiteSettings()
+  const { home } = useSiteSettings()
   const rv = home?.reviews
   const heading = rv?.heading ?? 'Отзывы клиентов'
   const subheading = rv?.subheading ?? 'Реальные заказчики B2B и частные лица.'
+  const teaserTitle = rv?.teaserTitle ?? heading
+  const teaserSubtitle = rv?.teaserSubtitle ?? 'Кратко — на главной, подробно на отдельной странице.'
+  const teaserCta = rv?.teaserCta ?? 'Все отзывы'
+  const teaserMax = (() => {
+    const n = rv?.teaserMaxItems
+    if (typeof n === 'number' && Number.isFinite(n) && n >= 1 && n <= 12) return Math.floor(n)
+    return 3
+  })()
   const loadingText = rv?.loading ?? 'Загрузка отзывов…'
   const videoCaption = rv?.videoCaption ?? 'Видеоотзыв'
   const readMoreLabel = rv?.readMoreLabel ?? 'Читать весь отзыв'
@@ -42,10 +64,8 @@ export function ReviewsSection() {
   const namePlaceholder = rv?.namePlaceholder ?? 'Имя'
   const cityPlaceholder = rv?.cityPlaceholder ?? 'Город'
   const textPlaceholder = rv?.textPlaceholder ?? 'Текст отзыва'
-  const consentPrefix =
-    rv?.consentPrefix ?? 'Согласен на публикацию отзыва и обработку персональных данных согласно'
-  const consentLinkLabel = rv?.consentLinkLabel ?? 'политике конфиденциальности'
-  const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
+  const publicationConsentLabel =
+    rv?.publicationConsentLabel ?? 'Согласен(а) на публикацию отзыва на сайте после модерации'
   const submitButton = rv?.submitButton ?? 'Отправить отзыв'
   const submittingLabel = rv?.submitting ?? 'Отправка...'
   const successMessage =
@@ -65,6 +85,8 @@ export function ReviewsSection() {
     text: '',
     publicationConsent: false,
   })
+
+  const previewLimit = isTeaser ? REVIEW_PREVIEW_TEASER : REVIEW_PREVIEW_PAGE
 
   useEffect(() => {
     let cancelled = false
@@ -104,105 +126,170 @@ export function ReviewsSection() {
     setExpandedReviews((prev) => ({ ...prev, [reviewId]: !prev[reviewId] }))
   }
 
+  const list = isTeaser ? reviews.slice(0, teaserMax) : reviews
+
+  const listBlock = (() => {
+    if (loading) {
+      return <p className={isTeaser ? 'mt-6 font-body text-text-muted' : 'mt-10 font-body text-text-muted'}>{loadingText}</p>
+    }
+    return (
+      <motion.div
+        className={
+          isTeaser
+            ? 'mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
+            : 'mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        }
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.05 }}
+      >
+        {list.map((r) => (
+          <motion.article
+            key={r.id}
+            variants={staggerItem}
+            whileHover={
+              reduce
+                ? undefined
+                : {
+                    y: isTeaser ? -2 : -4,
+                    boxShadow: isTeaser
+                      ? '0 10px 24px -8px rgba(0,0,0,0.1)'
+                      : '0 16px 32px -12px rgba(0,0,0,0.12)',
+                  }
+            }
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className={
+              isTeaser
+                ? 'flex h-full flex-col rounded-xl border border-border-light bg-surface p-4 shadow-sm md:p-5'
+                : 'flex h-full flex-col rounded-2xl border border-border-light bg-surface p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:p-6'
+            }
+          >
+            {(() => {
+              const text = (r.text || '').trim()
+              const isLong = text.length > previewLimit
+              const isExpanded = Boolean(expandedReviews[r.id])
+              const previewText = isLong ? `${text.slice(0, previewLimit).trimEnd()}...` : text
+              const shownText = isExpanded ? text : previewText
+              return (
+                <>
+                  <div className="flex items-start gap-2 md:gap-3">
+                    <OptimizedImage
+                      src={r.photo}
+                      alt=""
+                      widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
+                      sizes="64px"
+                      className={
+                        isTeaser
+                          ? 'h-12 w-12 shrink-0 rounded-full object-cover md:h-14 md:w-14'
+                          : 'h-14 w-14 shrink-0 rounded-full object-cover md:h-16 md:w-16'
+                      }
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-body text-sm font-semibold leading-snug text-text md:text-base">{r.name}</p>
+                      {r.city || r.reviewedOn ? (
+                        <p className="mt-0.5 text-xs text-text-muted">
+                          {[r.city, r.reviewedOn].filter(Boolean).join(' • ')}
+                        </p>
+                      ) : null}
+                      <div className="mt-1">
+                        <Stars rating={r.rating} />
+                      </div>
+                    </div>
+                  </div>
+                  <p
+                    className={
+                      isTeaser
+                        ? 'mt-3 flex-1 font-body text-sm leading-relaxed text-text-muted'
+                        : 'mt-4 flex-1 font-body text-sm leading-relaxed text-text-muted md:text-[15px]'
+                    }
+                  >
+                    «{shownText}»
+                  </p>
+                  {isLong && !isTeaser ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleReviewExpand(r.id)}
+                      className="mt-1 self-start font-body text-xs font-semibold text-accent transition hover:underline"
+                    >
+                      {isExpanded ? collapseLabel : readMoreLabel}
+                    </button>
+                  ) : null}
+                  {r.video && !isTeaser && (
+                    <div className="relative mt-4 aspect-video overflow-hidden rounded-xl bg-text/10">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/90 text-surface shadow-md">
+                          ▶
+                        </span>
+                      </div>
+                      <p className="absolute bottom-1.5 left-2 font-body text-[11px] text-text-muted">
+                        {videoCaption}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </motion.article>
+        ))}
+      </motion.div>
+    )
+  })()
+
+  if (isTeaser) {
+    return (
+      <motion.section
+        className="fabric-container min-w-0 py-8 md:py-12"
+        initial={reduce ? false : fadeUpHidden}
+        whileInView={reduce ? undefined : fadeUpVisible}
+        viewport={{ once: true, amount: 0.08 }}
+        transition={easeOutSoft}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-text md:text-3xl">{teaserTitle}</h2>
+            <p className="mt-1 max-w-2xl font-body text-sm text-text-muted md:text-base">{teaserSubtitle}</p>
+          </div>
+          <Link
+            to="/reviews"
+            className="fabric-strap-btn inline-flex w-fit shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium text-accent hover:border-accent/60 md:px-5"
+          >
+            {teaserCta}
+          </Link>
+        </div>
+        {listBlock}
+      </motion.section>
+    )
+  }
+
   return (
     <motion.section
-      className="fabric-container min-w-0 py-12 md:py-24"
+      className={`fabric-container min-w-0 ${showListHeading ? 'pt-0' : 'pt-2'} pb-12 md:pb-24`}
       initial={reduce ? false : fadeUpHidden}
       whileInView={reduce ? undefined : fadeUpVisible}
-      viewport={{ once: true, amount: 0.08 }}
+      viewport={{ once: true, amount: 0.05 }}
       transition={easeOutSoft}
     >
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-      <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
-
-      {loading ? (
-        <p className="mt-10 font-body text-text-muted">{loadingText}</p>
-      ) : (
-        <motion.div
-          className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.05 }}
-        >
-          {reviews.map((r) => (
-            <motion.article
-              key={r.id}
-              variants={staggerItem}
-              whileHover={
-                reduce
-                  ? undefined
-                  : {
-                      y: -4,
-                      boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
-                    }
-              }
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex h-full flex-col rounded-2xl border border-border-light bg-surface p-5 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] md:p-6"
-            >
-              {(() => {
-                const text = (r.text || '').trim()
-                const isLong = text.length > REVIEW_PREVIEW_LIMIT
-                const isExpanded = Boolean(expandedReviews[r.id])
-                const previewText = isLong ? `${text.slice(0, REVIEW_PREVIEW_LIMIT).trimEnd()}...` : text
-                const shownText = isExpanded ? text : previewText
-                return (
-                  <>
-              <div className="flex items-start gap-3">
-                <OptimizedImage
-                  src={r.photo}
-                  alt=""
-                  widths={[64, 128, 160]}
-                  sizes="64px"
-                  className="h-14 w-14 shrink-0 rounded-full object-cover md:h-16 md:w-16"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-body text-base font-semibold leading-snug text-text">{r.name}</p>
-                  {r.city || r.reviewedOn ? (
-                    <p className="mt-0.5 text-xs text-text-muted">
-                      {[r.city, r.reviewedOn].filter(Boolean).join(' • ')}
-                    </p>
-                  ) : null}
-                  <div className="mt-1">
-                    <Stars rating={r.rating} />
-                  </div>
-                </div>
-              </div>
-              <p className="mt-4 flex-1 font-body text-sm leading-relaxed text-text-muted md:text-[15px]">
-                «{shownText}»
-              </p>
-              {isLong ? (
-                <button
-                  type="button"
-                  onClick={() => toggleReviewExpand(r.id)}
-                  className="mt-1 self-start font-body text-xs font-semibold text-accent transition hover:underline"
-                >
-                  {isExpanded ? collapseLabel : readMoreLabel}
-                </button>
-              ) : null}
-              {r.video && (
-                <div className="relative mt-4 aspect-video overflow-hidden rounded-xl bg-text/10">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent/90 text-surface shadow-md">
-                      ▶
-                    </span>
-                  </div>
-                  <p className="absolute bottom-1.5 left-2 font-body text-[11px] text-text-muted">
-                    {videoCaption}
-                  </p>
-                </div>
-              )}
-                  </>
-                )
-              })()}
-            </motion.article>
-          ))}
-        </motion.div>
-      )}
-      <div className="mt-10 rounded-2xl border border-border-light bg-surface p-5 md:p-6">
+      {showListHeading ? (
+        <>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl">{heading}</h2>
+          <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
+        </>
+      ) : null}
+      {listBlock}
+      <div
+        className={
+          showListHeading
+            ? 'mt-10 rounded-2xl border border-border-light bg-surface p-5 md:p-6'
+            : 'mt-10 rounded-2xl border border-border-light bg-surface p-5 md:mt-12 md:p-6'
+        }
+      >
         <h3 className="font-heading text-2xl font-semibold text-text">{formHeading}</h3>
         <p className="mt-2 text-sm text-text-muted">{formSubheading}</p>
         <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
+          <div className="md:col-span-2">
+            <FormPersonalDataConsent variant="form" />
+          </div>
           <input
             className="rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             placeholder={namePlaceholder}
@@ -229,13 +316,7 @@ export function ReviewsSection() {
               onChange={(e) => setForm((v) => ({ ...v, publicationConsent: e.target.checked }))}
               required
             />
-            <label htmlFor="review-consent">
-              {consentPrefix}{' '}
-              <Link to={privacyPath} className="text-accent hover:underline">
-                {consentLinkLabel}
-              </Link>
-              .
-            </label>
+            <label htmlFor="review-consent">{publicationConsentLabel}</label>
           </div>
           <textarea
             className="md:col-span-2 min-h-28 rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"

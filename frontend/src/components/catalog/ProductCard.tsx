@@ -1,12 +1,14 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../../config/site'
 import type { Product } from '../../data/products'
+import { orderLineFromProduct } from '../../lib/orderLinePayload'
 import { productCardImageFrameClass } from '../../lib/productPhotoAspect'
 import { useCart } from '../../hooks/useCart'
+import { OneClickOrderModal } from '../order/OneClickOrderModal'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { ProductTeaserBadges } from './ProductTeaserBadges'
@@ -28,6 +30,9 @@ export function ProductCard({ product }: Props) {
   const cover = product.images[0]
   const [imgFailed, setImgFailed] = useState(false)
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)
+  const [oneClickOpen, setOneClickOpen] = useState(false)
+  const oneClickLine = useMemo(() => orderLineFromProduct(product, null, 1), [product])
+  const oneClickLabel = ui?.productOneClick ?? 'Купить в 1 клик'
   const autoBadges = [
     ui?.productBadgeInStock || 'Всё в наличии',
     new Date().getMonth() <= 1 || new Date().getMonth() >= 10
@@ -74,20 +79,39 @@ export function ProductCard({ product }: Props) {
         <p className="mt-2 line-clamp-3 flex-1 font-body text-sm leading-relaxed text-text-muted">
           {product.excerpt}
         </p>
-        <motion.button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault()
-            addProduct(product, 1)
-            setAddedPromptOpen(true)
-          }}
-          whileHover={reduce ? undefined : subtleButtonHover}
-          whileTap={reduce ? undefined : { scale: 0.98 }}
-          transition={cardHoverTransition}
-          className="fabric-strap-btn mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_12px_0_rgba(200,155,83,0.28)] transition hover:bg-[#d4ad72] hover:shadow-[0_6px_16px_0_rgba(200,155,83,0.32)]"
-        >
-          {ui?.productAddToCart || 'В корзину'}
-        </motion.button>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <motion.button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              addProduct(product, 1)
+              setAddedPromptOpen(true)
+            }}
+            whileHover={reduce ? undefined : subtleButtonHover}
+            whileTap={reduce ? undefined : { scale: 0.98 }}
+            transition={cardHoverTransition}
+            className="fabric-strap-btn flex h-11 w-full min-w-0 items-center justify-center rounded-xl bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_12px_0_rgba(200,155,83,0.28)] transition hover:bg-[#d4ad72] hover:shadow-[0_6px_16px_0_rgba(200,155,83,0.32)]"
+          >
+            {ui?.productAddToCart || 'В корзину'}
+          </motion.button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setOneClickOpen(true)
+            }}
+            className="flex h-11 w-full min-w-0 items-center justify-center rounded-xl border-2 border-accent font-body text-sm font-medium text-accent transition hover:bg-[rgba(200,155,83,0.12)]"
+          >
+            {oneClickLabel}
+          </button>
+        </div>
+        <OneClickOrderModal
+          open={oneClickOpen}
+          onClose={() => setOneClickOpen(false)}
+          lines={[oneClickLine]}
+          title={oneClickLabel}
+        />
         {addedPromptOpen && (
           createPortal(
             <div className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+6rem)] z-[520] mx-auto w-[min(520px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-4 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.48)] md:inset-x-auto md:bottom-4 md:right-6 md:mx-0 md:w-[460px]">

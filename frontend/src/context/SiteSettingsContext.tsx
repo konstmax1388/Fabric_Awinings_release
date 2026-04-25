@@ -53,6 +53,10 @@ export type SiteSettingsContextValue = {
   analyticsYandex: AnalyticsYandexDto
   seoDefaults: SeoDefaultsDto
   staticPages: StaticPageDto[]
+  /** JSON навигации шапки из настроек сайта (нормализуется на бэкенде). */
+  headerNavigation: unknown
+  /** Виджет/ссылка на отзывы в Яндексе. */
+  reviewsYandex: { profileUrl: string; widgetHtml: string }
 }
 
 const defaultEnabled: MarketplaceId[] = ['wb', 'ozon']
@@ -95,6 +99,8 @@ const initialValue: SiteSettingsContextValue = {
     locale: 'ru_RU',
   },
   staticPages: [],
+  headerNavigation: undefined,
+  reviewsYandex: { profileUrl: '', widgetHtml: '' },
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue>(initialValue)
@@ -137,6 +143,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   })
   const [seoDefaults, setSeoDefaults] = useState<SeoDefaultsDto>(initialValue.seoDefaults)
   const [staticPages, setStaticPages] = useState<StaticPageDto[]>([])
+  const [headerNavigation, setHeaderNavigation] = useState<unknown>(undefined)
+  const [reviewsYandex, setReviewsYandex] = useState<{
+    profileUrl: string
+    widgetHtml: string
+  }>({ profileUrl: '', widgetHtml: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -192,6 +203,13 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             locale: s.seoDefaults.locale?.trim() || 'ru_RU',
           })
         }
+        if (s.headerNavigation !== undefined) setHeaderNavigation(s.headerNavigation)
+        if (s.reviewsYandex) {
+          setReviewsYandex({
+            profileUrl: s.reviewsYandex.profileUrl ?? '',
+            widgetHtml: s.reviewsYandex.widgetHtml ?? '',
+          })
+        }
       }
       setHome(h)
       setStaticPages(Array.isArray(pages) ? pages : [])
@@ -235,6 +253,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       analyticsYandex,
       seoDefaults,
       staticPages,
+      headerNavigation,
+      reviewsYandex,
     }),
     [
       enabledMarketplaces,
@@ -268,6 +288,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       analyticsYandex,
       seoDefaults,
       staticPages,
+      headerNavigation,
+      reviewsYandex,
     ],
   )
 
