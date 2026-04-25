@@ -51,3 +51,23 @@ export function paginate<T>(items: T[], page: number, pageSize = PAGE_SIZE) {
 }
 
 export { PAGE_SIZE }
+
+/**
+ * Параметры `f_<id>=value` в query каталога: один ключ — несколько значений (OR).
+ */
+export function parseCatalogSpecFiltersFromSearchParams(sp: URLSearchParams): Map<number, string[]> {
+  const m = new Map<number, string[]>()
+  for (const [k, v] of sp.entries()) {
+    if (k.length < 3 || !k.startsWith('f_')) continue
+    const suffix = k.slice(2)
+    if (!/^\d+$/.test(suffix)) continue
+    const id = parseInt(suffix, 10)
+    if (!Number.isFinite(id)) continue
+    const t = v.trim()
+    if (!t) continue
+    const cur = m.get(id) ?? []
+    cur.push(t)
+    m.set(id, cur)
+  }
+  return m
+}

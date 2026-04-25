@@ -58,5 +58,6 @@ urlpatterns = [
     path("auth/change-password/", ChangePasswordView.as_view(), name="auth_change_password"),
     path("orders/", CustomerOrderListView.as_view(), name="orders-list"),
     path("orders/<str:order_ref>/", CustomerOrderDetailView.as_view(), name="orders-detail"),
+    path("catalog-filter-facets/", views.catalog_filter_facets, name="catalog-filter-facets"),
     path("", include(router.urls)),
 ]

@@ -8,6 +8,7 @@ import { ProductCard } from '../components/catalog/ProductCard'
 import { ProductDetailsDrawer } from '../components/catalog/ProductDetailsDrawer'
 import { ProductGallery } from '../components/catalog/ProductGallery'
 import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
+import { ProductTrustStrip } from '../components/catalog/ProductTrustStrip'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { HeroCallbackModal } from '../components/home/HeroCallbackModal'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
@@ -451,6 +452,11 @@ export function ProductPage() {
                     {displayPrice.toLocaleString('ru-RU')} ₽
                   </span>
                 </div>
+                <ProductTrustStrip
+                  className="mt-4 max-w-lg"
+                  warrantyMonths={product.warrantyMonths}
+                  returnDays={product.returnDays}
+                />
               </div>
 
               {product.variants && product.variants.length > 1 && (

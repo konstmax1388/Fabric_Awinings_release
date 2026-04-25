@@ -289,6 +289,14 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
       : raw.cdekHeightCm == null
         ? null
         : Number(raw.cdekHeightCm)
+  const warrantyMonths =
+    typeof raw.warrantyMonths === 'number' && Number.isFinite(raw.warrantyMonths)
+      ? Math.max(0, Math.floor(raw.warrantyMonths))
+      : 3
+  const returnDays =
+    typeof raw.returnDays === 'number' && Number.isFinite(raw.returnDays)
+      ? Math.max(0, Math.floor(raw.returnDays))
+      : 14
   return {
     id,
     slug: raw.slug,
@@ -313,6 +321,8 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     cdekLengthCm: Number.isFinite(cdekLengthCm) ? cdekLengthCm : null,
     cdekWidthCm: Number.isFinite(cdekWidthCm) ? cdekWidthCm : null,
     cdekHeightCm: Number.isFinite(cdekHeightCm) ? cdekHeightCm : null,
+    warrantyMonths,
+    returnDays,
   }
 }
 
@@ -378,22 +388,84 @@ export async function fetchProductCategories(): Promise<ProductCategoryRow[] | n
   }
 }
 
+export type CatalogFilterFacetKey = {
+  id: number
+  label: string
+  groupName: string
+  name: string
+  values: string[]
+}
+
+function parseCatalogFilterFacetKey(o: Record<string, unknown>): CatalogFilterFacetKey | null {
+  const idRaw = o.id
+  const id = typeof idRaw === 'number' ? idRaw : Number(idRaw)
+  if (!Number.isFinite(id)) return null
+  const label = typeof o.label === 'string' ? o.label : ''
+  const groupName = typeof o.groupName === 'string' ? o.groupName : ''
+  const name = typeof o.name === 'string' ? o.name : ''
+  const rawVals = o.values
+  const values: string[] = []
+  if (Array.isArray(rawVals)) {
+    for (const v of rawVals) {
+      if (typeof v === 'string' && v.trim()) values.push(v.trim())
+    }
+  }
+  if (!name) return null
+  return { id, label, groupName, name, values }
+}
+
+export async function fetchCatalogFilterFacets(opts: {
+  category?: string
+}): Promise<CatalogFilterFacetKey[] | null> {
+  const p = new URLSearchParams()
+  if (opts.category) p.set('category', opts.category)
+  const q = p.toString()
+  try {
+    const r = await fetch(`${apiBase()}/api/catalog-filter-facets/${q ? `?${q}` : ''}`)
+    const raw = await parseJson<Record<string, unknown>>(r)
+    if (!raw) return null
+    const list = raw.keys
+    if (!Array.isArray(list)) return null
+    const out: CatalogFilterFacetKey[] = []
+    for (const item of list) {
+      if (!item || typeof item !== 'object') continue
+      const row = parseCatalogFilterFacetKey(item as Record<string, unknown>)
+      if (row) out.push(row)
+    }
+    return out
+  } catch {
+    return null
+  }
+}
+
 export async function fetchProductsPage(opts: {
   page: number
   category?: ProductCategory | null
   sort: CatalogSortApi
   search?: string
   pageSize?: number
+  /** Ключ = id CatalogFilterKey; в рамках одного ключа — OR по значениям (несколько `f_<id>=...` в query). */
+  specFilters?: ReadonlyMap<number, readonly string[]>
 }): Promise<Paginated<Product> | null> {
   const ordering = sortToOrdering(opts.sort)
   const normalizedSearch = (opts.search || '').trim()
-  const q = buildQuery({
-    page: opts.page,
-    page_size: opts.pageSize ?? 9,
-    ...(opts.category ? { category: opts.category } : {}),
-    ...(normalizedSearch ? { search: normalizedSearch } : {}),
-    ...(ordering ? { ordering } : {}),
-  })
+  const p = new URLSearchParams()
+  p.set('page', String(opts.page))
+  p.set('page_size', String(opts.pageSize ?? 9))
+  if (opts.category) p.set('category', String(opts.category))
+  if (normalizedSearch) p.set('search', normalizedSearch)
+  if (ordering) p.set('ordering', ordering)
+  if (opts.specFilters && opts.specFilters.size) {
+    for (const [id, values] of opts.specFilters) {
+      const k = `f_${id}`
+      for (const v of values) {
+        const t = (v || '').trim()
+        if (t) p.append(k, t)
+      }
+    }
+  }
+  const queryStr = p.toString()
+  const q = queryStr ? `?${queryStr}` : ''
   try {
     const r = await fetch(`${apiBase()}/api/products/${q}`)
     const data = await parseJson<Paginated<Record<string, unknown>>>(r)
@@ -699,6 +771,9 @@ export type SiteSettingsDto = {
   portfolioEnabled?: boolean
   productPhotoAspect?: ProductPhotoAspect
   catalogIntro?: string
+  /** Дефолты каталога (если в товаре не задано своё). */
+  catalogWarrantyMonths?: number
+  catalogReturnDays?: number
   checkout?: CheckoutPublicConfig
   mapForm?: MapFormSiteOverlay
   analyticsYandex?: AnalyticsYandexDto
@@ -994,6 +1069,14 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
       portfolioEnabled: typeof data.portfolioEnabled === 'boolean' ? data.portfolioEnabled : undefined,
       productPhotoAspect: parseProductPhotoAspect(data.productPhotoAspect),
       catalogIntro: strOrEmpty(data.catalogIntro),
+      catalogWarrantyMonths:
+        typeof data.catalogWarrantyMonths === 'number' && Number.isFinite(data.catalogWarrantyMonths)
+          ? Math.max(0, Math.floor(data.catalogWarrantyMonths))
+          : undefined,
+      catalogReturnDays:
+        typeof data.catalogReturnDays === 'number' && Number.isFinite(data.catalogReturnDays)
+          ? Math.max(0, Math.floor(data.catalogReturnDays))
+          : undefined,
       checkout: parseCheckoutPublic(data.checkout),
       mapForm: parseMapFormOverlay(data.mapForm),
       analyticsYandex: (() => {

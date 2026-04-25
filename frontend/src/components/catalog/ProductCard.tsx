@@ -12,6 +12,7 @@ import { OneClickOrderModal } from '../order/OneClickOrderModal'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { ProductTeaserBadges } from './ProductTeaserBadges'
+import { ProductTrustStrip } from './ProductTrustStrip'
 import { cardHoverTransition, subtleHoverLift, subtleButtonHover } from '../../lib/motion-presets'
 
 type Props = { product: Product }
@@ -79,6 +80,11 @@ export function ProductCard({ product }: Props) {
         <p className="mt-2 line-clamp-3 flex-1 font-body text-sm leading-relaxed text-text-muted">
           {product.excerpt}
         </p>
+        <ProductTrustStrip
+          className="mt-4"
+          warrantyMonths={product.warrantyMonths}
+          returnDays={product.returnDays}
+        />
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <motion.button
             type="button"

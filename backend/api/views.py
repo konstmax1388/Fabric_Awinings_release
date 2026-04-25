@@ -7,16 +7,18 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from .catalog_filters import apply_catalog_spec_filters
 from .filters import ProductFilter
 from .models import (
     BlogPost,
     CalculatorLead,
     CallbackLead,
+    CatalogFilterKey,
     PortfolioProject,
     Product,
     ProductCategory,
@@ -25,6 +27,7 @@ from .models import (
     ProductVariant,
     Review,
     ConsentLog,
+    SiteSettings,
 )
 from .pagination import ProductPagination
 from .throttles import ConsentLogThrottle, LeadSubmissionThrottle
@@ -107,10 +110,68 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             return qs.distinct()
         return qs
 
+    def filter_queryset(self, queryset):
+        qs = super().filter_queryset(queryset)
+        return apply_catalog_spec_filters(self.request, qs)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["site_settings"] = SiteSettings.get_solo()
+        return ctx
+
     def get_serializer_class(self):
         if self.action == "retrieve":
             return ProductDetailSerializer
         return ProductListSerializer
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def catalog_filter_facets(request):
+    """
+    Включённые параметры фильтра + список значений по опубликованным товарам
+    (с учётом ?category=slug, если задан).
+    """
+    category = (request.query_params.get("category") or "").strip()
+    products = Product.objects.filter(is_published=True, category__is_published=True)
+    if category:
+        products = products.filter(category__slug=category)
+    keys = CatalogFilterKey.objects.filter(is_enabled=True).order_by("sort_order", "id")
+    out: list[dict[str, object]] = []
+    for k in keys:
+        values_qs = (
+            ProductSpecification.objects.filter(
+                product__in=products,
+                group_name=k.group_name,
+                name=k.name,
+            )
+            .values_list("value", flat=True)
+            .order_by("value")
+        )
+        seen_lower: set[str] = set()
+        value_list: list[str] = []
+        for v in values_qs:
+            t = (v or "").strip()
+            if not t:
+                continue
+            lo = t.lower()
+            if lo in seen_lower:
+                continue
+            seen_lower.add(lo)
+            value_list.append(t)
+        if not value_list:
+            continue
+        label = (k.label or "").strip() or k.name
+        out.append(
+            {
+                "id": k.id,
+                "label": label,
+                "groupName": k.group_name,
+                "name": k.name,
+                "values": value_list,
+            }
+        )
+    return Response({"keys": out})
 
 
 class PortfolioViewSet(viewsets.ReadOnlyModelViewSet):

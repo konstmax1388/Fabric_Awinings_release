@@ -218,7 +218,7 @@ def default_home_payload() -> dict[str, Any]:
             "teaserTitle": "Отзывы",
             "teaserSubtitle": "Кратко — на главной, подробно на отдельной странице.",
             "teaserCta": "Все отзывы",
-            "teaserMaxItems": 3,
+            "teaserMaxItems": 6,
             "pageTitle": "Отзывы клиентов",
             "pageDescription": "Отзывы на Яндексе и на сайте, форма обратной связи.",
             "loading": "Загрузка отзывов…",

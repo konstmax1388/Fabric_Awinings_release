@@ -103,7 +103,6 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "contacts_back_link_label",
     ),
     "menu_reviews": (
-        "header_navigation",
         "reviews_yandex_profile_url",
         "reviews_yandex_widget_html",
     ),
@@ -119,7 +118,7 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "seo_locale",
     ),
     "calculator": ("show_calculator", "show_portfolio"),
-    "catalog": ("catalog_intro", "product_photo_aspect"),
+    "catalog": ("catalog_intro", "product_photo_aspect", "catalog_warranty_months", "catalog_return_days"),
     "checkout_limits": (
         "checkout_minimum_order_rub",
         "checkout_free_delivery_from_rub",

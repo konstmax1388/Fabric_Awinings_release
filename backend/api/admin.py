@@ -12,7 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.forms.models import modelform_factory
 from django.http import Http404
 from django.http import JsonResponse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -40,8 +40,13 @@ from config.sitesettings_nav import (
     ss_fieldset,
 )
 
-from .admin_forms import ProductAdminForm, teasers_list_for_save
+from .admin_forms import ProductAdminForm, SiteSettingsAdminForm, SiteSettingsMenuSectionForm, teasers_list_for_save
 from .home_defaults import merged_home_payload
+
+_HEADER_NAV_ADMIN_FIELD_ROWS: tuple[tuple[str, str, str], ...] = tuple(
+    (f"nav_item_{k}_enabled", f"nav_item_{k}_order", f"nav_item_{k}_label")
+    for k in ("home", "catalog", "portfolio", "reviews", "blog", "contacts")
+)
 from .home_page_admin_form import (
     HomePageContentAdminForm,
     HomePageSectionForm,
@@ -75,6 +80,7 @@ from .models import (
     SiteEmailTemplate,
     SiteSettings,
     ConsentLog,
+    CatalogFilterKey,
 )
 
 
@@ -309,6 +315,15 @@ class ProductAdmin(ModelAdmin):
                 "description": _(
                     "«Показывать на главной» — блок рекомендуемых на главной странице. "
                     "Бейджи на карточке товара: можно включить несколько; на сайте порядок: хит → новинка → рекомендуем."
+                ),
+            },
+        ),
+        (
+            _("Гарантия и возврат (витрина)"),
+            {
+                "fields": ("warranty_months", "return_days"),
+                "description": _(
+                    "Сроки на карточке товара. Пусто — на сайте подставляется из «Настройки сайта» → «Каталог»."
                 ),
             },
         ),
@@ -1373,42 +1388,6 @@ class ConsentLogAdmin(ModelAdmin):
         return False
 
 
-class SiteSettingsAdminForm(forms.ModelForm):
-    class Meta:
-        model = SiteSettings
-        fields = "__all__"
-        widgets = {
-            "smtp_password": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "astrum_crm_api_key": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "bitrix24_webhook_base": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "cdek_secure_password": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "ozon_pay_client_secret": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "ozon_pay_webhook_secret": forms.PasswordInput(
-                render_value=True,
-                attrs={"autocomplete": "new-password"},
-            ),
-            "header_navigation": forms.Textarea(
-                attrs={"rows": 16, "class": "vLargeTextField", "style": "font-family:monospace;font-size:12px"},
-            ),
-            "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
-        }
-
-
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(ModelAdmin):
     form = SiteSettingsAdminForm
@@ -1567,17 +1546,15 @@ class SiteSettingsAdmin(ModelAdmin):
         ss_fieldset(
             "menu_reviews",
             {
-                "fields": (
-                    "header_navigation",
+                "fields": _HEADER_NAV_ADMIN_FIELD_ROWS
+                + (
                     "reviews_yandex_profile_url",
                     "reviews_yandex_widget_html",
                 ),
                 "description": _(
-                    "JSON: порядок и включение пунктов верхнего меню (ключи: home, catalog, portfolio, blog, reviews, contacts) "
-                    "и ссылка на витрину. Подписи по умолчанию — из «Главная страница (контент)», блок «Интерфейс витрин»; "
-                    "в JSON можно задать поле label на пункт. "
-                    "Отзывы с Яндекса на сайт без кода подгружаются только через виджет из кабинета организации (HTML) — "
-                    "такой блок на странице /reviews показывается первым; ниже — отзывы с сайта из админки."
+                    "Для каждого пункта: включение, порядок (меньше — левее), при необходимости своя подпись. "
+                    "Пустая подпись — из «Главная страница (контент)», «Интерфейс витрин». "
+                    "Отзывы в Яндексе на /reviews: код виджета (iframe) и при необходимости ссылка на карточку организации. "
                 ),
             },
         ),
@@ -1615,9 +1592,15 @@ class SiteSettingsAdmin(ModelAdmin):
         ss_fieldset(
             "catalog",
             {
-                "fields": ("catalog_intro", "product_photo_aspect"),
+                "fields": (
+                    "catalog_intro",
+                    "product_photo_aspect",
+                    "catalog_warranty_months",
+                    "catalog_return_days",
+                ),
                 "description": _(
-                    "Текст под заголовком «Каталог» и формат фото в карточках. "
+                    "Текст под заголовком «Каталог», формат фото в карточках, гарантия и срок возврата по умолчанию "
+                    "для витрины (в карточке товара, если в самом товаре не задано своё). "
                     "Портрет 3:4 — рамка как 900×1200; квадрат — 1:1. На сайте фото не обрезается."
                 ),
             },
@@ -1763,7 +1746,10 @@ class SiteSettingsAdmin(ModelAdmin):
             raise PermissionDenied
         obj = SiteSettings.get_solo()
         fields = SS_SECTION_FIELDS[slug]
-        SectionForm = _sitesettings_section_modelform_factory(request, fields)
+        if slug == "menu_reviews":
+            SectionForm = SiteSettingsMenuSectionForm
+        else:
+            SectionForm = _sitesettings_section_modelform_factory(request, fields)
         if request.method == "POST":
             form = SectionForm(request.POST, request.FILES, instance=obj)
             if form.is_valid():
@@ -2778,6 +2764,57 @@ class ShippingAddressAdmin(ModelAdmin):
         (_("Адрес"), {"fields": ("postal_code", "city", "street", "building", "apartment")}),
         (_("Получатель"), {"fields": ("recipient_name", "recipient_phone")}),
     )
+
+
+@admin.register(CatalogFilterKey)
+class CatalogFilterKeyAdmin(ModelAdmin):
+    """Кандидаты для фильтра — кнопка «Сформировать из товаров»; включите галочками."""
+
+    list_display = (
+        "is_enabled",
+        "sort_order",
+        "name",
+        "group_name",
+        "product_count",
+        "label",
+        "updated_at",
+    )
+    list_display_links = ("name",)
+    list_filter = ("is_enabled",)
+    list_editable = ("is_enabled", "sort_order", "label")
+    search_fields = ("name", "group_name", "label")
+    ordering = ("sort_order", "id")
+    readonly_fields = ("product_count", "created_at", "updated_at")
+    change_list_template = "admin/api/catalogfilterkey/change_list.html"
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def get_urls(self):
+        info = self.opts.app_label, self.opts.model_name
+        return [
+            path(
+                "rebuild/",
+                self.admin_site.admin_view(self._rebuild_view),
+                name="%s_%s_rebuild" % info,
+            ),
+            *super().get_urls(),
+        ]
+
+    def _rebuild_view(self, request):
+        from django.contrib import messages
+
+        from .catalog_filters import rebuild_catalog_filter_keys_from_products
+
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+        stats = rebuild_catalog_filter_keys_from_products()
+        messages.success(
+            request,
+            _("Сформировано пар характеристик: %(pairs)s, новых записей: %(created)s.")
+            % {"pairs": stats["pairs"], "created": stats["created"]},
+        )
+        return HttpResponseRedirect(reverse("admin:api_catalogfilterkey_changelist"))
 
 
 admin.site.unregister(User)

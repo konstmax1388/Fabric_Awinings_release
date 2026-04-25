@@ -82,6 +82,9 @@ export type Product = {
   cdekLengthCm?: number | null
   cdekWidthCm?: number | null
   cdekHeightCm?: number | null
+  /** Эффективные сроки (с бэкенда: свой товар или дефолт каталога), мес. / дн. */
+  warrantyMonths: number
+  returnDays: number
 }
 
 /** Подписи для демо-моков и блока «Виды тентов» (картинки по слагу) */
@@ -92,9 +95,12 @@ export const CATEGORY_LABELS: Record<string, string> = {
   events: 'Мероприятия',
 }
 
+const _mockTrust = { warrantyMonths: 3, returnDays: 14 }
+
 /** Мок-данные до API Django */
 export const MOCK_PRODUCTS: Product[] = [
   {
+    ..._mockTrust,
     id: 'p1',
     slug: 'tent-polupricep-20t',
     title: 'Тент на полуприцеп 20 т',
@@ -117,6 +123,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['bestseller', 'recommended'],
   },
   {
+    ..._mockTrust,
     id: 'p2',
     slug: 'tent-fura-tentovannyj',
     title: 'Тент тентованный на фуру',
@@ -135,6 +142,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['new'],
   },
   {
+    ..._mockTrust,
     id: 'p3',
     slug: 'naves-sklad-400',
     title: 'Навес складской каркасный',
@@ -155,6 +163,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['recommended'],
   },
   {
+    ..._mockTrust,
     id: 'p4',
     slug: 'angar-bystrovozvodimyj',
     title: 'Быстровозводимый ангар',
@@ -173,6 +182,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: [],
   },
   {
+    ..._mockTrust,
     id: 'p5',
     slug: 'terassa-kafe-razdvizhnaya',
     title: 'Терраса для кафе, раздвижная',
@@ -195,6 +205,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['recommended'],
   },
   {
+    ..._mockTrust,
     id: 'p6',
     slug: 'naves-letnij-veranda',
     title: 'Летняя веранда с навесом',
@@ -213,6 +224,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['bestseller'],
   },
   {
+    ..._mockTrust,
     id: 'p7',
     slug: 'shater-meropriyatie-10x15',
     title: 'Шатёр 10×15 м',
@@ -233,6 +245,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['new', 'recommended'],
   },
   {
+    ..._mockTrust,
     id: 'p8',
     slug: 'szena-naves-scenicheskij',
     title: 'Сценический навес',
@@ -251,6 +264,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: [],
   },
   {
+    ..._mockTrust,
     id: 'p9',
     slug: 'tent-pickup',
     title: 'Тент на пикап / раму',
@@ -271,6 +285,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['new'],
   },
   {
+    ..._mockTrust,
     id: 'p10',
     slug: 'ukrytie-strojploshadka',
     title: 'Укрытие строительной площадки',
@@ -289,6 +304,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: [],
   },
   {
+    ..._mockTrust,
     id: 'p11',
     slug: 'markiza-vitrina',
     title: 'Маркиза для витрины',
@@ -310,6 +326,7 @@ export const MOCK_PRODUCTS: Product[] = [
     teasers: ['recommended', 'new'],
   },
   {
+    ..._mockTrust,
     id: 'p12',
     slug: 'palatka-promo',
     title: 'Промо-палатка 3×3',

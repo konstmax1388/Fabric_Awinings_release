@@ -52,7 +52,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
   const teaserMax = (() => {
     const n = rv?.teaserMaxItems
     if (typeof n === 'number' && Number.isFinite(n) && n >= 1 && n <= 12) return Math.floor(n)
-    return 3
+    return 6
   })()
   const loadingText = rv?.loading ?? 'Загрузка отзывов…'
   const videoCaption = rv?.videoCaption ?? 'Видеоотзыв'
@@ -252,12 +252,20 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
           </div>
           <Link
             to="/reviews"
-            className="fabric-strap-btn inline-flex w-fit shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium text-accent hover:border-accent/60 md:px-5"
+            className="fabric-strap-btn hidden w-fit shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium text-accent hover:border-accent/60 md:inline-flex md:px-5"
           >
             {teaserCta}
           </Link>
         </div>
         {listBlock}
+        <div className="mt-6 flex justify-center sm:mt-8">
+          <Link
+            to="/reviews"
+            className="fabric-strap-btn inline-flex rounded-full border border-border px-5 py-2.5 text-sm font-medium text-accent hover:border-accent/60"
+          >
+            {teaserCta}
+          </Link>
+        </div>
       </motion.section>
     )
   }

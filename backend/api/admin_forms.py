@@ -3,7 +3,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Product
+from .models import Product, SiteSettings
 
 _MP_INPUT_CLASSES = (
     "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-3xl "
@@ -227,3 +227,156 @@ class ProductAdminForm(forms.ModelForm):
             self.initial.setdefault(f"material_layer_{idx}_title", str(row.get("title") or "").strip())
             self.initial.setdefault(f"material_layer_{idx}_x", row.get("x"))
             self.initial.setdefault(f"material_layer_{idx}_y", row.get("y"))
+
+
+# Порядок строк = порядок в UI (см. default_header_navigation).
+_HEADER_NAV_SLUGS: tuple[str, ...] = (
+    "home",
+    "catalog",
+    "portfolio",
+    "reviews",
+    "blog",
+    "contacts",
+)
+_HEADER_NAV_LABELS: dict[str, str] = {
+    "home": "Главная",
+    "catalog": "Каталог",
+    "portfolio": "Портфолио",
+    "reviews": "Отзывы",
+    "blog": "Блог",
+    "contacts": "Контакты",
+}
+
+
+class SiteSettingsHeaderNavMixin:
+    """Поля `nav_item_*` вместо сырого JSON `header_navigation`."""
+
+    def _header_nav_inject_fields(self) -> None:
+        from config.header_nav import default_header_navigation, normalize_header_navigation
+
+        inst = getattr(self, "instance", None)
+        if inst and getattr(inst, "pk", None):
+            norm = normalize_header_navigation(inst.header_navigation)
+        else:
+            norm = default_header_navigation()
+        by_key = {r["key"]: r for r in norm}
+        for key in _HEADER_NAV_SLUGS:
+            row = by_key.get(key) or {"enabled": True, "order": 0, "label": ""}
+            label_base = _HEADER_NAV_LABELS.get(key, key)
+            self.fields[f"nav_item_{key}_enabled"] = forms.BooleanField(
+                label=_("Показывать: %s") % label_base,
+                required=False,
+                initial=row.get("enabled", True) is not False and row.get("enabled") != 0,
+                widget=forms.CheckboxInput(attrs={"class": _CHECK_CLASSES}),
+            )
+            self.fields[f"nav_item_{key}_order"] = forms.IntegerField(
+                label=_("Порядок (%s)") % label_base,
+                required=True,
+                min_value=0,
+                max_value=100,
+                initial=int(row.get("order") or 0),
+                help_text=_("Меньшее число — левее в шапке."),
+                widget=forms.NumberInput(attrs={"class": _SMALL_INPUT_CLASSES, "style": "max-width:5rem;"}),
+            )
+            self.fields[f"nav_item_{key}_label"] = forms.CharField(
+                label=_("Своя подпись: %s") % label_base,
+                required=False,
+                max_length=120,
+                initial=(row.get("label") or "") if isinstance(row.get("label"), str) else "",
+                help_text=_("Пусто — подставится подпись из «Главная (контент)» → «Интерфейс витрин»."),
+                widget=forms.TextInput(attrs={"class": _MP_INPUT_CLASSES}),
+            )
+
+    def _header_nav_apply_to_instance(self, instance: SiteSettings) -> None:
+        from config.header_nav import normalize_header_navigation
+
+        rows: list[dict] = []
+        for key in _HEADER_NAV_SLUGS:
+            en = self.cleaned_data.get(f"nav_item_{key}_enabled", True)
+            if isinstance(en, str):
+                enabled = en not in ("0", "false", "False", "")
+            else:
+                enabled = en is not False
+            try:
+                order = int(self.cleaned_data.get(f"nav_item_{key}_order", 0))
+            except (TypeError, ValueError):
+                order = 0
+            order = max(0, min(100, order))
+            lab = self.cleaned_data.get(f"nav_item_{key}_label")
+            label = (lab or "").strip()[:120] if isinstance(lab, str) else ""
+            rows.append({"key": key, "enabled": bool(enabled), "order": order, "label": label})
+        instance.header_navigation = normalize_header_navigation(rows)
+
+
+class SiteSettingsAdminForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
+    """
+    Все настройки сайта; JSON `header_navigation` не редактируется напрямую —
+    заполняются поля `nav_item_*` (и секция «Шапка: пункты меню»).
+    """
+
+    class Meta:
+        model = SiteSettings
+        exclude = ("header_navigation",)
+        widgets = {
+            "smtp_password": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "astrum_crm_api_key": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "bitrix24_webhook_base": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "cdek_secure_password": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "ozon_pay_client_secret": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "ozon_pay_webhook_secret": forms.PasswordInput(
+                render_value=True,
+                attrs={"autocomplete": "new-password"},
+            ),
+            "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._header_nav_inject_fields()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        self._header_nav_apply_to_instance(instance)
+        if commit:
+            instance.save()
+        return instance
+
+
+class SiteSettingsMenuSectionForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
+    """Секция «Шапка: пункты меню и отзывы»: только витрина, Яндекс и навигация (без остальных настроек)."""
+
+    class Meta:
+        model = SiteSettings
+        fields = (
+            "reviews_yandex_profile_url",
+            "reviews_yandex_widget_html",
+        )
+        widgets = {
+            "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._header_nav_inject_fields()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        self._header_nav_apply_to_instance(instance)
+        if commit:
+            instance.save()
+        return instance

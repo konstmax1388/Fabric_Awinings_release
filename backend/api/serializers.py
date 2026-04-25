@@ -84,6 +84,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     cdekLengthCm = serializers.IntegerField(source="cdek_length_cm", allow_null=True, read_only=True)
     cdekWidthCm = serializers.IntegerField(source="cdek_width_cm", allow_null=True, read_only=True)
     cdekHeightCm = serializers.IntegerField(source="cdek_height_cm", allow_null=True, read_only=True)
+    warrantyMonths = serializers.SerializerMethodField()
+    returnDays = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -105,6 +107,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             "cdekLengthCm",
             "cdekWidthCm",
             "cdekHeightCm",
+            "warrantyMonths",
+            "returnDays",
         )
 
     def get_id(self, obj: Product) -> str:
@@ -127,6 +131,22 @@ class ProductListSerializer(serializers.ModelSerializer):
             if u:
                 out.append(u)
         return out
+
+    def get_warrantyMonths(self, obj: Product) -> int:
+        if obj.warranty_months is not None:
+            return int(obj.warranty_months)
+        ss = self.context.get("site_settings")
+        if ss is None:
+            ss = SiteSettings.get_solo()
+        return int(ss.catalog_warranty_months)
+
+    def get_returnDays(self, obj: Product) -> int:
+        if obj.return_days is not None:
+            return int(obj.return_days)
+        ss = self.context.get("site_settings")
+        if ss is None:
+            ss = SiteSettings.get_solo()
+        return int(ss.catalog_return_days)
 
 
 class ProductSpecificationSerializer(serializers.ModelSerializer):
@@ -807,6 +827,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     portfolioEnabled = serializers.BooleanField(source="show_portfolio", read_only=True)
     productPhotoAspect = serializers.CharField(source="product_photo_aspect", read_only=True)
     catalogIntro = serializers.CharField(source="catalog_intro", read_only=True)
+    catalogWarrantyMonths = serializers.IntegerField(source="catalog_warranty_months", read_only=True)
+    catalogReturnDays = serializers.IntegerField(source="catalog_return_days", read_only=True)
     checkout = serializers.SerializerMethodField()
     mapForm = serializers.SerializerMethodField()
     analyticsYandex = serializers.SerializerMethodField()
@@ -841,6 +863,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "portfolioEnabled",
             "productPhotoAspect",
             "catalogIntro",
+            "catalogWarrantyMonths",
+            "catalogReturnDays",
             "checkout",
             "mapForm",
             "analyticsYandex",

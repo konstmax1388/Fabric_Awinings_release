@@ -57,6 +57,8 @@ export type SiteSettingsContextValue = {
   headerNavigation: unknown
   /** Виджет/ссылка на отзывы в Яндексе. */
   reviewsYandex: { profileUrl: string; widgetHtml: string }
+  catalogWarrantyMonths: number
+  catalogReturnDays: number
 }
 
 const defaultEnabled: MarketplaceId[] = ['wb', 'ozon']
@@ -101,6 +103,8 @@ const initialValue: SiteSettingsContextValue = {
   staticPages: [],
   headerNavigation: undefined,
   reviewsYandex: { profileUrl: '', widgetHtml: '' },
+  catalogWarrantyMonths: 3,
+  catalogReturnDays: 14,
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue>(initialValue)
@@ -148,6 +152,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
     profileUrl: string
     widgetHtml: string
   }>({ profileUrl: '', widgetHtml: '' })
+  const [catalogWarrantyMonths, setCatalogWarrantyMonths] = useState(3)
+  const [catalogReturnDays, setCatalogReturnDays] = useState(14)
 
   useEffect(() => {
     let cancelled = false
@@ -210,6 +216,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             widgetHtml: s.reviewsYandex.widgetHtml ?? '',
           })
         }
+        if (s.catalogWarrantyMonths !== undefined) setCatalogWarrantyMonths(s.catalogWarrantyMonths)
+        if (s.catalogReturnDays !== undefined) setCatalogReturnDays(s.catalogReturnDays)
       }
       setHome(h)
       setStaticPages(Array.isArray(pages) ? pages : [])
@@ -255,6 +263,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       staticPages,
       headerNavigation,
       reviewsYandex,
+      catalogWarrantyMonths,
+      catalogReturnDays,
     }),
     [
       enabledMarketplaces,
@@ -290,6 +300,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       staticPages,
       headerNavigation,
       reviewsYandex,
+      catalogWarrantyMonths,
+      catalogReturnDays,
     ],
   )
 

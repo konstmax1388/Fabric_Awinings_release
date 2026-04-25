@@ -124,6 +124,18 @@ class Product(models.Model):
             "Если не заполнено — используется общий fallback из настроек интеграции СДЭК."
         ),
     )
+    warranty_months = models.PositiveSmallIntegerField(
+        "Гарантия, мес (витрина)",
+        null=True,
+        blank=True,
+        help_text="Пусто — на сайте подставляется «Каталог: гарантия по умолчанию» из настроек сайта.",
+    )
+    return_days = models.PositiveSmallIntegerField(
+        "Возврат, дн (витрина)",
+        null=True,
+        blank=True,
+        help_text="Пусто — на сайте подставляется «Каталог: возврат по умолчанию» из настроек сайта.",
+    )
 
     class Meta:
         ordering = ["sort_order", "-updated_at", "id"]
@@ -208,6 +220,58 @@ class ProductSpecification(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}: {self.value[:40]}"
+
+
+class CatalogFilterKey(models.Model):
+    """
+    Какой параметр (группа + имя) участвует в фильтре каталога.
+    Список кандидатов и счётчики — кнопка «Сформировать» в админке; включение — вручную.
+    """
+
+    group_name = models.CharField("Группа (как в товаре)", max_length=255, blank=True, default="")
+    name = models.CharField("Параметр (как в товаре)", max_length=255, db_index=True)
+    label = models.CharField(
+        "Подпись в витрине",
+        max_length=255,
+        blank=True,
+        help_text="Пусто — показывать «Параметр»; иначе этот текст (например, короткий заголовок).",
+    )
+    is_enabled = models.BooleanField("Показывать в фильтре каталога", default=False, db_index=True)
+    sort_order = models.PositiveIntegerField("Порядок", default=0, db_index=True)
+    product_count = models.PositiveIntegerField(
+        "Товаров с параметром (последний разбор)",
+        default=0,
+        editable=True,
+        help_text="Сколько опубликованных товаров содержат эту характеристику — после «Сформировать из товаров».",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Параметр фильтра каталога"
+        verbose_name_plural = "Фильтр каталога: параметры"
+        ordering = ("sort_order", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["group_name", "name"],
+                name="api_catalogfilterkey_group_name_name_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        g = (self.group_name or "").strip()
+        n = (self.name or "").strip()
+        if g and n:
+            return f"{g} — {n}"
+        return n or f"#{self.pk}"
+
+    def clean(self) -> None:
+        self.group_name = (self.group_name or "").strip()
+        self.name = (self.name or "").strip()
+        if not self.name:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError({"name": "Параметр обязателен."})
 
 
 class ProductImage(models.Model):
@@ -607,6 +671,16 @@ class SiteSettings(models.Model):
             "Тенты, навесы и шатры для транспорта, складов, общепита и мероприятий."
         ),
         help_text="Страница /catalog — абзац под заголовком «Каталог».",
+    )
+    catalog_warranty_months = models.PositiveSmallIntegerField(
+        "Каталог: гарантия по умолчанию, мес.",
+        default=3,
+        help_text="Показ в карточках товара, если у товара не задана своя гарантия.",
+    )
+    catalog_return_days = models.PositiveSmallIntegerField(
+        "Каталог: возврат по умолчанию, дн.",
+        default=14,
+        help_text="Показ в карточках товара, если у товара не задан свой срок возврата.",
     )
 
     global_url_wb = models.URLField("URL витрины WB (общий)", max_length=512, blank=True)

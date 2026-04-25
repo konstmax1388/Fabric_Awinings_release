@@ -10,11 +10,6 @@ import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { OptimizedImage } from '../ui/OptimizedImage'
 import { HeaderSearchPanel } from './HeaderSearchPanel'
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `font-body text-base font-medium tracking-wide transition-colors hover:text-accent ${
-    isActive ? 'text-accent' : 'text-text'
-  }`
-
 const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   `block rounded-2xl px-4 py-3.5 font-body text-[17px] font-semibold tracking-wide transition-colors ${
     isActive ? 'bg-accent/15 text-accent ring-1 ring-accent/30' : 'text-text hover:bg-primary/70'
@@ -213,10 +208,10 @@ export function SiteHeader() {
       ref={headerRef}
       className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90 md:fixed md:top-0"
     >
-      <div className="fabric-container flex min-w-0 items-center justify-between gap-3 py-4 md:py-2.5 md:gap-4">
+      <div className="fabric-container flex min-w-0 flex-nowrap items-center gap-2 py-3 md:grid md:grid-cols-[minmax(7rem,auto)_minmax(0,1fr)_auto] md:items-center md:gap-3 md:py-2.5">
         <Link
           to="/"
-          className="fabric-logo-link flex min-w-0 max-w-[min(100%,250px)] items-center gap-2 md:max-w-[320px]"
+          className="fabric-logo-link flex min-w-[7rem] shrink-0 max-w-[min(280px,42vw)] items-center md:min-w-0"
           aria-label={siteName}
         >
           {!logoBroken ? (
@@ -225,8 +220,8 @@ export function SiteHeader() {
               alt=""
               priority
               widths={[160, 320, 480]}
-              sizes="(max-width: 768px) 160px, 200px"
-              className="fabric-header-logo h-10 w-auto max-h-12 max-w-full object-contain object-left md:h-10"
+              sizes="(max-width: 768px) 200px, min(280px, 28vw)"
+              className="fabric-header-logo h-11 w-auto min-h-[40px] max-h-[52px] max-w-full object-contain object-left md:h-12"
               data-logo-tone={theme === 'dark' ? 'white' : 'black'}
               onError={() => setLogoBroken(true)}
             />
@@ -237,18 +232,32 @@ export function SiteHeader() {
           )}
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label={mainMenuAria}>
-          {mainNavItems.map((item: MainNavItem) => (
-            <NavLink key={item.key} to={item.to} end={item.end} className={navLinkClass}>
-              {item.label}
-            </NavLink>
-          ))}
+        <nav
+          className="no-scrollbar hidden min-w-0 overflow-y-visible md:mx-0 md:flex md:max-w-none md:justify-center"
+          aria-label={mainMenuAria}
+        >
+          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5 overflow-x-auto px-0.5 text-sm [scrollbar-width:none] sm:gap-2.5 md:gap-3 [&::-webkit-scrollbar]:hidden lg:gap-4">
+            {mainNavItems.map((item: MainNavItem) => (
+              <NavLink
+                key={item.key}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `shrink-0 font-body text-sm font-medium tracking-wide transition-colors first:pl-0 last:pr-0 sm:text-base md:text-sm lg:text-base ${
+                    isActive ? 'text-accent' : 'text-text hover:text-accent'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
           <button
             type="button"
-            className="fabric-theme-toggle hidden md:inline-flex"
+            className="fabric-theme-toggle hidden h-9 w-9 items-center justify-center md:inline-flex md:rounded-full md:text-lg"
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
             aria-label={theme === 'dark' ? themeToLightAria : themeToDarkAria}
             title={theme === 'dark' ? themeLightTitle : themeDarkTitle}
@@ -258,37 +267,44 @@ export function SiteHeader() {
           <NavLink
             to="/account"
             className={({ isActive }) =>
-              `hidden h-11 items-center rounded-xl px-3 font-body text-sm font-medium text-text hover:bg-primary/70 md:inline-flex ${
-                isActive ? 'bg-primary/70 text-accent' : ''
+              `hidden h-10 w-10 items-center justify-center rounded-full border text-text transition md:inline-flex ${
+                isActive
+                  ? 'border-accent/50 bg-primary/80 text-accent'
+                  : 'border-border/50 bg-primary/30 hover:border-accent/40 hover:bg-primary/50'
               }`
             }
+            title={navAccountLabel}
+            aria-label={navAccountLabel}
           >
-            {navAccountLabel}
+            <span className="h-[22px] w-[22px]" aria-hidden>
+              <MobileBarUserIcon className="h-full w-full" />
+            </span>
           </NavLink>
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-text transition hover:bg-primary/70"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/40 bg-primary/15 text-text transition hover:border-accent/50 hover:bg-primary/35 md:border-border/50 md:bg-primary/20"
             onClick={openHeaderSearch}
             aria-label="Поиск по каталогу"
             aria-haspopup="dialog"
             aria-expanded={searchOpen}
             title="Поиск"
           >
-            <span className="material-symbols-outlined text-[24px] leading-none" aria-hidden>
+            <span className="material-symbols-outlined text-[22px] leading-none" aria-hidden>
               search
             </span>
           </button>
-          <CartHeaderLink />
-          <div className="hidden items-center gap-2.5 md:flex">
-            <span className="hidden shrink-0 font-body text-[11px] font-medium text-text-muted xl:inline">
+          <CartHeaderLink className="rounded-full border border-border/40 bg-primary/15 hover:border-accent/50 md:border-border/50 md:bg-primary/20" />
+          <div className="hidden min-w-0 items-center gap-2 lg:flex">
+            <span className="shrink-0 font-body text-[10px] font-medium uppercase tracking-wide text-text-muted xl:text-[11px]">
               {buyOnLabel}
             </span>
             <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
-            <span className="hidden h-8 w-px bg-border-light xl:block" aria-hidden />
+            <span className="h-6 w-px bg-border-light" aria-hidden />
             <MagneticHover radius={90} strength={0.1}>
               <a
                 href={phoneHref}
-                className="font-body text-sm font-medium text-text-muted hover:text-accent lg:text-base"
+                className="max-w-[8.5rem] shrink-0 truncate font-body text-xs font-medium text-text-muted hover:text-accent sm:max-w-none sm:text-sm"
+                title={phone}
               >
                 {phone}
               </a>

@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async'
 import { motion, useReducedMotion } from 'framer-motion'
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { CatalogSpecFilters } from '../components/catalog/CatalogSpecFilters'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { SiteFooter } from '../components/layout/SiteFooter'
@@ -12,9 +13,17 @@ import type { Product, ProductCategory } from '../data/products'
 import {
   PAGE_SIZE,
   SORT_LABELS,
+  parseCatalogSpecFiltersFromSearchParams,
   type CatalogSortId,
 } from '../lib/catalog-utils'
-import { fetchProductCategories, fetchProductsPage, type Paginated, type ProductCategoryRow } from '../lib/api'
+import {
+  fetchCatalogFilterFacets,
+  fetchProductCategories,
+  fetchProductsPage,
+  type CatalogFilterFacetKey,
+  type Paginated,
+  type ProductCategoryRow,
+} from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
 
 /** Слаг категории с API: только латиница, цифры, `_` и `-` (без кириллицы в URL). */
@@ -80,6 +89,11 @@ export function CatalogPage() {
   const sort = parseSort(search.get('sort'))
   const page = parsePage(search.get('page'))
   const searchTerm = parseSearch(search.get('search'))
+  const specFilterMap = useMemo(
+    () => parseCatalogSpecFiltersFromSearchParams(search),
+    [search],
+  )
+  const searchKey = useMemo(() => search.toString(), [search])
 
   /** Убираем из адреса устаревший `?category=` с кириллицей после смены слагов на латиницу. */
   useEffect(() => {
@@ -94,6 +108,7 @@ export function CatalogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [categoryRows, setCategoryRows] = useState<ProductCategoryRow[] | null>(null)
+  const [filterFacets, setFilterFacets] = useState<CatalogFilterFacetKey[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -107,11 +122,29 @@ export function CatalogPage() {
 
   useEffect(() => {
     let cancelled = false
+    setFilterFacets(null)
+    fetchCatalogFilterFacets({ category: category ?? undefined }).then((rows) => {
+      if (!cancelled) setFilterFacets(rows)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [category])
+
+  useEffect(() => {
+    let cancelled = false
     startTransition(() => {
       setLoading(true)
       setError(null)
     })
-    fetchProductsPage({ page, category, sort, search: searchTerm, pageSize: PAGE_SIZE }).then((res) => {
+    fetchProductsPage({
+      page,
+      category,
+      sort,
+      search: searchTerm,
+      pageSize: PAGE_SIZE,
+      specFilters: specFilterMap,
+    }).then((res) => {
       if (cancelled) return
       if (!res) {
         setData(null)
@@ -125,32 +158,77 @@ export function CatalogPage() {
     return () => {
       cancelled = true
     }
-  }, [page, category, sort, searchTerm])
+  }, [searchKey])
 
   const setParams = useCallback(
-    (patch: { category?: ProductCategory | null; sort?: CatalogSortId; page?: number; search?: string }) => {
+    (patch: {
+      category?: ProductCategory | null
+      sort?: CatalogSortId
+      page?: number
+      search?: string
+      specFilters?: Map<number, string[]>
+    }) => {
       const next = new URLSearchParams(search)
-      if (patch.category === undefined) {
-        /* skip */
-      } else if (patch.category === null) {
-        next.delete('category')
-      } else {
-        next.set('category', patch.category)
+      if (patch.category !== undefined) {
+        if (patch.category === null) {
+          next.delete('category')
+        } else {
+          next.set('category', patch.category)
+        }
+        for (const k of [...next.keys()]) {
+          if (k.startsWith('f_')) next.delete(k)
+        }
       }
       if (patch.sort !== undefined) next.set('sort', patch.sort)
-      if (patch.page !== undefined) {
-        if (patch.page <= 1) next.delete('page')
-        else next.set('page', String(patch.page))
-      }
       if (patch.search !== undefined) {
         const normalized = patch.search.trim()
         if (normalized) next.set('search', normalized)
         else next.delete('search')
       }
+      if (patch.specFilters !== undefined) {
+        for (const k of [...next.keys()]) {
+          if (k.startsWith('f_')) next.delete(k)
+        }
+        for (const [id, values] of patch.specFilters) {
+          for (const v of values) {
+            const t = v.trim()
+            if (t) next.append(`f_${id}`, t)
+          }
+        }
+      }
+      if (patch.page !== undefined) {
+        if (patch.page <= 1) next.delete('page')
+        else next.set('page', String(patch.page))
+      } else if (patch.specFilters !== undefined || patch.category !== undefined) {
+        next.delete('page')
+      }
       setSearch(next, { replace: true })
     },
     [search, setSearch],
   )
+
+  const onSpecFilterToggle = useCallback(
+    (keyId: number, value: string, nextSelected: boolean) => {
+      const m = new Map(specFilterMap)
+      const cur = [...(m.get(keyId) ?? [])]
+      if (nextSelected) {
+        if (!cur.some((x) => (x || '').toLowerCase() === value.toLowerCase())) {
+          cur.push(value)
+        }
+        m.set(keyId, cur)
+      } else {
+        const nextVals = cur.filter((x) => (x || '').toLowerCase() !== value.toLowerCase())
+        if (nextVals.length) m.set(keyId, nextVals)
+        else m.delete(keyId)
+      }
+      setParams({ specFilters: m, page: 1 })
+    },
+    [setParams, specFilterMap],
+  )
+
+  const onSpecFilterClear = useCallback(() => {
+    setParams({ specFilters: new Map(), page: 1 })
+  }, [setParams])
 
   const total = data?.count ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -252,6 +330,12 @@ export function CatalogPage() {
                 ))
               )}
             </ul>
+            <CatalogSpecFilters
+              facets={filterFacets}
+              specFilters={specFilterMap}
+              onToggleValue={onSpecFilterToggle}
+              onClear={onSpecFilterClear}
+            />
           </aside>
 
           <div className="min-w-0 flex-1">
@@ -302,7 +386,7 @@ export function CatalogPage() {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              key={`${category ?? 'all'}-${sort}-${currentPage}`}
+              key={searchKey}
             >
               {slice.map((p) => (
                 <motion.div key={p.id} variants={staggerItem}>
@@ -316,15 +400,28 @@ export function CatalogPage() {
               <div className="fabric-card mt-10 border-dashed px-6 py-10 text-center">
                 <p className="font-heading text-xl font-semibold text-text">Пока пусто в этой категории</p>
                 <p className="mt-2 font-body text-sm text-text-muted">
-                  Попробуйте открыть другую категорию или сбросить фильтр до «Все».
+                  {specFilterMap.size
+                    ? 'Снимите лишние значения в блоке «Параметры» слева или сбросьте фильтры.'
+                    : 'Попробуйте открыть другую категорию или сбросить фильтр до «Все».'}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setParams({ category: null, page: 1 })}
-                  className="mt-5 inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
-                >
-                  Показать все товары
-                </button>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                  {specFilterMap.size > 0 ? (
+                    <button
+                      type="button"
+                      onClick={onSpecFilterClear}
+                      className="inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
+                    >
+                      Сбросить параметры
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setParams({ category: null, page: 1 })}
+                    className="inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
+                  >
+                    Показать все товары
+                  </button>
+                </div>
               </div>
             )}
 
