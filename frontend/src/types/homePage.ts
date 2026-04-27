@@ -260,6 +260,8 @@ export type HomePayload = {
     navHome?: string
     navCatalog?: string
     navAbout?: string
+    /** Подпункт в дропдауне «О нас» — ссылка на ту же страницу (по умолчанию «О компании»). */
+    navAboutCompany?: string
     /** Слаг статичной страницы «О нас» (по умолчанию o-nas), см. /api/static-pages/ */
     aboutPageSlug?: string
     navPortfolio?: string

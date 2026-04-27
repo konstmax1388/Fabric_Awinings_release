@@ -486,14 +486,20 @@ main {
   }
 }
 
-/* Сниппет перед </body> (CRM/чат) — сдвиг кнопки «Наверх» выше, чтобы не перекрывать виджет. */
+/*
+ * Сниппет в конец body (CRM/чат из настроек) — не ставим «Наверх» в тот же угол, что и пузырь чата:
+ * выше по вертикали + левее по горизонтали (обычно ~56–64px пузырь справа внизу).
+ */
 html.fabric-has-body-end-widget .fabric-scroll-top {
-  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(6.75rem + env(safe-area-inset-bottom, 0px));
+  right: 6.5rem;
+  z-index: 40;
 }
 
 @media (min-width: 768px) {
   html.fabric-has-body-end-widget .fabric-scroll-top {
-    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+    right: 7rem;
   }
 }
 

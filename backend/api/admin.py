@@ -52,6 +52,12 @@ from .home_page_admin_form import (
     HomePageSectionForm,
     apply_homepage_section_save,
 )
+from .static_page_about_admin_form import (
+    StaticPageAboutLayoutFields,
+    about_page_admin_fieldsets,
+    apply_about_layout_initial,
+    build_about_payload,
+)
 from .product_wb_import import WbImportError, import_one_from_wb_url
 from api.services.astrum_crm import (
     astrum_crm_enabled,
@@ -796,23 +802,7 @@ class BlogPostAdmin(ModelAdmin):
     )
 
 
-class StaticPageAdminForm(forms.ModelForm):
-    about_layout_json = forms.CharField(
-        label=_("Макет «О нас» (JSON)"),
-        required=False,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 26,
-                "class": "vLargeTextField",
-                "style": "font-family:ui-monospace,Consolas,monospace;font-size:13px",
-            }
-        ),
-        help_text=_(
-            "Пусто — на сайте только HTML из «Содержимое» ниже. "
-            "Иначе JSON с version: 1: блоки intro, featureBullets, spotlight, manufacturer, facts, reviewsStrip (см. подсказку в полеset)."
-        ),
-    )
-
+class StaticPageAdminForm(forms.ModelForm, StaticPageAboutLayoutFields):
     class Meta:
         model = StaticPage
         exclude = ("about_payload",)
@@ -828,31 +818,22 @@ class StaticPageAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "about_layout_json" in self.fields:
-            inst = self.instance
-            if getattr(inst, "pk", None) and isinstance(getattr(inst, "about_payload", None), dict) and inst.about_payload:
-                self.initial["about_layout_json"] = json.dumps(
-                    inst.about_payload, ensure_ascii=False, indent=2
-                )
-
-    def clean_about_layout_json(self):
-        raw = (self.cleaned_data.get("about_layout_json") or "").strip()
-        if not raw:
-            return {}
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError as e:
-            raise ValidationError(_("Некорректный JSON: %(err)s") % {"err": str(e)}) from e
-        if not isinstance(data, dict):
-            raise ValidationError(_("Корнем JSON должен быть объект."))
-        return data
+        p: dict
+        if getattr(self.instance, "pk", None):
+            raw = getattr(self.instance, "about_payload", None)
+            p = raw if isinstance(raw, dict) else {}
+        else:
+            p = {}
+        apply_about_layout_initial(self, p)
 
     def save(self, commit=True):
-        layout = self.cleaned_data.get("about_layout_json")
-        if not isinstance(layout, dict):
-            layout = {}
-        self.instance.about_payload = layout
-        return super().save(commit=commit)
+        instance = super().save(commit=False)
+        slug = (instance.slug or "").strip()
+        if slug == "o-nas":
+            instance.about_payload = build_about_payload(self.cleaned_data)
+        if commit:
+            instance.save()
+        return instance
 
     class Media:
         js = (
@@ -869,52 +850,51 @@ class StaticPageAdmin(ModelAdmin):
     search_fields = ("title", "slug", "meta_title", "meta_description", "body")
     ordering = ("sort_order", "title")
     readonly_fields = ("slug", "updated_at")
-    fieldsets = (
-        (
-            _("Статичная страница"),
-            {
-                "fields": (
-                    "title",
-                    "slug",
-                    "is_published",
-                    "sort_order",
-                    "show_in_header",
-                    "header_link_label",
-                    "show_in_footer",
-                    "footer_link_label",
-                ),
-                "description": _(
-                    "Slug используется как URL страницы: /<slug>. "
-                    "Для ссылок в меню/подвале можно задать отдельные подписи."
-                ),
-            },
-        ),
-        (
-            _("SEO"),
-            {
-                "fields": ("meta_title", "meta_description"),
-            },
-        ),
-        (
-            _("Макет «О нас» (витрина)"),
-            {
-                "fields": ("about_layout_json",),
-                "description": _(
-                    "Блоки JSON: version, intro (title, titleAccent, paragraphs, imageUrl), featureBullets, "
-                    "spotlight, spotlightGallery, manufacturer (imageUrl, videoUrl, legalText, …), metrics, "
-                    "facts (фон backgroundUrl, items), reviewsStrip (карусель отзывов). "
-                    "Пустое поле — используется только HTML ниже."
-                ),
-            },
-        ),
-        (
-            _("Контент"),
-            {
-                "fields": ("body", "updated_at"),
-                "description": _("Если задан JSON макета, этот HTML можно оставить для справки или запасного варианта."),
-            },
-        ),
-    )
+
+    def get_fieldsets(self, request, obj: StaticPage | None = None):
+        head: list[tuple[str, dict]] = [
+            (
+                _("Статичная страница"),
+                {
+                    "fields": (
+                        "title",
+                        "slug",
+                        "is_published",
+                        "sort_order",
+                        "show_in_header",
+                        "header_link_label",
+                        "show_in_footer",
+                        "footer_link_label",
+                    ),
+                    "description": _(
+                        "Slug — URL страницы: /<slug>. "
+                        "Расширенный макет v1 (поля ниже) доступен при слаге o-nas («О нас»). "
+                        "Для ссылок в шапке/подвале задайте подписи."
+                    ),
+                },
+            ),
+            (
+                _("SEO"),
+                {
+                    "fields": ("meta_title", "meta_description"),
+                },
+            ),
+        ]
+        if obj is None or (getattr(obj, "slug", None) or "") == "o-nas":
+            head.extend(about_page_admin_fieldsets())
+        head.append(
+            (
+                _("Контент"),
+                {
+                    "fields": ("body", "updated_at"),
+                    "description": _(
+                        "Если макет v1 на витрине не включён или слаг не o-nas — на сайте выводится этот HTML. "
+                        "Можно использовать как запасной вариант или вставки при гибридной вёрстке."
+                    ),
+                },
+            )
+        )
+        return tuple(head)
 
 
 @admin.register(CalculatorLead)

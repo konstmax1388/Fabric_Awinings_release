@@ -19,10 +19,15 @@ const PATHS: Record<Exclude<HeaderNavKey, 'about'>, string> = {
   contacts: '/contacts',
 }
 
-function sanitizeAboutSlug(raw: string | undefined): string {
+export function sanitizeAboutSlug(raw: string | undefined): string {
   const t = (raw || 'o-nas').trim().toLowerCase()
   if (!t || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t)) return 'o-nas'
   return t.slice(0, 120)
+}
+
+/** URL страницы «О нас» из `home.ui.aboutPageSlug` (витрина, шапка/подвал). */
+export function aboutPathFromHomeUi(ui: HomePayload['ui'] | undefined): string {
+  return `/${sanitizeAboutSlug(ui?.aboutPageSlug)}`
 }
 
 function defaultLabelForKey(key: HeaderNavKey, ui: HomePayload['ui'] | undefined): string {
@@ -92,7 +97,7 @@ export function buildMainNavItems(
   ui: HomePayload['ui'] | undefined,
   options: { portfolioEnabled: boolean; staticPages: StaticPageDto[] },
 ): MainNavItem[] {
-  const aboutPath = `/${sanitizeAboutSlug(ui?.aboutPageSlug)}`
+  const aboutPath = aboutPathFromHomeUi(ui)
   const rows = parseRows(headerNavigation)
   const sorted = rows
     ? [...rows].sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
@@ -121,7 +126,10 @@ export function buildMainNavItems(
 
     if (row.key === 'about') {
       const label = row.label.trim() || defaultLabelForKey('about', ui)
-      const children: MainNavChild[] = []
+      const aboutCompanyLabel = (ui?.navAboutCompany ?? 'О компании').trim() || 'О компании'
+      const children: MainNavChild[] = [
+        { key: 'about-company', to: aboutPath, label: aboutCompanyLabel },
+      ]
       if (reviewsInSub) {
         children.push({
           key: 'reviews',
@@ -136,12 +144,19 @@ export function buildMainNavItems(
           label: (portfolioRow?.label || '').trim() || defaultLabelForKey('portfolio', ui),
         })
       }
+      if (children.length === 1) {
+        children.push({
+          key: 'about-contacts',
+          to: PATHS.contacts,
+          label: defaultLabelForKey('contacts', ui),
+        })
+      }
       out.push({
         key: row.key,
         to: aboutPath,
         label,
         end: false,
-        children: children.length ? children : undefined,
+        children,
       })
       continue
     }

@@ -235,26 +235,34 @@ export function SiteHeader() {
                     }
                     aria-haspopup="menu"
                   >
-                    <span className="inline-flex items-center gap-0.5">
+                    <span className="inline-flex items-center gap-1">
                       {item.label}
-                      <span className="text-[10px] leading-none text-text-muted opacity-80" aria-hidden>
+                      <span
+                        className="text-[9px] leading-none text-text-muted/90 transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+                        aria-hidden
+                      >
                         ▾
                       </span>
                     </span>
                   </NavLink>
                   <ul
                     role="menu"
-                    className="invisible absolute left-0 top-full z-[100] min-w-[12rem] pt-1 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+                    className="invisible absolute left-0 top-full z-[100] min-w-[13.5rem] origin-top scale-95 pt-2 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:visible group-hover:scale-100 group-hover:opacity-100"
                   >
-                    <li className="overflow-hidden rounded-xl border border-border bg-bg-base py-1.5 shadow-lg" role="none">
+                    <li
+                      className="overflow-hidden rounded-2xl border border-border/70 bg-bg-base/95 py-1.5 shadow-2xl shadow-black/20 ring-1 ring-border/35 backdrop-blur-md dark:shadow-black/50"
+                      role="none"
+                    >
                       {item.children.map((c) => (
                         <NavLink
                           key={c.key}
                           role="menuitem"
                           to={c.to}
                           className={({ isActive }) =>
-                            `block px-4 py-2.5 font-body text-sm ${
-                              isActive ? 'bg-primary/50 text-accent' : 'text-text hover:bg-primary/50 hover:text-accent'
+                            `block px-4 py-2.5 font-body text-sm transition-colors ${
+                              isActive
+                                ? 'bg-primary/40 font-medium text-accent'
+                                : 'text-text hover:bg-primary/50 hover:text-accent'
                             }`
                           }
                         >

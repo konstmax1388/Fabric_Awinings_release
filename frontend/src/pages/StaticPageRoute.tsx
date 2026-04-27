@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { AboutPageLayout } from '../components/static/AboutPageLayout'
+import { ReviewsSection } from '../components/home/ReviewsSection'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
 
 export function StaticPageRoute() {
@@ -82,9 +83,12 @@ export function StaticPageRoute() {
             <span className="text-text">{page.title}</span>
           </nav>
           {aboutV1 && page.aboutPayload ? (
-            <article className="mt-8 min-w-0">
-              <AboutPageLayout payload={page.aboutPayload} pageTitle={aboutHeading} />
-            </article>
+            <>
+              <article className="mt-8 min-w-0">
+                <AboutPageLayout payload={page.aboutPayload} pageTitle={aboutHeading} />
+              </article>
+              <ReviewsSection mode="teaser" showListHeading />
+            </>
           ) : (
             <article className="fabric-card mt-8 space-y-6 p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
               <header className="space-y-2">

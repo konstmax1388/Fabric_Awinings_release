@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { aboutPathFromHomeUi } from '../../lib/headerNav'
 import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { getPublicAdminLinks } from '../../config/adminLinks'
 import { GLOBAL_MARKETPLACE_URLS } from '../../config/site'
@@ -28,6 +29,9 @@ export function SiteFooter() {
   const ui = home?.ui ?? {}
   const navHomeLabel = ui.navHome ?? 'Главная'
   const navCatalogLabel = ui.navCatalog ?? 'Каталог'
+  const aboutPath = aboutPathFromHomeUi(home?.ui)
+  const navAboutLabel = ui.navAbout ?? 'О нас'
+  const navReviewsLabel = ui.navReviews ?? 'Отзывы'
   const navPortfolioLabel = ui.navPortfolio ?? 'Портфолио'
   const navContactsLabel = ui.navContacts ?? 'Контакты'
   const navBlogLabel = ui.navBlog ?? 'Блог'
@@ -99,6 +103,16 @@ export function SiteFooter() {
                   {navCatalogLabel}
                 </Link>
               </li>
+              <li>
+                <Link to={aboutPath} className="hover:text-accent">
+                  {navAboutLabel}
+                </Link>
+              </li>
+              <li>
+                <Link to="/reviews" className="hover:text-accent">
+                  {navReviewsLabel}
+                </Link>
+              </li>
               {portfolioEnabled ? (
                 <li>
                   <Link to="/portfolio" className="hover:text-accent">
@@ -107,13 +121,13 @@ export function SiteFooter() {
                 </li>
               ) : null}
               <li>
-                <Link to="/contacts" className="hover:text-accent">
-                  {navContactsLabel}
+                <Link to="/blog" className="hover:text-accent">
+                  {navBlogLabel}
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="hover:text-accent">
-                  {navBlogLabel}
+                <Link to="/contacts" className="hover:text-accent">
+                  {navContactsLabel}
                 </Link>
               </li>
             </ul>
