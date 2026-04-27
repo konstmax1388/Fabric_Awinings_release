@@ -7,7 +7,7 @@ import { buildSeoTitle } from '../../lib/seoVitrine'
 import { useCart } from '../../hooks/useCart'
 import type { CustomerOrderRow } from '../../lib/api'
 import { fetchCustomerOrders } from '../../lib/api'
-import { fulfillmentLabel } from '../../lib/orderStatusLabels'
+import { fulfillmentLabel, paymentLabel } from '../../lib/orderStatusLabels'
 
 export function AccountOrdersPage() {
   const { siteName, seoDefaults } = useSiteSettings()
@@ -106,6 +106,12 @@ export function AccountOrdersPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full bg-border-light px-3 py-1 font-body text-xs text-text">
                     {fulfillmentLabel(o.fulfillment_status, o.fulfillmentStatusLabel)}
+                  </span>
+                  <span
+                    className="rounded-full border border-border-light bg-bg-base px-3 py-1 font-body text-xs text-text-muted"
+                    title="Статус оплаты"
+                  >
+                    {paymentLabel(o.payment_status, o.paymentStatusLabel)}
                   </span>
                   <span className="font-heading text-lg font-semibold text-text">
                     {o.totalApprox.toLocaleString('ru-RU')} ₽

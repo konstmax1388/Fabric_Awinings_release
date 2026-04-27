@@ -154,6 +154,8 @@ def test_build_astrum_payload():
     assert p["deal"]["products"][0]["price"] == 15000
     assert p["deal"]["products"][0]["quantity"] == 2
     assert p["deal"]["products"][0]["product_id"] == 42
+    assert "Статус оплаты:" in p["deal"]["comments"]
+    assert "Способ оплаты:" in p["deal"]["comments"]
 
 
 @pytest.mark.django_db

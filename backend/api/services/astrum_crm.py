@@ -163,6 +163,8 @@ def build_astrum_payload(
             else []
         ),
         f"Номер на сайте: {order.order_ref}",
+        f"Статус оплаты: {order.get_payment_status_display()}",
+        f"Способ оплаты: {order.get_payment_method_display()}",
         f"Сумма в CRM (без доставки): {max(0, int(order.total_approx or 0) - delivery_price)} ₽",
         f"Доставка (справочно): {delivery_price} ₽",
         f"Итого для клиента (справочно): {order.total_approx} ₽",

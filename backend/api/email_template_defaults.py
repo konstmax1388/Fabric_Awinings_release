@@ -40,7 +40,10 @@ DEFAULT_EMAIL_TEMPLATES: dict[str, dict[str, str]] = {
     },
     "manager_cart": {
         "subject": "Заказ с сайта {order_ref} — {customer_name}",
-        "body": "{manager_letter}",
+        "body": """Статус оплаты: {payment_status_label}
+Способ оплаты: {payment_method_label}
+
+{manager_letter}""",
     },
     "buyer_credentials": {
         "subject": "Ваш заказ {order_ref} и доступ в личный кабинет — {site_name}",
@@ -62,7 +65,11 @@ DEFAULT_EMAIL_TEMPLATES: dict[str, dict[str, str]] = {
     },
     "buyer_order_confirmation": {
         "subject": "Заказ {order_ref} принят — {site_name}",
-        "body": "{client_ack}",
+        "body": """{client_ack}
+
+---
+Статус оплаты: {payment_status_label}
+Способ оплаты: {payment_method_label}""",
     },
     "smtp_test": {
         "subject": "Тест SMTP — {site_name} (админка)",
@@ -101,6 +108,14 @@ PLACEHOLDER_REFERENCE: dict[str, list[tuple[str, str]]] = {
         ("order_ref", "Номер заказа"),
         ("customer_name", "Имя клиента"),
         (
+            "payment_status_label",
+            "Статус оплаты на сайте (как в карточке заказа в админке)",
+        ),
+        (
+            "payment_method_label",
+            "Способ оплаты (как в карточке заказа в админке)",
+        ),
+        (
             "manager_letter",
             "Готовый текст заявки (состав корзины, доставка). В теме не используется. "
             "В теле письма по умолчанию только этот блок — можно обернуть своим текстом.",
@@ -122,9 +137,17 @@ PLACEHOLDER_REFERENCE: dict[str, list[tuple[str, str]]] = {
         ("order_ref", "Номер заказа"),
         ("customer_name", "Имя клиента"),
         (
+            "payment_status_label",
+            "Статус оплаты на момент отправки письма (человекочитаемо)",
+        ),
+        (
+            "payment_method_label",
+            "Способ оплаты (как в заказе)",
+        ),
+        (
             "client_ack",
             "Готовый текст благодарности и деталей заказа для клиента (как на сайте после оформления). "
-            "По умолчанию тело письма = только этот блок.",
+            "По умолчанию в теле письма идёт этот блок и отдельно — статус/способ оплаты.",
         ),
         (
             "manager_letter",

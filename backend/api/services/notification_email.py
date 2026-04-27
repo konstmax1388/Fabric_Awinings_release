@@ -164,6 +164,13 @@ def notify_callback_lead(lead: "CallbackLead") -> None:
         logger.warning("notify_callback_lead: не отправлено: %s", err)
 
 
+def _order_payment_ctx(order: "CartOrder") -> dict[str, str]:
+    return {
+        "payment_status_label": order.get_payment_status_display(),
+        "payment_method_label": order.get_payment_method_display(),
+    }
+
+
 def notify_cart_order(order: "CartOrder") -> None:
     ctx = dict(
         site_name=_site_name(),
@@ -171,6 +178,7 @@ def notify_cart_order(order: "CartOrder") -> None:
         customer_name=order.customer_name,
         manager_letter=order.manager_letter or "",
         client_ack=(order.client_ack or "").strip(),
+        **_order_payment_ctx(order),
     )
     subj_t, body_t = effective_subject_body("manager_cart")
     subject = fill_placeholders(subj_t, **ctx)
@@ -209,6 +217,7 @@ def send_buyer_order_confirmation_email(order: "CartOrder") -> None:
         customer_name=order.customer_name,
         client_ack=(order.client_ack or "").strip() or f"Ваш заказ {order.order_ref} принят.",
         manager_letter=(order.manager_letter or "").strip(),
+        **_order_payment_ctx(order),
     )
     subject = fill_placeholders(subj_t, **ctx)
     body = fill_placeholders(body_t, **ctx)
