@@ -63,14 +63,14 @@ SKU берётся из поля **`ozonSku`** в строке корзины (�
 
 | Назначение | Шаблон |
 |------------|--------|
-| Успешная оплата | `{PUBLIC_SITE_URL}/checkout?pay=ok&orderRef=<order_ref>` |
-| Отмена / неуспех | `{PUBLIC_SITE_URL}/checkout?pay=cancel&orderRef=<order_ref>` |
+| Успешная оплата | `{PUBLIC_SITE_URL}/checkout/payment/success?orderRef=<order_ref>` |
+| Отмена / неуспех | `{PUBLIC_SITE_URL}/checkout/payment/failed?orderRef=<order_ref>` |
 
 `<order_ref>` — внутренний номер заказа; в URL передаётся **в закодированном виде** (`urllib.parse.quote`).
 
-В кабинете Ozon укажите **тот же путь и query-параметры**, что использует API: минимально достаточно совпадения **схемы, хоста и пути** `/checkout` с параметрами `pay=ok` / `pay=cancel` (при необходимости — пример с тестовым `orderRef`).
+В кабинете Ozon укажите **те же URL** (путь + query), что подставляет `createOrder`: `.../checkout/payment/success?orderRef=...` и `.../checkout/payment/failed?orderRef=...` (для теста — любой `orderRef`, в URL кодируется).
 
-Фронт: маршрут оформления — `/checkout` (страница `CheckoutPage`).
+Фронт: оформление — `/checkout` (`CheckoutPage`); возврат с оплаты — `/checkout/payment/success` и `/checkout/payment/failed` (страницы `CheckoutOzonPaymentPage`).
 
 ### URL POST-уведомлений (notificationUrl)
 

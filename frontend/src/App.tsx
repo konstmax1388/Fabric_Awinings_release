@@ -16,6 +16,12 @@ import { RequireAuth } from './pages/account/RequireAuth'
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })))
 const CartPage = lazy(() => import('./pages/CartPage').then((m) => ({ default: m.CartPage })))
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then((m) => ({ default: m.CheckoutPage })))
+const CheckoutOzonPaymentSuccessPage = lazy(() =>
+  import('./pages/CheckoutOzonPaymentPage').then((m) => ({ default: m.CheckoutOzonPaymentSuccessPage })),
+)
+const CheckoutOzonPaymentFailedPage = lazy(() =>
+  import('./pages/CheckoutOzonPaymentPage').then((m) => ({ default: m.CheckoutOzonPaymentFailedPage })),
+)
 const AccountLoginPage = lazy(() =>
   import('./pages/account/AccountLoginPage').then((m) => ({ default: m.AccountLoginPage })),
 )
@@ -90,6 +96,8 @@ const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/cart', element: <CartPage /> },
       { path: '/checkout', element: <CheckoutPage /> },
+      { path: '/checkout/payment/success', element: <CheckoutOzonPaymentSuccessPage /> },
+      { path: '/checkout/payment/failed', element: <CheckoutOzonPaymentFailedPage /> },
       { path: '/account/login', element: <AccountLoginPage /> },
       { path: '/account/register', element: <AccountRegisterPage /> },
       {
