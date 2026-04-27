@@ -86,7 +86,8 @@ source .venv/bin/activate
 pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
-echo "(systemd пропущен: DEPLOY_SKIP_SYSTEMD=1)"
+cd ..
+bash deploy/prune-production-tree.sh .
 EOF
 else
   "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
@@ -126,6 +127,8 @@ source .venv/bin/activate
 pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+cd ..
+bash deploy/prune-production-tree.sh .
 sudo systemctl restart $SERVICE
 EOF
 fi

@@ -39,6 +39,10 @@ coverage/
 # Тесты на прод не нужны для рантайма
 backend/tests/
 
+# Скрипты отладки фронта
+frontend/tmp-capture.cjs
+frontend/tmp-capture.js
+
 # Локальные БД и медиа разработчика (на проде свои пути)
 *.sqlite3
 db.sqlite3

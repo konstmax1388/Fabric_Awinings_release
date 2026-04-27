@@ -84,6 +84,8 @@ $remoteLines = @(
     "pip install -q -r requirements-prod.txt"
     "python manage.py migrate --noinput"
     "python manage.py collectstatic --noinput"
+    "cd .."
+    "bash deploy/prune-production-tree.sh ."
 )
 
 if (-not $skipSystemd) {

@@ -3,6 +3,13 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.2.3] — 2026-04-24
+
+### Изменено
+
+- **Деплой на VPS:** после `collectstatic` автоматически вызывается `deploy/prune-production-tree.sh` (убирает с клона `docs/`, `backend/tests/`, `__pycache__`, служебные файлы и т.д. — см. скрипт). Расширен сам **prune**; флаги `--drop-sqlite` / `--with-git` при ручном запуске.
+- **rsync-exclude:** `frontend/tmp-capture*`.
+
 ## [3.2.2] — 2026-04-24
 
 ### Добавлено
