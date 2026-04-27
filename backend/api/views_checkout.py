@@ -108,6 +108,15 @@ class OzonPayWebhookView(View):
                 co.refresh_from_db()
                 if just_paid:
                     try:
+                        from api.services.astrum_crm import push_astrum_crm_after_ozon_payment_captured
+
+                        push_astrum_crm_after_ozon_payment_captured(co)
+                    except Exception:
+                        logger.exception(
+                            "push_astrum_crm_after_ozon_payment_captured failed for order=%s",
+                            co.order_ref,
+                        )
+                    try:
                         from api.services.notification_email import send_buyer_order_confirmation_email
 
                         send_buyer_order_confirmation_email(co)

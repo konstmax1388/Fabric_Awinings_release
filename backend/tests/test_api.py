@@ -1216,6 +1216,63 @@ def test_ozon_webhook_completed_triggers_cdek_sync(mock_sync, _mock_sign, client
     mock_sync.assert_called_once()
 
 
+@patch("api.services.astrum_crm._astrum_post_order_succeeds", return_value=True)
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_ozon_webhook_completed_triggers_astrum_payment_followup(
+    mock_sync, _mock_sign, _mock_astrum_post, client,
+):
+    """После Completed — повторный POST в Astrum с актуальным статусом оплаты (без смены bitrix_sync_*)."""
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.astrum_crm_enabled = True
+    s.astrum_crm_api_key = "secret"
+    s.astrum_crm_assigned_default = 1
+    s.save(
+        update_fields=[
+            "ozon_pay_client_id",
+            "ozon_pay_webhook_secret",
+            "astrum_crm_enabled",
+            "astrum_crm_api_key",
+            "astrum_crm_assigned_default",
+        ],
+    )
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-ASTRUM-OZON-1",
+        customer_name="Онлайн Клиент",
+        customer_phone="+79990001122",
+        customer_email="ok@shop.ru",
+        lines=[{"title": "x", "priceFrom": 1000, "qty": 1}],
+        total_approx=1300,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        manager_letter="m",
+        client_ack="c",
+        acquiring_payload={"seed": 1},
+    )
+    payload = {
+        "requestSign": "ok",
+        "extOrderID": co.order_ref,
+        "status": "Completed",
+        "orderID": "oz-ast-1",
+    }
+    r = client.post("/api/webhooks/ozon-pay/", data=payload, content_type="application/json")
+    assert r.status_code == 200
+    _mock_astrum_post.assert_called_once()
+    co.refresh_from_db()
+    assert co.acquiring_payload.get("bitrixOzonPaymentPushSent") is True
+    assert co.acquiring_payload.get("seed") == 1
+    assert co.acquiring_payload.get("ozonWebhookLast", {}).get("status") == "Completed"
+    assert co.bitrix_sync_status == CartOrder.BitrixSyncStatus.NOT_SENT
+
+
 @patch("api.views_checkout.verify_notification_request_sign", return_value=True)
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
 @pytest.mark.django_db

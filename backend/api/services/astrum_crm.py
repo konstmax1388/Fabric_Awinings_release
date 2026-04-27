@@ -204,6 +204,70 @@ def build_astrum_payload(
     }
 
 
+def _astrum_post_order_succeeds(order: CartOrder, cfg: AstrumCrmRuntimeConfig) -> bool:
+    """
+    POST /api/order с теми же повторами, что push_cart_order_to_astrum_crm (e-mail),
+    без изменения полей CartOrder. Для «мягкого» повторного пуша после смены статуса.
+    """
+    had_email = bool((order.customer_email or "").strip())
+    payload = build_astrum_payload(order, cfg, include_contact_email=True)
+    try:
+        code, raw, data = _post_json(
+            cfg.api_url, cfg.api_key, payload, timeout=cfg.timeout
+        )
+    except Exception:
+        logger.exception("astrum_crm: HTTP-запрос (follow-up) для %s", order.order_ref)
+        return False
+    if 200 <= code < 300:
+        return True
+    if had_email and _should_retry_astrum_without_contact_email(code, raw, data):
+        logger.info("astrum_crm: follow-up — повтор POST без contact.email для %s", order.order_ref)
+        payload2 = build_astrum_payload(order, cfg, include_contact_email=False)
+        try:
+            code2, raw2, data2 = _post_json(
+                cfg.api_url, cfg.api_key, payload2, timeout=cfg.timeout
+            )
+        except Exception:
+            logger.exception("astrum_crm: follow-up (повтор) для %s", order.order_ref)
+            return False
+        if 200 <= code2 < 300:
+            return True
+        logger.warning(
+            "astrum_crm: follow-up (повтор) HTTP %s: %s",
+            code2,
+            (raw2 or "")[:500],
+        )
+        return False
+    logger.warning("astrum_crm: follow-up HTTP %s: %s", code, (raw or "")[:500])
+    return False
+
+
+def push_astrum_crm_after_ozon_payment_captured(order: CartOrder) -> None:
+    """
+    Повторный POST в Astrum после вебхука Ozon (оплата прошла), чтобы в сделке Б24 в комментариях
+    отразились «Оплачен» и актуальные поля. Не трогает bitrix_sync_*: при сбое первая синхронизация
+    оформления не портится. Один успешный запуск на заказ (флаг acquiring_payload).
+    """
+    cfg = resolve_astrum_crm_config()
+    if cfg is None:
+        return
+    if order.payment_method != CartOrder.PaymentMethod.CARD_ONLINE:
+        return
+    if order.payment_status != CartOrder.PaymentStatus.CAPTURED:
+        return
+    ap0 = order.acquiring_payload if isinstance(order.acquiring_payload, dict) else {}
+    if ap0.get("bitrixOzonPaymentPushSent"):
+        return
+    if not _astrum_post_order_succeeds(order, cfg):
+        return
+    co = CartOrder.objects.get(pk=order.pk)
+    ap = dict(co.acquiring_payload) if isinstance(co.acquiring_payload, dict) else {}
+    ap["bitrixOzonPaymentPushSent"] = True
+    co.acquiring_payload = ap
+    co.save(update_fields=["acquiring_payload"])
+    logger.info("astrum_crm: follow-up после оплаты Ozon — ок, order=%s", order.order_ref)
+
+
 def _post_json(url: str, api_key: str, payload: dict[str, Any], timeout: int) -> tuple[int, str, dict[str, Any] | None]:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = Request(
