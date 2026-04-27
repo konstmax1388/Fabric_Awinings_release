@@ -10,16 +10,16 @@ type Props = {
 export function ProductTrustStrip({ warrantyMonths, returnDays, className = '' }: Props) {
   return (
     <div
-      className={`flex flex-wrap gap-2 ${className}`.trim()}
+      className={`flex min-w-0 flex-nowrap gap-1.5 sm:gap-2 ${className}`.trim()}
       role="group"
       aria-label="Условия гарантии и возврата"
     >
-      <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3 py-2 text-left">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 sm:h-8 sm:w-8"
           aria-hidden
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -29,24 +29,28 @@ export function ProductTrustStrip({ warrantyMonths, returnDays, className = '' }
           </svg>
         </span>
         <div className="min-w-0">
-          <p className="font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">Гарантия</p>
-          <p className="font-body text-sm font-medium text-text">
+          <p className="font-body text-[10px] font-semibold uppercase leading-tight tracking-wide text-text-subtle sm:text-[11px]">
+            Гарантия
+          </p>
+          <p className="truncate font-body text-xs font-medium text-text sm:text-sm">
             {warrantyMonths} {pluralMonths(warrantyMonths)}
           </p>
         </div>
       </div>
-      <div className="inline-flex items-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/8 px-3 py-2 text-left">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-sky-500/25 bg-sky-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400 sm:h-8 sm:w-8"
           aria-hidden
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </span>
         <div className="min-w-0">
-          <p className="font-body text-[11px] font-semibold uppercase tracking-wide text-text-subtle">Возврат</p>
-          <p className="font-body text-sm font-medium text-text">{returnDays} дней</p>
+          <p className="font-body text-[10px] font-semibold uppercase leading-tight tracking-wide text-text-subtle sm:text-[11px]">
+            Возврат
+          </p>
+          <p className="whitespace-nowrap font-body text-xs font-medium text-text sm:text-sm">{returnDays} дней</p>
         </div>
       </div>
     </div>

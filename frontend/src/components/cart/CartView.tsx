@@ -196,9 +196,6 @@ export function CartView() {
                   lines={orderLinesFromCartItems(items)}
                   title="Купить в 1 клик"
                 />
-                <p className="mt-3 text-center font-body text-xs text-text-subtle">
-                  {ui?.cartCheckoutFootnote || 'Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.'}
-                </p>
                 <FormPersonalDataConsent
                   variant="order"
                   className="mt-2 text-left font-body text-xs leading-relaxed text-text-subtle"

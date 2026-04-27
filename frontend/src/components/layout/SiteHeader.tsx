@@ -1,5 +1,5 @@
-import { faCartShopping, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
-import { faCircleUser } from '@fortawesome/free-regular-svg-icons'
+import { faCartShopping, faMagnifyingGlass, faMoon } from '@fortawesome/free-solid-svg-icons'
+import { faCircleUser, faSun } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -231,12 +231,16 @@ export function SiteHeader() {
         <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
           <button
             type="button"
-            className="fabric-theme-toggle hidden h-9 w-9 items-center justify-center md:inline-flex md:rounded-full md:text-lg"
+            className="fabric-theme-toggle hidden h-9 w-9 items-center justify-center md:inline-flex md:rounded-full"
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
             aria-label={theme === 'dark' ? themeToLightAria : themeToDarkAria}
             title={theme === 'dark' ? themeLightTitle : themeDarkTitle}
           >
-            <span aria-hidden>{theme === 'dark' ? '☾' : '☀'}</span>
+            <FontAwesomeIcon
+              icon={theme === 'dark' ? faSun : faMoon}
+              className="h-5 w-5 text-current"
+              aria-hidden
+            />
           </button>
           <NavLink
             to="/account"
@@ -377,7 +381,11 @@ export function SiteHeader() {
                     className="fabric-theme-toggle mt-1 justify-start rounded-2xl px-4"
                     onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
                   >
-                    <span aria-hidden>{theme === 'dark' ? '☾' : '☀'}</span>
+                    <FontAwesomeIcon
+                      icon={theme === 'dark' ? faSun : faMoon}
+                      className="h-5 w-5 shrink-0 text-current"
+                      aria-hidden
+                    />
                     <span className="font-body text-sm font-semibold">
                       {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                     </span>

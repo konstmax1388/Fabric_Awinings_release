@@ -342,7 +342,7 @@ def default_home_payload() -> dict[str, Any]:
             "cartSummaryApproxLabel": "Ориентировочно",
             "cartSummaryDeliveryNote": "Итоговая сумма появится после выбора и расчета доставки.",
             "cartCheckoutButton": "Оформить заказ",
-            "cartCheckoutFootnote": "Далее — контакты и адрес доставки, без онлайн-оплаты на сайте.",
+            "cartCheckoutFootnote": "",
             "cartTermsPrefix": "Оформление заказа регулируется",
             "productNotFoundTitle": "Товар не найден",
             "productNotFoundText": "Позиция отсутствует в каталоге или ссылка устарела.",
