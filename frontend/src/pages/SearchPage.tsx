@@ -130,7 +130,7 @@ export function SearchPage() {
           ) : null}
           {!loading && q0 && data && data.results.length > 0 ? (
             <motion.div
-              className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+              className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
               initial={reduce ? false : fadeUpHidden}
               animate={reduce ? undefined : fadeUpVisible}
               transition={easeOutSoft}

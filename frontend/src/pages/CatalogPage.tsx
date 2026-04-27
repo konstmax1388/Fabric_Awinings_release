@@ -64,7 +64,7 @@ function buildPageWindow(current: number, total: number): Array<number | 'ellips
 
 function CatalogSkeletonGrid() {
   return (
-    <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-2xl border border-border-light bg-surface p-4 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.08)]">
           <div className="skeleton-shimmer aspect-[4/3] rounded-xl" />
@@ -382,7 +382,7 @@ export function CatalogPage() {
             )}
 
             <motion.div
-              className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+              className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"

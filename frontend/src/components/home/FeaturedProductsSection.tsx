@@ -38,8 +38,8 @@ export function FeaturedProductsSection() {
     return (
       <section className="fabric-container min-w-0 py-12 md:py-24">
         <p className="font-body text-text-muted">{loadingText}</p>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="overflow-hidden rounded-2xl border border-border-light bg-surface p-4">
               <div className="skeleton-shimmer aspect-[4/3] rounded-xl" />
               <div className="mt-4 skeleton-shimmer h-4 w-1/3 rounded" />
@@ -82,7 +82,7 @@ export function FeaturedProductsSection() {
       </motion.div>
 
       <motion.div
-        className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
