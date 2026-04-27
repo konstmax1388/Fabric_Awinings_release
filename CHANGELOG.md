@@ -3,6 +3,12 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.2.2] — 2026-04-24
+
+### Добавлено
+
+- **Команда Django** `apply_fabrika_site_identity`: заполнение реквизитов ИП, контактов, SEO и `meta` главной (Иваново, доставка по РФ, fabrika-tentov.ru); оболочка `backend/scripts/apply_fabrika_site_identity.sh`. Для прода: после деплоя выполнить на сервере `python manage.py apply_fabrika_site_identity`.
+
 ## [3.2.1] — 2026-04-24
 
 ### Изменено
