@@ -1003,7 +1003,9 @@ class CartOrderAdmin(ModelAdmin):
             {
                 "fields": ("crm_sync_summary",),
                 "description": _(
-                    "После оформления заказ отправляется в приложение «Заявки с сайта». В поле «Сводка по CRM» — статус, "
+                    "Обычно: после оформления заказ уходит в приложение «Заявки с сайта». "
+                    "Если оплата — картой на сайте, в CRM (и в СДЭК при доставке СДЭК) — после фиксации оплаты (вебхук Ozon или вручную «Оплачено» в админке). "
+                    "В «Сводка по CRM» — статус, "
                     "текст ошибки (если был) и кнопка «Отправить в CRM» для повторной ручной отправки (в одной строке со статусом, справа). "
                     "По крону: retry_astrum_crm_orders."
                 ),
@@ -1342,6 +1344,35 @@ class CartOrderAdmin(ModelAdmin):
             ),
             *super().get_urls(),
         ]
+
+    def save_model(self, request: Any, obj: Any, form: Any, change: bool) -> None:
+        """При ручной установке «оплачено» для оплаты картой — те же СДЭК/CRM/письмо, что после вебхука Ozon."""
+        prev_captured = True
+        if change and obj.pk:
+            try:
+                prev = CartOrder.objects.get(pk=obj.pk)
+                prev_captured = prev.payment_status == CartOrder.PaymentStatus.CAPTURED
+            except CartOrder.DoesNotExist:
+                prev_captured = False
+        super().save_model(request, obj, form, change)
+        if not change or prev_captured:
+            return
+        obj.refresh_from_db()
+        if (
+            obj.payment_status == CartOrder.PaymentStatus.CAPTURED
+            and obj.payment_method == CartOrder.PaymentMethod.CARD_ONLINE
+        ):
+            try:
+                from api.services.cart_order_after_card_payment import (
+                    run_post_payment_integrations_for_card_order,
+                )
+
+                run_post_payment_integrations_for_card_order(obj, send_buyer_confirmation=True)
+            except Exception:
+                _logger.exception(
+                    "CartOrderAdmin: run_post_payment_integrations_for_card_order for %s",
+                    getattr(obj, "order_ref", obj.pk),
+                )
 
     def _resend_astrum_crm_view(
         self, request: Any, object_id: str

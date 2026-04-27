@@ -98,30 +98,16 @@ class OzonPayWebhookView(View):
                     ]
                 )
                 just_paid = status == "Completed" and not prev_captured
-                if just_paid and co.delivery_method == CartOrder.DeliveryMethod.CDEK and co.payment_method == CartOrder.PaymentMethod.CARD_ONLINE:
-                    try:
-                        from api.services.cdek_order_create import sync_cdek_order_with_retry
-
-                        sync_cdek_order_with_retry(co)
-                    except Exception:
-                        logger.exception("sync_cdek_order_with_retry failed for order=%s", co.order_ref)
                 co.refresh_from_db()
-                if just_paid:
+                if just_paid and co.payment_method == CartOrder.PaymentMethod.CARD_ONLINE:
                     try:
-                        from api.services.astrum_crm import push_astrum_crm_after_ozon_payment_captured
-
-                        push_astrum_crm_after_ozon_payment_captured(co)
-                    except Exception:
-                        logger.exception(
-                            "push_astrum_crm_after_ozon_payment_captured failed for order=%s",
-                            co.order_ref,
+                        from api.services.cart_order_after_card_payment import (
+                            run_post_payment_integrations_for_card_order,
                         )
-                    try:
-                        from api.services.notification_email import send_buyer_order_confirmation_email
 
-                        send_buyer_order_confirmation_email(co)
+                        run_post_payment_integrations_for_card_order(co, send_buyer_confirmation=True)
                     except Exception:
-                        logger.exception("send_buyer_order_confirmation_email failed for order=%s", co.order_ref)
+                        logger.exception("run_post_payment_integrations_for_card_order order=%s", co.order_ref)
 
         logger.info(
             "Ozon webhook ok: extOrderID=%s status=%s",

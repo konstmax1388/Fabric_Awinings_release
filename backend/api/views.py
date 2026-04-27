@@ -289,11 +289,8 @@ class CartOrderCreateView(generics.CreateAPIView):
         try:
             from .services.notification_email import send_buyer_order_confirmation_email
 
-            # При CDEK+CARD_ONLINE письмо подтверждения отправится после оплаты вместе с треком.
-            if not (
-                order.delivery_method == order.DeliveryMethod.CDEK
-                and order.payment_method == order.PaymentMethod.CARD_ONLINE
-            ):
+            # Онлайн-оплата: письмо подтверждения — после фиксации оплаты (вебхук / интеграции).
+            if order.payment_method != order.PaymentMethod.CARD_ONLINE:
                 send_buyer_order_confirmation_email(order)
         except Exception:
             import logging
@@ -302,7 +299,8 @@ class CartOrderCreateView(generics.CreateAPIView):
         try:
             from .services.astrum_crm import push_cart_order_to_astrum_crm
 
-            push_cart_order_to_astrum_crm(order)
+            if order.payment_method != order.PaymentMethod.CARD_ONLINE:
+                push_cart_order_to_astrum_crm(order)
         except Exception:
             import logging
 
