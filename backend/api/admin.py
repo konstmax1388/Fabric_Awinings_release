@@ -814,6 +814,12 @@ class StaticPageAdminForm(forms.ModelForm, StaticPageAboutLayoutFields):
                     "data-editor": "static-page-html",
                 }
             ),
+            "about_manufacturer_video": forms.ClearableFileInput(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm"}
+            ),
+            "about_intro_video": forms.ClearableFileInput(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -825,12 +831,20 @@ class StaticPageAdminForm(forms.ModelForm, StaticPageAboutLayoutFields):
         else:
             p = {}
         apply_about_layout_initial(self, p)
+        if "ab_mnf_image_url" in self.fields:
+            self.fields["ab_mnf_image_url"].label = _("Производитель: внешний URL фото (если нет файла выше)")
+        if "ab_mnf_video_url" in self.fields:
+            self.fields["ab_mnf_video_url"].label = _("Производитель: внешняя ссылка на видео (если нет файла выше)")
+        if "ab_intro_image_url" in self.fields:
+            self.fields["ab_intro_image_url"].label = _("Вступление: внешний URL фото (если нет файла выше)")
+        if "ab_intro_video_url" in self.fields:
+            self.fields["ab_intro_video_url"].label = _("Вступление: внешняя ссылка на видео (если нет файла выше)")
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         slug = (instance.slug or "").strip()
         if slug == "o-nas":
-            instance.about_payload = build_about_payload(self.cleaned_data)
+            instance.about_payload = build_about_payload(self.cleaned_data, instance=instance)
         if commit:
             instance.save()
         return instance
@@ -1608,11 +1622,17 @@ class SiteSettingsAdmin(ModelAdmin):
                     "seo_default_meta_description",
                     "seo_title_suffix",
                     "seo_locale",
+                    "seo_og_image",
+                    "seo_meta_description_max",
+                    "seo_twitter_card",
+                    "seo_title_separator",
+                    "seo_title_templates",
                 ),
                 "description": _(
-                    "Настройки аналитики и базовых SEO-параметров витрины: включение Метрики через код-сниппет, "
-                    "индексация, регион и суффикс заголовков. Сниппеты: начало <head>, начало <body> и конец <body> "
-                    "(к виджету CRM / онлайн-чату) без правки кода витрины."
+                    "Аналитика: Метрика, сниппеты head/body. "
+                    "SEO: индексация, дефолт description, locale; шаблоны title с плейсхолдерами; og:image по умолчанию, "
+                    "длина meta description, Twitter card. "
+                    "Там, где в карточке страницы/товара/статьи задано своё title или description, оно важнее шаблона."
                 ),
             },
         ),

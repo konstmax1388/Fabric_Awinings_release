@@ -8,6 +8,7 @@ import { useResolvedLineImages } from '../../hooks/useResolvedLineImages'
 import { fetchCustomerOrder } from '../../lib/api'
 import { fulfillmentLabel, paymentLabel } from '../../lib/orderStatusLabels'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import { OptimizedImage } from '../../components/ui/OptimizedImage'
 
 function lineTitle(line: unknown): string {
@@ -25,7 +26,7 @@ function lineQty(line: unknown): number {
 export function AccountOrderDetailPage() {
   const { orderRef } = useParams<{ orderRef: string }>()
   const { accessToken } = useAuth()
-  const { productPhotoAspect } = useSiteSettings()
+  const { productPhotoAspect, siteName, seoDefaults } = useSiteSettings()
   const { mergeLinesFromOrder } = useCart()
   const navigate = useNavigate()
   const [data, setData] = useState<Record<string, unknown> | null | undefined>(undefined)
@@ -56,10 +57,12 @@ export function AccountOrderDetailPage() {
   }
 
   if (data === null) {
+    const notFoundTitle = buildSeoTitle('listing', { title: 'Заказ не найден', siteName }, seoDefaults)
     return (
       <>
         <Helmet>
-          <title>Заказ не найден — Фабрика Тентов</title>
+          <title>{notFoundTitle}</title>
+          <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <p className="font-body text-sm text-text-muted">Заказ не найден.</p>
         <Link to="/account/orders" className="mt-4 inline-block font-body text-sm text-accent hover:underline">
@@ -97,10 +100,13 @@ export function AccountOrderDetailPage() {
     navigate('/cart')
   }
 
+  const orderTitle = buildSeoTitle('listing', { title: `Заказ ${ref}`, siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Заказ {ref} — Фабрика Тентов</title>
+        <title>{orderTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <Link
         to="/account/orders"

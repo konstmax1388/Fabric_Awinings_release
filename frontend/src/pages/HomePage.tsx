@@ -17,6 +17,7 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { orderedVisibleHomeSectionIds, type HomeSectionId } from '../lib/homePageLayout'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function HomePage() {
   const site = publicSiteUrl()
@@ -72,11 +73,15 @@ export function HomePage() {
   }, [calculatorEnabled])
 
   const baseTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
-  const pageTitle = seoDefaults.titleSuffix ? `${baseTitle} ${seoDefaults.titleSuffix}` : baseTitle
-  const pageDesc =
+  const pageTitle = buildSeoTitle('home', { title: baseTitle, siteName }, seoDefaults)
+  const pageDesc = truncateMetaDescription(
     meta?.description?.trim() ||
-    seoDefaults.defaultMetaDescription?.trim() ||
-    'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.'
+      seoDefaults.defaultMetaDescription?.trim() ||
+      'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.',
+    undefined,
+    seoDefaults,
+  )
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   const sectionById = (id: HomeSectionId) => {
     switch (id) {
@@ -120,6 +125,15 @@ export function HomePage() {
         <meta name="description" content={pageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${site}/`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>
       <SiteHeader />

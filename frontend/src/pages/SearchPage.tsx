@@ -8,13 +8,14 @@ import { useSiteSettings } from '../context/SiteSettingsContext'
 import { publicSiteUrl } from '../config/publicSite'
 import type { Product } from '../data/products'
 import { fetchProductsPage, type Paginated } from '../lib/api'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../lib/motion-presets'
 import { motion, useReducedMotion } from 'framer-motion'
 
 export function SearchPage() {
   const [sp, setSp] = useSearchParams()
   const q0 = (sp.get('q') || '').trim().slice(0, 200)
-  const { seoDefaults } = useSiteSettings()
+  const { seoDefaults, siteName } = useSiteSettings()
   const site = publicSiteUrl()
   const reduce = useReducedMotion()
   const [qInput, setQInput] = useState(q0)
@@ -61,17 +62,30 @@ export function SearchPage() {
     setSp({ q: t })
   }
 
-  const title = q0 ? `Поиск: ${q0}` : 'Поиск'
-  const pageTitle = seoDefaults.titleSuffix ? `${title} ${seoDefaults.titleSuffix}` : title
+  const base = q0 ? `Поиск: ${q0}` : 'Поиск'
+  const pageTitle = buildSeoTitle('listing', { title: base, siteName }, seoDefaults)
+  const searchDesc = truncateMetaDescription(
+    q0 ? `Результаты поиска «${q0}» в каталоге.` : 'Поиск товаров в каталоге.',
+    undefined,
+    seoDefaults,
+  )
   const canonical = `${site}/search${q0 ? `?q=${encodeURIComponent(q0)}` : ''}`
 
   return (
     <>
       <Helmet>
         <title>{pageTitle}</title>
-        <meta name="description" content={q0 ? `Результаты поиска «${q0}» в каталоге.` : 'Поиск товаров в каталоге.'} />
+        <meta name="description" content={searchDesc} />
         <link rel="canonical" href={canonical} />
         <meta name="robots" content="noindex, follow" />
+        <meta name="twitter:card" content={seoDefaults.twitterCard || 'summary_large_image'} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={searchDesc} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page min-w-0">

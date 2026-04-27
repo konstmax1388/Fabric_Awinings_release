@@ -5,6 +5,8 @@ import { FormPersonalDataConsent } from '../../components/legal/FormPersonalData
 import { SiteFooter } from '../../components/layout/SiteFooter'
 import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import {
   formatRuPhoneMask,
   isCompleteRuPhone,
@@ -14,6 +16,7 @@ import {
 } from '../../lib/formValidation'
 
 export function AccountRegisterPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const { user, loading, register } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -55,10 +58,13 @@ export function AccountRegisterPage() {
     if (!res.ok) setError(res.error ?? 'Не удалось зарегистрироваться')
   }
 
+  const docTitle = buildSeoTitle('listing', { title: 'Регистрация', siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Регистрация — Фабрика Тентов</title>
+        <title>{docTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto min-h-[60vh] min-w-0 max-w-lg overflow-x-clip px-4 py-10 md:mx-auto md:max-w-[1280px] md:px-6 md:py-14">

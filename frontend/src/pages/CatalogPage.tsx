@@ -25,6 +25,7 @@ import {
   type ProductCategoryRow,
 } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 /** Слаг категории с API: только латиница, цифры, `_` и `-` (без кириллицы в URL). */
 function parseCategory(raw: string | null): ProductCategory | null {
@@ -82,7 +83,7 @@ function CatalogSkeletonGrid() {
 export function CatalogPage() {
   const [search, setSearch] = useSearchParams()
   const reduce = useReducedMotion()
-  const { catalogIntro, seoDefaults } = useSiteSettings()
+  const { catalogIntro, seoDefaults, siteName } = useSiteSettings()
   const site = publicSiteUrl()
 
   const category = parseCategory(search.get('category'))
@@ -244,28 +245,31 @@ export function CatalogPage() {
 
   const showPager = useMemo(() => totalPages > 1 && !loading && !error, [totalPages, loading, error])
 
+  const catPageTitle = buildSeoTitle('listing', { title: 'Каталог', siteName }, seoDefaults)
+  const catPageDesc = truncateMetaDescription(
+    seoDefaults.defaultMetaDescription?.trim() ||
+      'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».',
+    undefined,
+    seoDefaults,
+  )
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
+
   return (
     <>
       <Helmet>
-        <title>{`Каталог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
-        <meta
-          name="description"
-          content={
-            seoDefaults.defaultMetaDescription?.trim() ||
-            'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».'
-          }
-        />
+        <title>{catPageTitle}</title>
+        <meta name="description" content={catPageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/catalog`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content={`Каталог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`} />
-        <meta
-          property="og:description"
-          content={
-            seoDefaults.defaultMetaDescription?.trim() ||
-            'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».'
-          }
-        />
+        <meta property="og:url" content={`${site}/catalog`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={catPageTitle} />
+        <meta property="og:description" content={catPageDesc} />
+        <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

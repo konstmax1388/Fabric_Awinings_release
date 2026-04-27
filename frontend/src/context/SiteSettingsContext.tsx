@@ -99,6 +99,17 @@ const initialValue: SiteSettingsContextValue = {
     defaultMetaDescription: '',
     titleSuffix: '',
     locale: 'ru_RU',
+    titleTemplates: {
+      home: '',
+      listing: '{title}{suffix}',
+      static: '{title} — {siteName}',
+      article: '{title}{suffix}',
+      emdash: '{title} — {siteName}',
+    },
+    titleSeparator: ' | ',
+    ogImageUrl: null,
+    metaDescriptionMaxLength: 160,
+    twitterCard: 'summary_large_image',
   },
   staticPages: [],
   headerNavigation: undefined,
@@ -207,6 +218,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             defaultMetaDescription: s.seoDefaults.defaultMetaDescription ?? '',
             titleSuffix: s.seoDefaults.titleSuffix ?? '',
             locale: s.seoDefaults.locale?.trim() || 'ru_RU',
+            titleTemplates: s.seoDefaults.titleTemplates,
+            titleSeparator: s.seoDefaults.titleSeparator,
+            ogImageUrl: s.seoDefaults.ogImageUrl ?? null,
+            metaDescriptionMaxLength: s.seoDefaults.metaDescriptionMaxLength,
+            twitterCard: s.seoDefaults.twitterCard,
           })
         }
         if (s.headerNavigation !== undefined) setHeaderNavigation(s.headerNavigation)

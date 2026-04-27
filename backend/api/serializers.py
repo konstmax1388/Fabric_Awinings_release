@@ -1017,12 +1017,29 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         }
 
     def get_seoDefaults(self, obj: SiteSettings) -> dict:
+        from .models import default_seo_title_templates
+
+        templates = default_seo_title_templates()
+        raw = getattr(obj, "seo_title_templates", None)
+        if isinstance(raw, dict):
+            for k, v in raw.items():
+                if k in templates and isinstance(v, str) and v.strip():
+                    templates[str(k)] = v.strip()
+        req = self.context.get("request")
+        og = self._absolute_media(req, obj.seo_og_image) if getattr(obj, "seo_og_image", None) else None
         return {
             "allowIndexing": bool(obj.seo_allow_indexing),
             "region": (obj.seo_region or "RU").strip() or "RU",
             "defaultMetaDescription": (obj.seo_default_meta_description or "").strip(),
             "titleSuffix": (obj.seo_title_suffix or "").strip(),
             "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
+            "titleTemplates": templates,
+            "titleSeparator": (getattr(obj, "seo_title_separator", None) or " | ").strip() or " | ",
+            "ogImageUrl": og,
+            "metaDescriptionMaxLength": int(getattr(obj, "seo_meta_description_max", None) or 160),
+            "twitterCard": (getattr(obj, "seo_twitter_card", None) or "summary_large_image")
+            .strip()
+            or "summary_large_image",
         }
 
     def get_headerNavigation(self, obj: SiteSettings) -> list[dict[str, object]]:

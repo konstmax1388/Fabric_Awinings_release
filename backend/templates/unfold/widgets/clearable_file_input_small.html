@@ -55,6 +55,20 @@
                 <div class="h-11 w-11 shrink-0 overflow-hidden rounded-default border border-base-200 dark:border-base-700">
                     <a href="{{ widget.value.url }}" target="_blank" rel="noopener noreferrer" class="block h-full w-full bg-cover bg-center" style="background-image: url('{{ widget.value.url }}')" title="{% trans 'Просмотр' %}"></a>
                 </div>
+            {% elif widget.is_initial and widget.value %}
+                {% with name=widget.value.name|default:"" %}
+                {% if ".mp4" in name|lower or ".webm" in name|lower or ".ogv" in name|lower or ".ogg" in name|lower %}
+                <div class="h-11 w-20 shrink-0 overflow-hidden rounded-default border border-base-200 dark:border-base-700">
+                    <video
+                        src="{{ widget.value.url }}"
+                        class="h-full w-full object-cover"
+                        muted
+                        playsinline
+                        preload="metadata"
+                    ></video>
+                </div>
+                {% endif %}
+                {% endwith %}
             {% endif %}
         </div>
     </div>

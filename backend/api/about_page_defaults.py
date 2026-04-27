@@ -19,6 +19,9 @@ def default_about_page_payload() -> dict[str, Any]:
             ],
             "imageUrl": "",
             "imageAlt": "Тент на бассейне",
+            "videoUrl": "",
+            "videoCta": "",
+            "videoSub": "",
         },
         "featureBullets": [
             "Лучшее качество",

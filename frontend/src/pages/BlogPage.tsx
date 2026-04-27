@@ -7,10 +7,19 @@ import { Helmet } from 'react-helmet-async'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function BlogPage() {
   const site = publicSiteUrl()
-  const { seoDefaults } = useSiteSettings()
+  const { seoDefaults, siteName } = useSiteSettings()
+  const blogTitle = buildSeoTitle('listing', { title: 'Блог', siteName }, seoDefaults)
+  const blogDesc = truncateMetaDescription(
+    seoDefaults.defaultMetaDescription?.trim() ||
+      'Статьи о материалах, замере и монтаже тентов и навесов.',
+    undefined,
+    seoDefaults,
+  )
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
   const [posts, setPosts] = useState<BlogListItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -30,16 +39,18 @@ export function BlogPage() {
   return (
     <>
       <Helmet>
-        <title>{`Блог${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
-        <meta
-          name="description"
-          content={
-            seoDefaults.defaultMetaDescription?.trim() ||
-            'Статьи о материалах, замере и монтаже тентов и навесов.'
-          }
-        />
+        <title>{blogTitle}</title>
+        <meta name="description" content={blogDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/blog`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${site}/blog`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={blogTitle} />
+        <meta property="og:description" content={blogDesc} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

@@ -6,6 +6,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function ContactsPage() {
   const site = publicSiteUrl()
@@ -18,17 +19,29 @@ export function ContactsPage() {
     seoDefaults,
   } = useSiteSettings()
 
-  const metaDescription =
-    contactsMetaDescription.trim() ||
-    `Телефон, email и адрес: ${address}`.slice(0, 500)
+  const metaDescription = truncateMetaDescription(
+    contactsMetaDescription.trim() || `Телефон, email и адрес: ${address}`,
+    undefined,
+    seoDefaults,
+  )
+  const docTitle = buildSeoTitle('emdash', { title: contactsPageTitle, siteName }, seoDefaults)
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   return (
     <>
       <Helmet>
-        <title>{`${contactsPageTitle} — ${siteName}`}</title>
+        <title>{docTitle}</title>
         <meta name="description" content={metaDescription} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/contacts`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${site}/contacts`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={docTitle} />
+        <meta property="og:description" content={metaDescription} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

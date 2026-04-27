@@ -58,6 +58,9 @@ class StaticPageAboutLayoutFields(forms.Form):
     ab_intro_p3 = _area(_("Вступление: абзац 4 (необязательно)"), rows=2)
     ab_intro_image_url = _txt(_("Вступление: URL картинки (справа)"))
     ab_intro_image_alt = _txt(_("Вступление: подпись к картинке (alt)"))
+    ab_intro_video_url = _txt(_("Вступление: внешняя ссылка на видео (если нет файла)"))
+    ab_intro_video_cta = _txt(_("Вступление: текст кнопки «Видео» на фото"))
+    ab_intro_video_sub = _txt(_("Вступление: подпись под кнопкой видео"))
 
     ab_fb0 = _txt(_("Преимущества: пункт 1"))
     ab_fb1 = _txt(_("Преимущества: пункт 2"))
@@ -145,6 +148,9 @@ def apply_about_layout_initial(form: forms.BaseForm, payload: dict[str, Any] | N
         form.fields[f"ab_intro_p{i}"].initial = v
     form.fields["ab_intro_image_url"].initial = (intro or {}).get("imageUrl") or ""
     form.fields["ab_intro_image_alt"].initial = (intro or {}).get("imageAlt") or ""
+    form.fields["ab_intro_video_url"].initial = (intro or {}).get("videoUrl") or ""
+    form.fields["ab_intro_video_cta"].initial = (intro or {}).get("videoCta") or ""
+    form.fields["ab_intro_video_sub"].initial = (intro or {}).get("videoSub") or ""
 
     fbs: list[Any] = p.get("featureBullets") if isinstance(p.get("featureBullets"), list) else []
     for i in range(6):
@@ -211,6 +217,44 @@ def apply_about_layout_initial(form: forms.BaseForm, payload: dict[str, Any] | N
         form.fields[f"ab_r{j}_avatar"].initial = d.get("avatarUrl") or ""
 
 
+def _merge_about_manufacturer_files(core: dict[str, Any], instance: Any) -> dict[str, Any]:
+    """Подставляет URL из загруженных на модель файлов в блок manufacturer (приоритет над полями URL)."""
+    img = getattr(instance, "about_manufacturer_image", None)
+    vid = getattr(instance, "about_manufacturer_video", None)
+    has_img = bool(img and getattr(img, "name", ""))
+    has_vid = bool(vid and getattr(vid, "name", ""))
+    if not has_img and not has_vid:
+        return core
+    m: dict[str, Any] = core.get("manufacturer") if isinstance(core.get("manufacturer"), dict) else {}
+    m = {**m}
+    if has_img:
+        m["imageUrl"] = img.url
+    if has_vid:
+        m["videoUrl"] = vid.url
+    if m:
+        core = {**core, "manufacturer": m}
+    return core
+
+
+def _merge_about_intro_files(core: dict[str, Any], instance: Any) -> dict[str, Any]:
+    """Подставляет URL из файлов в блок intro (приоритет над полями URL в макете)."""
+    img = getattr(instance, "about_intro_image", None)
+    vid = getattr(instance, "about_intro_video", None)
+    has_img = bool(img and getattr(img, "name", ""))
+    has_vid = bool(vid and getattr(vid, "name", ""))
+    if not has_img and not has_vid:
+        return core
+    intro: dict[str, Any] = core.get("intro") if isinstance(core.get("intro"), dict) else {}
+    intro = {**intro}
+    if has_img:
+        intro["imageUrl"] = img.url
+    if has_vid:
+        intro["videoUrl"] = vid.url
+    if intro:
+        core = {**core, "intro": intro}
+    return core
+
+
 def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {"version": 1}
     intro: dict[str, Any] = {}
@@ -229,6 +273,14 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
         intro["imageUrl"] = _s(cleaned, "ab_intro_image_url")
     if _s(cleaned, "ab_intro_image_alt"):
         intro["imageAlt"] = _s(cleaned, "ab_intro_image_alt")
+    for jk, fk in (
+        ("videoUrl", "ab_intro_video_url"),
+        ("videoCta", "ab_intro_video_cta"),
+        ("videoSub", "ab_intro_video_sub"),
+    ):
+        t = _s(cleaned, fk)
+        if t:
+            intro[jk] = t
     if intro:
         out["intro"] = intro
     fbs: list[str] = [_s(cleaned, f"ab_fb{i}") for i in range(6)]
@@ -342,10 +394,13 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def build_about_payload(cleaned: dict[str, Any]) -> dict[str, Any]:
+def build_about_payload(cleaned: dict[str, Any], instance: Any | None = None) -> dict[str, Any]:
     if not cleaned.get("ab_enable_v1_layout"):
         return {}
     core = _build_about_payload_core(cleaned)
+    if instance is not None:
+        core = _merge_about_manufacturer_files(core, instance)
+        core = _merge_about_intro_files(core, instance)
     if len(core) <= 1:
         return {}
     return core
@@ -375,8 +430,13 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_intro_p1",
                     "ab_intro_p2",
                     "ab_intro_p3",
+                    "about_intro_image",
+                    "about_intro_video",
                     "ab_intro_image_url",
                     "ab_intro_image_alt",
+                    "ab_intro_video_url",
+                    "ab_intro_video_cta",
+                    "ab_intro_video_sub",
                 ),
                 "classes": ("collapse",),
             },
@@ -408,6 +468,8 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
             _("Блок: производитель и видео"),
             {
                 "fields": (
+                    "about_manufacturer_image",
+                    "about_manufacturer_video",
                     "ab_mnf_image_url",
                     "ab_mnf_image_alt",
                     "ab_mnf_video_url",

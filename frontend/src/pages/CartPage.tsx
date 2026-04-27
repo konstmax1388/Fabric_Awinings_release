@@ -3,16 +3,22 @@ import { Link } from 'react-router-dom'
 import { CartView } from '../components/cart/CartView'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function CartPage() {
-  const { seoDefaults } = useSiteSettings()
+  const site = publicSiteUrl()
+  const { seoDefaults, siteName } = useSiteSettings()
+  const docTitle = buildSeoTitle('listing', { title: 'Корзина', siteName }, seoDefaults)
+  const desc = truncateMetaDescription('Состав заказа и оформление заявки.', undefined, seoDefaults)
   return (
     <>
       <Helmet>
-        <title>{`Корзина${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
-        <meta name="description" content="Состав заказа и оформление заявки." />
+        <title>{docTitle}</title>
+        <meta name="description" content={desc} />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={`${site}/cart`} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

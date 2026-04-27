@@ -33,6 +33,8 @@ import {
   isCompleteRuPhone,
 } from '../lib/formValidation'
 import { submitCartOrder } from '../lib/leads'
+import { publicSiteUrl } from '../config/publicSite'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 function extractTariffDeliveryRub(t: unknown): number | null {
   if (t == null || typeof t !== 'object') return null
@@ -66,7 +68,7 @@ type CdekMode = 'office' | 'door'
 export function CheckoutPage() {
   const { items, totalApprox, clear, totalQty } = useCart()
   const { user, accessToken } = useAuth()
-  const { checkout, loading: settingsLoading, seoDefaults, staticPages } = useSiteSettings()
+  const { checkout, loading: settingsLoading, seoDefaults, staticPages, siteName } = useSiteSettings()
   const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
   const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
   const consentPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.consent, '/')
@@ -497,12 +499,21 @@ export function CheckoutPage() {
         : 'bg-border-light text-text-muted'
     }`
 
+  const site = publicSiteUrl()
+  const checkoutTitle = buildSeoTitle('listing', { title: 'Оформление заказа', siteName }, seoDefaults)
+  const checkoutDesc = truncateMetaDescription(
+    'Контакты, доставка, подтверждение заказа.',
+    undefined,
+    seoDefaults,
+  )
+
   return (
     <>
       <Helmet>
-        <title>{`Оформление заказа${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
-        <meta name="description" content="Контакты, доставка, подтверждение заказа." />
+        <title>{checkoutTitle}</title>
+        <meta name="description" content={checkoutDesc} />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={`${site}/checkout`} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

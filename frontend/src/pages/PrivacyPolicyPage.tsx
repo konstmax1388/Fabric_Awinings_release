@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, resolveStaticPageDocumentTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function PrivacyPolicyPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const [page, setPage] = useState<StaticPageDto | null | undefined>(undefined)
 
   useEffect(() => {
@@ -20,8 +23,8 @@ export function PrivacyPolicyPage() {
   }, [])
 
   if (page) {
-    const title = page.pageTitle?.trim() || `${page.title} — Фабрика Тентов`
-    const desc = page.metaDescription?.trim() || page.title
+    const title = resolveStaticPageDocumentTitle(page, siteName, seoDefaults)
+    const desc = truncateMetaDescription(page.metaDescription?.trim() || page.title, undefined, seoDefaults)
     return (
       <>
         <Helmet>
@@ -54,14 +57,22 @@ export function PrivacyPolicyPage() {
     )
   }
 
+  const privacyFallbackTitle = buildSeoTitle(
+    'static',
+    { title: 'Политика конфиденциальности', siteName },
+    seoDefaults,
+  )
+  const privacyFallbackDesc = truncateMetaDescription(
+    'Политика конфиденциальности и согласие на обработку персональных данных.',
+    undefined,
+    seoDefaults,
+  )
+
   return (
     <>
       <Helmet>
-        <title>Политика конфиденциальности — Фабрика Тентов</title>
-        <meta
-          name="description"
-          content="Политика конфиденциальности и согласие на обработку персональных данных."
-        />
+        <title>{privacyFallbackTitle}</title>
+        <meta name="description" content={privacyFallbackDesc} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

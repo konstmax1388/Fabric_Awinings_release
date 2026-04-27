@@ -6,9 +6,14 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { AboutPageLayout } from '../components/static/AboutPageLayout'
 import { ReviewsSection } from '../components/home/ReviewsSection'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
+import { publicSiteUrl } from '../config/publicSite'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import { resolveStaticPageDocumentTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function StaticPageRoute() {
   const { slug = '' } = useParams<{ slug: string }>()
+  const { siteName, seoDefaults } = useSiteSettings()
+  const siteBase = publicSiteUrl()
   const [page, setPage] = useState<StaticPageDto | null | undefined>(undefined)
 
   useEffect(() => {
@@ -60,15 +65,28 @@ export function StaticPageRoute() {
     )
   }
 
-  const title = page.pageTitle?.trim() || `${page.title} — Фабрика Тентов`
-  const desc = page.metaDescription?.trim() || page.title
+  const docTitle = resolveStaticPageDocumentTitle(page, siteName, seoDefaults)
+  const desc = truncateMetaDescription(page.metaDescription?.trim() || page.title, undefined, seoDefaults)
   const aboutV1 = page.aboutPayload?.version === 1
   const aboutHeading = page.pageTitle?.trim() || page.title
+  const path = page.path.startsWith('/') ? page.path : `/${page.path}`
+  const canonical = `${siteBase}${path}`
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
   return (
     <>
       <Helmet>
-        <title>{title}</title>
+        <title>{docTitle}</title>
         <meta name="description" content={desc} />
+        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
+        <link rel="canonical" href={canonical} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={docTitle} />
+        <meta property="og:description" content={desc} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

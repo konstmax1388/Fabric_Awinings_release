@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { AboutPagePayload } from '../../types/aboutPage'
-import { OptimizedImage } from '../ui/OptimizedImage'
+import type { AboutIntro, AboutManufacturer, AboutPagePayload } from '../../types/aboutPage'
+import { AboutFactValue } from './AboutFactValue'
 
 type Props = {
   payload: AboutPagePayload
@@ -10,6 +10,100 @@ type Props = {
 function clampPct(n: number | undefined, fallback = 0): number {
   if (typeof n !== 'number' || !Number.isFinite(n)) return fallback
   return Math.min(100, Math.max(0, n))
+}
+
+function isDirectVideoUrl(url: string | undefined): boolean {
+  const u = (url || '').trim()
+  if (!u) return false
+  return /\.(mp4|webm|ogg|ogv)(\?|#|$)/i.test(u.toLowerCase())
+}
+
+function ManufacturerMedia({ m }: { m: AboutManufacturer }) {
+  const videoUrl = m.videoUrl?.trim()
+  const imageUrl = m.imageUrl?.trim()
+  const direct = isDirectVideoUrl(videoUrl)
+
+  if (direct && videoUrl) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+        <video
+          className="aspect-[4/3] w-full object-cover"
+          src={videoUrl}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      </div>
+    )
+  }
+
+  if (imageUrl) {
+    return (
+      <div className="relative">
+        <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+          <img
+            src={imageUrl}
+            alt={m.imageAlt || ''}
+            className="aspect-[4/3] w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        {videoUrl && !direct ? (
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-4 left-4 flex max-w-[min(100%,280px)] items-center gap-3 rounded-xl border border-border/80 bg-bg-base/95 p-3 shadow-lg backdrop-blur-sm"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-surface" aria-hidden>
+              <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+            </span>
+            <span>
+              <span className="block font-heading text-base font-semibold text-text">{m.videoCta || 'Смотреть видео'}</span>
+              {m.videoSub ? <span className="mt-0.5 block font-body text-xs text-text-muted">{m.videoSub}</span> : null}
+            </span>
+          </a>
+        ) : null}
+      </div>
+    )
+  }
+
+  if (videoUrl && !direct) {
+    return (
+      <a
+        href={videoUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-border bg-bg-base/40 p-4 shadow-sm"
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-surface" aria-hidden>
+          <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7L8 5z" />
+          </svg>
+        </span>
+        <span>
+          <span className="block font-heading text-base font-semibold text-text">{m.videoCta || 'Смотреть видео'}</span>
+          {m.videoSub ? <span className="mt-0.5 block font-body text-xs text-text-muted">{m.videoSub}</span> : null}
+        </span>
+      </a>
+    )
+  }
+
+  return null
+}
+
+function IntroMedia({ intro, pageTitle }: { intro: AboutIntro; pageTitle: string }) {
+  const m: AboutManufacturer = {
+    imageUrl: intro.imageUrl,
+    imageAlt: intro.imageAlt || pageTitle,
+    videoUrl: intro.videoUrl,
+    videoCta: intro.videoCta,
+    videoSub: intro.videoSub,
+  }
+  return <ManufacturerMedia m={m} />
 }
 
 export function AboutPageLayout({ payload, pageTitle }: Props) {
@@ -40,7 +134,12 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
       {!hasCustomIntroH1 ? (
         <h1 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-5xl">{pageTitle}</h1>
       ) : null}
-      {intro && (intro.paragraphs?.length || intro.title || intro.titleAccent || intro.imageUrl) ? (
+      {intro &&
+      (intro.paragraphs?.length ||
+        intro.title ||
+        intro.titleAccent ||
+        intro.imageUrl ||
+        intro.videoUrl) ? (
         <section className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-12">
           <div>
             {(intro.title || intro.titleAccent) && (
@@ -55,15 +154,9 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
               ))}
             </div>
           </div>
-          {intro.imageUrl ? (
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-primary/20 shadow-sm">
-              <OptimizedImage
-                src={intro.imageUrl}
-                alt={intro.imageAlt || pageTitle}
-                widths={[400, 640, 960]}
-                className="aspect-[4/3] w-full object-cover"
-                sizes="(max-width: 1024px) 100vw, 45vw"
-              />
+          {intro.imageUrl || intro.videoUrl ? (
+            <div className="min-w-0">
+              <IntroMedia intro={intro} pageTitle={pageTitle} />
             </div>
           ) : null}
         </section>
@@ -136,39 +229,8 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
         payload.manufacturer.imageUrl ||
         payload.manufacturer.videoUrl) ? (
         <section className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-14">
-          <div className="relative">
-            {payload.manufacturer.imageUrl ? (
-              <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-                <img
-                  src={payload.manufacturer.imageUrl}
-                  alt={payload.manufacturer.imageAlt || ''}
-                  className="aspect-[4/3] w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-            ) : null}
-            {payload.manufacturer.videoUrl ? (
-              <a
-                href={payload.manufacturer.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute bottom-4 left-4 flex max-w-[min(100%,280px)] items-center gap-3 rounded-xl border border-border/80 bg-bg-base/95 p-3 shadow-lg backdrop-blur-sm"
-              >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-surface" aria-hidden>
-                  <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7L8 5z" />
-                  </svg>
-                </span>
-                <span>
-                  <span className="block font-heading text-base font-semibold text-text">
-                    {payload.manufacturer.videoCta || 'Смотреть видео'}
-                  </span>
-                  {payload.manufacturer.videoSub ? (
-                    <span className="mt-0.5 block font-body text-xs text-text-muted">{payload.manufacturer.videoSub}</span>
-                  ) : null}
-                </span>
-              </a>
-            ) : null}
+          <div className="relative min-w-0">
+            <ManufacturerMedia m={payload.manufacturer} />
           </div>
           <div>
             {payload.manufacturer.heading ? (
@@ -237,7 +299,10 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
             <ul className="relative z-[1] mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-6 md:grid-cols-4 md:gap-4">
               {facts.items.map((it, i) => (
                 <li key={i} className={`text-center ${factsOnPhoto ? 'text-surface' : 'text-text'}`}>
-                  <p className="font-heading text-3xl font-bold tabular-nums md:text-4xl">{it.value}</p>
+                  <AboutFactValue
+                    value={it.value != null ? String(it.value) : ''}
+                    className="font-heading text-3xl font-bold tabular-nums md:text-4xl"
+                  />
                   <p className="mt-2 inline-block rounded-md border border-border/40 bg-surface/95 px-2 py-1.5 font-body text-xs font-medium text-text shadow-sm md:text-sm">
                     {it.label}
                   </p>

@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, resolveStaticPageDocumentTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function PublicOfferPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const [page, setPage] = useState<StaticPageDto | null | undefined>(undefined)
 
   useEffect(() => {
@@ -20,8 +23,8 @@ export function PublicOfferPage() {
   }, [])
 
   if (page) {
-    const title = page.pageTitle?.trim() || `${page.title} — Фабрика Тентов`
-    const desc = page.metaDescription?.trim() || page.title
+    const title = resolveStaticPageDocumentTitle(page, siteName, seoDefaults)
+    const desc = truncateMetaDescription(page.metaDescription?.trim() || page.title, undefined, seoDefaults)
     return (
       <>
         <Helmet>
@@ -54,14 +57,18 @@ export function PublicOfferPage() {
     )
   }
 
+  const offerFallbackTitle = buildSeoTitle('static', { title: 'Публичная оферта', siteName }, seoDefaults)
+  const offerFallbackDesc = truncateMetaDescription(
+    'Публичная оферта на оказание услуг и продажу товаров.',
+    undefined,
+    seoDefaults,
+  )
+
   return (
     <>
       <Helmet>
-        <title>Публичная оферта — Фабрика Тентов</title>
-        <meta
-          name="description"
-          content="Публичная оферта на оказание услуг и продажу товаров Фабрики Тентов."
-        />
+        <title>{offerFallbackTitle}</title>
+        <meta name="description" content={offerFallbackDesc} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

@@ -350,6 +350,9 @@ class SiteSettingsAdminForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
                 attrs={"autocomplete": "new-password"},
             ),
             "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
+            "seo_title_templates": forms.Textarea(
+                attrs={"rows": 10, "class": "vLargeTextField font-mono text-sm", "spellcheck": "false"},
+            ),
         }
 
     def __init__(self, *args, **kwargs):

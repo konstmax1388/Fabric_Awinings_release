@@ -1,6 +1,8 @@
 import { Helmet } from 'react-helmet-async'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import {
   deleteAddress,
   fetchAddresses,
@@ -28,6 +30,7 @@ const emptyForm: Omit<ShippingAddressDto, 'id'> = {
 }
 
 export function AccountAddressesPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const { accessToken } = useAuth()
   const [list, setList] = useState<ShippingAddressDto[] | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -86,10 +89,13 @@ export function AccountAddressesPage() {
     await load()
   }
 
+  const docTitle = buildSeoTitle('listing', { title: 'Адреса доставки', siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Адреса доставки — Фабрика Тентов</title>
+        <title>{docTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Адреса доставки</h1>
       <p className="mt-2 font-body text-sm text-text-muted">

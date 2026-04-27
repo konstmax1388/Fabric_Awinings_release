@@ -2,10 +2,13 @@ import { Helmet } from 'react-helmet-async'
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import { patchAuthProfile } from '../../lib/api'
 import { formatRuPhoneMask, isCompleteRuPhone, nationalDigitsFromInput, phoneForApi } from '../../lib/formValidation'
 
 export function AccountProfilePage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const { user, accessToken, refreshUser } = useAuth()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -47,10 +50,13 @@ export function AccountProfilePage() {
     setSaved(true)
   }
 
+  const docTitle = buildSeoTitle('listing', { title: 'Профиль', siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Профиль — Фабрика Тентов</title>
+        <title>{docTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Профиль</h1>
       <p className="mt-2 font-body text-sm text-text-muted">Имя и контакты для заказов и связи с менеджером.</p>

@@ -6,6 +6,9 @@ export type AboutIntro = {
   paragraphs?: string[]
   imageUrl?: string
   imageAlt?: string
+  videoUrl?: string
+  videoCta?: string
+  videoSub?: string
 }
 
 export type AboutSpotlight = {

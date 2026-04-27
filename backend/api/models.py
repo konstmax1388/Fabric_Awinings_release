@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 import re
 
@@ -628,6 +633,49 @@ class CartOrder(models.Model):
         return self.order_ref
 
 
+def default_seo_title_templates() -> dict[str, str]:
+    """Шаблоны title по умолчанию (см. help_text у SiteSettings.seo_title_templates)."""
+    return {
+        "home": "",
+        "listing": "{title}{suffix}",
+        "static": "{title} — {siteName}",
+        "article": "{title}{suffix}",
+        "emdash": "{title} — {siteName}",
+    }
+
+
+_SEO_TPL_KEYS = frozenset({"home", "listing", "static", "article", "emdash"})
+_SEO_TPL_PLACEHOLDERS = frozenset({"title", "siteName", "suffix", "sep"})
+_SEO_TPL_BRACE = re.compile(r"\{([^}]+)\}")
+
+
+def validate_seo_title_templates_value(raw: Any) -> dict[str, str]:
+    if raw is None or raw == {}:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValidationError({"seo_title_templates": "Ожидается JSON-объект с ключами шаблонов title."})
+    out: dict[str, str] = {}
+    for k, v in raw.items():
+        ks = str(k).strip()
+        if ks not in _SEO_TPL_KEYS:
+            raise ValidationError({"seo_title_templates": f"Неизвестный ключ шаблона: {ks}."})
+        if not isinstance(v, str):
+            raise ValidationError({"seo_title_templates": f"Шаблон «{ks}»: ожидается строка."})
+        s = v.strip()
+        if len(s) > 500:
+            raise ValidationError({"seo_title_templates": f"Шаблон «{ks}»: не длиннее 500 символов."})
+        for m in _SEO_TPL_BRACE.finditer(s):
+            ph = m.group(1).strip()
+            if ph not in _SEO_TPL_PLACEHOLDERS:
+                raise ValidationError(
+                    {
+                        "seo_title_templates": f"Шаблон «{ks}»: недопустимый плейсхолдер. Допустимо: title, siteName, suffix, sep."
+                    }
+                )
+        out[ks] = s
+    return out
+
+
 class SiteSettings(models.Model):
     """Singleton (pk=1): витрина маркетплейсов и глобальные ссылки."""
 
@@ -827,6 +875,42 @@ class SiteSettings(models.Model):
         blank=True,
         default="ru_RU",
         help_text="Open Graph locale, например ru_RU.",
+    )
+    seo_og_image = models.ImageField(
+        "SEO: изображение по умолчанию (og:image)",
+        upload_to="branding/seo-og/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Используется в Open Graph, если у страницы нет своего изображения (тематическое 1200×630 или квадрат, до ~2 МБ).",
+    )
+    seo_meta_description_max = models.PositiveSmallIntegerField(
+        "SEO: max длина meta description (символы)",
+        default=160,
+        help_text="Подсказка для витрины: обрезка автоматически сгенерированных описаний (текст из каталога, блог и т.д.).",
+    )
+    seo_twitter_card = models.CharField(
+        "SEO: Twitter / X card",
+        max_length=32,
+        blank=True,
+        default="summary_large_image",
+        help_text="summary или summary_large_image (как у крупных CMS: карточка в соцсетях).",
+    )
+    seo_title_separator = models.CharField(
+        "SEO: разделитель в шаблоне title (плейсхолдер {sep})",
+        max_length=16,
+        blank=True,
+        default=" | ",
+        help_text="Например « | » или « — ». Подставляется в шаблоны, где указано {sep}.",
+    )
+    seo_title_templates = models.JSONField(
+        "SEO: шаблоны <title> по типам страниц",
+        default=default_seo_title_templates,
+        blank=True,
+        help_text="JSON. Ключи: home, listing, static, article, emdash. "
+        "Плейсхолдеры: {title}, {siteName}, {suffix} (суффикс из поля «суффикс title»), {sep}. "
+        "Пустой home — как сейчас: заголовок из контента главной + суффикс. "
+        "Перекрытие: у статичных страниц, товаров и блога заполненный в карточке meta title важнее шаблона.",
     )
 
     # Блок карты + формы на главной (перекрывает mapForm из «Главная страница», если заполнено)
@@ -1297,6 +1381,16 @@ class SiteSettings(models.Model):
         locale = (self.seo_locale or "").strip()
         if locale and not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
             raise ValidationError({"seo_locale": "Формат locale: xx_XX, например ru_RU."})
+        tw = (self.seo_twitter_card or "").strip().lower()
+        if tw and tw not in ("summary", "summary_large_image"):
+            raise ValidationError({"seo_twitter_card": "Допустимо: summary или summary_large_image."})
+        self.seo_twitter_card = tw or "summary_large_image"
+        nmax = self.seo_meta_description_max
+        if nmax is not None and (nmax < 80 or nmax > 400):
+            raise ValidationError(
+                {"seo_meta_description_max": "Укажите значение в диапазоне 80–400 (рекомендуется ~160)."}
+            )
+        self.seo_title_templates = validate_seo_title_templates_value(self.seo_title_templates)
         from config.header_nav import normalize_header_navigation
 
         if self.header_navigation is not None:
@@ -1470,6 +1564,40 @@ class StaticPage(models.Model):
         blank=True,
         help_text="Заполняется полями раздела «Макет «О нас» — витрина» в админке для страницы со слагом o-nas. "
         "Если пусто — на сайте используется только «Содержимое».",
+    )
+    about_manufacturer_image = models.ImageField(
+        "Производитель: фото (файл)",
+        upload_to="static_pages/about_mnf/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Слева от текста «Мы производитель». Если задано — подменяет внешний URL фото из макета.",
+    )
+    about_manufacturer_video = models.FileField(
+        "Производитель: видео (файл)",
+        upload_to="static_pages/about_mnf/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Слева от текста. MP4/WebM; на сайте встроенное видео. Если задано — подменяет ссылку на видео из макета.",
+        validators=[FileExtensionValidator(allowed_extensions=["mp4", "webm", "ogv", "ogg"])],
+    )
+    about_intro_image = models.ImageField(
+        "Вступление: фото (файл, справа от заголовка)",
+        upload_to="static_pages/about_intro/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Колонка справа от «Узнай нас / …». Если задано — подменяет URL картинки из макета.",
+    )
+    about_intro_video = models.FileField(
+        "Вступление: видео (файл, справа)",
+        upload_to="static_pages/about_intro/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="MP4/WebM; встроенное видео справа. Если задано — подменяет внешнюю ссылку на видео из макета.",
+        validators=[FileExtensionValidator(allowed_extensions=["mp4", "webm", "ogv", "ogg"])],
     )
     is_published = models.BooleanField("Опубликовано", default=True, db_index=True)
     show_in_header = models.BooleanField("Показывать ссылку в шапке", default=False)

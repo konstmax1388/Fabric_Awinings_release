@@ -739,12 +739,28 @@ export type AnalyticsYandexDto = {
   bodyEndSnippet?: string
 }
 
+/** Синхронизировано с GET /api/site-settings/ (seoDefaults). */
+export type SeoTitleTemplatesDto = {
+  home: string
+  listing: string
+  static: string
+  article: string
+  emdash: string
+}
+
 export type SeoDefaultsDto = {
   allowIndexing: boolean
   region: string
   defaultMetaDescription: string
   titleSuffix: string
   locale: string
+  /** Склеенные с дефолтами на бэкенде. */
+  titleTemplates?: SeoTitleTemplatesDto
+  titleSeparator?: string
+  ogImageUrl?: string | null
+  metaDescriptionMaxLength?: number
+  /** summary | summary_large_image */
+  twitterCard?: string
 }
 
 export type SiteSettingsDto = {
@@ -1097,6 +1113,18 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
         const sd = data.seoDefaults
         if (!sd || typeof sd !== 'object') return undefined
         const s = sd as Record<string, unknown>
+        const tt = s.titleTemplates
+        let titleTemplates: SeoTitleTemplatesDto | undefined
+        if (tt && typeof tt === 'object' && !Array.isArray(tt)) {
+          const o = tt as Record<string, unknown>
+          titleTemplates = {
+            home: typeof o.home === 'string' ? o.home : '',
+            listing: typeof o.listing === 'string' ? o.listing : '',
+            static: typeof o.static === 'string' ? o.static : '',
+            article: typeof o.article === 'string' ? o.article : '',
+            emdash: typeof o.emdash === 'string' ? o.emdash : '',
+          }
+        }
         return {
           allowIndexing: s.allowIndexing !== false,
           region: typeof s.region === 'string' && s.region.trim() ? s.region : 'RU',
@@ -1104,6 +1132,14 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
             typeof s.defaultMetaDescription === 'string' ? s.defaultMetaDescription : '',
           titleSuffix: typeof s.titleSuffix === 'string' ? s.titleSuffix : '',
           locale: typeof s.locale === 'string' && s.locale.trim() ? s.locale : 'ru_RU',
+          titleTemplates,
+          titleSeparator: typeof s.titleSeparator === 'string' ? s.titleSeparator : undefined,
+          ogImageUrl: typeof s.ogImageUrl === 'string' && s.ogImageUrl ? s.ogImageUrl : null,
+          metaDescriptionMaxLength:
+            typeof s.metaDescriptionMaxLength === 'number' && s.metaDescriptionMaxLength > 0
+              ? s.metaDescriptionMaxLength
+              : undefined,
+          twitterCard: typeof s.twitterCard === 'string' ? s.twitterCard : undefined,
         }
       })(),
       headerNavigation: data.headerNavigation,

@@ -5,8 +5,13 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { fetchBlogPost, type BlogDetail } from '../lib/api'
 import { Helmet } from 'react-helmet-async'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
+import { publicSiteUrl } from '../config/publicSite'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function BlogPostPage() {
+  const site = publicSiteUrl()
+  const { seoDefaults, siteName } = useSiteSettings()
   const { slug = '' } = useParams<{ slug: string }>()
   const [post, setPost] = useState<BlogDetail | null | undefined>(undefined)
 
@@ -59,18 +64,35 @@ export function BlogPostPage() {
     )
   }
 
+  const docTitle =
+    post.seo?.pageTitle?.trim() ||
+    buildSeoTitle('article', { title: post.title, siteName }, seoDefaults)
+  const metaDesc = truncateMetaDescription(
+    post.seo?.metaDescription ?? post.excerpt ?? '',
+    undefined,
+    seoDefaults,
+  )
+  const ogImage = post.seo?.ogImage || post.img || seoDefaults.ogImageUrl || ''
+  const canonicalHref = post.seo?.canonicalUrl?.trim() || `${site}/blog/${encodeURIComponent(slug)}`
+  const ogTitle = post.seo?.pageTitle?.trim() || post.title
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
+
   return (
     <>
       <Helmet>
-        <title>{post.seo?.pageTitle ?? `${post.title} — блог`}</title>
-        <meta name="description" content={post.seo?.metaDescription ?? post.excerpt} />
+        <title>{docTitle}</title>
+        <meta name="description" content={metaDesc} />
         {post.seo?.robots ? <meta name="robots" content={post.seo.robots} /> : null}
-        {post.seo?.canonicalUrl ? <link rel="canonical" href={post.seo.canonicalUrl} /> : null}
-        {post.seo?.ogImage || post.img ? (
-          <meta property="og:image" content={post.seo?.ogImage || post.img} />
-        ) : null}
+        <link rel="canonical" href={canonicalHref} />
+        {ogImage ? <meta property="og:image" content={ogImage} /> : null}
+        <meta name="twitter:card" content={tw} />
+        {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
         <meta property="og:type" content="article" />
-        <meta property="og:title" content={post.seo?.pageTitle ?? post.title} />
+        <meta property="og:url" content={canonicalHref} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={metaDesc} />
+        <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

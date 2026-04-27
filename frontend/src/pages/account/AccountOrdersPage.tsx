@@ -2,12 +2,15 @@ import { Helmet } from 'react-helmet-async'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import { useCart } from '../../hooks/useCart'
 import type { CustomerOrderRow } from '../../lib/api'
 import { fetchCustomerOrders } from '../../lib/api'
 import { fulfillmentLabel } from '../../lib/orderStatusLabels'
 
 export function AccountOrdersPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const { accessToken } = useAuth()
   const { mergeLinesFromOrder } = useCart()
   const navigate = useNavigate()
@@ -40,10 +43,13 @@ export function AccountOrdersPage() {
     navigate('/cart')
   }
 
+  const docTitle = buildSeoTitle('listing', { title: 'Мои заказы', siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Мои заказы — Фабрика Тентов</title>
+        <title>{docTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Мои заказы</h1>
       <p className="mt-2 font-body text-sm text-text-muted">

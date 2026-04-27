@@ -23,6 +23,7 @@ import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
 import { orderLineFromProduct } from '../lib/orderLinePayload'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
+import { truncateMetaDescription } from '../lib/seoVitrine'
 import type { HomePayload } from '../types/homePage'
 
 function categoryLabel(p: Product): string {
@@ -210,7 +211,7 @@ function MaterialLayersHint({
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const reduce = useReducedMotion()
-  const { calculatorEnabled, productPhotoAspect, seoDefaults, home } = useSiteSettings()
+  const { calculatorEnabled, productPhotoAspect, seoDefaults, home, siteName } = useSiteSettings()
   const ui = home?.ui
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
@@ -386,10 +387,14 @@ export function ProductPage() {
   const seo = product.seo
   const rawPageTitle = seo?.pageTitle ?? `${product.title} — каталог`
   const pageTitle = seoDefaults.titleSuffix ? `${rawPageTitle} ${seoDefaults.titleSuffix}` : rawPageTitle
-  const metaDesc =
-    seo?.metaDescription ?? (product.excerpt || product.description || '').slice(0, 160)
+  const metaDesc = truncateMetaDescription(
+    seo?.metaDescription ?? (product.excerpt || product.description || ''),
+    undefined,
+    seoDefaults,
+  )
   const canonicalHref = seo?.canonicalUrl || `${site}/catalog/${encodeURIComponent(product.slug)}`
-  const ogImage = seo?.ogImage || galleryImages[0] || product.images[0]
+  const ogImage = seo?.ogImage || galleryImages[0] || product.images[0] || seoDefaults.ogImageUrl
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   return (
     <>
@@ -398,7 +403,11 @@ export function ProductPage() {
         <meta name="description" content={metaDesc} />
         {seo?.robots ? <meta name="robots" content={seo.robots} /> : null}
         <link rel="canonical" href={canonicalHref} />
+        <meta name="twitter:card" content={tw} />
+        {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
         <meta property="og:type" content="product" />
+        <meta property="og:url" content={canonicalHref} />
+        <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={metaDesc} />
         <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />

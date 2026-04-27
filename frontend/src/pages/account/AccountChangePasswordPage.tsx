@@ -4,9 +4,12 @@ import { Link, Navigate } from 'react-router-dom'
 import { SiteFooter } from '../../components/layout/SiteFooter'
 import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { buildSeoTitle } from '../../lib/seoVitrine'
 import { postChangePassword } from '../../lib/api'
 
 export function AccountChangePasswordPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
   const { user, accessToken, refreshUser } = useAuth()
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -49,10 +52,13 @@ export function AccountChangePasswordPage() {
   const blocking = Boolean(user.passwordChangeBlocking)
   const deadline = user.passwordChangeDeadline
 
+  const docTitle = buildSeoTitle('listing', { title: 'Смена пароля', siteName }, seoDefaults)
+
   return (
     <>
       <Helmet>
-        <title>Смена пароля — Фабрика Тентов</title>
+        <title>{docTitle}</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />
       <main className="mx-auto min-h-[60vh] min-w-0 max-w-lg overflow-x-clip px-4 py-10 md:mx-auto md:max-w-[1280px] md:px-6 md:py-14">

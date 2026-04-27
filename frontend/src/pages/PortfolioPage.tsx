@@ -10,14 +10,22 @@ import { BeforeAfterSlider } from '../components/portfolio/BeforeAfterSlider'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function PortfolioPage() {
   const reduce = useReducedMotion()
   const site = publicSiteUrl()
-  const { seoDefaults, home } = useSiteSettings()
+  const { seoDefaults, home, siteName } = useSiteSettings()
   const portfolio = home?.portfolio ?? {}
   const pageHeading = portfolio.pageHeading?.trim() || 'Портфолио'
   const pageSubheading = portfolio.pageSubheading?.trim() || 'Реализованные проекты'
+  const portTitle = buildSeoTitle('listing', { title: pageHeading, siteName }, seoDefaults)
+  const portDesc = truncateMetaDescription(
+    seoDefaults.defaultMetaDescription?.trim() || 'Реализованные проекты: тенты, навесы, террасы.',
+    undefined,
+    seoDefaults,
+  )
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
   const [projects, setProjects] = useState<PortfolioItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -37,15 +45,18 @@ export function PortfolioPage() {
   return (
     <>
       <Helmet>
-        <title>{`Портфолио${seoDefaults.titleSuffix ? ` ${seoDefaults.titleSuffix}` : ''}`}</title>
-        <meta
-          name="description"
-          content={
-            seoDefaults.defaultMetaDescription?.trim() || 'Реализованные проекты: тенты, навесы, террасы.'
-          }
-        />
+        <title>{portTitle}</title>
+        <meta name="description" content={portDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/portfolio`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${site}/portfolio`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={portTitle} />
+        <meta property="og:description" content={portDesc} />
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

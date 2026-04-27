@@ -6,6 +6,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function ReviewsPage() {
   const site = publicSiteUrl()
@@ -16,14 +17,27 @@ export function ReviewsPage() {
   const yandexVisible = Boolean(
     (reviewsYandex?.widgetHtml ?? '').trim() || (reviewsYandex?.profileUrl ?? '').trim(),
   )
+  const docTitle = buildSeoTitle('emdash', { title: pageTitle, siteName }, seoDefaults)
+  const desc = metaDescription
+    ? truncateMetaDescription(metaDescription, undefined, seoDefaults)
+    : ''
+  const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   return (
     <>
       <Helmet>
-        <title>{`${pageTitle} — ${siteName}`}</title>
-        {metaDescription ? <meta name="description" content={metaDescription} /> : null}
+        <title>{docTitle}</title>
+        {desc ? <meta name="description" content={desc} /> : null}
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <link rel="canonical" href={`${site}/reviews`} />
+        <meta name="twitter:card" content={tw} />
+        {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`${site}/reviews`} />
+        <meta property="og:site_name" content={siteName} />
+        <meta property="og:title" content={docTitle} />
+        {desc ? <meta property="og:description" content={desc} /> : null}
+        {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">
