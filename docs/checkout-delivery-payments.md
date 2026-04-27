@@ -52,3 +52,6 @@
 - `delivery`: объект с контактными полями доставки; для СДЭК допускаются поля в `delivery.cdek` (город, ПВЗ и т.д.) — см. `sanitize_checkout_delivery`.
 
 Ответ при онлайн-оплате может содержать **`paymentRedirectUrl`** (из `acquiring_payload.redirectUrl`), когда эквайринг вернёт ссылку на оплату.
+## Сверка: Ozon Доставка (Seller API) и сайт
+
+Сравнение сценария dev.ozon (Seller API, v1/delivery, v2/delivery/checkout, v2/order/create) с текущей реализацией на **Ozon Pay (Acquiring)**: [ozon-dostavka-seller-api-vs-site.md](./ozon-dostavka-seller-api-vs-site.md).
