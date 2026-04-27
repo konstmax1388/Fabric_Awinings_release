@@ -318,19 +318,31 @@ def test_cdek_oauth_token_uses_cache():
 
 
 @pytest.mark.django_db
-def test_ozon_pay_lists_missing_api_base_url():
+def test_ozon_pay_uses_default_api_base_when_env_empty():
+    """Без OZON_PAY_API_URL / OZON_PAY_API_BASE_URL используется https://payapi.ozon.ru (док. Ozon)."""
     from api.models import SiteSettings
-    from api.services.ozon_acquiring import try_begin_ozon_pay
+    from api.services import ozon_acquiring as ozon_mod
 
     s = SiteSettings.get_solo()
     s.ozon_pay_enabled = True
     s.ozon_pay_client_id = "cid"
     s.ozon_pay_client_secret = "sec"
     s.save()
-    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": ""}, clear=False):
-        out = try_begin_ozon_pay(order_ref="ORD1", total_approx=100, settings=s)
-    assert out.get("missingEnv") == ["OZON_PAY_API_BASE_URL"]
-    assert out.get("liveHttp") is False
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        assert str(url).startswith("https://payapi.ozon.ru/")
+        return {"order": {"payLink": "https://pay.example/o", "id": "def-base-1"}}
+
+    with patch.dict(
+        os.environ,
+        {"OZON_PAY_API_BASE_URL": "", "OZON_PAY_API_URL": ""},
+        clear=False,
+    ):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(order_ref="ORD1", total_approx=100, settings=s)
+    assert out.get("liveHttp") is True
+    assert out.get("redirectUrl") == "https://pay.example/o"
+    assert out.get("ozonOrderId") == "def-base-1"
 
 
 @pytest.mark.django_db
@@ -1240,6 +1252,86 @@ def test_ozon_webhook_non_completed_does_not_trigger_cdek_sync(mock_sync, _mock_
     co.refresh_from_db()
     assert co.payment_status == CartOrder.PaymentStatus.AUTHORIZED
     mock_sync.assert_not_called()
+
+
+@patch("api.services.notification_email.send_buyer_order_confirmation_email")
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@pytest.mark.django_db
+def test_ozon_webhook_completed_idempotent_on_repeat(
+    _mock_sign, mock_sync, mock_send, client,
+):
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save(update_fields=["ozon_pay_client_id", "ozon_pay_webhook_secret"])
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-WEBHOOK-DUP",
+        customer_name="Онлайн Клиент",
+        customer_phone="+79990001122",
+        customer_email="dup@shop.ru",
+        lines=[{"title": "x", "priceFrom": 1000, "qty": 1}],
+        total_approx=1300,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        manager_letter="m",
+        client_ack="c",
+    )
+    payload = {
+        "requestSign": "ok",
+        "extOrderID": co.order_ref,
+        "status": "Completed",
+        "orderID": "oz-555",
+    }
+    assert client.post("/api/webhooks/ozon-pay/", data=payload, content_type="application/json").status_code == 200
+    assert client.post("/api/webhooks/ozon-pay/", data=payload, content_type="application/json").status_code == 200
+    mock_sync.assert_called_once()
+    mock_send.assert_called_once()
+
+
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@pytest.mark.django_db
+def test_ozon_webhook_extorderid_alias(_mock_sign, client):
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save(update_fields=["ozon_pay_client_id", "ozon_pay_webhook_secret"])
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-EXT-ORDER-ID",
+        customer_name="A",
+        customer_phone="+1",
+        customer_email="a@a.ru",
+        lines=[{"title": "x", "priceFrom": 100, "qty": 1}],
+        total_approx=100,
+        delivery_method=CartOrder.DeliveryMethod.PICKUP,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        manager_letter="m",
+        client_ack="c",
+    )
+    r = client.post(
+        "/api/webhooks/ozon-pay/",
+        data={
+            "requestSign": "ok",
+            "extOrderId": co.order_ref,
+            "status": "Completed",
+            "orderID": "oz-999",
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+    co.refresh_from_db()
+    assert co.payment_status == CartOrder.PaymentStatus.CAPTURED
+    assert co.payment_external_id == "oz-999"
 
 
 @pytest.mark.django_db

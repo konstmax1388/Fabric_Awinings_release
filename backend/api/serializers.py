@@ -695,6 +695,12 @@ class CartOrderCreateSerializer(serializers.Serializer):
             elif extra:
                 client_ack = f"{client_ack}\n\n{extra}\n"
 
+        payment_ext = ""
+        if pm == CartOrder.PaymentMethod.CARD_ONLINE and isinstance(acquiring, dict):
+            oid = acquiring.get("ozonOrderId")
+            if oid is not None and str(oid).strip():
+                payment_ext = str(oid).strip()[:128]
+
         return CartOrder.objects.create(
             order_ref=ref,
             order_source=CartOrder.OrderSource.CHECKOUT,
@@ -713,6 +719,7 @@ class CartOrderCreateSerializer(serializers.Serializer):
             payment_method=pm,
             payment_status=pay_status,
             payment_provider="ozon_pay" if pm == CartOrder.PaymentMethod.CARD_ONLINE else "",
+            payment_external_id=payment_ext,
             delivery_provider=str(dm),
             delivery_snapshot=delivery_snapshot,
             acquiring_payload=acquiring if isinstance(acquiring, dict) else {},

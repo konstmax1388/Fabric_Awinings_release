@@ -78,7 +78,11 @@ def expected_notification_signature(
         else:
             tx_part = _str_or_empty(tx_uid)
 
-        fourth = _str_or_empty(payload.get("extOrderID"))
+        fourth = _str_or_empty(
+            payload.get("extOrderID")
+            or payload.get("extOrderId")
+            or payload.get("ext_order_id")
+        )
 
         digest = (
             f"{access_key}|"

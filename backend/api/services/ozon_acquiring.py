@@ -119,16 +119,8 @@ def try_begin_ozon_pay(
             "message": "Укажите идентификатор токена (accessKey) и секретный ключ (secretKey) в админке или OZON_PAY_ACCESS_KEY / OZON_PAY_SECRET_KEY.",
         }
 
-    api_base = _env("OZON_PAY_API_BASE_URL").rstrip("/")
-    if not api_base:
-        return {
-            **base_out,
-            "configured": True,
-            "liveHttp": False,
-            "redirectUrl": None,
-            "missingEnv": ["OZON_PAY_API_BASE_URL"],
-            "message": "Задайте OZON_PAY_API_BASE_URL — базовый URL API эквайринга из личного кабинета / документации (без завершающего слэша).",
-        }
+    # Боевой хост: https://docs.ozon.ru/api/acquiring/ — `OZON_PAY_API_URL` или `OZON_PAY_API_BASE_URL`, иначе https://payapi.ozon.ru
+    api_base = (_env("OZON_PAY_API_URL") or _env("OZON_PAY_API_BASE_URL") or "https://payapi.ozon.ru").rstrip("/")
 
     currency_code = _env("OZON_PAY_CURRENCY_CODE", "643")
     payment_algorithm = _env("OZON_PAY_PAYMENT_ALGORITHM", "PAY_ALGO_SMS")
@@ -266,4 +258,4 @@ def try_begin_ozon_pay_for_order(order: CartOrder) -> dict[str, Any]:
         receipt_email=order.customer_email or "",
         fiscalization_phone=order.customer_phone or "",
     )
-
+

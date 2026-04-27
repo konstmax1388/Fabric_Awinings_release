@@ -1750,9 +1750,10 @@ class SiteSettingsAdmin(ModelAdmin):
                 ),
                 "description": _(
                     "Эквайринг Ozon Bank: Ozon Pay Checkout — https://docs.ozon.ru/api/acquiring/ "
-                    "Сервер вызывает POST …/v1/createOrder с подписью requestSign (accessKey + secretKey). "
-                    "Базовый URL API: OZON_PAY_API_BASE_URL в .env. "
-                    "Вебхук POST: /api/webhooks/ozon-pay/ — проверка requestSign по notificationSecretKey. "
+                    "Сервер вызывает POST …/v1/createOrder с подписью requestSign (поля accessKey/secretKey совпадают с ключами ниже и с env OZON_PAY_ACCESS_KEY / OZON_PAY_SECRET_KEY при их задании). "
+                    "База API: OZON_PAY_API_URL или OZON_PAY_API_BASE_URL; если оба пусты — https://payapi.ozon.ru. "
+                    "Переадресация покупателя после оплаты — на страницы витрины /checkout/payment/success и /checkout/payment/failed (полные примеры — в блоке ссылок выше формы; совпадают с successUrl/failUrl в createOrder). "
+                    "Вебхук: POST /api/webhooks/ozon-pay/ — requestSign по notificationSecretKey. "
                     "См. docs/ozon-pay-env.md."
                 ),
             },
@@ -1819,6 +1820,26 @@ class SiteSettingsAdmin(ModelAdmin):
         else:
             form = SectionForm(instance=obj)
         meta = SS_SECTIONS[slug]
+        ozon_checkout_return_urls: dict | None = None
+        if slug == "checkout_ozon_pay":
+            from django.conf import settings as django_settings
+            from urllib.parse import quote as urlquote
+
+            pub = (getattr(django_settings, "PUBLIC_SITE_URL", "") or "").strip().rstrip("/")
+            example_ref = "ORDER-REF"
+            qref = urlquote(example_ref, safe="")
+            if pub:
+                ozon_checkout_return_urls = {
+                    "public_base": pub,
+                    "success": f"{pub}/checkout/payment/success?orderRef={qref}",
+                    "failed": f"{pub}/checkout/payment/failed?orderRef={qref}",
+                }
+            else:
+                ozon_checkout_return_urls = {
+                    "public_base": "",
+                    "success": None,
+                    "failed": None,
+                }
         context = {
             **self.admin_site.each_context(request),
             "title": str(meta["title"]),
@@ -1836,6 +1857,7 @@ class SiteSettingsAdmin(ModelAdmin):
                 if slug == "checkout_ozon_pay"
                 else None
             ),
+            "ozon_checkout_return_urls": ozon_checkout_return_urls,
             "bitrix24_test_url": (
                 reverse("admin:api_sitesettings_bitrix24_catalog_test")
                 if slug == "crm_bitrix_catalog"

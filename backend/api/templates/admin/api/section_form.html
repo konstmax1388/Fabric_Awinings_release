@@ -45,6 +45,32 @@
       </a>
     </p>
     {% endif %}
+    {% if ozon_checkout_return_urls %}
+    <div class="rounded-default border border-base-200 bg-base-50/90 p-4 text-sm dark:border-base-700 dark:bg-base-900/50">
+      <p class="font-medium text-font-important-light dark:text-font-important-dark">{% trans "Страницы витрины после оплаты (как successUrl / failUrl в createOrder)" %}</p>
+      <p class="mt-1 text-font-subtle-light dark:text-font-subtle-dark">
+        {% trans "В реальном заказе вместо ORDER-REF подставляется orderRef. Можно открыть примеры в новой вкладке." %}
+      </p>
+      {% if ozon_checkout_return_urls.success %}
+      <ul class="mt-2 space-y-2 break-all font-mono text-xs text-font-default-light dark:text-font-default-dark">
+        <li>
+          <span class="font-sans text-font-subtle-light dark:text-font-subtle-dark">{% trans "Успех" %}:</span>
+          <a href="{{ ozon_checkout_return_urls.success }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline dark:text-primary-400">{{ ozon_checkout_return_urls.success }}</a>
+        </li>
+        <li>
+          <span class="font-sans text-font-subtle-light dark:text-font-subtle-dark">{% trans "Неуспех" %}:</span>
+          <a href="{{ ozon_checkout_return_urls.failed }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline dark:text-primary-400">{{ ozon_checkout_return_urls.failed }}</a>
+        </li>
+      </ul>
+      <p class="mt-2 text-xs text-font-subtle-light dark:text-font-subtle-dark">
+        <span class="font-sans">{% trans "Префикс" %} (PUBLIC_SITE_URL):</span>
+        <span class="font-mono text-font-default-light dark:text-font-default-dark">{{ ozon_checkout_return_urls.public_base }}</span>
+      </p>
+      {% else %}
+      <p class="mt-2 text-amber-900/90 dark:text-amber-200/90">{% trans "Задайте PUBLIC_SITE_URL в .env (полный URL витрины без концевого слеша), иначе ссылки successUrl / failUrl не сформировать." %}</p>
+      {% endif %}
+    </div>
+    {% endif %}
     {% if bitrix24_test_url or bitrix24_sync_url %}
     <div class="flex flex-col gap-4 rounded-default border border-primary-200 bg-primary-50/80 p-4 text-sm dark:border-primary-900/60 dark:bg-primary-950/30 md:flex-row md:flex-wrap">
       {% if bitrix24_test_url %}

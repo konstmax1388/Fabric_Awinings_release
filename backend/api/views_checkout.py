@@ -58,13 +58,19 @@ class OzonPayWebhookView(View):
             logger.warning("Ozon webhook: signature mismatch")
             return JsonResponse({"ok": False, "error": "bad_signature"}, status=403)
 
-        ext_order = str(payload.get("extOrderID") or "").strip()
+        ext_order = str(
+            payload.get("extOrderID")
+            or payload.get("extOrderId")
+            or payload.get("ext_order_id")
+            or "",
+        ).strip()
         status = str(payload.get("status") or "")
         order_id_ozon = str(payload.get("orderID") or "").strip()
 
         if ext_order:
             co = CartOrder.objects.filter(order_ref=ext_order).first()
             if co:
+                prev_captured = co.payment_status == CartOrder.PaymentStatus.CAPTURED
                 ap = co.acquiring_payload if isinstance(co.acquiring_payload, dict) else {}
                 ap["ozonWebhookLast"] = {
                     "status": status,
@@ -91,11 +97,8 @@ class OzonPayWebhookView(View):
                         "fulfillment_status",
                     ]
                 )
-                if (
-                    status == "Completed"
-                    and co.delivery_method == CartOrder.DeliveryMethod.CDEK
-                    and co.payment_method == CartOrder.PaymentMethod.CARD_ONLINE
-                ):
+                just_paid = status == "Completed" and not prev_captured
+                if just_paid and co.delivery_method == CartOrder.DeliveryMethod.CDEK and co.payment_method == CartOrder.PaymentMethod.CARD_ONLINE:
                     try:
                         from api.services.cdek_order_create import sync_cdek_order_with_retry
 
@@ -103,7 +106,7 @@ class OzonPayWebhookView(View):
                     except Exception:
                         logger.exception("sync_cdek_order_with_retry failed for order=%s", co.order_ref)
                 co.refresh_from_db()
-                if status == "Completed":
+                if just_paid:
                     try:
                         from api.services.notification_email import send_buyer_order_confirmation_email
 
