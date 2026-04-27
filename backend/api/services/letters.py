@@ -68,6 +68,19 @@ def build_cart_letters(
                 hdr.append(f"Код ПВЗ: {cc}")
             if ca:
                 hdr.append(f"Пункт: {ca}")
+    ozon_ol = delivery.get("ozonLogistics")
+    if isinstance(ozon_ol, dict):
+        dp = str(ozon_ol.get("deliveryPayer") or "").strip()
+        if dp in ("store", "buyer"):
+            hdr.append("")
+            hdr.append("ЛОГИСТИКА OZON")
+            if dp == "buyer":
+                hdr.append("Доставка: за счёт покупателя (Ozon).")
+            else:
+                hdr.append("Доставка: за счёт магазина (Ozon).")
+        hint = str(ozon_ol.get("hint") or "").strip()
+        if hint:
+            hdr.append(f"Комментарий: {hint}")
     city = (delivery.get("city") or "").strip()
     addr = (delivery.get("address") or "").strip()
     d_comment = (delivery.get("comment") or "").strip()

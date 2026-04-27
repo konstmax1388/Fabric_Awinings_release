@@ -6,7 +6,7 @@ from api.models import CartOrder, SiteSettings
 
 
 def delivery_options_public(settings: SiteSettings) -> list[dict[str, str]]:
-    """Список включённых способов доставки для витрины."""
+    """Список включённых способов доставки для витрины. Логистика Ozon — выше СДЭК, если обе включены."""
     out: list[dict[str, str]] = []
     if settings.checkout_pickup_enabled:
         out.append(
@@ -15,18 +15,18 @@ def delivery_options_public(settings: SiteSettings) -> list[dict[str, str]]:
                 "label": CartOrder.DeliveryMethod.PICKUP.label,
             }
         )
-    if settings.cdek_enabled:
-        out.append(
-            {
-                "id": CartOrder.DeliveryMethod.CDEK,
-                "label": CartOrder.DeliveryMethod.CDEK.label,
-            }
-        )
     if settings.ozon_logistics_enabled:
         out.append(
             {
                 "id": CartOrder.DeliveryMethod.OZON_LOGISTICS,
                 "label": CartOrder.DeliveryMethod.OZON_LOGISTICS.label,
+            }
+        )
+    if settings.cdek_enabled:
+        out.append(
+            {
+                "id": CartOrder.DeliveryMethod.CDEK,
+                "label": CartOrder.DeliveryMethod.CDEK.label,
             }
         )
     return out

@@ -632,6 +632,11 @@ class CartOrderCreateSerializer(serializers.Serializer):
             cdek_obj = dict(cdek_raw) if isinstance(cdek_raw, dict) else {}
             cdek_obj["recipientFeeRub"] = int(recipient_fee)
             delivery_snapshot["cdek"] = cdek_obj
+        if dm == CartOrder.DeliveryMethod.OZON_LOGISTICS:
+            ol0 = delivery_snapshot.get("ozonLogistics")
+            ol_d = dict(ol0) if isinstance(ol0, dict) else {}
+            ol_d["deliveryPayer"] = (settings.ozon_logistics_delivery_payer or "store").strip() or "store"
+            delivery_snapshot["ozonLogistics"] = ol_d
 
         total_expected = expected_total_approx(goods_sub, delivery_charge, recipient_fee)
         if int(validated_data["totalApprox"]) != total_expected:
@@ -1044,6 +1049,12 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "ozonLogistics": {
                 "enabled": obj.ozon_logistics_enabled,
                 "buyerNote": obj.ozon_logistics_buyer_note,
+                "deliveryPayer": (obj.ozon_logistics_delivery_payer or "store").strip() or "store",
+                "deliveryPayerLabel": (
+                    "Доставка за счёт покупателя"
+                    if (obj.ozon_logistics_delivery_payer or "").strip() == "buyer"
+                    else "Доставка за наш счёт"
+                ),
             },
             "ozonPay": {
                 "enabled": obj.ozon_pay_enabled,

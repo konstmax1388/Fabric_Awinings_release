@@ -1304,10 +1304,21 @@ class SiteSettings(models.Model):
         help_text="Используется, если выбран режим «Процент от суммы товаров».",
     )
 
+    class OzonLogisticsDeliveryPayer(models.TextChoices):
+        STORE = "store", "Доставка за счёт магазина"
+        BUYER = "buyer", "Доставка за счёт покупателя"
+
     ozon_logistics_enabled = models.BooleanField(
         "Логистика Ozon: показывать способ доставки",
         default=False,
         help_text="Доступна только онлайн-оплата через Ozon Pay (если эквайринг включён). Подключение кабинета — по инструкции Ozon.",
+    )
+    ozon_logistics_delivery_payer = models.CharField(
+        "Логистика Ozon: кто оплачивает доставку (на витрине)",
+        max_length=16,
+        choices=OzonLogisticsDeliveryPayer.choices,
+        default=OzonLogisticsDeliveryPayer.STORE,
+        help_text="Показ текста на оформлении заказа. Итог с доставкой считает Ozon Pay при оплате.",
     )
     ozon_logistics_buyer_note = models.TextField(
         "Логистика Ozon: текст для покупателя",

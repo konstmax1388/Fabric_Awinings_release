@@ -155,6 +155,7 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     ),
     "checkout_ozon_logistics": (
         "ozon_logistics_enabled",
+        "ozon_logistics_delivery_payer",
         "ozon_logistics_buyer_note",
     ),
     "checkout_ozon_pay": (

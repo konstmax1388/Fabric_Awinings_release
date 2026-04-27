@@ -956,6 +956,14 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     const z = ol as Record<string, unknown>
     if (typeof z.enabled === 'boolean') ozonLogistics.enabled = z.enabled
     if (typeof z.buyerNote === 'string') ozonLogistics.buyerNote = z.buyerNote
+    if (z.deliveryPayer === 'store' || z.deliveryPayer === 'buyer') ozonLogistics.deliveryPayer = z.deliveryPayer
+    if (typeof z.deliveryPayerLabel === 'string' && z.deliveryPayerLabel.trim()) {
+      ozonLogistics.deliveryPayerLabel = z.deliveryPayerLabel.trim()
+    } else if (ozonLogistics.deliveryPayer === 'buyer') {
+      ozonLogistics.deliveryPayerLabel = 'Доставка за счёт покупателя'
+    } else {
+      ozonLogistics.deliveryPayerLabel = 'Доставка за наш счёт'
+    }
   }
 
   const ozonPay = { ...DEFAULT_CHECKOUT_PUBLIC.ozonPay }
@@ -971,8 +979,8 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     const label = CHECKOUT_DELIVERY_FALLBACK_LABELS[id] || id
     deliveryOptions.push({ id, label })
   }
-  if (cdek.enabled) ensureDeliveryRow('cdek')
   if (ozonLogistics.enabled) ensureDeliveryRow('ozon_logistics')
+  if (cdek.enabled) ensureDeliveryRow('cdek')
 
   const ensurePaymentRow = (deliveryId: string) => {
     let methods = paymentMatrix[deliveryId]

@@ -1536,6 +1536,23 @@ def test_ozon_webhook_extorderid_alias(_mock_sign, client):
 
 
 @pytest.mark.django_db
+def test_delivery_options_ozon_logistics_before_cdek():
+    from api.models import SiteSettings
+    from api.services.checkout_rules import delivery_options_public
+
+    s = SiteSettings.get_solo()
+    s.checkout_pickup_enabled = True
+    s.cdek_enabled = True
+    s.ozon_logistics_enabled = True
+    s.save(
+        update_fields=["checkout_pickup_enabled", "cdek_enabled", "ozon_logistics_enabled"],
+    )
+    opts = delivery_options_public(s)
+    ids = [x["id"] for x in opts]
+    assert ids.index("ozon_logistics") < ids.index("cdek")
+
+
+@pytest.mark.django_db
 def test_password_deadline_overdue_blocks_orders_not_me_or_change_password(client):
     from datetime import timedelta
 

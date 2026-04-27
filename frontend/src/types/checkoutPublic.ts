@@ -42,6 +42,10 @@ export type CheckoutPublicConfig = {
   ozonLogistics: {
     enabled: boolean
     buyerNote: string
+    /** `store` — доставка за магазин, `buyer` — за покупателя (текст на витрине) */
+    deliveryPayer: 'store' | 'buyer'
+    /** Готовая строка с витрины: «Доставка за наш счёт» / «Доставка за счёт покупателя» */
+    deliveryPayerLabel: string
   }
   ozonPay: {
     enabled: boolean
@@ -96,6 +100,8 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
   ozonLogistics: {
     enabled: false,
     buyerNote: '',
+    deliveryPayer: 'store',
+    deliveryPayerLabel: 'Доставка за наш счёт',
   },
   ozonPay: {
     enabled: false,

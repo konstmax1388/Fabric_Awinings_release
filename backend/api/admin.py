@@ -1762,7 +1762,11 @@ class SiteSettingsAdmin(ModelAdmin):
         ss_fieldset(
             "checkout_ozon_logistics",
             {
-                "fields": ("ozon_logistics_enabled", "ozon_logistics_buyer_note"),
+                "fields": (
+                    "ozon_logistics_enabled",
+                    "ozon_logistics_delivery_payer",
+                    "ozon_logistics_buyer_note",
+                ),
                 "description": _(
                     "Доставка через Ozon Логистику: подключение в кабинете продавца Ozon. "
                     "На витрине доступна только вместе с онлайн-оплатой (Ozon Pay)."
