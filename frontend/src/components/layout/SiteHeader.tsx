@@ -270,10 +270,10 @@ export function SiteHeader() {
                   </NavLink>
                   <ul
                     role="menu"
-                    className="invisible pointer-events-none absolute left-0 top-full z-[200] min-w-[14rem] origin-top -mt-1 scale-95 pt-2.5 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100"
+                    className="invisible pointer-events-none absolute left-0 top-full z-[200] min-w-[17.5rem] origin-top -mt-1 scale-95 pt-2.5 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100"
                   >
                     <li
-                      className="fabric-liquid-glass-soft overflow-hidden rounded-xl py-0.5 ring-1 ring-border/40 shadow-lg shadow-black/20"
+                      className="overflow-hidden rounded-xl border border-border bg-bg-base py-1.5 shadow-lg shadow-black/25"
                       role="none"
                     >
                       {item.children.map((c) => (
@@ -282,7 +282,7 @@ export function SiteHeader() {
                           role="menuitem"
                           to={c.to}
                           className={({ isActive }) =>
-                            `block border-l-2 px-3.5 py-2.5 font-body text-sm transition-colors ${
+                            `block border-l-2 px-4 py-3 font-body text-base leading-snug transition-colors ${
                               isActive
                                 ? 'border-accent bg-accent/10 font-medium text-text'
                                 : 'border-transparent text-text-muted hover:border-border/80 hover:bg-border/20 hover:text-text'
