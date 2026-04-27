@@ -81,9 +81,10 @@ export function SiteHeader() {
   const location = useLocation()
   const headerRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
-  /** Мобилка: раскрытие подменю у пунктов с `children` (напр. «О нас»). */
-  const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<Record<string, boolean>>({})
+  /** Мобилка: какой пункт с `children` раскрыт (один за раз, null — все свернуты). */
+  const [mobileExpandedKey, setMobileExpandedKey] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const mobileMenuWasOpenRef = useRef(false)
   const openHeaderSearch = useCallback(() => {
     setOpen(false)
     setSearchOpen(true)
@@ -140,16 +141,23 @@ export function SiteHeader() {
   )
 
   useEffect(() => {
-    if (!open) return
-    setMobileSubmenuOpen((prev) => {
-      const next = { ...prev }
+    if (!open) {
+      mobileMenuWasOpenRef.current = false
+      setMobileExpandedKey(null)
+      return
+    }
+    const justOpened = !mobileMenuWasOpenRef.current
+    mobileMenuWasOpenRef.current = true
+    if (justOpened) {
+      let auto: string | null = null
       for (const item of mainNavItems) {
         if (item.children?.length && mainNavBranchActive(location.pathname, item)) {
-          next[item.key] = true
+          auto = item.key
+          break
         }
       }
-      return next
-    })
+      setMobileExpandedKey(auto)
+    }
   }, [open, location.pathname, mainNavItems])
 
   useEffect(() => {
@@ -234,13 +242,13 @@ export function SiteHeader() {
         </Link>
 
         <nav
-          className="no-scrollbar hidden min-w-0 overflow-y-visible md:mx-0 md:flex md:max-w-none md:justify-center"
+          className="no-scrollbar hidden min-w-0 overflow-y-visible md:mx-0 md:flex md:max-w-none md:justify-center md:overflow-visible"
           aria-label={mainMenuAria}
         >
-          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5 overflow-x-auto overflow-y-visible px-0.5 text-sm [scrollbar-width:none] sm:gap-2.5 md:gap-3 [&::-webkit-scrollbar]:hidden lg:gap-4">
+          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5 overflow-x-auto overflow-y-visible px-0.5 text-sm [scrollbar-width:none] sm:gap-2.5 md:overflow-visible md:gap-3 [&::-webkit-scrollbar]:hidden lg:gap-4">
             {mainNavItems.map((item: MainNavItem) =>
               item.children?.length ? (
-                <div key={item.key} className="group relative shrink-0">
+                <div key={item.key} className="group relative z-[60] shrink-0">
                   <NavLink
                     to={item.to}
                     className={({ isActive }) =>
@@ -250,10 +258,10 @@ export function SiteHeader() {
                     }
                     aria-haspopup="menu"
                   >
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1.5">
                       {item.label}
                       <span
-                        className="text-[9px] leading-none text-text-muted/90 transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+                        className="text-[10px] leading-none text-text-muted transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
                         aria-hidden
                       >
                         ▾
@@ -262,7 +270,7 @@ export function SiteHeader() {
                   </NavLink>
                   <ul
                     role="menu"
-                    className="invisible pointer-events-none absolute left-0 top-full z-[100] min-w-[14rem] origin-top scale-95 pt-1.5 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100"
+                    className="invisible pointer-events-none absolute left-0 top-full z-[200] min-w-[14rem] origin-top -mt-1 scale-95 pt-2.5 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100"
                   >
                     <li
                       className="fabric-liquid-glass-soft overflow-hidden rounded-xl py-0.5 ring-1 ring-border/40 shadow-lg shadow-black/20"
@@ -438,23 +446,20 @@ export function SiteHeader() {
                 >
                   {mainNavItems.map((item: MainNavItem) =>
                     item.children?.length ? (
-                      <div
-                        key={item.key}
-                        className="fabric-liquid-glass-soft overflow-hidden rounded-2xl border border-border/50 ring-1 ring-border/35"
-                      >
+                      <div key={item.key} className="flex min-w-0 flex-col">
                         <button
                           type="button"
-                          className="flex w-full items-center justify-between gap-2 px-4 py-3.5 text-left font-body text-[17px] font-semibold tracking-wide transition-colors hover:bg-border/20"
-                          aria-expanded={!!mobileSubmenuOpen[item.key]}
-                          onClick={() =>
-                            setMobileSubmenuOpen((m) => ({ ...m, [item.key]: !m[item.key] }))
-                          }
+                          className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3.5 text-left font-body text-[17px] font-semibold tracking-wide text-text transition-colors hover:bg-primary/35"
+                          aria-expanded={mobileExpandedKey === item.key}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setMobileExpandedKey((k) => (k === item.key ? null : item.key))
+                          }}
                         >
                           <span
                             className={
-                              mainNavBranchActive(location.pathname, item)
-                                ? 'text-accent'
-                                : 'text-text'
+                              mainNavBranchActive(location.pathname, item) ? 'text-accent' : 'text-text'
                             }
                           >
                             {item.label}
@@ -462,27 +467,23 @@ export function SiteHeader() {
                           <span
                             className={[
                               'shrink-0 text-[10px] leading-none text-text-muted transition-transform duration-200',
-                              mobileSubmenuOpen[item.key] ? 'rotate-180' : '',
+                              mobileExpandedKey === item.key ? 'rotate-180' : '',
                             ].join(' ')}
                             aria-hidden
                           >
                             ▾
                           </span>
                         </button>
-                        {mobileSubmenuOpen[item.key] ? (
-                          <div
-                            className="border-t border-border/50 bg-bg-base/40 px-2 pb-2 pt-0"
-                            role="region"
-                            aria-label={item.label}
-                          >
+                        {mobileExpandedKey === item.key ? (
+                          <div className="pl-1 pt-0.5" role="region" aria-label={item.label}>
                             {item.children.map((c) => (
                               <NavLink
                                 key={c.key}
                                 to={c.to}
                                 className={({ isActive }) =>
-                                  `block rounded-xl px-3 py-2.5 font-body text-[16px] font-medium tracking-wide transition-colors ${
+                                  `mb-0.5 block rounded-xl px-3 py-2.5 font-body text-[16px] font-medium tracking-wide transition-colors ${
                                     isActive
-                                      ? 'bg-accent/12 text-accent ring-1 ring-accent/25'
+                                      ? 'bg-accent/12 text-accent'
                                       : 'text-text-muted hover:bg-primary/50 hover:text-text'
                                   }`
                                 }
