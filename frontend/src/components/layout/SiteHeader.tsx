@@ -81,6 +81,8 @@ export function SiteHeader() {
   const location = useLocation()
   const headerRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
+  /** Мобилка: раскрытие подменю у пунктов с `children` (напр. «О нас»). */
+  const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState<Record<string, boolean>>({})
   const [searchOpen, setSearchOpen] = useState(false)
   const openHeaderSearch = useCallback(() => {
     setOpen(false)
@@ -136,6 +138,19 @@ export function SiteHeader() {
     () => buildMainNavItems(headerNavigation, home?.ui, { portfolioEnabled, staticPages }),
     [headerNavigation, home?.ui, portfolioEnabled, staticPages],
   )
+
+  useEffect(() => {
+    if (!open) return
+    setMobileSubmenuOpen((prev) => {
+      const next = { ...prev }
+      for (const item of mainNavItems) {
+        if (item.children?.length && mainNavBranchActive(location.pathname, item)) {
+          next[item.key] = true
+        }
+      }
+      return next
+    })
+  }, [open, location.pathname, mainNavItems])
 
   useEffect(() => {
     const root = document.documentElement
@@ -247,10 +262,10 @@ export function SiteHeader() {
                   </NavLink>
                   <ul
                     role="menu"
-                    className="invisible absolute left-0 top-full z-[100] min-w-[13.5rem] origin-top scale-95 pt-2 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:visible group-hover:scale-100 group-hover:opacity-100"
+                    className="invisible pointer-events-none absolute left-0 top-full z-[100] min-w-[14rem] origin-top scale-95 pt-1.5 opacity-0 transition-[opacity,visibility,transform] duration-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:scale-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:scale-100 group-hover:opacity-100"
                   >
                     <li
-                      className="overflow-hidden rounded-2xl border border-border/70 bg-bg-base/95 py-1.5 shadow-2xl shadow-black/20 ring-1 ring-border/35 backdrop-blur-md dark:shadow-black/50"
+                      className="fabric-liquid-glass-soft overflow-hidden rounded-xl py-0.5 ring-1 ring-border/40 shadow-lg shadow-black/20"
                       role="none"
                     >
                       {item.children.map((c) => (
@@ -259,10 +274,10 @@ export function SiteHeader() {
                           role="menuitem"
                           to={c.to}
                           className={({ isActive }) =>
-                            `block px-4 py-2.5 font-body text-sm transition-colors ${
+                            `block border-l-2 px-3.5 py-2.5 font-body text-sm transition-colors ${
                               isActive
-                                ? 'bg-primary/40 font-medium text-accent'
-                                : 'text-text hover:bg-primary/50 hover:text-accent'
+                                ? 'border-accent bg-accent/10 font-medium text-text'
+                                : 'border-transparent text-text-muted hover:border-border/80 hover:bg-border/20 hover:text-text'
                             }`
                           }
                         >
@@ -423,25 +438,61 @@ export function SiteHeader() {
                 >
                   {mainNavItems.map((item: MainNavItem) =>
                     item.children?.length ? (
-                      <div key={item.key} className="flex flex-col gap-1.5">
-                        <NavLink
-                          to={item.to}
-                          end={item.end}
-                          className={mobileNavLinkClass}
-                          onClick={() => setOpen(false)}
+                      <div
+                        key={item.key}
+                        className="fabric-liquid-glass-soft overflow-hidden rounded-2xl border border-border/50 ring-1 ring-border/35"
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between gap-2 px-4 py-3.5 text-left font-body text-[17px] font-semibold tracking-wide transition-colors hover:bg-border/20"
+                          aria-expanded={!!mobileSubmenuOpen[item.key]}
+                          onClick={() =>
+                            setMobileSubmenuOpen((m) => ({ ...m, [item.key]: !m[item.key] }))
+                          }
                         >
-                          {item.label}
-                        </NavLink>
-                        {item.children.map((c) => (
-                          <NavLink
-                            key={c.key}
-                            to={c.to}
-                            className="block rounded-2xl pl-6 pr-4 font-body text-[16px] font-medium tracking-wide text-text-muted transition-colors hover:bg-primary/70"
-                            onClick={() => setOpen(false)}
+                          <span
+                            className={
+                              mainNavBranchActive(location.pathname, item)
+                                ? 'text-accent'
+                                : 'text-text'
+                            }
                           >
-                            {c.label}
-                          </NavLink>
-                        ))}
+                            {item.label}
+                          </span>
+                          <span
+                            className={[
+                              'shrink-0 text-[10px] leading-none text-text-muted transition-transform duration-200',
+                              mobileSubmenuOpen[item.key] ? 'rotate-180' : '',
+                            ].join(' ')}
+                            aria-hidden
+                          >
+                            ▾
+                          </span>
+                        </button>
+                        {mobileSubmenuOpen[item.key] ? (
+                          <div
+                            className="border-t border-border/50 bg-bg-base/40 px-2 pb-2 pt-0"
+                            role="region"
+                            aria-label={item.label}
+                          >
+                            {item.children.map((c) => (
+                              <NavLink
+                                key={c.key}
+                                to={c.to}
+                                className={({ isActive }) =>
+                                  `block rounded-xl px-3 py-2.5 font-body text-[16px] font-medium tracking-wide transition-colors ${
+                                    isActive
+                                      ? 'bg-accent/12 text-accent ring-1 ring-accent/25'
+                                      : 'text-text-muted hover:bg-primary/50 hover:text-text'
+                                  }`
+                                }
+                                onClick={() => setOpen(false)}
+                              >
+                                {c.label}
+                              </NavLink>
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     ) : (
                       <NavLink

@@ -1,4 +1,4 @@
-import { animate, useInView, useReducedMotion } from 'framer-motion'
+import { animate, motion, useInView, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 type NumericSpec = { target: number; format: (n: number) => string }
@@ -59,17 +59,18 @@ export function AboutFactValue({ value, className }: Props) {
     }
   }, [isInView, reduceMotion, spec])
 
-  if (!spec) {
-    return (
-      <p ref={ref} className={className}>
-        {value}
-      </p>
-    )
-  }
+  const showVal = !spec || reduceMotion || isInView
+  const countStr = spec ? spec.format(n) : value
 
   return (
-    <p ref={ref} className={className}>
-      {spec.format(n)}
-    </p>
+    <motion.p
+      ref={ref}
+      className={className}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={showVal ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {countStr}
+    </motion.p>
   )
 }
