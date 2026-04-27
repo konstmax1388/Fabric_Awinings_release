@@ -3,8 +3,15 @@
 
 Перед прогоном на проде сделайте бэкап БД. Повторный запуск перезаписывает те же поля.
 
+На сервере с MySQL сначала подгрузите окружение (как при деплое), иначе Django может взять SQLite без миграций::
+
+  cd /path/to/project && set -a && source .env && set +a && cd backend && source .venv/bin/activate
   python manage.py apply_fabrika_site_identity
+
+Локально::
+
   python manage.py apply_fabrika_site_identity --dry-run
+  python manage.py apply_fabrika_site_identity
   python manage.py apply_fabrika_site_identity --only-site-settings
   python manage.py apply_fabrika_site_identity --only-home-meta
 """
