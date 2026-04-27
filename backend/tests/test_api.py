@@ -427,6 +427,48 @@ def test_ozon_create_order_with_logistics_sends_items_and_delivery():
     assert b["amount"]["value"] == "100000"
 
 
+@pytest.mark.django_db
+def test_ozon_create_order_sends_receipt_email_and_enables_fiscalization():
+    from api.models import CartOrder, SiteSettings
+    from api.services import ozon_acquiring as ozon_mod
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+
+    captured: dict = {}
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        captured["body"] = body
+        return {"order": {"payLink": "https://pay.test/x", "id": "o1"}}
+
+    with patch.dict(
+        os.environ,
+        {
+            "OZON_PAY_API_BASE_URL": "https://acq.test",
+            "OZON_PAY_ENABLE_FISCALIZATION": "",
+        },
+        clear=False,
+    ):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(
+                order_ref="E1",
+                total_approx=10,
+                settings=s,
+                delivery_method=CartOrder.DeliveryMethod.PICKUP,
+                cart_lines=[],
+                receipt_email="buyer@example.com",
+                fiscalization_phone="+79990001122",
+            )
+    assert out.get("redirectUrl") == "https://pay.test/x"
+    b = captured["body"]
+    assert b.get("receiptEmail") == "buyer@example.com"
+    assert b.get("enableFiscalization") is True
+    assert b.get("fiscalizationPhone") == "+79990001122"
+
+
 def test_ozon_create_order_signature_matches_documentation():
     from api.services.ozon_acquiring_sign import request_sign_create_order
 

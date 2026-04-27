@@ -24,12 +24,15 @@ def run_ozon_pay_create_order_test() -> dict[str, Any]:
         amount_rub = 10
     amount_rub = max(1, min(1_000_000, amount_rub))
 
+    # Для песочницы: OZON_PAY_TEST_RECEIPT_EMAIL — чтобы в createOrder ушла receiptEmail и сработал чек.
+    test_email = (os.environ.get("OZON_PAY_TEST_RECEIPT_EMAIL") or "").strip()
+
     return try_begin_ozon_pay(
         order_ref=order_ref,
         total_approx=amount_rub,
         settings=s,
         delivery_method=CartOrder.DeliveryMethod.PICKUP,
         cart_lines=[],
-        receipt_email="",
+        receipt_email=test_email,
         fiscalization_phone="",
     )

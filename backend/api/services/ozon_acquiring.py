@@ -210,18 +210,23 @@ def try_begin_ozon_pay(
     if use_ozon_logistics:
         body["deliverySettings"] = {"isEnabled": True}
 
+    # Чек/фискализация: receiptEmail — куда уходит электронный чек; для включения «Онлайн-чек»
+    # в типовом сценарии нужен enableFiscalization=true (см. docs.ozon.ru/api/acquiring).
     email = (receipt_email or "").strip()
     if email:
         body["receiptEmail"] = email
     phone = (fiscalization_phone or "").strip()
-    if phone and use_ozon_logistics:
+    if phone:
         body["fiscalizationPhone"] = phone
 
     enable_fiscal = _env("OZON_PAY_ENABLE_FISCALIZATION", "").lower()
-    if enable_fiscal in ("true", "1", "yes"):
-        body["enableFiscalization"] = True
-    elif enable_fiscal in ("false", "0", "no"):
+    if enable_fiscal in ("false", "0", "no"):
         body["enableFiscalization"] = False
+    elif enable_fiscal in ("true", "1", "yes"):
+        body["enableFiscalization"] = True
+    elif email:
+        # По умолчанию: если почта для чека указана — запрашиваем фискализацию, пока env явно не отключит.
+        body["enableFiscalization"] = True
 
     url = f"{api_base}/v1/createOrder"
 
