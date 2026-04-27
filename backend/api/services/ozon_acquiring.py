@@ -1,7 +1,8 @@
 """
 Ozon Pay Checkout — Ozon Acquiring API: POST /v1/createOrder + подпись requestSign.
 
-При доставке «Логистика Ozon» добавляются deliverySettings.isEnabled и MODE_FULL + items.
+При доставке «Логистика Ozon» — deliverySettings.isEnabled и MODE_FULL + items.
+В остальных режимах (MODE_SHORTENED) в createOrder также передаётся items (одна позиция или корзина), т.к. payapi валидирует непустой состав и сумму ≥ 1 ₽.
 
 Документация: https://docs.ozon.ru/api/acquiring/
 """
@@ -150,9 +151,29 @@ def try_begin_ozon_pay(
                 total_client_kop,
             )
     else:
+        # Без доставки Ozon (MODE_SHORTENED) API всё равно ждёт непустой data.items и сумму ≥ 1 ₽,
+        # иначе 400: «стоимость заказа меньше 1.00 рубля» / «не выбраны товары или услуги».
         mode = _env("OZON_PAY_ORDER_MODE", "MODE_SHORTENED")
-        amount_kopecks = max(0, int(total_approx)) * 100
-        items = None
+        client_k = max(0, int(total_approx)) * 100
+        if lines:
+            line_k = total_kopecks_from_cart_lines(lines)
+            if line_k >= 100:
+                items = build_create_order_items(order_ref=order_ref, lines=lines)
+                amount_kopecks = line_k
+                if abs(line_k - client_k) > 100:
+                    logger.warning(
+                        "Ozon createOrder: сумма по строкам (%s коп.) расходится с totalApprox (%s коп.)",
+                        line_k,
+                        client_k,
+                    )
+            else:
+                if client_k < 100 and line_k < 100:
+                    logger.warning("Ozon createOrder: пустая сумма по строкам, подставляем 1 ₽ (MODE_SHORTENED)")
+                amount_kopecks = max(client_k, 100)
+                items = synthetic_single_item_order(order_ref=order_ref, amount_kopecks=amount_kopecks)
+        else:
+            amount_kopecks = max(client_k, 100)
+            items = synthetic_single_item_order(order_ref=order_ref, amount_kopecks=amount_kopecks)
 
     amount_value_str = str(amount_kopecks)
 
@@ -185,9 +206,9 @@ def try_begin_ozon_pay(
     if notif_url:
         body["notificationUrl"] = notif_url
 
+    body["items"] = items
     if use_ozon_logistics:
         body["deliverySettings"] = {"isEnabled": True}
-        body["items"] = items
 
     email = (receipt_email or "").strip()
     if email:

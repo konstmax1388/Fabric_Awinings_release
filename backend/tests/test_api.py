@@ -359,6 +359,8 @@ def test_ozon_pay_create_order_mocked():
     def fake_post_json(url, body, headers=None, **kwargs):
         assert "/v1/createOrder" in url
         assert body.get("requestSign")
+        assert body.get("items") and len(body["items"]) >= 1
+        assert int(body["amount"]["value"]) >= 100
         return {"order": {"payLink": "https://pay.example/o", "id": "oz-id-1"}}
 
     with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": "https://acq.test"}, clear=False):
