@@ -259,6 +259,9 @@ export type HomePayload = {
     buyOnMarketplacesMobile?: string
     navHome?: string
     navCatalog?: string
+    navAbout?: string
+    /** Слаг статичной страницы «О нас» (по умолчанию o-nas), см. /api/static-pages/ */
+    aboutPageSlug?: string
     navPortfolio?: string
     navContacts?: string
     navBlog?: string

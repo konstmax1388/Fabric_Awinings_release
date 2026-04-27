@@ -8,7 +8,7 @@ from django.contrib.admin import display
 from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group, User
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms.models import modelform_factory
 from django.http import Http404
 from django.http import JsonResponse
@@ -797,9 +797,25 @@ class BlogPostAdmin(ModelAdmin):
 
 
 class StaticPageAdminForm(forms.ModelForm):
+    about_layout_json = forms.CharField(
+        label=_("Макет «О нас» (JSON)"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 26,
+                "class": "vLargeTextField",
+                "style": "font-family:ui-monospace,Consolas,monospace;font-size:13px",
+            }
+        ),
+        help_text=_(
+            "Пусто — на сайте только HTML из «Содержимое» ниже. "
+            "Иначе JSON с version: 1: блоки intro, featureBullets, spotlight, manufacturer, facts, reviewsStrip (см. подсказку в полеset)."
+        ),
+    )
+
     class Meta:
         model = StaticPage
-        fields = "__all__"
+        exclude = ("about_payload",)
         widgets = {
             "body": forms.Textarea(
                 attrs={
@@ -809,6 +825,34 @@ class StaticPageAdminForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "about_layout_json" in self.fields:
+            inst = self.instance
+            if getattr(inst, "pk", None) and isinstance(getattr(inst, "about_payload", None), dict) and inst.about_payload:
+                self.initial["about_layout_json"] = json.dumps(
+                    inst.about_payload, ensure_ascii=False, indent=2
+                )
+
+    def clean_about_layout_json(self):
+        raw = (self.cleaned_data.get("about_layout_json") or "").strip()
+        if not raw:
+            return {}
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise ValidationError(_("Некорректный JSON: %(err)s") % {"err": str(e)}) from e
+        if not isinstance(data, dict):
+            raise ValidationError(_("Корнем JSON должен быть объект."))
+        return data
+
+    def save(self, commit=True):
+        layout = self.cleaned_data.get("about_layout_json")
+        if not isinstance(layout, dict):
+            layout = {}
+        self.instance.about_payload = layout
+        return super().save(commit=commit)
 
     class Media:
         js = (
@@ -852,9 +896,22 @@ class StaticPageAdmin(ModelAdmin):
             },
         ),
         (
+            _("Макет «О нас» (витрина)"),
+            {
+                "fields": ("about_layout_json",),
+                "description": _(
+                    "Блоки JSON: version, intro (title, titleAccent, paragraphs, imageUrl), featureBullets, "
+                    "spotlight, spotlightGallery, manufacturer (imageUrl, videoUrl, legalText, …), metrics, "
+                    "facts (фон backgroundUrl, items), reviewsStrip (карусель отзывов). "
+                    "Пустое поле — используется только HTML ниже."
+                ),
+            },
+        ),
+        (
             _("Контент"),
             {
                 "fields": ("body", "updated_at"),
+                "description": _("Если задан JSON макета, этот HTML можно оставить для справки или запасного варианта."),
             },
         ),
     )
@@ -2390,6 +2447,9 @@ class HomePageContentAdmin(ModelAdmin):
                     "ui_buy_marketplaces_mobile",
                     "ui_nav_home",
                     "ui_nav_catalog",
+                    "ui_nav_about",
+                    "ui_about_page_slug",
+                    "ui_nav_reviews",
                     "ui_nav_portfolio",
                     "ui_nav_contacts",
                     "ui_nav_blog",

@@ -14,7 +14,7 @@ from .validators import (
     normalize_ru_phone_optional,
     reject_honeypot,
 )
-from .html_sanitize import sanitize_html_fragment
+from .html_sanitize import sanitize_about_payload, sanitize_html_fragment
 from .models import (
     BlogPost,
     CalculatorLead,
@@ -1042,6 +1042,7 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
     pageTitle = serializers.CharField(source="meta_title", read_only=True)
     metaDescription = serializers.CharField(source="meta_description", read_only=True)
     bodyHtml = serializers.SerializerMethodField()
+    aboutPayload = serializers.SerializerMethodField()
     showInHeader = serializers.BooleanField(source="show_in_header", read_only=True)
     showInFooter = serializers.BooleanField(source="show_in_footer", read_only=True)
     headerLinkLabel = serializers.CharField(source="header_link_label", read_only=True)
@@ -1058,6 +1059,7 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
             "pageTitle",
             "metaDescription",
             "bodyHtml",
+            "aboutPayload",
             "showInHeader",
             "showInFooter",
             "headerLinkLabel",
@@ -1071,6 +1073,10 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
 
     def get_bodyHtml(self, obj: StaticPage) -> str:
         return sanitize_html_fragment(obj.body or "")
+
+    def get_aboutPayload(self, obj: StaticPage) -> dict[str, object]:
+        raw = obj.about_payload if isinstance(obj.about_payload, dict) else {}
+        return sanitize_about_payload(raw)
 
 
 class RegisterSerializer(serializers.Serializer):

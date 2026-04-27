@@ -3,9 +3,20 @@ import { faCircleUser, faSun } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { buildMainNavItems, type MainNavItem } from '../../lib/headerNav'
+
+function mainNavLinkBaseClass(): string {
+  return 'shrink-0 font-body text-sm font-medium tracking-wide transition-colors first:pl-0 last:pr-0 sm:text-base md:text-sm lg:text-base'
+}
+
+function mainNavBranchActive(pathname: string, item: MainNavItem): boolean {
+  if (item.end) return pathname === item.to
+  if (pathname === item.to) return true
+  if (item.to !== '/' && pathname.startsWith(`${item.to}/`)) return true
+  return item.children?.some((c) => pathname === c.to || pathname.startsWith(`${c.to}/`)) ?? false
+}
 import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
 import { MagneticHover } from '../motion/MagneticHover'
 import { useCart } from '../../hooks/useCart'
@@ -67,6 +78,7 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
 }
 
 export function SiteHeader() {
+  const location = useLocation()
   const headerRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -210,21 +222,63 @@ export function SiteHeader() {
           className="no-scrollbar hidden min-w-0 overflow-y-visible md:mx-0 md:flex md:max-w-none md:justify-center"
           aria-label={mainMenuAria}
         >
-          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5 overflow-x-auto px-0.5 text-sm [scrollbar-width:none] sm:gap-2.5 md:gap-3 [&::-webkit-scrollbar]:hidden lg:gap-4">
-            {mainNavItems.map((item: MainNavItem) => (
-              <NavLink
-                key={item.key}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `shrink-0 font-body text-sm font-medium tracking-wide transition-colors first:pl-0 last:pr-0 sm:text-base md:text-sm lg:text-base ${
-                    isActive ? 'text-accent' : 'text-text hover:text-accent'
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
+          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5 overflow-x-auto overflow-y-visible px-0.5 text-sm [scrollbar-width:none] sm:gap-2.5 md:gap-3 [&::-webkit-scrollbar]:hidden lg:gap-4">
+            {mainNavItems.map((item: MainNavItem) =>
+              item.children?.length ? (
+                <div key={item.key} className="group relative shrink-0">
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `${mainNavLinkBaseClass()} ${
+                        isActive || mainNavBranchActive(location.pathname, item) ? 'text-accent' : 'text-text hover:text-accent'
+                      }`
+                    }
+                    aria-haspopup="menu"
+                  >
+                    <span className="inline-flex items-center gap-0.5">
+                      {item.label}
+                      <span className="text-[10px] leading-none text-text-muted opacity-80" aria-hidden>
+                        ▾
+                      </span>
+                    </span>
+                  </NavLink>
+                  <ul
+                    role="menu"
+                    className="invisible absolute left-0 top-full z-[100] min-w-[12rem] pt-1 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+                  >
+                    <li className="overflow-hidden rounded-xl border border-border bg-bg-base py-1.5 shadow-lg" role="none">
+                      {item.children.map((c) => (
+                        <NavLink
+                          key={c.key}
+                          role="menuitem"
+                          to={c.to}
+                          className={({ isActive }) =>
+                            `block px-4 py-2.5 font-body text-sm ${
+                              isActive ? 'bg-primary/50 text-accent' : 'text-text hover:bg-primary/50 hover:text-accent'
+                            }`
+                          }
+                        >
+                          {c.label}
+                        </NavLink>
+                      ))}
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <NavLink
+                  key={item.key}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `${mainNavLinkBaseClass()} ${
+                      isActive ? 'text-accent' : 'text-text hover:text-accent'
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ),
+            )}
           </div>
         </nav>
 
@@ -359,17 +413,40 @@ export function SiteHeader() {
                   className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain px-4 py-5"
                   aria-label={mobileMenuAria}
                 >
-                  {mainNavItems.map((item: MainNavItem) => (
-                    <NavLink
-                      key={item.key}
-                      to={item.to}
-                      end={item.end}
-                      className={mobileNavLinkClass}
-                      onClick={() => setOpen(false)}
-                    >
-                      {item.label}
-                    </NavLink>
-                  ))}
+                  {mainNavItems.map((item: MainNavItem) =>
+                    item.children?.length ? (
+                      <div key={item.key} className="flex flex-col gap-1.5">
+                        <NavLink
+                          to={item.to}
+                          end={item.end}
+                          className={mobileNavLinkClass}
+                          onClick={() => setOpen(false)}
+                        >
+                          {item.label}
+                        </NavLink>
+                        {item.children.map((c) => (
+                          <NavLink
+                            key={c.key}
+                            to={c.to}
+                            className="block rounded-2xl pl-6 pr-4 font-body text-[16px] font-medium tracking-wide text-text-muted transition-colors hover:bg-primary/70"
+                            onClick={() => setOpen(false)}
+                          >
+                            {c.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    ) : (
+                      <NavLink
+                        key={item.key}
+                        to={item.to}
+                        end={item.end}
+                        className={mobileNavLinkClass}
+                        onClick={() => setOpen(false)}
+                      >
+                        {item.label}
+                      </NavLink>
+                    ),
+                  )}
                   <NavLink to="/cart" className={mobileNavLinkClass} onClick={() => setOpen(false)}>
                     {navCartLabel}
                   </NavLink>

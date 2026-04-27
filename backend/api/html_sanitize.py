@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+from copy import deepcopy
+from typing import Any
 
 import bleach
 
@@ -122,3 +124,33 @@ def sanitize_html_fragment(value: str) -> str:
         callbacks=[bleach.callbacks.nofollow, bleach.callbacks.target_blank],
         skip_tags=["pre", "code"],
     )
+
+
+def sanitize_about_payload(data: Any) -> dict[str, Any]:
+    """Контент макета «О нас» из JSON: длина строк, HTML через sanitize_html_fragment, списки ограничены."""
+    if not isinstance(data, dict):
+        return {}
+    return _sanitize_about_value(deepcopy(data))
+
+
+def _sanitize_about_value(obj: Any, depth: int = 0) -> Any:
+    if depth > 20:
+        return None
+    if isinstance(obj, dict):
+        return {str(k)[:100]: _sanitize_about_value(v, depth + 1) for k, v in list(obj.items())[:80]}
+    if isinstance(obj, list):
+        return [_sanitize_about_value(x, depth + 1) for x in obj[:60]]
+    if isinstance(obj, str):
+        t = (obj or "").strip()
+        if len(t) > 40000:
+            t = t[:40000]
+        if "<" in t and ">" in t:
+            return sanitize_html_fragment(t)
+        return t
+    if isinstance(obj, bool) or obj is None:
+        return obj
+    if isinstance(obj, int):
+        return obj
+    if isinstance(obj, float):
+        return obj
+    return str(obj)[:2000]

@@ -233,6 +233,7 @@ class ProductAdminForm(forms.ModelForm):
 _HEADER_NAV_SLUGS: tuple[str, ...] = (
     "home",
     "catalog",
+    "about",
     "portfolio",
     "reviews",
     "blog",
@@ -241,6 +242,7 @@ _HEADER_NAV_SLUGS: tuple[str, ...] = (
 _HEADER_NAV_LABELS: dict[str, str] = {
     "home": "Главная",
     "catalog": "Каталог",
+    "about": "О нас",
     "portfolio": "Портфолио",
     "reviews": "Отзывы",
     "blog": "Блог",
@@ -285,6 +287,11 @@ class SiteSettingsHeaderNavMixin:
                 initial=(row.get("label") or "") if isinstance(row.get("label"), str) else "",
                 help_text=_("Пусто — подставится подпись из «Главная (контент)» → «Интерфейс витрин»."),
                 widget=forms.TextInput(attrs={"class": _MP_INPUT_CLASSES}),
+            )
+        if "nav_item_about_enabled" in self.fields:
+            self.fields["nav_item_about_enabled"].help_text = _(
+                "Включите и при необходимости отдельно включите «Отзывы» и «Портфолио» ниже — "
+                "они откроются в подменю, а не в одной строке с остальными разделами."
             )
 
     def _header_nav_apply_to_instance(self, instance: SiteSettings) -> None:

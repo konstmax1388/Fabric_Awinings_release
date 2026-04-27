@@ -265,6 +265,8 @@ def default_home_payload() -> dict[str, Any]:
             "buyOnMarketplacesMobile": "Купить на маркетплейсе",
             "navHome": "Главная",
             "navCatalog": "Каталог",
+            "navAbout": "О нас",
+            "aboutPageSlug": "o-nas",
             "navPortfolio": "Портфолио",
             "navContacts": "Контакты",
             "navBlog": "Блог",

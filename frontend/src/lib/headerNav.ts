@@ -1,7 +1,7 @@
 import type { HomePayload } from '../types/homePage'
 import type { StaticPageDto } from './api'
 
-export type HeaderNavKey = 'home' | 'catalog' | 'portfolio' | 'blog' | 'reviews' | 'contacts'
+export type HeaderNavKey = 'home' | 'catalog' | 'about' | 'portfolio' | 'blog' | 'reviews' | 'contacts'
 
 export type HeaderNavRow = {
   key: HeaderNavKey
@@ -10,13 +10,19 @@ export type HeaderNavRow = {
   label: string
 }
 
-const PATHS: Record<HeaderNavKey, string> = {
+const PATHS: Record<Exclude<HeaderNavKey, 'about'>, string> = {
   home: '/',
   catalog: '/catalog',
   portfolio: '/portfolio',
   blog: '/blog',
   reviews: '/reviews',
   contacts: '/contacts',
+}
+
+function sanitizeAboutSlug(raw: string | undefined): string {
+  const t = (raw || 'o-nas').trim().toLowerCase()
+  if (!t || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t)) return 'o-nas'
+  return t.slice(0, 120)
 }
 
 function defaultLabelForKey(key: HeaderNavKey, ui: HomePayload['ui'] | undefined): string {
@@ -26,6 +32,8 @@ function defaultLabelForKey(key: HeaderNavKey, ui: HomePayload['ui'] | undefined
       return u?.navHome ?? 'Главная'
     case 'catalog':
       return u?.navCatalog ?? 'Каталог'
+    case 'about':
+      return u?.navAbout ?? 'О нас'
     case 'portfolio':
       return u?.navPortfolio ?? 'Портфолио'
     case 'blog':
@@ -49,6 +57,7 @@ function parseRows(raw: unknown): HeaderNavRow[] | null {
     if (
       key !== 'home' &&
       key !== 'catalog' &&
+      key !== 'about' &&
       key !== 'portfolio' &&
       key !== 'blog' &&
       key !== 'reviews' &&
@@ -64,43 +73,94 @@ function parseRows(raw: unknown): HeaderNavRow[] | null {
   return out.length ? out : null
 }
 
+export type MainNavChild = { key: string; to: string; label: string }
+
 export type MainNavItem = {
   key: string
   to: string
   label: string
   end?: boolean
+  children?: MainNavChild[]
 }
 
 /**
  * Пункты верхнего и мобильного меню: JSON из настроек + подписи из home.ui + статические страницы в шапке.
+ * «О нас» при включении забирает в подменю «Отзывы» и «Портфолио» (если они включены).
  */
 export function buildMainNavItems(
   headerNavigation: unknown,
   ui: HomePayload['ui'] | undefined,
   options: { portfolioEnabled: boolean; staticPages: StaticPageDto[] },
 ): MainNavItem[] {
+  const aboutPath = `/${sanitizeAboutSlug(ui?.aboutPageSlug)}`
   const rows = parseRows(headerNavigation)
   const sorted = rows
     ? [...rows].sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
     : [
         { key: 'home' as const, enabled: true, order: 0, label: '' },
         { key: 'catalog' as const, enabled: true, order: 1, label: '' },
-        { key: 'portfolio' as const, enabled: true, order: 2, label: '' },
-        { key: 'reviews' as const, enabled: true, order: 3, label: '' },
-        { key: 'blog' as const, enabled: true, order: 4, label: '' },
-        { key: 'contacts' as const, enabled: true, order: 5, label: '' },
+        { key: 'about' as const, enabled: true, order: 2, label: '' },
+        { key: 'blog' as const, enabled: true, order: 3, label: '' },
+        { key: 'contacts' as const, enabled: true, order: 4, label: '' },
+        { key: 'reviews' as const, enabled: true, order: 5, label: '' },
+        { key: 'portfolio' as const, enabled: true, order: 6, label: '' },
       ]
+
+  const aboutOn = sorted.some((r) => r.key === 'about' && r.enabled)
+  const reviewsRow = sorted.find((r) => r.key === 'reviews')
+  const portfolioRow = sorted.find((r) => r.key === 'portfolio')
+  const reviewsInSub = Boolean(aboutOn && reviewsRow && reviewsRow.enabled)
+  const portfolioInSub = Boolean(aboutOn && portfolioRow && portfolioRow.enabled && options.portfolioEnabled)
+
   const out: MainNavItem[] = []
   for (const row of sorted) {
     if (!row.enabled) continue
     if (row.key === 'portfolio' && !options.portfolioEnabled) continue
-    const label = row.label.trim() || defaultLabelForKey(row.key, ui)
-    out.push({
-      key: row.key,
-      to: PATHS[row.key],
-      label,
-      end: row.key === 'home',
-    })
+    if (row.key === 'reviews' && reviewsInSub) continue
+    if (row.key === 'portfolio' && portfolioInSub) continue
+
+    if (row.key === 'about') {
+      const label = row.label.trim() || defaultLabelForKey('about', ui)
+      const children: MainNavChild[] = []
+      if (reviewsInSub) {
+        children.push({
+          key: 'reviews',
+          to: PATHS.reviews,
+          label: (reviewsRow?.label || '').trim() || defaultLabelForKey('reviews', ui),
+        })
+      }
+      if (portfolioInSub) {
+        children.push({
+          key: 'portfolio',
+          to: PATHS.portfolio,
+          label: (portfolioRow?.label || '').trim() || defaultLabelForKey('portfolio', ui),
+        })
+      }
+      out.push({
+        key: row.key,
+        to: aboutPath,
+        label,
+        end: false,
+        children: children.length ? children : undefined,
+      })
+      continue
+    }
+
+    if (row.key === 'home') {
+      out.push({
+        key: row.key,
+        to: PATHS.home,
+        label: row.label.trim() || defaultLabelForKey('home', ui),
+        end: true,
+      })
+    } else if (row.key === 'catalog' || row.key === 'blog' || row.key === 'contacts' || row.key === 'portfolio' || row.key === 'reviews') {
+      out.push({
+        key: row.key,
+        to: PATHS[row.key],
+        label: row.label.trim() || defaultLabelForKey(row.key, ui),
+        end: false,
+      })
+    }
   }
   const headerStatic = options.staticPages.filter((p) => p.showInHeader)
   for (const p of headerStatic) {

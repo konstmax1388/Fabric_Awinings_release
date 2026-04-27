@@ -1,5 +1,6 @@
 import type { MarketplaceId } from '../config/site'
 import type { HomePayload } from '../types/homePage'
+import type { AboutPagePayload } from '../types/aboutPage'
 import {
   CHECKOUT_DELIVERY_FALLBACK_LABELS,
   DEFAULT_CHECKOUT_PUBLIC,
@@ -790,6 +791,8 @@ export type StaticPageDto = {
   pageTitle: string
   metaDescription: string
   bodyHtml: string
+  /** JSON макета «О нас» (version 1), с бэка в camelCase. */
+  aboutPayload?: AboutPagePayload
   showInHeader: boolean
   showInFooter: boolean
   headerLinkLabel: string
@@ -1138,6 +1141,9 @@ function parseStaticPage(raw: unknown): StaticPageDto | null {
   const slug = typeof r.slug === 'string' ? r.slug.trim() : ''
   const title = typeof r.title === 'string' ? r.title : ''
   if (!slug || !title) return null
+  const apRaw = r.aboutPayload
+  const aboutPayload: AboutPagePayload | undefined =
+    apRaw && typeof apRaw === 'object' && !Array.isArray(apRaw) ? (apRaw as AboutPagePayload) : undefined
   return {
     slug,
     path: typeof r.path === 'string' && r.path.trim() ? r.path : `/${slug}`,
@@ -1145,6 +1151,7 @@ function parseStaticPage(raw: unknown): StaticPageDto | null {
     pageTitle: typeof r.pageTitle === 'string' ? r.pageTitle : '',
     metaDescription: typeof r.metaDescription === 'string' ? r.metaDescription : '',
     bodyHtml: typeof r.bodyHtml === 'string' ? r.bodyHtml : '',
+    aboutPayload,
     showInHeader: r.showInHeader === true,
     showInFooter: r.showInFooter !== false,
     headerLinkLabel: typeof r.headerLinkLabel === 'string' ? r.headerLinkLabel : '',

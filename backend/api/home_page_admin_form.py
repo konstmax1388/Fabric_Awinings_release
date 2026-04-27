@@ -326,23 +326,23 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     proc_s3_text = _area(_("Этап 4: текст"), rows=2)
 
     # --- purchase paths ---
-    paths_eyebrow = _req_txt(_("Бейдж блока «Как оформить заказ»"))
-    paths_heading = _req_txt(_("Заголовок блока"))
+    paths_eyebrow = _txt(_("Бейдж блока «Как оформить заказ»"))
+    paths_heading = _txt(_("Заголовок блока"))
     paths_subheading = _area(_("Подзаголовок блока"), rows=3)
-    paths_ready_title = _req_txt(_("Готовая продукция: название сценария"))
-    paths_ready_subtitle = _req_txt(_("Готовая продукция: подзаголовок"))
-    paths_ready_b0 = _req_txt(_("Готовая продукция: пункт 1"))
-    paths_ready_b1 = _req_txt(_("Готовая продукция: пункт 2"))
-    paths_ready_b2 = _req_txt(_("Готовая продукция: пункт 3"))
-    paths_ready_cta = _req_txt(_("Готовая продукция: текст кнопки"))
-    paths_ready_href = _req_txt(_("Готовая продукция: ссылка кнопки"))
-    paths_custom_title = _req_txt(_("Индивидуальный проект: название сценария"))
-    paths_custom_subtitle = _req_txt(_("Индивидуальный проект: подзаголовок"))
-    paths_custom_b0 = _req_txt(_("Индивидуальный проект: пункт 1"))
-    paths_custom_b1 = _req_txt(_("Индивидуальный проект: пункт 2"))
-    paths_custom_b2 = _req_txt(_("Индивидуальный проект: пункт 3"))
-    paths_custom_cta = _req_txt(_("Индивидуальный проект: текст кнопки"))
-    paths_custom_href = _req_txt(_("Индивидуальный проект: ссылка кнопки"))
+    paths_ready_title = _txt(_("Готовая продукция: название сценария"))
+    paths_ready_subtitle = _txt(_("Готовая продукция: подзаголовок"))
+    paths_ready_b0 = _txt(_("Готовая продукция: пункт 1"))
+    paths_ready_b1 = _txt(_("Готовая продукция: пункт 2"))
+    paths_ready_b2 = _txt(_("Готовая продукция: пункт 3"))
+    paths_ready_cta = _txt(_("Готовая продукция: текст кнопки"))
+    paths_ready_href = _txt(_("Готовая продукция: ссылка кнопки"))
+    paths_custom_title = _txt(_("Индивидуальный проект: название сценария"))
+    paths_custom_subtitle = _txt(_("Индивидуальный проект: подзаголовок"))
+    paths_custom_b0 = _txt(_("Индивидуальный проект: пункт 1"))
+    paths_custom_b1 = _txt(_("Индивидуальный проект: пункт 2"))
+    paths_custom_b2 = _txt(_("Индивидуальный проект: пункт 3"))
+    paths_custom_cta = _txt(_("Индивидуальный проект: текст кнопки"))
+    paths_custom_href = _txt(_("Индивидуальный проект: ссылка кнопки"))
 
     # --- tent types ---
     tt_heading = _req_txt(_("Заголовок"))
@@ -658,6 +658,14 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     ui_buy_marketplaces_mobile = _req_txt(_("Подпись маркетплейсов (мобильная)"))
     ui_nav_home = _req_txt(_("Навигация: «Главная»"))
     ui_nav_catalog = _req_txt(_("Навигация: «Каталог»"))
+    ui_nav_about = _req_txt(_("Навигация: «О нас»"))
+    ui_about_page_slug = forms.SlugField(
+        label=_("Слаг страницы «О нас»"),
+        required=True,
+        max_length=120,
+        help_text=_("Статичная страница с таким слагом в разделе «Статичные страницы» (текст «О нас»). По умолчанию: o-nas."),
+    )
+    ui_nav_reviews = _req_txt(_("Навигация: «Отзывы»"))
     ui_nav_portfolio = _req_txt(_("Навигация: «Портфолио»"))
     ui_nav_contacts = _req_txt(_("Навигация: «Контакты»"))
     ui_nav_blog = _req_txt(_("Навигация: «Блог»"))
@@ -1056,6 +1064,9 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         self.initial.setdefault("ui_buy_marketplaces_mobile", ui.get("buyOnMarketplacesMobile", ""))
         self.initial.setdefault("ui_nav_home", ui.get("navHome", ""))
         self.initial.setdefault("ui_nav_catalog", ui.get("navCatalog", ""))
+        self.initial.setdefault("ui_nav_about", ui.get("navAbout", ""))
+        self.initial.setdefault("ui_about_page_slug", ui.get("aboutPageSlug", "o-nas") or "o-nas")
+        self.initial.setdefault("ui_nav_reviews", ui.get("navReviews", ""))
         self.initial.setdefault("ui_nav_portfolio", ui.get("navPortfolio", ""))
         self.initial.setdefault("ui_nav_contacts", ui.get("navContacts", ""))
         self.initial.setdefault("ui_nav_blog", ui.get("navBlog", ""))
@@ -1361,6 +1372,9 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "buyOnMarketplacesMobile": cd["ui_buy_marketplaces_mobile"].strip(),
             "navHome": cd["ui_nav_home"].strip(),
             "navCatalog": cd["ui_nav_catalog"].strip(),
+            "navAbout": cd["ui_nav_about"].strip(),
+            "aboutPageSlug": cd["ui_about_page_slug"].strip(),
+            "navReviews": cd["ui_nav_reviews"].strip(),
             "navPortfolio": cd["ui_nav_portfolio"].strip(),
             "navContacts": cd["ui_nav_contacts"].strip(),
             "navBlog": cd["ui_nav_blog"].strip(),

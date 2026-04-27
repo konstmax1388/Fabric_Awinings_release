@@ -1464,6 +1464,12 @@ class StaticPage(models.Model):
         default="",
         help_text="Поддерживается HTML. Markdown можно хранить как текст и обработать на витрине при необходимости.",
     )
+    about_payload = models.JSONField(
+        "Макет «О нас» (JSON)",
+        default=dict,
+        blank=True,
+        help_text="Если задан валидный JSON с version: 1, на витрине показывается расширенный макет; иначе — только поле «Содержимое».",
+    )
     is_published = models.BooleanField("Опубликовано", default=True, db_index=True)
     show_in_header = models.BooleanField("Показывать ссылку в шапке", default=False)
     show_in_footer = models.BooleanField("Показывать ссылку в подвале", default=True)

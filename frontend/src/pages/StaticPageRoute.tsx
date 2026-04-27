@@ -3,6 +3,7 @@ import { startTransition, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { AboutPageLayout } from '../components/static/AboutPageLayout'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
 
 export function StaticPageRoute() {
@@ -60,6 +61,8 @@ export function StaticPageRoute() {
 
   const title = page.pageTitle?.trim() || `${page.title} — Фабрика Тентов`
   const desc = page.metaDescription?.trim() || page.title
+  const aboutV1 = page.aboutPayload?.version === 1
+  const aboutHeading = page.pageTitle?.trim() || page.title
   return (
     <>
       <Helmet>
@@ -68,7 +71,9 @@ export function StaticPageRoute() {
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">
-        <div className="fabric-page-main min-h-[60vh] w-full max-w-[960px]">
+        <div
+          className={`fabric-page-main min-h-[60vh] w-full ${aboutV1 ? 'max-w-[min(100%,1200px)]' : 'max-w-[960px]'}`}
+        >
           <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
             <Link to="/" className="hover:text-accent">
               Главная
@@ -76,15 +81,21 @@ export function StaticPageRoute() {
             <span className="mx-2">/</span>
             <span className="text-text">{page.title}</span>
           </nav>
-          <article className="fabric-card mt-8 space-y-6 p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
-            <header className="space-y-2">
-              <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">{page.title}</h1>
-            </header>
-            <div
-              className="cms-html space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
-              dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
-            />
-          </article>
+          {aboutV1 && page.aboutPayload ? (
+            <article className="mt-8 min-w-0">
+              <AboutPageLayout payload={page.aboutPayload} pageTitle={aboutHeading} />
+            </article>
+          ) : (
+            <article className="fabric-card mt-8 space-y-6 p-6 font-body text-sm leading-relaxed text-text md:p-8 md:text-base">
+              <header className="space-y-2">
+                <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">{page.title}</h1>
+              </header>
+              <div
+                className="cms-html space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
+                dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+              />
+            </article>
+          )}
         </div>
       </main>
       <SiteFooter />
