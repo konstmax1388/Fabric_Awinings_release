@@ -267,7 +267,7 @@ class CartOrderCreateView(generics.CreateAPIView):
         try:
             from .services.cdek_order_create import sync_cdek_order_with_retry
 
-            # Для онлайн-оплаты накладную создаём только после webhook "Completed".
+            # СДЭК + карта: накладная только после оплаты (вебхук). СДЭК + наложенный (cod_cdek) — сразу здесь.
             if not (
                 order.delivery_method == order.DeliveryMethod.CDEK
                 and order.payment_method == order.PaymentMethod.CARD_ONLINE
@@ -299,6 +299,7 @@ class CartOrderCreateView(generics.CreateAPIView):
         try:
             from .services.astrum_crm import push_cart_order_to_astrum_crm
 
+            # Онлайн-оплата (в т.ч. СДЭК+карта, логистика Ozon+карта): в CRM — после «Оплачено» (вебхук/админка).
             if order.payment_method != order.PaymentMethod.CARD_ONLINE:
                 push_cart_order_to_astrum_crm(order)
         except Exception:

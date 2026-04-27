@@ -1312,6 +1312,52 @@ def test_ozon_webhook_completed_astrum_first_push_when_not_in_crm(
 
 
 @patch("api.services.notification_email.send_buyer_order_confirmation_email")
+@patch("api.services.astrum_crm.push_cart_order_to_astrum_crm")
+@patch("api.views_checkout.verify_notification_request_sign", return_value=True)
+@patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
+@pytest.mark.django_db
+def test_ozon_webhook_card_ozon_logistics_pushes_crm_not_cdek(
+    mock_sync, mock_push_crm, _mock_sign, _mock_buyer_email, client,
+):
+    """Логистика Ozon + Ozon Pay: СДЭК не вызываем; в CRM — после вебхука (createOrder с доставкой — при payLink)."""
+    from api.models import CartOrder, SiteSettings
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_client_id = "ack"
+    s.ozon_pay_webhook_secret = "sec"
+    s.save(update_fields=["ozon_pay_client_id", "ozon_pay_webhook_secret"])
+
+    co = CartOrder.objects.create(
+        order_ref="ORD-OZ-LOG-1",
+        customer_name="Логистика Клиент",
+        customer_phone="+79990001122",
+        customer_email="ozlo@shop.ru",
+        lines=[{"title": "t", "priceFrom": 500, "qty": 1}],
+        total_approx=500,
+        delivery_method=CartOrder.DeliveryMethod.OZON_LOGISTICS,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.PENDING,
+        fulfillment_status=CartOrder.FulfillmentStatus.AWAITING_PAYMENT,
+        bitrix_sync_status=CartOrder.BitrixSyncStatus.NOT_SENT,
+        manager_letter="m",
+        client_ack="c",
+    )
+    r = client.post(
+        "/api/webhooks/ozon-pay/",
+        data={
+            "requestSign": "ok",
+            "extOrderID": co.order_ref,
+            "status": "Completed",
+            "orderID": "oz-oz-1",
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+    mock_sync.assert_not_called()
+    mock_push_crm.assert_called_once()
+
+
+@patch("api.services.notification_email.send_buyer_order_confirmation_email")
 @patch("api.services.astrum_crm._astrum_post_order_succeeds", return_value=True)
 @patch("api.views_checkout.verify_notification_request_sign", return_value=True)
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))

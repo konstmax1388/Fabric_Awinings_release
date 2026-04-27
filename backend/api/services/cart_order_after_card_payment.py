@@ -1,7 +1,18 @@
 """
-Действия после фиксации оплаты картой (Ozon Pay): накладная СДЭК, выгрузка в CRM (Astrum), письмо покупателю.
+Действия после успешной оплаты картой (Ozon Pay, вебхук `Completed` или ручная отметка в админке).
 
-При оформлении с `payment_method=card_online` в CRM и СДЭК на этапе POST /api/leads/cart/ не уходим — только после статуса «оплачено» (вебхук или админка).
+Сценарии (всё автоматически по вебхуку, без ручных шагов):
+
+1. **СДЭК + наложенный платёж (`cod_cdek`)** — CRM и СДЭК сразу при создании заказа
+   (см. `CartOrderCreateView`, не `card_online`).
+
+2. **СДЭК + Ozon Pay (`card_online`)** — накладная СДЭК и CRM **после** фиксации оплаты (здесь + `sync_cdek`).
+
+3. **Логистика Ozon + Ozon Pay** — в CRM **после** оплаты (здесь). Заказ в эквайринге с
+   `deliverySettings` и товарами создаётся в `try_begin_ozon_pay` при оформлении (нужен `payLink`);
+   отдельного «второго» API доставки Ozon у нас после вебхука нет — оплата завершает сделку у Ozon.
+
+При оформлении с `card_online` в CRM/СДЭК на POST /api/leads/cart/ не уходим (кроме п.1).
 """
 
 from __future__ import annotations
@@ -13,14 +24,22 @@ from api.models import CartOrder
 logger = logging.getLogger(__name__)
 
 
+def _buyer_email_already_sent_with_cdek_tracking(order: CartOrder) -> bool:
+    """Письмо с треком могло уйти из `cdek_order_create._dispatch_tracking_to_email_and_crm`."""
+    snap = order.delivery_snapshot if isinstance(order.delivery_snapshot, dict) else {}
+    meta = snap.get("cdekTrackingDispatched")
+    return isinstance(meta, dict) and bool(meta.get("buyerEmail"))
+
+
 def run_post_payment_integrations_for_card_order(
     order: CartOrder,
     *,
     send_buyer_confirmation: bool = True,
 ) -> None:
     """
-    СДЭК (только доставка СДЭК), затем Astrum: либо первая отправка (заказ ещё не в CRM), либо
-    follow-up «оплата прошла», если сделка уже создавалась на оформлении (старые заказы).
+    После `payment_status=CAPTURED` для оплаты картой: СДЭК (если доставка СДЭК) → CRM (Astrum) → письмо покупателю.
+
+    CRM: либо первая выгрузка, либо follow-up, если сделка уже создавалась на оформлении (легаси-заказы).
     """
     if order.payment_method != CartOrder.PaymentMethod.CARD_ONLINE:
         return
@@ -55,6 +74,9 @@ def run_post_payment_integrations_for_card_order(
         logger.exception("post_payment: CRM push failed for order=%s", co.order_ref)
 
     if not send_buyer_confirmation:
+        return
+    co.refresh_from_db()
+    if _buyer_email_already_sent_with_cdek_tracking(co):
         return
     try:
         from api.services.notification_email import send_buyer_order_confirmation_email
