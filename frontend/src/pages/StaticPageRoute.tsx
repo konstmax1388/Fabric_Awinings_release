@@ -54,7 +54,7 @@ export function StaticPageRoute() {
             <h1 className="font-heading text-3xl font-bold text-text">Страница не найдена</h1>
             <Link
               to="/"
-              className="fabric-strap-btn mt-8 inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-accent hover:text-accent"
+              className="fabric-strap-btn mt-8 inline-flex h-11 items-center justify-center rounded-[40px] border border-border px-6 font-body text-sm font-medium text-text transition hover:border-text/40"
             >
               На главную
             </Link>
@@ -94,7 +94,7 @@ export function StaticPageRoute() {
           className={`fabric-page-main min-h-[60vh] w-full ${aboutV1 ? 'max-w-[min(100%,1200px)]' : 'max-w-[960px]'}`}
         >
           <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-sm text-text-muted">
-            <Link to="/" className="hover:text-accent">
+            <Link to="/" className="text-text-muted transition hover:text-text">
               Главная
             </Link>
             <span className="mx-2">/</span>

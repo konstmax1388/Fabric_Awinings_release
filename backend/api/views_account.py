@@ -118,7 +118,13 @@ class StaticPageListPublicView(APIView):
 
     def get(self, request):
         rows = StaticPage.objects.filter(is_published=True).order_by("sort_order", "title")
-        return Response({"results": StaticPagePublicSerializer(rows, many=True).data})
+        return Response(
+            {
+                "results": StaticPagePublicSerializer(
+                    rows, many=True, context={"request": request}
+                ).data
+            }
+        )
 
 
 class StaticPageDetailPublicView(APIView):
@@ -128,7 +134,7 @@ class StaticPageDetailPublicView(APIView):
         page = StaticPage.objects.filter(is_published=True, slug=slug).first()
         if not page:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(StaticPagePublicSerializer(page).data)
+        return Response(StaticPagePublicSerializer(page, context={"request": request}).data)
 
 
 class RegisterView(APIView):

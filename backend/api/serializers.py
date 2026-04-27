@@ -53,6 +53,42 @@ def media_file_absolute(request, filef) -> str:
     return rel
 
 
+def merge_static_page_about_file_urls(
+    payload: dict[str, object], obj: StaticPage, request
+) -> dict[str, object]:
+    """
+    URL из about_intro_* / about_manufacturer_* (файлы на модели) в aboutPayload.
+    Вызывается только при включённом макете v1 (version==1 в about_payload в БД),
+    синхронно с логикой save в админке.
+    """
+    if (getattr(obj, "slug", None) or "").strip() != "o-nas":
+        return payload
+    if not isinstance(payload, dict):
+        return payload
+    out: dict[str, object] = dict(payload)
+    intro_raw = out.get("intro")
+    intro: dict[str, object] = {**intro_raw} if isinstance(intro_raw, dict) else {}
+    iimg = getattr(obj, "about_intro_image", None)
+    ivid = getattr(obj, "about_intro_video", None)
+    if iimg and getattr(iimg, "name", ""):
+        intro["imageUrl"] = media_file_absolute(request, iimg)
+    if ivid and getattr(ivid, "name", ""):
+        intro["videoUrl"] = media_file_absolute(request, ivid)
+    if intro:
+        out["intro"] = intro
+    m_raw = out.get("manufacturer")
+    m: dict[str, object] = {**m_raw} if isinstance(m_raw, dict) else {}
+    mimg = getattr(obj, "about_manufacturer_image", None)
+    mvid = getattr(obj, "about_manufacturer_video", None)
+    if mimg and getattr(mimg, "name", ""):
+        m["imageUrl"] = media_file_absolute(request, mimg)
+    if mvid and getattr(mvid, "name", ""):
+        m["videoUrl"] = media_file_absolute(request, mvid)
+    if m:
+        out["manufacturer"] = m
+    return out
+
+
 class ProductCategoryPublicSerializer(serializers.ModelSerializer):
     sortOrder = serializers.IntegerField(source="sort_order", read_only=True)
     imageUrl = serializers.SerializerMethodField()
@@ -1093,7 +1129,10 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
 
     def get_aboutPayload(self, obj: StaticPage) -> dict[str, object]:
         raw = obj.about_payload if isinstance(obj.about_payload, dict) else {}
-        return sanitize_about_payload(raw)
+        out = sanitize_about_payload(raw)
+        if (getattr(obj, "slug", None) or "").strip() == "o-nas" and raw.get("version") == 1:
+            return merge_static_page_about_file_urls(out, obj, self.context.get("request"))
+        return out
 
 
 class RegisterSerializer(serializers.Serializer):

@@ -69,9 +69,6 @@ class StaticPageAboutLayoutFields(forms.Form):
     ab_fb4 = _txt(_("Преимущества: пункт 5"))
     ab_fb5 = _txt(_("Преимущества: пункт 6"))
 
-    ab_sp_eyebrow = _txt(_("Синий блок: верхняя строка (капс)"))
-    ab_sp_line = _area(_("Синий блок: подстрока"), rows=2)
-
     ab_g0_url = _txt(_("Галерея: фото 1 — URL"))
     ab_g0_alt = _txt(_("Галерея: фото 1 — подпись"))
     ab_g1_url = _txt(_("Галерея: фото 2 — URL"))
@@ -99,7 +96,7 @@ class StaticPageAboutLayoutFields(forms.Form):
     ab_met2_bar = _int_pct(_("Метрика 3: % ширины полосы"))
 
     ab_facts_bg = _txt(_("Факты: URL фона"))
-    ab_facts_badge = _txt(_("Факты: бейдж (синяя плашка)"))
+    ab_facts_badge = _txt(_("Факты: бейдж (плашка над цифрами)"))
     ab_facts_subtitle = _area(_("Факты: подзаголовок"), rows=2)
     ab_f0_val = _txt(_("Факты: ячейка 1 — число"))
     ab_f0_lbl = _txt(_("Факты: ячейка 1 — подпись"))
@@ -109,22 +106,6 @@ class StaticPageAboutLayoutFields(forms.Form):
     ab_f2_lbl = _txt(_("Факты: ячейка 3 — подпись"))
     ab_f3_val = _txt(_("Факты: ячейка 4 — число"))
     ab_f3_lbl = _txt(_("Факты: ячейка 4 — подпись"))
-
-    ab_rev_title = _txt(_("Отзывы: заголовок (часть 1)"))
-    ab_rev_title_accent = _txt(_("Отзывы: заголовок (часть 2, акцент)"))
-    ab_rev_subtitle = _area(_("Отзывы: подзаголовок"), rows=2)
-
-    ab_r0_product = _txt(_("Отзыв 1: товар/заголовок"))
-    ab_r0_text = _area(_("Отзыв 1: текст"), rows=4)
-    ab_r0_author = _txt(_("Отзыв 1: имя"))
-    ab_r0_source = _txt(_("Отзыв 1: источник (OZON, WB…)"))
-    ab_r0_avatar = _txt(_("Отзыв 1: URL аватара"))
-
-    ab_r1_product = _txt(_("Отзыв 2: товар/заголовок"))
-    ab_r1_text = _area(_("Отзыв 2: текст"), rows=4)
-    ab_r1_author = _txt(_("Отзыв 2: имя"))
-    ab_r1_source = _txt(_("Отзыв 2: источник"))
-    ab_r1_avatar = _txt(_("Отзыв 2: URL аватара"))
 
 
 def _s(cleaned: dict[str, Any], key: str) -> str:
@@ -156,10 +137,6 @@ def apply_about_layout_initial(form: forms.BaseForm, payload: dict[str, Any] | N
     for i in range(6):
         v = str(fbs[i]).strip() if i < len(fbs) and fbs[i] is not None else ""
         form.fields[f"ab_fb{i}"].initial = v
-
-    sp = p.get("spotlight") if isinstance(p.get("spotlight"), dict) else {}
-    form.fields["ab_sp_eyebrow"].initial = (sp or {}).get("eyebrow") or ""
-    form.fields["ab_sp_line"].initial = (sp or {}).get("line") or ""
 
     gal = p.get("spotlightGallery")
     for i in range(3):
@@ -200,21 +177,6 @@ def apply_about_layout_initial(form: forms.BaseForm, payload: dict[str, Any] | N
             d = items[i]
         form.fields[f"ab_f{i}_val"].initial = d.get("value") or ""
         form.fields[f"ab_f{i}_lbl"].initial = d.get("label") or ""
-
-    rs = p.get("reviewsStrip") if isinstance(p.get("reviewsStrip"), dict) else {}
-    form.fields["ab_rev_title"].initial = (rs or {}).get("title") or ""
-    form.fields["ab_rev_title_accent"].initial = (rs or {}).get("titleAccent") or ""
-    form.fields["ab_rev_subtitle"].initial = (rs or {}).get("subtitle") or ""
-    ritems = (rs or {}).get("items")
-    for j in range(2):
-        d = {}
-        if isinstance(ritems, list) and j < len(ritems) and isinstance(ritems[j], dict):
-            d = ritems[j]
-        form.fields[f"ab_r{j}_product"].initial = d.get("productTitle") or ""
-        form.fields[f"ab_r{j}_text"].initial = d.get("text") or ""
-        form.fields[f"ab_r{j}_author"].initial = d.get("authorName") or ""
-        form.fields[f"ab_r{j}_source"].initial = d.get("source") or ""
-        form.fields[f"ab_r{j}_avatar"].initial = d.get("avatarUrl") or ""
 
 
 def _merge_about_manufacturer_files(core: dict[str, Any], instance: Any) -> dict[str, Any]:
@@ -287,13 +249,6 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
     fbs = [x for x in fbs if x]
     if fbs:
         out["featureBullets"] = fbs
-    sp: dict[str, str] = {}
-    if _s(cleaned, "ab_sp_eyebrow"):
-        sp["eyebrow"] = _s(cleaned, "ab_sp_eyebrow")
-    if _s(cleaned, "ab_sp_line"):
-        sp["line"] = _s(cleaned, "ab_sp_line")
-    if sp:
-        out["spotlight"] = sp
     gal: list[dict[str, str]] = []
     for i in range(3):
         u, a = _s(cleaned, f"ab_g{i}_url"), _s(cleaned, f"ab_g{i}_alt")
@@ -359,38 +314,6 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
         facts["items"] = fitems
     if facts:
         out["facts"] = facts
-    rs: dict[str, Any] = {}
-    if _s(cleaned, "ab_rev_title"):
-        rs["title"] = _s(cleaned, "ab_rev_title")
-    if _s(cleaned, "ab_rev_title_accent"):
-        rs["titleAccent"] = _s(cleaned, "ab_rev_title_accent")
-    if _s(cleaned, "ab_rev_subtitle"):
-        rs["subtitle"] = _s(cleaned, "ab_rev_subtitle")
-    rits: list[dict[str, str]] = []
-    for j in range(2):
-        ptt = _s(cleaned, f"ab_r{j}_product")
-        tx = _s(cleaned, f"ab_r{j}_text")
-        aut = _s(cleaned, f"ab_r{j}_author")
-        src = _s(cleaned, f"ab_r{j}_source")
-        av = _s(cleaned, f"ab_r{j}_avatar")
-        if not (ptt or tx or aut or src or av):
-            continue
-        d: dict[str, str] = {}
-        if ptt:
-            d["productTitle"] = ptt
-        if tx:
-            d["text"] = tx
-        if aut:
-            d["authorName"] = aut
-        if src:
-            d["source"] = src
-        if av:
-            d["avatarUrl"] = av
-        rits.append(d)
-    if rits:
-        rs["items"] = rits
-    if rs:
-        out["reviewsStrip"] = rs
     return out
 
 
@@ -410,7 +333,9 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
     """Fieldsets для страницы «О нас» (slug o-nas); подключаются в StaticPageAdmin.get_fieldsets."""
     desc_main = _(
         "Тот же макет, что и на витрине (version 1). "
-        "Пустые поля на сайте не показываются; при снятом флаге «Включить макет» используется только HTML ниже."
+        "Пустые поля на сайте не показываются; при снятом флаге «Включить макет» используется только HTML ниже. "
+        "Фото и видео можно задать файлами в блоках или внешними URL — файлы имеют приоритет. "
+        "Блок отзывов внизу страницы — общий виджет сайта, он не дублируется этой формой."
     )
     return (
         (
@@ -449,11 +374,9 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
             },
         ),
         (
-            _("Блок: синий акцент и галерея"),
+            _("Блок: горизонтальная галерея"),
             {
                 "fields": (
-                    "ab_sp_eyebrow",
-                    "ab_sp_line",
                     "ab_g0_url",
                     "ab_g0_alt",
                     "ab_g1_url",
@@ -514,27 +437,6 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_f2_lbl",
                     "ab_f3_val",
                     "ab_f3_lbl",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            _("Блок: отзывы (карусель)"),
-            {
-                "fields": (
-                    "ab_rev_title",
-                    "ab_rev_title_accent",
-                    "ab_rev_subtitle",
-                    "ab_r0_product",
-                    "ab_r0_text",
-                    "ab_r0_author",
-                    "ab_r0_source",
-                    "ab_r0_avatar",
-                    "ab_r1_product",
-                    "ab_r1_text",
-                    "ab_r1_author",
-                    "ab_r1_source",
-                    "ab_r1_avatar",
                 ),
                 "classes": ("collapse",),
             },

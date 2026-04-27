@@ -56,7 +56,7 @@ function ManufacturerMedia({ m }: { m: AboutManufacturer }) {
             rel="noopener noreferrer"
             className="absolute bottom-4 left-4 flex max-w-[min(100%,280px)] items-center gap-3 rounded-xl border border-border/80 bg-bg-base/95 p-3 shadow-lg backdrop-blur-sm"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-surface" aria-hidden>
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text" aria-hidden>
               <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7L8 5z" />
               </svg>
@@ -79,7 +79,7 @@ function ManufacturerMedia({ m }: { m: AboutManufacturer }) {
         rel="noopener noreferrer"
         className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-border bg-bg-base/40 p-4 shadow-sm"
       >
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-surface" aria-hidden>
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text" aria-hidden>
           <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7L8 5z" />
           </svg>
@@ -145,7 +145,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
             {(intro.title || intro.titleAccent) && (
               <h1 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl lg:text-5xl">
                 {intro.title ? <span>{intro.title} </span> : null}
-                {intro.titleAccent ? <span className="text-accent">{intro.titleAccent}</span> : null}
+                {intro.titleAccent ? <span className="text-text">{intro.titleAccent}</span> : null}
               </h1>
             )}
             <div className="mt-6 space-y-4 font-body text-base leading-relaxed text-text-muted md:text-lg">
@@ -168,7 +168,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
             {payload.featureBullets.map((text, i) => (
               <li key={i} className="flex items-start gap-3 font-body text-text md:text-lg">
                 <span
-                  className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/90 text-surface shadow-sm"
+                  className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-text shadow-sm"
                   aria-hidden
                 >
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -191,7 +191,9 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
                 type="button"
                 onClick={() => setGalleryIdx(i)}
                 className={`relative h-40 w-52 shrink-0 overflow-hidden rounded-xl border transition md:h-48 md:w-64 ${
-                  i === galleryIdx ? 'border-accent ring-2 ring-accent/25' : 'border-border/80 opacity-95 hover:opacity-100'
+                  i === galleryIdx
+                    ? 'border-text/35 ring-1 ring-border'
+                    : 'border-border/80 opacity-95 hover:opacity-100'
                 }`}
               >
                 {g.url ? (
@@ -205,7 +207,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
               <button
                 type="button"
                 onClick={galleryPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-accent"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-text/40"
                 aria-label="Предыдущее фото"
               >
                 ‹
@@ -213,7 +215,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
               <button
                 type="button"
                 onClick={galleryNext}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-accent"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-text/40"
                 aria-label="Следующее фото"
               >
                 ›
@@ -251,7 +253,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
                       <p className="font-body text-sm font-medium text-text">{m.label}</p>
                       <div className="mt-1.5 flex items-center gap-2">
                         <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-sm bg-border">
-                          <div className="h-full bg-accent/80 transition-[width]" style={{ width: `${w}%` }} />
+                          <div className="h-full bg-text/30 transition-[width]" style={{ width: `${w}%` }} />
                         </div>
                         <span className="shrink-0 rounded bg-text px-2 py-0.5 font-body text-xs font-medium text-surface">
                           {m.valuePercent != null ? `${Math.round(m.valuePercent)}%` : ''}
@@ -269,7 +271,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
       {showFacts && facts ? (
         <section
           className={`relative overflow-hidden rounded-2xl border border-border/50 px-4 py-12 md:px-8 md:py-16 ${
-            !factsOnPhoto ? 'bg-primary/15' : ''
+            !factsOnPhoto ? 'bg-surface/50' : ''
           }`}
           style={
             factsOnPhoto
@@ -283,7 +285,7 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
         >
           <div className="relative z-[1] mx-auto max-w-3xl text-center">
             {facts.badge ? (
-              <p className="inline-block rounded-lg bg-accent px-4 py-2 font-heading text-base font-bold text-surface shadow-sm md:text-lg">
+              <p className="inline-block rounded-lg border border-border bg-surface/90 px-4 py-2 font-heading text-base font-bold text-text shadow-sm md:text-lg">
                 {facts.badge}
               </p>
             ) : null}
