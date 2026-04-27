@@ -1,3 +1,6 @@
+import { faCartShopping, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { faCircleUser } from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
@@ -41,25 +44,6 @@ function MobileBarGridIcon({ className = '' }: { className?: string }) {
     </svg>
   )
 }
-function MobileBarCartIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6.5 6h12l-1.2 6H7.2L6.5 6Z" />
-      <path d="M6.5 6L5.5 3.5H3" />
-      <circle cx="9" cy="20" r="1" fill="currentColor" />
-      <circle cx="16" cy="20" r="1" fill="currentColor" />
-    </svg>
-  )
-}
-function MobileBarUserIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 21a8 8 0 0 0-16 0" />
-      <circle cx="12" cy="7.5" r="3.5" />
-    </svg>
-  )
-}
-
 function CartHeaderLink({ className = '' }: { className?: string }) {
   const { totalQty } = useCart()
   return (
@@ -72,17 +56,7 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
       }
       aria-label={`Корзина${totalQty ? `, ${totalQty} поз.` : ''}`}
     >
-      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="9" cy="20" r="1" fill="currentColor" />
-        <circle cx="17" cy="20" r="1" fill="currentColor" />
-      </svg>
+      <FontAwesomeIcon icon={faCartShopping} className="h-6 w-6" aria-hidden />
       {totalQty > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 font-body text-[10px] font-bold text-surface">
           {totalQty > 99 ? '99+' : totalQty}
@@ -276,9 +250,11 @@ export function SiteHeader() {
             title={navAccountLabel}
             aria-label={navAccountLabel}
           >
-            <span className="h-[22px] w-[22px]" aria-hidden>
-              <MobileBarUserIcon className="h-full w-full" />
-            </span>
+            <FontAwesomeIcon
+              icon={faCircleUser}
+              className="h-[22px] w-[22px] text-current"
+              aria-hidden
+            />
           </NavLink>
           <button
             type="button"
@@ -289,9 +265,11 @@ export function SiteHeader() {
             aria-expanded={searchOpen}
             title="Поиск"
           >
-            <span className="material-symbols-outlined text-[22px] leading-none" aria-hidden>
-              search
-            </span>
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              className="h-[22px] w-[22px] text-current"
+              aria-hidden
+            />
           </button>
           <CartHeaderLink className="rounded-full border border-border/40 bg-primary/15 hover:border-accent/50 md:border-border/50 md:bg-primary/20" />
           <div className="hidden min-w-0 items-center gap-2 lg:flex">
@@ -509,7 +487,11 @@ export function SiteHeader() {
                 ].join(' ')}
               >
                 <span className="relative inline-flex">
-                  <MobileBarCartIcon className={mobileBarIcon} />
+                  <FontAwesomeIcon
+                    icon={faCartShopping}
+                    className={`${mobileBarIcon} text-current`}
+                    aria-hidden
+                  />
                   {totalQty > 0 ? (
                     <span
                       className="absolute -right-2 -top-0.5 min-w-[1.1rem] rounded-full bg-accent px-0.5 text-center font-body text-[9px] font-bold text-surface ring-1 ring-border/30"
@@ -533,7 +515,11 @@ export function SiteHeader() {
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <MobileBarUserIcon className={mobileBarIcon} />
+                <FontAwesomeIcon
+                  icon={faCircleUser}
+                  className={`${mobileBarIcon} text-current`}
+                  aria-hidden
+                />
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{mobileBarProfileLabel}</span>
               </div>
             )}
