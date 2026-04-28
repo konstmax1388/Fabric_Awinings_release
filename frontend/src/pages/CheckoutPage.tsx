@@ -662,7 +662,14 @@ export function CheckoutPage() {
                           name="deliveryMethod"
                           value={o.id}
                           checked={deliveryMethod === o.id}
-                          onChange={() => setDeliveryMethod(o.id)}
+                          onChange={() => {
+                            setDeliveryMethod(o.id)
+                            if (o.id === 'ozon_logistics') {
+                              setCity('')
+                              setAddress('')
+                              setDeliveryComment('')
+                            }
+                          }}
                           className="mt-1"
                         />
                         <span className="flex min-h-[1.25rem] flex-1 flex-wrap items-center gap-2 font-body text-sm text-text">
@@ -702,8 +709,9 @@ export function CheckoutPage() {
                         </span>
                       </div>
                       <p className="mt-3 font-body text-sm leading-relaxed text-text">
-                        Доставку обрабатывает логистика Ozon. Онлайн-оплата картой: полная сумма (товары и доставка)
-                        будет показана на защищённой странице Ozon Pay перед оплатой.
+                        Онлайн-оплата картой: итог с доставкой и{' '}
+                        <strong className="font-semibold text-text">способ доставки (курьер, ПВЗ — выбор адреса)</strong>{' '}
+                        — на защищённой странице Ozon Pay, сразу перед оплатой. На сайте адрес указывать не нужно.
                       </p>
                       {checkout.ozonLogistics.buyerNote ? (
                         <div className="mt-4 rounded-xl border border-border-light/90 bg-bg-base/90 p-3 font-body text-sm text-text-muted">
@@ -893,7 +901,9 @@ export function CheckoutPage() {
                     </>
                   )}
 
-                  {deliveryMethod !== 'cdek' && deliveryMethod !== 'pickup' && (
+                  {deliveryMethod !== 'cdek' &&
+                    deliveryMethod !== 'pickup' &&
+                    deliveryMethod !== 'ozon_logistics' && (
                     <>
                       <label className="mt-6 block">
                         <span className="mb-1 block font-body text-sm font-medium text-text">Город</span>
@@ -914,7 +924,7 @@ export function CheckoutPage() {
                     </>
                   )}
 
-                  {deliveryMethod !== 'pickup' && (
+                  {deliveryMethod !== 'pickup' && deliveryMethod !== 'ozon_logistics' && (
                     <label className="mt-3 block">
                       <span className="mb-1 block font-body text-sm font-medium text-text">
                         Комментарий к доставке
@@ -1076,6 +1086,10 @@ export function CheckoutPage() {
                       <PickupInfoCard pickup={checkout.pickup} variant="compact" />
                     </div>
                   </div>
+                ) : deliveryMethod === 'ozon_logistics' ? (
+                  <p className="mt-3 text-text-muted">
+                    Адрес доставки вы укажете на следующем шаге — в окне оплаты Ozon.
+                  </p>
                 ) : (city || address) ? (
                   <p className="mt-3">
                     Адрес / город: {city} {address}
