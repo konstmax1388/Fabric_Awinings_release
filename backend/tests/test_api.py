@@ -431,7 +431,7 @@ def test_ozon_create_order_with_logistics_sends_items_and_delivery():
 
 @pytest.mark.django_db
 def test_ozon_create_order_unit_price_times_qty_matches_amount_for_qty_gt_one():
-    """Ozon: в value — коп/ед., amount = value×quantity (не сумма строки в value при qty>1)."""
+    """Ozon: по умолчанию две штуки = две позиции с quantity=1; amount = Σ value."""
     from api.models import CartOrder, Product, ProductCategory, SiteSettings
     from api.services import ozon_acquiring as ozon_mod
 
@@ -479,9 +479,13 @@ def test_ozon_create_order_unit_price_times_qty_matches_amount_for_qty_gt_one():
     assert out.get("redirectUrl") == "https://pay.test/x"
     b = captured["body"]
     assert b["amount"]["value"] == "200000"
+    assert len(b["items"]) == 2
     assert b["items"][0]["price"]["value"] == "100000"
-    assert b["items"][0]["quantity"] == 2
-    assert int(b["items"][0]["price"]["value"]) * int(b["items"][0]["quantity"]) == 200_000
+    assert b["items"][1]["price"]["value"] == "100000"
+    assert b["items"][0]["quantity"] == 1
+    assert b["items"][1]["quantity"] == 1
+    assert b["items"][0]["extId"] == "Z2-L1U1"
+    assert b["items"][1]["extId"] == "Z2-L1U2"
 
 
 @pytest.mark.django_db

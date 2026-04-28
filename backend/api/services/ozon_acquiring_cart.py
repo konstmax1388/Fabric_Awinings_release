@@ -80,6 +80,12 @@ def _resolve_sku_for_line(line: dict[str, Any]) -> int | None:
     return None
 
 
+def _split_cart_line_to_unit_items() -> bool:
+    """По умолчанию: одна единица — одна запись в items с quantity=1 (некоторые контуры payapi так валидируют)."""
+    v = _env("OZON_PAY_CREATE_ORDER_ONE_ITEM_PER_UNIT", "1").lower()
+    return v not in ("0", "false", "no", "off")
+
+
 def build_create_order_items(
     *,
     order_ref: str,
@@ -87,13 +93,16 @@ def build_create_order_items(
 ) -> list[dict[str, Any]]:
     """Позиции для MODE_SHORTENED / MODE_FULL.
 
-    В `price.value` — цена за **одну** единицу в копейках, в `quantity` — штук.
-    Pay API проверяет Σ (value × quantity) = `amount` (см. ошибка «количестве товаров» при
-    неверной интерпретации: не подставлять сюда сумму строки при qty>1).
+    `price.value` — цена за **одну** единицу в копейках. По умолчанию (см. env) каждая штука
+    в корзине — отдельный элемент `items[]` с ``quantity: 1`` и уникальным `extId`, чтобы
+    сумма Σ (value×quantity) совпадала с `amount` без споров API про «количество в строке».
+    Отключение: ``OZON_PAY_CREATE_ORDER_ONE_ITEM_PER_UNIT=0`` — тогда снова одна строка на
+    товар с ``quantity: qty`` (как в корзине).
     """
     currency = _env("OZON_PAY_CURRENCY_CODE", "643")
     vat = _env("OZON_PAY_ITEM_VAT", "VAT_20")
     item_type = _env("OZON_PAY_ITEM_TYPE", "TYPE_PRODUCT")
+    one_per_unit = _split_cart_line_to_unit_items()
 
     items: list[dict[str, Any]] = []
     for i, line in enumerate(lines):
@@ -101,23 +110,39 @@ def build_create_order_items(
         qty = max(1, min(99, int(line.get("qty") or 1)))
         price_rub = max(0, int(line.get("priceFrom") or 0))
         value_kop = str(price_rub * 100)
-        ext_id = f"{order_ref}-L{i + 1}"
-
-        item: dict[str, Any] = {
-            "extId": ext_id,
-            "name": title,
-            "price": {"currencyCode": currency, "value": value_kop},
-            "quantity": qty,
-            "type": item_type,
-            "vat": vat,
-        }
         sku = _resolve_sku_for_line(line)
-        if sku is not None:
-            item["sku"] = sku
-        else:
-            logger.debug("Ozon createOrder line %s: SKU не найден (extId=%s)", i, ext_id)
 
-        items.append(item)
+        if one_per_unit:
+            for u in range(1, qty + 1):
+                ext_id = f"{order_ref}-L{i + 1}U{u}"
+                item: dict[str, Any] = {
+                    "extId": ext_id,
+                    "name": title,
+                    "price": {"currencyCode": currency, "value": value_kop},
+                    "quantity": 1,
+                    "type": item_type,
+                    "vat": vat,
+                }
+                if sku is not None:
+                    item["sku"] = sku
+                else:
+                    logger.debug("Ozon createOrder line %s: SKU не найден (extId=%s)", i, ext_id)
+                items.append(item)
+        else:
+            ext_id = f"{order_ref}-L{i + 1}"
+            item = {
+                "extId": ext_id,
+                "name": title,
+                "price": {"currencyCode": currency, "value": value_kop},
+                "quantity": qty,
+                "type": item_type,
+                "vat": vat,
+            }
+            if sku is not None:
+                item["sku"] = sku
+            else:
+                logger.debug("Ozon createOrder line %s: SKU не найден (extId=%s)", i, ext_id)
+            items.append(item)
     return items
 
 
