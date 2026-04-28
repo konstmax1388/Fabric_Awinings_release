@@ -695,26 +695,37 @@ export function CheckoutPage() {
                           }}
                           className="mt-1"
                         />
-                        <span className="flex min-h-[1.25rem] flex-1 flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 font-body text-sm text-text">
-                          {o.id === 'ozon_logistics' ? (
-                            <img
-                              src="/delivery/ozon-logistics-logo.svg"
-                              alt="Ozon"
-                              className="h-5 w-[min(9rem,42vw)] max-w-full shrink-0 object-contain object-left"
-                            />
-                          ) : null}
-                          {o.id === 'cdek' ? (
-                            <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-4 w-auto object-contain" />
-                          ) : null}
-                          <span className="min-w-0 leading-snug">
-                            <span className="text-text">{o.label}</span>
-                            {o.id === 'ozon_logistics' ? (
-                              <span className="mt-0.5 block text-xs font-medium text-text-muted sm:ml-1 sm:mt-0 sm:inline">
-                                {checkout.ozonLogistics.deliveryPayerLabel}
+                        {o.id === 'ozon_logistics' ? (
+                          <span className="flex min-w-0 flex-1 flex-col gap-2.5">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                              <img
+                                src="/delivery/ozon-logistics-logo.svg"
+                                alt="Ozon"
+                                className="h-6 w-[min(10rem,48vw)] max-w-full shrink-0 object-contain object-left"
+                              />
+                              <span className="font-body text-base font-semibold tracking-tight text-text">
+                                {o.label}
                               </span>
-                            ) : null}
+                            </div>
+                            <span
+                              className="inline-flex w-fit max-w-full items-center rounded-2xl border border-[#005BFF]/40 bg-gradient-to-br from-[#005BFF]/[0.16] via-[#005BFF]/[0.08] to-transparent px-4 py-2.5 text-sm font-semibold leading-snug text-[#0039a3] shadow-[0_1px_0_0_rgba(0,91,255,0.12)] dark:border-[#3b7fff]/55 dark:from-[#005BFF]/25 dark:via-[#1e3a5f]/30 dark:to-transparent dark:text-[#9ec5ff] dark:shadow-[0_1px_0_0_rgba(0,120,255,0.2)]"
+                              role="status"
+                            >
+                              {checkout.ozonLogistics.deliveryPayerLabel}
+                            </span>
                           </span>
-                        </span>
+                        ) : (
+                          <span className="flex min-h-[1.25rem] flex-1 flex-wrap items-center gap-2 font-body text-sm text-text">
+                            {o.id === 'cdek' ? (
+                              <img
+                                src="/delivery/cdek-logo.svg"
+                                alt="СДЭК"
+                                className="h-4 w-auto object-contain"
+                              />
+                            ) : null}
+                            <span className="leading-snug text-text">{o.label}</span>
+                          </span>
+                        )}
                       </label>
                     ))}
                   </fieldset>
