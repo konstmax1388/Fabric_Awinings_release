@@ -430,8 +430,8 @@ def test_ozon_create_order_with_logistics_sends_items_and_delivery():
 
 
 @pytest.mark.django_db
-def test_ozon_create_order_line_price_value_matches_line_total_kopecks_for_qty_gt_one():
-    """Ozon: сумма items[].price.value согласована с amount; при qty>1 value — вся строка, не за ед."""
+def test_ozon_create_order_unit_price_times_qty_matches_amount_for_qty_gt_one():
+    """Ozon: в value — коп/ед., amount = value×quantity (не сумма строки в value при qty>1)."""
     from api.models import CartOrder, Product, ProductCategory, SiteSettings
     from api.services import ozon_acquiring as ozon_mod
 
@@ -479,8 +479,9 @@ def test_ozon_create_order_line_price_value_matches_line_total_kopecks_for_qty_g
     assert out.get("redirectUrl") == "https://pay.test/x"
     b = captured["body"]
     assert b["amount"]["value"] == "200000"
-    assert b["items"][0]["price"]["value"] == "200000"
+    assert b["items"][0]["price"]["value"] == "100000"
     assert b["items"][0]["quantity"] == 2
+    assert int(b["items"][0]["price"]["value"]) * int(b["items"][0]["quantity"]) == 200_000
 
 
 @pytest.mark.django_db

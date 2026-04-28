@@ -21,6 +21,7 @@ from api.models import CartOrder, SiteSettings
 from api.services.http_util import HttpJsonError, post_json
 from api.services.ozon_acquiring_cart import (
     build_create_order_items,
+    kopecks_from_items_by_unit_price,
     synthetic_single_item_order,
     total_kopecks_from_cart_lines,
 )
@@ -207,6 +208,13 @@ def try_begin_ozon_pay(
         body["notificationUrl"] = notif_url
 
     body["items"] = items
+    _items_k = kopecks_from_items_by_unit_price(items=items)
+    if _items_k != amount_kopecks:
+        logger.error(
+            "Ozon createOrder: Σ(price.value×quantity)=%s коп. не совпадает с amount=%s коп.",
+            _items_k,
+            amount_kopecks,
+        )
     if use_ozon_logistics:
         body["deliverySettings"] = {"isEnabled": True}
 

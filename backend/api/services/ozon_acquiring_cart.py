@@ -28,6 +28,31 @@ def total_kopecks_from_cart_lines(lines: list[dict[str, Any]]) -> int:
     return total
 
 
+def kopecks_from_items_by_unit_price(*, items: list[dict[str, Any]]) -> int:
+    """
+    Сумма в копейках по позициям createOrder: Σ (int(price.value) × quantity).
+    Ожидается, что `price.value` — цена за единицу в копейках (как в чеке).
+    """
+    s = 0
+    for it in items:
+        p = it.get("price")
+        if not isinstance(p, dict):
+            continue
+        raw = p.get("value")
+        try:
+            v = int(str(raw).strip())
+        except (TypeError, ValueError):
+            continue
+        q = it.get("quantity", 1)
+        try:
+            n = int(q) if not isinstance(q, str) else int(str(q).strip() or "1")
+        except (TypeError, ValueError):
+            n = 1
+        n = max(1, min(99, n))
+        s += v * n
+    return s
+
+
 def _resolve_sku_for_line(line: dict[str, Any]) -> int | None:
     pid = line.get("productId") or ""
     vid = (line.get("variantId") or "").strip()
@@ -62,8 +87,9 @@ def build_create_order_items(
 ) -> list[dict[str, Any]]:
     """Позиции для MODE_SHORTENED / MODE_FULL.
 
-    В `price.value` уходит сумма по строке в копейках (за ед. × кол-во), чтобы
-    `amount` совпадал с суммой `items[].price.value` (API Ozon, см. createOrder).
+    В `price.value` — цена за **одну** единицу в копейках, в `quantity` — штук.
+    Pay API проверяет Σ (value × quantity) = `amount` (см. ошибка «количестве товаров» при
+    неверной интерпретации: не подставлять сюда сумму строки при qty>1).
     """
     currency = _env("OZON_PAY_CURRENCY_CODE", "643")
     vat = _env("OZON_PAY_ITEM_VAT", "VAT_20")
@@ -74,8 +100,7 @@ def build_create_order_items(
         title = str(line.get("title") or "Товар").strip()[:500] or "Товар"
         qty = max(1, min(99, int(line.get("qty") or 1)))
         price_rub = max(0, int(line.get("priceFrom") or 0))
-        # Строка в копейках: та же величина, что в total_kopecks_from_cart_lines по линии.
-        value_kop = str(price_rub * 100 * qty)
+        value_kop = str(price_rub * 100)
         ext_id = f"{order_ref}-L{i + 1}"
 
         item: dict[str, Any] = {
