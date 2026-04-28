@@ -18,7 +18,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 from .unfold_sidebar import build_unfold_sidebar
-from .version import APP_VERSION, GIT_SHA as REPO_GIT_SHA
+from .version import GIT_SHA as REPO_GIT_SHA, get_app_version
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,7 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 def unfold_environment_callback(request):
     """Бейдж справа в шапке Unfold: номер версии; цвет намекает на окружение (DEBUG)."""
     dev = os.environ.get("DJANGO_DEBUG", "true").lower() in ("1", "true", "yes")
-    return [APP_VERSION, "warning" if dev else "success"]
+    # Читаем VERSION с диска при запросе: после деплоя совпадает с файлом без «залипания» воркеров
+    # и с реальным contents на VPS, если пуш в git-remote сервера актуален.
+    return [get_app_version(), "warning" if dev else "success"]
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",

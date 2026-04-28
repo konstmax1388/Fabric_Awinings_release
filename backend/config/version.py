@@ -1,4 +1,8 @@
-"""Версия продукта (источник — файл VERSION в корне репозитория)."""
+"""Версия продукта (источник — файл VERSION в корне репозитория).
+
+Прод часто клонирует зеркало `Fabric_Awinings_release`: релизный коммит должен попасть
+и в тот remote (`git push release main`), иначе на VPS останется старая VERSION — см. deploy/push-mirror.ps1.
+"""
 
 from pathlib import Path
 import subprocess

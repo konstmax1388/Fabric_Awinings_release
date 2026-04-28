@@ -51,11 +51,13 @@ from .serializers import (
 @ensure_csrf_cookie
 @api_view(["GET"])
 def health(request):
+    from config.version import get_app_version
+
     return Response(
         {
             "status": "ok",
             "service": "fabric-awnings-api",
-            "version": getattr(settings, "APP_VERSION", "0.0.0"),
+            "version": get_app_version(),
             "gitSha": str(getattr(settings, "GIT_SHA", "") or ""),
             "builtAt": str(getattr(settings, "BUILD_TIME", "") or ""),
             "time": timezone.now().isoformat(),
