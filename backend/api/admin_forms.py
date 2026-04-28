@@ -1,6 +1,7 @@
 """Формы админки: удобный ввод вместо сырого JSON где возможно."""
 
 from django import forms
+from django.db import DatabaseError
 from django.utils.translation import gettext_lazy as _
 from unfold.widgets import UnfoldAdminPasswordWidget
 
@@ -423,9 +424,16 @@ class SiteSettingsOzonLogisticsSectionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and getattr(self.instance, "pk", None):
-            cred, _ = OzonSellerApiSettings.objects.get_or_create(site=self.instance)
-            self.initial.setdefault("ozon_seller_client_id", cred.client_id)
-            self.initial.setdefault("ozon_seller_api_key", cred.api_key)
+            # Только чтение: не создаём строку в БД на GET. Нет таблицы (не migrate) — не падаем.
+            try:
+                cred = OzonSellerApiSettings.objects.filter(
+                    site_id=self.instance.pk
+                ).first()
+            except DatabaseError:
+                return
+            if cred is not None:
+                self.initial.setdefault("ozon_seller_client_id", cred.client_id)
+                self.initial.setdefault("ozon_seller_api_key", cred.api_key)
 
     def save(self, commit=True):
         instance = super().save(commit=commit)

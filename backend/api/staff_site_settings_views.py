@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.db import DatabaseError
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers as drf_serializers
@@ -15,10 +16,11 @@ from rest_framework.views import APIView
 from config.sitesettings_nav import SECTION_FIELDS, SECTION_ORDER
 
 from .admin import _sitesettings_section_modelform_factory, _validate_astrum_crm_section
-from .models import SiteSettings
+from .admin_forms import SiteSettingsOzonLogisticsSectionForm
+from .models import OzonSellerApiSettings, SiteSettings
 from .permissions import IsStaffUser
 from .staff_content_serializers import _apply_image_relative_path
-from .staff_utils import camel_to_snake, model_instance_to_camel_dict
+from .staff_utils import camel_to_snake, model_instance_to_camel_dict, snake_to_camel
 
 _SECRET_WRITE_MAP = {
     "smtpPasswordNew": "smtp_password",
@@ -106,7 +108,23 @@ class SiteSettingsSectionStaffView(APIView):
             raise Http404
         obj = SiteSettings.get_solo()
         fields = SECTION_FIELDS[slug]
-        data = model_instance_to_camel_dict(obj, fields, request, mask_secrets=True)
+        if slug == "checkout_ozon_logistics":
+            base = (
+                "ozon_logistics_enabled",
+                "ozon_logistics_delivery_payer",
+                "ozon_logistics_buyer_note",
+            )
+            data = model_instance_to_camel_dict(obj, base, request, mask_secrets=True)
+            try:
+                cred = OzonSellerApiSettings.objects.filter(site_id=obj.pk).first()
+            except DatabaseError:
+                cred = None
+            cid = (cred.client_id or "") if cred else ""
+            key = (cred.api_key or "") if cred else ""
+            data[snake_to_camel("ozon_seller_client_id")] = cid
+            data[snake_to_camel("ozon_seller_api_key")] = "***" if (key and key.strip()) else ""
+        else:
+            data = model_instance_to_camel_dict(obj, fields, request, mask_secrets=True)
         data["slug"] = slug
         return Response(data)
 
@@ -115,7 +133,10 @@ class SiteSettingsSectionStaffView(APIView):
             raise Http404
         obj = SiteSettings.get_solo()
         fields = SECTION_FIELDS[slug]
-        Form = _sitesettings_section_modelform_factory(request, fields)
+        if slug == "checkout_ozon_logistics":
+            Form = SiteSettingsOzonLogisticsSectionForm
+        else:
+            Form = _sitesettings_section_modelform_factory(request, fields)
         raw = dict(request.data) if hasattr(request.data, "keys") else {}
         post_data: dict[str, Any] = {}
         for k, v in raw.items():
