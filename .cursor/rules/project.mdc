@@ -15,15 +15,14 @@ alwaysApply: true
 Считай такой запросом на **полный релизный цикл** после готового кода (и прошедших релевантных проверок):
 
 1. **Версия** — **всегда** подними `VERSION` в **корне** репозитория (семвер) и **включи** изменение в **релизный коммит** вместе с кодом, либо отдельный коммит `Release X.Y.Z: …` только с `VERSION`, если других правок нет. Без пустого `VERSION` и без «забыли».
-2. **GitHub** — **`git push release main`** **и** **`git push origin main`**. См. раздел «Git: куда пушить» ниже; для прода **оба** пуша обычно нужны.
+2. **GitHub** — **оба** remotes: **`.\deploy\push-mirror.ps1`** (эквивалент: **`git push origin main`** + **`git push release main`**). Без `release` зерко **Fabric_Awinings_release** не обновляется, а **на VPS `git fetch` часто смотрит именно на него** — в админке тогда **старая** строка в `VERSION` (например 3.2.20), хотя основной репо уже 3.2.23+.
 3. **Прод (VPS), чтобы на сайте были все изменения:**
-   - Если в рабочей копии есть `deploy/.env.deploy` (файл **не** в git, настроен у тебя локально) — **сразу после пуша** **запусти** `.\deploy\sync-to-production.ps1` (из PowerShell) или `bash deploy/sync-to-production.sh` из корня проекта. Скрипт тянет **`origin/main`** на сервер, собирает фронт, `migrate`/`collectstatic` по скрипту, перезапускает gunicorn — это и есть **«деплой на сервер»**.
+   - Если в рабочей копии есть `deploy/.env.deploy` (файл **не** в git, настроен у тебя локально) — **сразу после пуша** **запусти** `.\deploy\sync-to-production.ps1` (из PowerShell) или `bash deploy/sync-to-production.sh` из корня проекта. Скрипт тянет на сервер ветку из `DEPLOY_GIT_REMOTE` / `main`, собирает фронт, `migrate`/`collectstatic` по скрипту, перезапускает gunicorn — это и есть **«деплой на сервер»**.
    - Если `deploy/.env.deploy` **нет** или **SSH/скрипт падает** — не останавливайся на «нужен ручной деплой» без деталей: выведи **ошибку**, перечисли, что сделал (пуш), и **точные** шаги: создать `.env` из `deploy/.env.deploy.example`, повторить скрипт, либо вручную `git pull`+build+`migrate`+`restart` по `deploy/DEPLOY-MECHANISM.md` / GitHub Actions **Deploy VPS**.
 4. **После успешного деплоя** — в ответе пользователю: проверь на проде `VERSION` (админка / `VERSION` на сервере), `GET /api/health/`, и что миграции применились, если в релизе были.
 
 **Ограничение:** агент выполняет деплой **только** если на машине, где крутится среда, есть `deploy/.env.deploy` и рабочий SSH к VPS; иначе **пуши сделай сам**, а деплой — **инструкцией** или **ручной кнопкой** Actions, без выдуманного «уже задеплоил».
 
-# Git: куда пушить (прод тянет `origin/main`, не только `release`)
-- В репозитории два remotes: **`origin`** → `github.com/.../Fabric_Awinings`, **`release`** → `.../Fabric_Awinings_release`. Локальная `main` часто отслеживает `release/main`, но **деплой** (`deploy/sync-to-production.*`, **GitHub Action Deploy VPS** на сервере) выполняет `git fetch/reset` от **`origin/main`**.
-- ПОСЛЕ релизного коммита, если нужен выклад **на тот хост, где `origin` = Fabric_Awinings**, выполняй: **`git push release main` И `git push origin main`** (второе обязательно, иначе прод останется на старом SHA).
-- Кратко проверка: `git rev-parse release/main` и `git rev-parse origin/main` должны совпадать с `main` перед деплоем (иначе на сервере останется старый `origin/main`).
+# Git: куда пушить (два remotes, прод часто = зерко `release`)
+- Удалённо: **`origin`** → `.../Fabric_Awinings`, **`release`** → `.../Fabric_Awinings_release`. На **VPS** имя `origin` у клона **часто** указывает на **тот же** `Fabric_Awinings_release` — `git pull/fetch` берёт оттуда; если пушить только в GitHub-`origin`, **прод не видит** новых коммитов.
+- ПОСЛЕ релиза: **`.\deploy\push-mirror.ps1`** (или вручную **`git push origin main`**, затем **`git push release main`**). Перед `sync-to-production`: `git rev-parse main`, `git rev-parse origin/main`, `git rev-parse release/main` — **одинаковый SHA** (или `release/main` не существует локально — сделай `git fetch release`).
