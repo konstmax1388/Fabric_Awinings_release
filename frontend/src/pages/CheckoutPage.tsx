@@ -675,7 +675,7 @@ export function CheckoutPage() {
                         <span className="flex min-h-[1.25rem] flex-1 flex-wrap items-center gap-2 font-body text-sm text-text">
                           {o.id === 'ozon_logistics' ? (
                             <img
-                              src="/checkout/ozon-logistics-logo.svg"
+                              src="/delivery/ozon-logistics-logo.svg"
                               alt="Ozon"
                               className="h-5 w-[min(9rem,42vw)] max-w-full object-contain object-left"
                             />
@@ -700,7 +700,7 @@ export function CheckoutPage() {
                     <div className="mt-5 overflow-hidden rounded-2xl border border-[#005BFF]/20 bg-gradient-to-br from-[#005BFF]/[0.07] via-bg-base to-bg-base p-5 shadow-sm dark:from-[#005BFF]/[0.12] dark:via-bg-base">
                       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                         <img
-                          src="/checkout/ozon-logistics-logo.svg"
+                          src="/delivery/ozon-logistics-logo.svg"
                           alt="Ozon"
                           className="h-7 w-[min(12rem,55vw)] max-w-full object-contain object-left"
                         />
