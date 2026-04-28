@@ -607,6 +607,8 @@ class CartOrderCreateSerializer(serializers.Serializer):
         from .services.letters import build_cart_letters
         from .services.order_ref import generate_order_ref
         from .services.ozon_acquiring import try_begin_ozon_pay
+        from .services.ozon_acquiring_cart import aggregate_qty_by_ozon_sku
+        from .services.ozon_seller_stocks import validate_ozon_logistics_stock
 
         request = self.context.get("request")
         user = None
@@ -658,6 +660,14 @@ class CartOrderCreateSerializer(serializers.Serializer):
                     "totalApprox": "Сумма заказа не совпала с расчётом. Обновите страницу и проверьте доставку.",
                 }
             )
+
+        if (
+            dm == CartOrder.DeliveryMethod.OZON_LOGISTICS
+            and pm == CartOrder.PaymentMethod.CARD_ONLINE
+        ):
+            need = aggregate_qty_by_ozon_sku(lines_plain)
+            if need:
+                validate_ozon_logistics_stock(need)
 
         acquiring: dict = {}
         if pm == CartOrder.PaymentMethod.CARD_ONLINE:

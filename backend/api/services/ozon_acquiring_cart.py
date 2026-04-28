@@ -93,6 +93,20 @@ def _resolve_sku_for_line(line: dict[str, Any]) -> int | None:
     return None
 
 
+def aggregate_qty_by_ozon_sku(lines: list[dict[str, Any]]) -> dict[int, int]:
+    """
+    Суммарное кол-во в корзине на каждый marketplace SKU (тот же идентификатор, что в createOrder items[].sku).
+    """
+    out: dict[int, int] = {}
+    for line in lines:
+        sku = _resolve_sku_for_line(line)
+        if sku is None:
+            continue
+        qty = max(1, min(99, int(line.get("qty") or 1)))
+        out[sku] = out.get(sku, 0) + qty
+    return out
+
+
 def _split_cart_line_to_unit_items() -> bool:
     """По умолчанию: одна единица — одна запись в items с quantity=1 (некоторые контуры payapi так валидируют)."""
     v = _env("OZON_PAY_CREATE_ORDER_ONE_ITEM_PER_UNIT", "1").lower()
