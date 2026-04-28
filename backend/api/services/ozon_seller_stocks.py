@@ -6,7 +6,10 @@ Ozon Seller API: остатки по товарам (перед createOrder / Oz
 возвращает товар. Запрашиваем остатки и по `product_id`, и по `offer_id`, и по `sku` (v4), плюс
 `v3/product/info/list` по списку `sku` — ответы склеиваем; в индексе учитываем `sources[]` (FBS).
 Плюс **`/v1/product/info/stocks-by-warehouse/fbs`**: по каждому SKU суммируем `present` по
-складам (v3/v4 иногда не отражают FBS-остаток в `stocks`, хотя в кабинете он есть).
+складам (FBS / rFBS), если в ответе есть значение `present`.
+**`/v1/product/related-sku/get`** (док-ция ProductAPI_ProductGetRelatedSKU) — у одного товара
+несколько SKU (FBO / FBS и т.д.); по одному введённому в админке ищем **все связанные `sku`**
+(группировка по `product_id` в ответе) и сравниваем остаток по **максимуму внутри кластера**.
 
 Ключи: OZON_SELLER_CLIENT_ID, OZON_SELLER_API_KEY (см. кабинет — Product read-only + Warehouse
 или Admin read-only). Кэш: OZON_SELLER_STOCK_CACHE_SECONDS (по умолчанию 120).
@@ -79,15 +82,38 @@ def _cache_ttl_seconds() -> int:
 def _batch_cache_key(skus: list[int]) -> str:
     raw = json.dumps(sorted(skus), separators=(",", ":"), ensure_ascii=True)
     h = zlib.crc32(raw.encode("utf-8")) & 0xFFFFFFFF
-    return f"ozon_seller:stocks:batch:v3:{h}:{len(skus)}"
+    return f"ozon_seller:stocks:batch:v4:{h}:{len(skus)}"
+
+
+def _coerce_nonneg_int(val: Any) -> int | None:
+    if isinstance(val, (int, float)) and val >= 0:
+        return int(val)
+    return None
+
+
+def _row_presentish(row: dict[str, Any]) -> int:
+    for key in ("present", "count", "stock", "available"):
+        w = _coerce_nonneg_int(row.get(key))
+        if w is not None and w > 0:
+            return w
+    return 0
 
 
 def _extract_present(item: dict[str, Any]) -> int:
     stocks = item.get("stocks")
     if isinstance(stocks, dict):
         p = stocks.get("present")
-        if isinstance(p, (int, float)) and p >= 0:
-            return int(p)
+        w = _coerce_nonneg_int(p) if p is not None else None
+        if w is not None and w > 0:
+            return w
+        inner = stocks.get("stocks")
+        if isinstance(inner, list) and inner:
+            t = 0
+            for s in inner:
+                if isinstance(s, dict):
+                    t += _row_presentish(s)
+            if t > 0:
+                return t
     if isinstance(stocks, list) and stocks:
         total = 0
         for s in stocks:
@@ -96,6 +122,8 @@ def _extract_present(item: dict[str, Any]) -> int:
             p = s.get("present")
             if isinstance(p, (int, float)) and p > 0:
                 total += int(p)
+            else:
+                total += _row_presentish(s)
         if total > 0:
             return total
     p = item.get("present")
@@ -157,10 +185,13 @@ def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
             for src in sources:
                 if not isinstance(src, dict):
                     continue
-                p_src = src.get("present")
-                if not isinstance(p_src, (int, float)) or p_src < 0:
+                ps0 = src.get("present")
+                if isinstance(ps0, (int, float)) and ps0 >= 0:
+                    p_src = int(ps0)
+                else:
+                    p_src = _row_presentish(src)
+                if p_src < 0:
                     p_src = 0
-                p_src = int(p_src)
                 for key in ("sku", "product_id", "fbs_sku"):
                     raw = src.get(key)
                     if raw is None or raw is False:
@@ -197,6 +228,59 @@ def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
                 if p > best.get(k, -1):
                     best[k] = p
     return best
+
+
+def _related_sku_raw_items(
+    creds: tuple[str, str], skus: list[int]
+) -> list[dict[str, Any]]:
+    if not skus:
+        return []
+    url = f"{SELLER_BASE}/v1/product/related-sku/get"
+    out: list[dict[str, Any]] = []
+    for i in range(0, len(skus), 200):
+        batch = skus[i : i + 200]
+        try:
+            data = post_json(url, {"sku": batch}, headers=_auth_headers(creds), timeout=45.0)
+        except HttpJsonError as e:
+            logger.info("Ozon v1/related-sku: %s", e)
+            continue
+        if not isinstance(data, dict):
+            continue
+        items = data.get("items")
+        if not isinstance(items, list):
+            continue
+        for x in items:
+            if isinstance(x, dict):
+                out.append(x)
+    return out
+
+
+def _sku_to_cluster_map(
+    sset: list[int], rel_items: list[dict[str, Any]]
+) -> dict[int, set[int]]:
+    by_pid: dict[int, set[int]] = {}
+    for it in rel_items:
+        raw_p = it.get("product_id")
+        raw_s = it.get("sku")
+        if raw_s is None or raw_s is False or raw_p is None:
+            continue
+        try:
+            pid = int(str(raw_p).strip())
+            sk = int(str(raw_s).strip())
+        except (TypeError, ValueError):
+            continue
+        if sk < 0 or pid < 0:
+            continue
+        by_pid.setdefault(pid, set()).add(sk)
+    out: dict[int, set[int]] = {}
+    for k in sset:
+        cl: set[int] = {k}
+        for sgroup in by_pid.values():
+            if k in sgroup:
+                cl = set(sgroup)
+                break
+        out[k] = cl
+    return out
 
 
 def _v3_product_info_list_by_sku(
@@ -269,11 +353,11 @@ def _v1_fbs_warehouse_present_by_sku(
                 continue
             if k < 0:
                 continue
-            p = row.get("present")
-            if not isinstance(p, (int, float)) or p < 0:
-                p = 0
-            p = int(p)
-            out[k] = out.get(k, 0) + p
+            p0 = row.get("present")
+            a = int(p0) if isinstance(p0, (int, float)) and p0 >= 0 else 0
+            b = _row_presentish(row)
+            q = max(a, b)
+            out[k] = out.get(k, 0) + q
     return out
 
 
@@ -281,11 +365,29 @@ def _fetch_fresh(
     skus: list[int],
     creds: tuple[str, str],
 ) -> dict[int, int]:
-    """Сколько в наличии: v4 + v3 и отдельно FBS-склады (см. _v1_fbs_warehouse_present_by_sku)."""
+    """v4 + v3 + FBS-склады; related-sku сшивает FBO/FBS-идентификаторы (см. доку)."""
     sset = sorted({s for s in skus if s and s > 0})
     if not sset:
         return {}
-    sset_str = [str(x) for x in sset]
+    rel = _related_sku_raw_items(creds, sset)
+    by_k = _sku_to_cluster_map(sset, rel)
+    expanded: set[int] = set()
+    for g in by_k.values():
+        expanded |= g
+    for it in rel:
+        raw = it.get("sku")
+        if raw is not None and raw is not False:
+            try:
+                sk = int(str(raw).strip())
+            except (TypeError, ValueError):
+                pass
+            else:
+                if sk > 0:
+                    expanded.add(sk)
+    ex = sorted(x for x in expanded if x > 0)
+    if not ex:
+        ex = sset
+    sset_str = [str(x) for x in ex]
     all_items: list[dict[str, Any]] = []
     all_items.extend(_v4_stocks_paginate(creds, filter_key="product_id", ids=sset_str))
     all_items.extend(_v4_stocks_paginate(creds, filter_key="offer_id", ids=sset_str))
@@ -293,10 +395,13 @@ def _fetch_fresh(
         all_items.extend(_v4_stocks_paginate(creds, filter_key="sku", ids=sset_str))
     except HttpJsonError as e:
         logger.info("Ozon v4/stocks filter=sku: %s (ok if keys — product_id)", e)
-    all_items.extend(_v3_product_info_list_by_sku(creds, sset))
+    all_items.extend(_v3_product_info_list_by_sku(creds, ex))
     by_id = _index_availability(all_items)
-    fbs = _v1_fbs_warehouse_present_by_sku(creds, sset)
-    return {k: max(int(by_id.get(k, 0) or 0), int(fbs.get(k, 0) or 0)) for k in sset}
+    fbs = _v1_fbs_warehouse_present_by_sku(creds, ex)
+    per: dict[int, int] = {
+        n: max(int(by_id.get(n, 0) or 0), int(fbs.get(n, 0) or 0)) for n in ex
+    }
+    return {k: max((per.get(s, 0) for s in by_k[k]), default=0) for k in sset}
 
 
 def get_ozon_stock_availability(
@@ -330,7 +435,7 @@ def get_ozon_stock_availability(
     out = _fetch_fresh(u, creds)
     cache.set(batch_key, {str(k): v for k, v in out.items()}, ttl)
     for k, v in out.items():
-        cache.set(f"ozon_seller:stock:single:v3:{k}", v, ttl)
+        cache.set(f"ozon_seller:stock:single:v4:{k}", v, ttl)
     return out
 
 
