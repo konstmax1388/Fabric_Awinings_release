@@ -110,7 +110,11 @@ class HomePageContentPublicView(APIView):
                         card["iconImageUrl"] = request.build_absolute_uri(img.url)
                     else:
                         card["iconImageUrl"] = ""
-        return Response({"home": home})
+        response = Response({"home": home})
+        # Как site-settings: не кэшировать у CDN/браузером — иначе после правок в админке
+        # долго виден старый whyUs, sectionLayout, hero и т.д.
+        response["Cache-Control"] = "no-store, max-age=0, private"
+        return response
 
 
 class StaticPageListPublicView(APIView):
@@ -134,7 +138,9 @@ class StaticPageDetailPublicView(APIView):
         page = StaticPage.objects.filter(is_published=True, slug=slug).first()
         if not page:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(StaticPagePublicSerializer(page, context={"request": request}).data)
+        out = Response(StaticPagePublicSerializer(page, context={"request": request}).data)
+        out["Cache-Control"] = "no-store, max-age=0, private"
+        return out
 
 
 class RegisterView(APIView):
