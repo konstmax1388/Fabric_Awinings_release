@@ -919,18 +919,23 @@ class StaticPageAdmin(ModelAdmin):
         ]
         if obj is None or (getattr(obj, "slug", None) or "") == "o-nas":
             head.extend(about_page_admin_fieldsets())
-        head.append(
-            (
-                _("Контент"),
-                {
-                    "fields": ("body", "updated_at"),
-                    "description": _(
-                        "Если макет v1 на витрине не включён или слаг не o-nas — на сайте выводится этот HTML. "
-                        "Можно использовать как запасной вариант или вставки при гибридной вёрстке."
-                    ),
-                },
+        slug = (getattr(obj, "slug", None) or "") if obj is not None else ""
+        content_block: dict[str, Any] = {
+            "fields": ("body", "updated_at"),
+            "description": _(
+                "Если макет v1 на витрине не включён или слаг не o-nas — на сайте выводится этот HTML. "
+                "Можно использовать как запасной вариант или вставки при гибридной вёрстке."
+            ),
+        }
+        if slug == "o-nas":
+            content_block["classes"] = ("collapse",)
+            content_block["description"] = _(
+                "Запасной HTML при отключённом макете v1; при макете v1 основной контент задаётся полями выше. "
+                "Галерея плиткой: после сохранения страницы смотрите инлайн под этим полем — "
+                "«Галерея (О нас, витрина): …» (файлы с ПК, зона с перетаскиванием). "
+                "Блок «Контент» свернут по умолчанию, чтобы быстрее дойти до загрузки фото."
             )
-        )
+        head.append((_("Контент"), content_block))
         return tuple(head)
 
 
