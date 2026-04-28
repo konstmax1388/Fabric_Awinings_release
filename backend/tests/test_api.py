@@ -430,6 +430,58 @@ def test_ozon_create_order_with_logistics_sends_items_and_delivery():
 
 
 @pytest.mark.django_db
+def test_ozon_logistics_does_not_call_create_order_without_ozon_sku():
+    """Без Ozon SKU createOrder не вызываем — иначе 400 по items; покупателю — явное сообщение."""
+    from api.models import CartOrder, Product, ProductCategory, SiteSettings
+    from api.services import ozon_acquiring as ozon_mod
+
+    cat = ProductCategory.objects.create(title="Cat", slug="cat-no-ozon-sku", sort_order=0)
+    p = Product.objects.create(
+        title="Тест без SKU",
+        slug="test-no-ozon-sku",
+        category=cat,
+        price_from=10,
+        ozon_sku=None,
+    )
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+
+    post_calls: list = []
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        post_calls.append(url)
+        return {"order": {"payLink": "x"}}
+
+    lines = [
+        {
+            "productId": str(p.id),
+            "variantId": "",
+            "slug": p.slug,
+            "title": p.title,
+            "priceFrom": 10,
+            "qty": 1,
+            "image": "",
+        }
+    ]
+    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": "https://acq.test"}, clear=False):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(
+                order_ref="Z-NOSKU",
+                total_approx=10,
+                settings=s,
+                delivery_method=CartOrder.DeliveryMethod.OZON_LOGISTICS,
+                cart_lines=lines,
+            )
+    assert post_calls == []
+    assert out.get("redirectUrl") is None
+    assert "Ozon SKU" in (out.get("message") or "")
+
+
+@pytest.mark.django_db
 def test_ozon_create_order_unit_price_times_qty_matches_amount_for_qty_gt_one():
     """Ozon: по умолчанию две штуки = две позиции с quantity=1; amount = Σ value."""
     from api.models import CartOrder, Product, ProductCategory, SiteSettings

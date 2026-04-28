@@ -53,6 +53,19 @@ def kopecks_from_items_by_unit_price(*, items: list[dict[str, Any]]) -> int:
     return s
 
 
+def lines_missing_ozon_sku(lines: list[dict[str, Any]]) -> list[tuple[int, str]]:
+    """
+    Строки корзины, для которых не удаётся определить Ozon SKU (нужен для MODE_FULL / логистика).
+    Возвращает (номер строки 1-based, краткое имя).
+    """
+    out: list[tuple[int, str]] = []
+    for i, line in enumerate(lines):
+        if _resolve_sku_for_line(line) is None:
+            title = str(line.get("title") or "Товар").strip()[:200] or "Товар"
+            out.append((i + 1, title))
+    return out
+
+
 def _resolve_sku_for_line(line: dict[str, Any]) -> int | None:
     pid = line.get("productId") or ""
     vid = (line.get("variantId") or "").strip()

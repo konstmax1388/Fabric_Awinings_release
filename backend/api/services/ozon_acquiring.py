@@ -22,6 +22,7 @@ from api.services.http_util import HttpJsonError, post_json
 from api.services.ozon_acquiring_cart import (
     build_create_order_items,
     kopecks_from_items_by_unit_price,
+    lines_missing_ozon_sku,
     synthetic_single_item_order,
     total_kopecks_from_cart_lines,
 )
@@ -138,6 +139,23 @@ def try_begin_ozon_pay(
     if use_ozon_logistics:
         mode = "MODE_FULL"
         if lines:
+            skip_sku = _env("OZON_PAY_SKIP_LOGISTICS_SKU_CHECK", "").lower() in ("1", "true", "yes")
+            missing_sku = lines_missing_ozon_sku(lines)
+            if missing_sku and not skip_sku:
+                sample = "», «".join(t for _, t in missing_sku[:5])
+                if len(missing_sku) > 5:
+                    sample += "», …"
+                return {
+                    **base_out,
+                    "configured": True,
+                    "liveHttp": False,
+                    "redirectUrl": None,
+                    "message": (
+                        "Для доставки «Логистика Ozon» у каждого товара в админке должен быть указан "
+                        "числовой Ozon SKU из кабинета продавца (поле «Ozon SKU» у товара или варианта). "
+                        f"Сейчас не задано для: «{sample}». После сохранения SKU повторите заказ."
+                    ),
+                }
             items = build_create_order_items(order_ref=order_ref, lines=lines)
             amount_kopecks = total_kopecks_from_cart_lines(lines)
         else:
