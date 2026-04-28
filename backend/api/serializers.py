@@ -122,6 +122,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     cdekHeightCm = serializers.IntegerField(source="cdek_height_cm", allow_null=True, read_only=True)
     warrantyMonths = serializers.SerializerMethodField()
     returnDays = serializers.SerializerMethodField()
+    ozonSku = serializers.IntegerField(source="ozon_sku", allow_null=True, read_only=True)
 
     class Meta:
         model = Product
@@ -145,6 +146,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "cdekHeightCm",
             "warrantyMonths",
             "returnDays",
+            "ozonSku",
         )
 
     def get_id(self, obj: Product) -> str:
@@ -199,10 +201,11 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
     wbUrl = serializers.URLField(source="marketplace_wb_url", allow_blank=True)
     isDefault = serializers.BooleanField(source="is_default", read_only=True)
+    ozonSku = serializers.IntegerField(source="ozon_sku", allow_null=True, read_only=True)
 
     class Meta:
         model = ProductVariant
-        fields = ("id", "label", "priceFrom", "images", "wbUrl", "isDefault")
+        fields = ("id", "label", "priceFrom", "images", "wbUrl", "isDefault", "ozonSku")
 
     def get_id(self, obj: ProductVariant) -> str:
         return str(obj.pk)
@@ -520,13 +523,23 @@ class CartOrderCreateSerializer(serializers.Serializer):
         except ValueError as exc:
             raise serializers.ValidationError(str(exc))
         attrs["_trusted_lines"] = trusted_lines
+        dm = attrs.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
+        if dm == CartOrder.DeliveryMethod.OZON_LOGISTICS:
+            from .services.ozon_acquiring_cart import lines_missing_ozon_sku
+
+            if lines_missing_ozon_sku(trusted_lines):
+                raise serializers.ValidationError(
+                    {
+                        "deliveryMethod": [
+                            "Логистика Ozon доступна только если у всех товаров в каталоге задан Ozon SKU.",
+                        ]
+                    }
+                )
         goods_sub = goods_subtotal_from_lines(trusted_lines)
         min_rub = int(s.checkout_minimum_order_rub or 0)
         if min_rub > 0 and goods_sub < min_rub:
             est = f"{min_rub:,}".replace(",", " ")
             raise serializers.ValidationError(f"Минимальная сумма заказа (товары) — {est} ₽.")
-
-        dm = attrs.get("deliveryMethod", CartOrder.DeliveryMethod.PICKUP)
         delivery = attrs.get("delivery") or {}
         free_from = int(s.checkout_free_delivery_from_rub or 0)
         if dm == CartOrder.DeliveryMethod.CDEK:

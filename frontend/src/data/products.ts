@@ -14,6 +14,8 @@ export type ProductVariantRow = {
   images: string[]
   wbUrl?: string
   isDefault?: boolean
+  /** SKU в Ozon по варианту; для доставки «Логистика Ozon» */
+  ozonSku?: number
 }
 
 export type ProductSpecificationRow = {
@@ -82,6 +84,8 @@ export type Product = {
   cdekLengthCm?: number | null
   cdekWidthCm?: number | null
   cdekHeightCm?: number | null
+  /** SKU в Ozon на уровне товара (без варианта или fallback); для доставки «Логистика Ozon» */
+  ozonSku?: number
   /** Эффективные сроки (с бэкенда: свой товар или дефолт каталога), мес. / дн. */
   warrantyMonths: number
   returnDays: number

@@ -170,7 +170,14 @@ function parseVariantRow(row: unknown): ProductVariantRow | null {
   const wbUrl = typeof r.wbUrl === 'string' && r.wbUrl.trim() ? r.wbUrl : undefined
   const isDefault = Boolean(r.isDefault)
   if (!id || !label.trim() || !Number.isFinite(priceFrom)) return null
-  return { id, label, priceFrom, images, wbUrl, isDefault }
+  const rawOzon = r.ozonSku
+  let ozonSku: number | undefined
+  if (typeof rawOzon === 'number' && rawOzon > 0) ozonSku = Math.floor(rawOzon)
+  else if (rawOzon != null) {
+    const n = Number(rawOzon)
+    if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
+  }
+  return { id, label, priceFrom, images, wbUrl, isDefault, ...(ozonSku !== undefined ? { ozonSku } : {}) }
 }
 
 function parseProductSeo(raw: unknown): ProductSeo | undefined {
@@ -298,6 +305,13 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     typeof raw.returnDays === 'number' && Number.isFinite(raw.returnDays)
       ? Math.max(0, Math.floor(raw.returnDays))
       : 14
+  const rawOzonProduct = raw.ozonSku
+  let ozonSku: number | undefined
+  if (typeof rawOzonProduct === 'number' && rawOzonProduct > 0) ozonSku = Math.floor(rawOzonProduct)
+  else if (rawOzonProduct != null) {
+    const n = Number(rawOzonProduct)
+    if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
+  }
   return {
     id,
     slug: raw.slug,
@@ -324,6 +338,7 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     cdekHeightCm: Number.isFinite(cdekHeightCm) ? cdekHeightCm : null,
     warrantyMonths,
     returnDays,
+    ...(ozonSku !== undefined ? { ozonSku } : {}),
   }
 }
 

@@ -4,6 +4,7 @@ import { CartContext } from '../cart/cartContext'
 import type { Product, ProductVariantRow } from '../data/products'
 import { resolveCartLineImage } from '../lib/cartLineImage'
 import { fetchProductBySlug } from '../lib/api'
+import { resolveOzonSkuForCartLine } from '../lib/resolveOzonSku'
 
 const STORAGE_KEY = 'fabric-awnings-cart-v1'
 
@@ -44,7 +45,7 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
     ) {
       continue
     }
-    out.push({
+    const line: CartLine = {
       lineId,
       productId,
       variantId,
@@ -77,7 +78,15 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
           : r.cdekHeightCm == null
             ? null
             : Number(r.cdekHeightCm),
-    })
+    }
+    const rawOzon = r.ozonSku
+    let ozonSku: number | undefined
+    if (typeof rawOzon === 'number' && rawOzon > 0) ozonSku = Math.floor(rawOzon)
+    else if (rawOzon != null) {
+      const n = Number(rawOzon)
+      if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
+    }
+    out.push(ozonSku !== undefined ? { ...line, ozonSku } : line)
   }
   return out
 }
@@ -153,6 +162,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [imageEnrichmentKey])
 
+  const ozonEnrichmentKey = useMemo(
+    () =>
+      items
+        .filter((l) => l.ozonSku == null || l.ozonSku < 1)
+        .map((l) => `${l.lineId}\0${l.slug}\0${l.variantId ?? ''}`)
+        .sort()
+        .join('|'),
+    [items],
+  )
+
+  useEffect(() => {
+    if (!ozonEnrichmentKey) return
+    let cancelled = false
+    const entries = ozonEnrichmentKey.split('|').map((part) => {
+      const [lineId, slug, vid = ''] = part.split('\0')
+      return { lineId, slug, variantId: vid || undefined }
+    })
+    const slugSet = [...new Set(entries.map((e) => e.slug))]
+
+    ;(async () => {
+      const products = new Map<string, Product | null>()
+      await Promise.all(
+        slugSet.map(async (slug) => {
+          const p = await fetchProductBySlug(slug)
+          if (!cancelled) products.set(slug, p)
+        }),
+      )
+      if (cancelled) return
+      setItems((prev) => {
+        let changed = false
+        const next = prev.map((line) => {
+          if (line.ozonSku != null && line.ozonSku > 0) return line
+          if (!entries.some((e) => e.lineId === line.lineId)) return line
+          const p = products.get(line.slug)
+          if (!p) return line
+          const sku = resolveOzonSkuForCartLine(p, line.variantId)
+          if (sku === undefined) return line
+          changed = true
+          return { ...line, ozonSku: sku }
+        })
+        return changed ? next : prev
+      })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [ozonEnrichmentKey])
+
   const addProduct = useCallback((product: Product, qty = 1, variant?: ProductVariantRow) => {
     const q = Math.min(99, Math.max(1, Math.floor(qty)))
     const lid = lineIdFor(product.id, variant?.id)
@@ -162,12 +220,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const priceFrom = variant ? variant.priceFrom : product.priceFrom
     const rawImg = variant?.images?.[0] ?? product.images[0] ?? ''
     const image = typeof rawImg === 'string' ? rawImg.trim() : ''
+    const resolvedOzon = resolveOzonSkuForCartLine(product, variant?.id)
     setItems((prev) => {
       const i = prev.findIndex((l) => l.lineId === lid)
       if (i >= 0) {
         const next = [...prev]
         const img = (next[i].image || '').trim() || (typeof image === 'string' ? image.trim() : '')
-        next[i] = { ...next[i], qty: Math.min(99, next[i].qty + q), image: img }
+        const ozonSku = next[i].ozonSku ?? resolvedOzon
+        next[i] = {
+          ...next[i],
+          qty: Math.min(99, next[i].qty + q),
+          image: img,
+          ...(ozonSku !== undefined ? { ozonSku } : {}),
+        }
         return next
       }
       return [
@@ -185,6 +250,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           cdekLengthCm: product.cdekLengthCm ?? null,
           cdekWidthCm: product.cdekWidthCm ?? null,
           cdekHeightCm: product.cdekHeightCm ?? null,
+          ...(resolvedOzon !== undefined ? { ozonSku: resolvedOzon } : {}),
         },
       ]
     })

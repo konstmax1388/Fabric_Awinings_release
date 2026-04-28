@@ -69,6 +69,14 @@ export function CheckoutPage() {
   const { items, totalApprox, clear, totalQty } = useCart()
   const { user, accessToken } = useAuth()
   const { checkout, loading: settingsLoading, seoDefaults, staticPages, siteName } = useSiteSettings()
+  const allCartLinesHaveOzonSku = useMemo(
+    () => items.length > 0 && items.every((l) => typeof l.ozonSku === 'number' && l.ozonSku > 0),
+    [items],
+  )
+  const effectiveDeliveryOptions = useMemo(() => {
+    if (allCartLinesHaveOzonSku) return checkout.deliveryOptions
+    return checkout.deliveryOptions.filter((o) => o.id !== 'ozon_logistics')
+  }, [checkout.deliveryOptions, allCartLinesHaveOzonSku])
   const privacyPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.privacy, '/')
   const offerPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.offer, '/')
   const consentPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.consent, '/')
@@ -116,10 +124,10 @@ export function CheckoutPage() {
 
   useEffect(() => {
     if (settingsLoading) return
-    const opts = checkout.deliveryOptions
+    const opts = effectiveDeliveryOptions
     if (!opts.length) return
     setDeliveryMethod((prev) => (prev && opts.some((o) => o.id === prev) ? prev : opts[0].id))
-  }, [settingsLoading, checkout.deliveryOptions])
+  }, [settingsLoading, effectiveDeliveryOptions])
 
   useEffect(() => {
     if (settingsLoading || !deliveryMethod) return
@@ -161,8 +169,8 @@ export function CheckoutPage() {
   }, [step])
 
   const deliveryLabel = useMemo(() => {
-    return checkout.deliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
-  }, [checkout.deliveryOptions, deliveryMethod])
+    return effectiveDeliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
+  }, [effectiveDeliveryOptions, deliveryMethod])
 
   const paymentLabel = useMemo(() => {
     return checkout.paymentLabels[paymentMethod] ?? paymentMethod
@@ -296,7 +304,7 @@ export function CheckoutPage() {
   const goNextFromDelivery = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (!settingsLoading && checkout.deliveryOptions.length === 0) {
+    if (!settingsLoading && effectiveDeliveryOptions.length === 0) {
       setError('Оформление заказа недоступно: включите способы доставки в настройках сайта.')
       return
     }
@@ -640,7 +648,7 @@ export function CheckoutPage() {
               <h1 className="fabric-section-title text-2xl md:text-3xl">Доставка и оплата</h1>
               {settingsLoading ? (
                 <p className="mt-4 font-body text-sm text-text-muted">Загрузка настроек…</p>
-              ) : checkout.deliveryOptions.length === 0 ? (
+              ) : effectiveDeliveryOptions.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 font-body text-sm text-amber-900">
                   Сейчас нельзя оформить заказ на сайте: не включён ни один способ доставки. Обратитесь к
                   администратору или позвоните нам.
@@ -650,9 +658,19 @@ export function CheckoutPage() {
                   <p className="mt-2 font-body text-sm text-text-muted">
                     Способы и оплата задаются в админке («Настройки сайта» → блоки оформления).
                   </p>
+                  {!allCartLinesHaveOzonSku &&
+                  checkout.deliveryOptions.some((o) => o.id === 'ozon_logistics') ? (
+                    <p
+                      className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 font-body text-sm text-amber-900"
+                      role="status"
+                    >
+                      Логистика Ozon недоступна: в заказе есть товары без Ozon SKU в каталоге. Выберите другой
+                      способ доставки.
+                    </p>
+                  ) : null}
                   <fieldset className="mt-6 space-y-3">
                     <legend className="mb-2 font-body text-sm font-medium text-text">Доставка</legend>
-                    {checkout.deliveryOptions.map((o) => (
+                    {effectiveDeliveryOptions.map((o) => (
                       <label
                         key={o.id}
                         className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-light bg-bg-base p-3 has-[:checked]:border-accent"
@@ -1020,7 +1038,7 @@ export function CheckoutPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={settingsLoading || checkout.deliveryOptions.length === 0}
+                  disabled={settingsLoading || effectiveDeliveryOptions.length === 0}
                   className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:opacity-50"
                 >
                   Далее
