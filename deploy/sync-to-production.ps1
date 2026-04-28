@@ -58,7 +58,7 @@ $remoteLines = @(
     "git fetch $gitRemote `"$branch`""
     "git checkout `"$branch`""
     "git reset --hard `"$gitRemote/$branch`""
-    "echo \"==> On server after git reset: VERSION=\`$(cat VERSION 2>/dev/null | head -1) \`$(git log -1 --oneline) (remote $gitRemote)\""
+    ('echo "==> On server after git reset: VERSION=$(cat VERSION 2>/dev/null | head -1) $(git log -1 --oneline) (remote ' + $gitRemote + ')"')
     "export GIT_SHA=`"`$(git rev-parse --short HEAD)`""
     "export BUILD_TIME=`"`$(date -u +%Y-%m-%dT%H:%M:%SZ)`""
     "STAFF_TMP=`"/tmp/fabrika_staff_prev`""
