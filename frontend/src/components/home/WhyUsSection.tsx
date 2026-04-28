@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import type { WhyColumn, WhyStat } from '../../types/homePage'
+import type { WhyColumn, WhyColumnIconKind, WhyStat } from '../../types/homePage'
 import { AnimatedCounter } from '../motion/AnimatedCounter'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 
@@ -9,22 +9,30 @@ const DEFAULT_COLS: WhyColumn[] = [
   {
     title: 'Своё производство',
     text: 'Полный цикл: проектирование, раскрой, сварка и монтаж своими бригадами.',
-    icon: '🏭',
+    icon: '•',
+    iconKind: 'fontawesome',
+    fontawesomeClass: 'fa-solid fa-industry',
   },
   {
     title: 'Материалы в наличии',
     text: 'ПВХ, ткани, фурнитура от проверенных поставщиков — без месяцев ожидания.',
-    icon: '📦',
+    icon: '•',
+    iconKind: 'fontawesome',
+    fontawesomeClass: 'fa-solid fa-warehouse',
   },
   {
     title: 'Договор и гарантия',
     text: 'Фиксируем сроки и объём работ. Документы для B2B и тендеров.',
-    icon: '📋',
+    icon: '•',
+    iconKind: 'fontawesome',
+    fontawesomeClass: 'fa-solid fa-file-contract',
   },
   {
     title: 'Поддержка после монтажа',
     text: 'Консультации по уходу, ремонт и доработки по запросу.',
-    icon: '🛠',
+    icon: '•',
+    iconKind: 'fontawesome',
+    fontawesomeClass: 'fa-solid fa-screwdriver-wrench',
   },
 ]
 
@@ -50,6 +58,30 @@ function normalizeStats(raw: unknown): WhyStat[] {
   return out.length ? out : DEFAULT_STATS
 }
 
+function isSafeFontAwesomeClass(s: string): boolean {
+  if (!s || s.length > 120) return false
+  if (!/^[\d\w\s-]+$/.test(s)) return false
+  return /\bfa-/.test(s)
+}
+
+function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
+  const fromClass = (col.fontawesomeClass || '').trim()
+  const fromIcon = (col.icon || '').trim()
+  const fa = fromClass || (fromIcon && /\bfa-/.test(fromIcon) ? fromIcon : '')
+  if (fa && isSafeFontAwesomeClass(fa)) {
+    const useFa = col.iconKind === 'fontawesome' || (!col.iconKind && (Boolean(fromClass) || /\bfa-/.test(fromIcon)))
+    if (useFa) {
+      return <i className={`${fa} text-xl text-current`} aria-hidden />
+    }
+  }
+  const emoji = fromIcon && !/\bfa-/.test(fromIcon) ? fromIcon : '•'
+  return (
+    <span className="font-heading text-2xl leading-none text-current" aria-hidden>
+      {col.iconKind === 'fontawesome' && !fa ? '•' : emoji}
+    </span>
+  )
+}
+
 function normalizeColumns(raw: unknown): WhyColumn[] {
   if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_COLS
   const out: WhyColumn[] = []
@@ -59,8 +91,17 @@ function normalizeColumns(raw: unknown): WhyColumn[] {
     const title = typeof o.title === 'string' ? o.title : ''
     const text = typeof o.text === 'string' ? o.text : ''
     const icon = typeof o.icon === 'string' ? o.icon : '•'
+    const fontawesomeClass = typeof o.fontawesomeClass === 'string' ? o.fontawesomeClass : undefined
+    let iconKind: WhyColumnIconKind | undefined
+    if (o.iconKind === 'fontawesome' || o.iconKind === 'emoji') iconKind = o.iconKind
     if (!title || !text) continue
-    out.push({ title, text, icon })
+    out.push({
+      title,
+      text,
+      icon: icon || '•',
+      iconKind,
+      fontawesomeClass: fontawesomeClass || undefined,
+    })
   }
   return out.length ? out : DEFAULT_COLS
 }
@@ -211,7 +252,7 @@ export function WhyUsSection() {
                     className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
                     aria-hidden
                   >
-                    {c.icon}
+                    <WhyUsColumnIcon col={c} />
                   </span>
                   <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">{c.title}</h3>
                   <p className="relative z-10 mt-2 font-body text-sm leading-relaxed text-text-muted md:text-base">{c.text}</p>

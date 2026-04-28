@@ -13,7 +13,15 @@ export type ProblemCard = {
 
 export type WhyStat = { value: number; suffix: string; label: string }
 
-export type WhyColumn = { title: string; text: string; icon: string }
+export type WhyColumnIconKind = 'emoji' | 'fontawesome'
+
+export type WhyColumn = {
+  title: string
+  text: string
+  icon: string
+  iconKind?: WhyColumnIconKind
+  fontawesomeClass?: string
+}
 
 export type HeroActionType = 'link' | 'callback'
 

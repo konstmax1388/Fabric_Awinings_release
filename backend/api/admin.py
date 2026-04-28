@@ -68,6 +68,7 @@ from api.services.astrum_crm import (
 _logger = logging.getLogger(__name__)
 
 from .models import (
+    AboutSpotlightImage,
     BlogPost,
     CalculatorLead,
     CallbackLead,
@@ -182,6 +183,17 @@ def _validate_astrum_crm_section(form: forms.ModelForm) -> None:
             "astrum_crm_assigned_default",
             _("Укажите числовой ID ответственного (assigned_default в документации Astrum)."),
         )
+
+
+class AboutSpotlightImageInline(TabularInline):
+    model = AboutSpotlightImage
+    extra = 1
+    fields = ("image", "alt", "sort_order")
+    ordering = ("sort_order", "id")
+    verbose_name = _("Фото галереи")
+    verbose_name_plural = _(
+        "Галерея (плитка на витрине): фото с ПК — клик по рамке или перетаскивание, подпись, порядок"
+    )
 
 
 class ProductImageInline(TabularInline):
@@ -842,9 +854,6 @@ class StaticPageAdminForm(forms.ModelForm, StaticPageAboutLayoutFields):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        slug = (instance.slug or "").strip()
-        if slug == "o-nas":
-            instance.about_payload = build_about_payload(self.cleaned_data, instance=instance)
         if commit:
             instance.save()
         return instance
@@ -864,6 +873,20 @@ class StaticPageAdmin(ModelAdmin):
     search_fields = ("title", "slug", "meta_title", "meta_description", "body")
     ordering = ("sort_order", "title")
     readonly_fields = ("slug", "updated_at")
+
+    def get_inlines(self, request, obj: StaticPage | None = None):
+        if obj is not None and (getattr(obj, "slug", None) or "") == "o-nas":
+            return (AboutSpotlightImageInline,)
+        return ()
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        inst = form.instance
+        if (getattr(inst, "slug", None) or "").strip() != "o-nas":
+            return
+        inst.refresh_from_db()
+        inst.about_payload = build_about_payload(form.cleaned_data, instance=inst)
+        inst.save(update_fields=["about_payload"])
 
     def get_fieldsets(self, request, obj: StaticPage | None = None):
         head: list[tuple[str, dict]] = [
@@ -2424,16 +2447,28 @@ class HomePageContentAdmin(ModelAdmin):
                     "why_s2_label",
                     "why_c0_title",
                     "why_c0_text",
+                    "why_c0_icon_kind",
                     "why_c0_icon",
+                    "why_c0_fa_preset",
+                    "why_c0_fontawesome",
                     "why_c1_title",
                     "why_c1_text",
+                    "why_c1_icon_kind",
                     "why_c1_icon",
+                    "why_c1_fa_preset",
+                    "why_c1_fontawesome",
                     "why_c2_title",
                     "why_c2_text",
+                    "why_c2_icon_kind",
                     "why_c2_icon",
+                    "why_c2_fa_preset",
+                    "why_c2_fontawesome",
                     "why_c3_title",
                     "why_c3_text",
+                    "why_c3_icon_kind",
                     "why_c3_icon",
+                    "why_c3_fa_preset",
+                    "why_c3_fontawesome",
                 ),
             },
         ),

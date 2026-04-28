@@ -139,7 +139,7 @@ def _sanitize_about_value(obj: Any, depth: int = 0) -> Any:
     if isinstance(obj, dict):
         return {str(k)[:100]: _sanitize_about_value(v, depth + 1) for k, v in list(obj.items())[:80]}
     if isinstance(obj, list):
-        return [_sanitize_about_value(x, depth + 1) for x in obj[:60]]
+        return [_sanitize_about_value(x, depth + 1) for x in obj[:200]]
     if isinstance(obj, str):
         t = (obj or "").strip()
         if len(t) > 40000:

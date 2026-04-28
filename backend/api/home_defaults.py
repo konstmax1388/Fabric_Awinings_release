@@ -193,22 +193,30 @@ def default_home_payload() -> dict[str, Any]:
                 {
                     "title": "Своё производство",
                     "text": "Полный цикл: проектирование, раскрой, сварка и монтаж своими бригадами.",
-                    "icon": "🏭",
+                    "icon": "•",
+                    "iconKind": "fontawesome",
+                    "fontawesomeClass": "fa-solid fa-industry",
                 },
                 {
                     "title": "Материалы в наличии",
                     "text": "ПВХ, ткани, фурнитура от проверенных поставщиков — без месяцев ожидания.",
-                    "icon": "📦",
+                    "icon": "•",
+                    "iconKind": "fontawesome",
+                    "fontawesomeClass": "fa-solid fa-warehouse",
                 },
                 {
                     "title": "Договор и гарантия",
                     "text": "Фиксируем сроки и объём работ. Документы для B2B и тендеров.",
-                    "icon": "📋",
+                    "icon": "•",
+                    "iconKind": "fontawesome",
+                    "fontawesomeClass": "fa-solid fa-file-contract",
                 },
                 {
                     "title": "Поддержка после монтажа",
                     "text": "Консультации по уходу, ремонт и доработки по запросу.",
-                    "icon": "🛠",
+                    "icon": "•",
+                    "iconKind": "fontawesome",
+                    "fontawesomeClass": "fa-solid fa-screwdriver-wrench",
                 },
             ],
         },
@@ -378,6 +386,31 @@ def deep_merge_home(base: dict[str, Any], override: dict[str, Any] | None) -> di
     return out
 
 
+def _normalize_why_us_columns(home: dict[str, Any]) -> None:
+    w = home.get("whyUs")
+    if not isinstance(w, dict):
+        return
+    cols = w.get("columns")
+    if not isinstance(cols, list):
+        return
+    for c in cols:
+        if not isinstance(c, dict):
+            continue
+        k = c.get("iconKind")
+        fa = (c.get("fontawesomeClass") or "").strip()
+        ic = str(c.get("icon") or "")
+        if k not in ("emoji", "fontawesome"):
+            if fa:
+                c["iconKind"] = "fontawesome"
+            elif "fa-" in ic:
+                c["iconKind"] = "fontawesome"
+                c["fontawesomeClass"] = ic.strip()
+                c["icon"] = c.get("icon") or "•"
+            else:
+                c["iconKind"] = "emoji"
+        c.setdefault("fontawesomeClass", "")
+
+
 def _normalize_problem_solution_cards(home: dict[str, Any]) -> None:
     ps = home.get("problemSolution")
     if not isinstance(ps, dict):
@@ -498,6 +531,7 @@ def _normalize_hero_v2(home: dict[str, Any]) -> None:
 def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     out = deep_merge_home(default_home_payload(), stored)
     out["sectionLayout"] = normalize_section_layout(out.get("sectionLayout"))
+    _normalize_why_us_columns(out)
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)
@@ -507,6 +541,7 @@ def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
 def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     """Только сохранённый JSON из админки (без подмешивания дефолтов)."""
     out = deepcopy(stored) if isinstance(stored, dict) else {}
+    _normalize_why_us_columns(out)
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)

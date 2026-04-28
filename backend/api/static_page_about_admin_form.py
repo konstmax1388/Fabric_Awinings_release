@@ -69,13 +69,6 @@ class StaticPageAboutLayoutFields(forms.Form):
     ab_fb4 = _txt(_("Преимущества: пункт 5"))
     ab_fb5 = _txt(_("Преимущества: пункт 6"))
 
-    ab_g0_url = _txt(_("Галерея: фото 1 — URL"))
-    ab_g0_alt = _txt(_("Галерея: фото 1 — подпись"))
-    ab_g1_url = _txt(_("Галерея: фото 2 — URL"))
-    ab_g1_alt = _txt(_("Галерея: фото 2 — подпись"))
-    ab_g2_url = _txt(_("Галерея: фото 3 — URL"))
-    ab_g2_alt = _txt(_("Галерея: фото 3 — подпись"))
-
     ab_mnf_image_url = _txt(_("Производитель: URL фото"))
     ab_mnf_image_alt = _txt(_("Производитель: подпись к фото"))
     ab_mnf_video_url = _txt(_("Производитель: ссылка на видео"))
@@ -137,14 +130,6 @@ def apply_about_layout_initial(form: forms.BaseForm, payload: dict[str, Any] | N
     for i in range(6):
         v = str(fbs[i]).strip() if i < len(fbs) and fbs[i] is not None else ""
         form.fields[f"ab_fb{i}"].initial = v
-
-    gal = p.get("spotlightGallery")
-    for i in range(3):
-        d: dict[str, Any] = {}
-        if isinstance(gal, list) and i < len(gal) and isinstance(gal[i], dict):
-            d = gal[i]
-        form.fields[f"ab_g{i}_url"].initial = d.get("url") or ""
-        form.fields[f"ab_g{i}_alt"].initial = d.get("alt") or ""
 
     m = p.get("manufacturer") if isinstance(p.get("manufacturer"), dict) else {}
     form.fields["ab_mnf_image_url"].initial = m.get("imageUrl") or ""
@@ -249,12 +234,6 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
     fbs = [x for x in fbs if x]
     if fbs:
         out["featureBullets"] = fbs
-    gal: list[dict[str, str]] = []
-    for i in range(3):
-        u, a = _s(cleaned, f"ab_g{i}_url"), _s(cleaned, f"ab_g{i}_alt")
-        gal.append({"url": u, "alt": a})
-    if any(g.get("url") or g.get("alt") for g in gal):
-        out["spotlightGallery"] = gal
     m: dict[str, Any] = {}
     for jk, fk in (
         ("imageUrl", "ab_mnf_image_url"),
@@ -317,6 +296,58 @@ def _build_about_payload_core(cleaned: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _spotlight_gallery_from_inline_rows(instance: Any) -> list[dict[str, str]] | None:
+    if not instance or not getattr(instance, "pk", None):
+        return None
+    try:
+        q = instance.about_spotlight_items.all().order_by("sort_order", "id")
+    except Exception:
+        return None
+    rows: list[dict[str, str]] = []
+    for it in q:
+        img = getattr(it, "image", None)
+        if img and getattr(img, "name", ""):
+            rows.append(
+                {
+                    "url": img.url,
+                    "alt": (getattr(it, "alt", None) or "").strip(),
+                }
+            )
+    return rows if rows else None
+
+
+def _spotlight_gallery_from_saved_payload(instance: Any) -> list[dict[str, str]] | None:
+    p = getattr(instance, "about_payload", None)
+    if not isinstance(p, dict):
+        return None
+    gal = p.get("spotlightGallery")
+    if not isinstance(gal, list):
+        return None
+    rows: list[dict[str, str]] = []
+    for x in gal:
+        if not isinstance(x, dict):
+            continue
+        u = (x.get("url") or "").strip()
+        if u:
+            rows.append({"url": u, "alt": (x.get("alt") or "").strip()})
+    return rows if rows else None
+
+
+def _merge_spotlight_gallery_from_instance(core: dict[str, Any], instance: Any) -> dict[str, Any]:
+    if not instance or not getattr(instance, "pk", None):
+        return core
+    from .models import AboutSpotlightImage
+
+    has_saved_files = AboutSpotlightImage.objects.filter(static_page=instance).exclude(image="").exists()
+    if has_saved_files:
+        rows = _spotlight_gallery_from_inline_rows(instance) or []
+        return {**core, "spotlightGallery": rows}
+    leg = _spotlight_gallery_from_saved_payload(instance)
+    if leg:
+        return {**core, "spotlightGallery": leg}
+    return core
+
+
 def build_about_payload(cleaned: dict[str, Any], instance: Any | None = None) -> dict[str, Any]:
     if not cleaned.get("ab_enable_v1_layout"):
         return {}
@@ -324,6 +355,7 @@ def build_about_payload(cleaned: dict[str, Any], instance: Any | None = None) ->
     if instance is not None:
         core = _merge_about_manufacturer_files(core, instance)
         core = _merge_about_intro_files(core, instance)
+        core = _merge_spotlight_gallery_from_instance(core, instance)
     if len(core) <= 1:
         return {}
     return core
@@ -335,6 +367,8 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
         "Тот же макет, что и на витрине (version 1). "
         "Пустые поля на сайте не показываются; при снятом флаге «Включить макет» используется только HTML ниже. "
         "Фото и видео можно задать файлами в блоках или внешними URL — файлы имеют приоритет. "
+        "Галерея «плитка» внизу: добавьте фотографии в инлайне под формой (с компьютера, с перетаскиванием в рамку). "
+        "Пока в инлайне нет фото, используется ранее сохранённый список в JSON. "
         "Блок отзывов внизу страницы — общий виджет сайта, он не дублируется этой формой."
     )
     return (
@@ -370,20 +404,6 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
             _("Блок: преимущества (список)"),
             {
                 "fields": ("ab_fb0", "ab_fb1", "ab_fb2", "ab_fb3", "ab_fb4", "ab_fb5"),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            _("Блок: горизонтальная галерея"),
-            {
-                "fields": (
-                    "ab_g0_url",
-                    "ab_g0_alt",
-                    "ab_g1_url",
-                    "ab_g1_alt",
-                    "ab_g2_url",
-                    "ab_g2_alt",
-                ),
                 "classes": ("collapse",),
             },
         ),

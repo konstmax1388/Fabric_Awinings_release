@@ -128,12 +128,41 @@ PS_ICON_KIND_CHOICES = (
     ("image", _("Загруженное изображение")),
 )
 
+WHY_ICON_KIND_CHOICES = (
+    ("emoji", _("Текст или эмодзи")),
+    ("fontawesome", _("Иконка Font Awesome")),
+)
+
 
 def _resolved_fa_class(cd: dict[str, Any], i: int) -> str:
     preset = (cd.get(f"ps{i}_fa_preset") or "").strip()
     if preset:
         return preset
     return (cd.get(f"ps{i}_fontawesome") or "").strip()
+
+
+def _resolved_why_fa_class(cd: dict[str, Any], i: int) -> str:
+    preset = (cd.get(f"why_c{i}_fa_preset") or "").strip()
+    if preset:
+        return preset
+    return (cd.get(f"why_c{i}_fontawesome") or "").strip()
+
+
+def _why_us_column(cd: dict[str, Any], i: int) -> dict[str, Any]:
+    kind = cd.get(f"why_c{i}_icon_kind") or "emoji"
+    if kind not in ("emoji", "fontawesome"):
+        kind = "emoji"
+    icon_text = (cd.get(f"why_c{i}_icon") or "").strip() or "•"
+    fa = _resolved_why_fa_class(cd, i)
+    if kind == "fontawesome" and not fa:
+        kind = "emoji"
+    return {
+        "title": cd[f"why_c{i}_title"].strip(),
+        "text": cd[f"why_c{i}_text"].strip(),
+        "icon": icon_text,
+        "iconKind": kind,
+        "fontawesomeClass": fa if kind == "fontawesome" else "",
+    }
 
 
 def _ps_problem_solution_card(cd: dict[str, Any], i: int) -> dict[str, Any]:
@@ -593,16 +622,100 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     why_s2_label = _req_txt(_("Счётчик 3: подпись"))
     why_c0_title = _req_txt(_("Колонка 1: заголовок"))
     why_c0_text = _area(_("Колонка 1: текст"), rows=2)
-    why_c0_icon = _txt(_("Колонка 1: значок"))
+    why_c0_icon_kind = forms.ChoiceField(
+        label=_("Колонка 1: тип значка"),
+        choices=WHY_ICON_KIND_CHOICES,
+        initial="emoji",
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c0_icon = _txt(
+        _("Колонка 1: эмодзи или символ"),
+        help_text=_("Для типа «Текст или эмодзи»."),
+    )
+    why_c0_fa_preset = forms.ChoiceField(
+        label=_("Колонка 1: иконка Font Awesome (из списка)"),
+        choices=FONTAWESOME_PRESET_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c0_fontawesome = forms.CharField(
+        label=_("Колонка 1: класс Font Awesome вручную"),
+        required=False,
+        widget=forms.TextInput(attrs={"class": _W}),
+        help_text=_("Если не выбрали из списка: классы FA 6, напр. fa-solid fa-warehouse. Каталог: fontawesome.com (free)."),
+    )
     why_c1_title = _req_txt(_("Колонка 2: заголовок"))
     why_c1_text = _area(_("Колонка 2: текст"), rows=2)
-    why_c1_icon = _txt(_("Колонка 2: значок"))
+    why_c1_icon_kind = forms.ChoiceField(
+        label=_("Колонка 2: тип значка"),
+        choices=WHY_ICON_KIND_CHOICES,
+        initial="emoji",
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c1_icon = _txt(
+        _("Колонка 2: эмодзи или символ"),
+        help_text=_("Для типа «Текст или эмодзи»."),
+    )
+    why_c1_fa_preset = forms.ChoiceField(
+        label=_("Колонка 2: иконка Font Awesome (из списка)"),
+        choices=FONTAWESOME_PRESET_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c1_fontawesome = forms.CharField(
+        label=_("Колонка 2: класс Font Awesome вручную"),
+        required=False,
+        widget=forms.TextInput(attrs={"class": _W}),
+        help_text=_("См. подсказку у колонки 1."),
+    )
     why_c2_title = _req_txt(_("Колонка 3: заголовок"))
     why_c2_text = _area(_("Колонка 3: текст"), rows=2)
-    why_c2_icon = _txt(_("Колонка 3: значок"))
+    why_c2_icon_kind = forms.ChoiceField(
+        label=_("Колонка 3: тип значка"),
+        choices=WHY_ICON_KIND_CHOICES,
+        initial="emoji",
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c2_icon = _txt(
+        _("Колонка 3: эмодзи или символ"),
+        help_text=_("Для типа «Текст или эмодзи»."),
+    )
+    why_c2_fa_preset = forms.ChoiceField(
+        label=_("Колонка 3: иконка Font Awesome (из списка)"),
+        choices=FONTAWESOME_PRESET_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c2_fontawesome = forms.CharField(
+        label=_("Колонка 3: класс Font Awesome вручную"),
+        required=False,
+        widget=forms.TextInput(attrs={"class": _W}),
+        help_text=_("См. подсказку у колонки 1."),
+    )
     why_c3_title = _req_txt(_("Колонка 4: заголовок"))
     why_c3_text = _area(_("Колонка 4: текст"), rows=2)
-    why_c3_icon = _txt(_("Колонка 4: значок"))
+    why_c3_icon_kind = forms.ChoiceField(
+        label=_("Колонка 4: тип значка"),
+        choices=WHY_ICON_KIND_CHOICES,
+        initial="emoji",
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c3_icon = _txt(
+        _("Колонка 4: эмодзи или символ"),
+        help_text=_("Для типа «Текст или эмодзи»."),
+    )
+    why_c3_fa_preset = forms.ChoiceField(
+        label=_("Колонка 4: иконка Font Awesome (из списка)"),
+        choices=FONTAWESOME_PRESET_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": _W}),
+    )
+    why_c3_fontawesome = forms.CharField(
+        label=_("Колонка 4: класс Font Awesome вручную"),
+        required=False,
+        widget=forms.TextInput(attrs={"class": _W}),
+        help_text=_("См. подсказку у колонки 1."),
+    )
 
     # --- reviews ---
     rev_heading = _req_txt(_("Заголовок"))
@@ -1017,7 +1130,29 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             c = cols[i] if i < len(cols) and isinstance(cols[i], dict) else {}
             self.initial.setdefault(f"why_c{i}_title", c.get("title", ""))
             self.initial.setdefault(f"why_c{i}_text", c.get("text", ""))
-            self.initial.setdefault(f"why_c{i}_icon", c.get("icon", ""))
+            kind = c.get("iconKind")
+            fa_cls = (c.get("fontawesomeClass") or "").strip()
+            legacy_icon = str(c.get("icon") or "").strip()
+            if kind not in ("emoji", "fontawesome"):
+                if fa_cls:
+                    kind = "fontawesome"
+                elif "fa-" in legacy_icon:
+                    kind = "fontawesome"
+                    fa_cls = legacy_icon
+                else:
+                    kind = "emoji"
+            self.initial.setdefault(f"why_c{i}_icon_kind", kind)
+            self.initial.setdefault(f"why_c{i}_icon", legacy_icon or "•")
+            if kind == "fontawesome" and fa_cls:
+                if fa_cls in PRESET_CLASS_SET:
+                    self.initial.setdefault(f"why_c{i}_fa_preset", fa_cls)
+                    self.initial.setdefault(f"why_c{i}_fontawesome", "")
+                else:
+                    self.initial.setdefault(f"why_c{i}_fa_preset", "")
+                    self.initial.setdefault(f"why_c{i}_fontawesome", fa_cls)
+            else:
+                self.initial.setdefault(f"why_c{i}_fa_preset", "")
+                self.initial.setdefault(f"why_c{i}_fontawesome", "")
 
         rev = m.get("reviews") or {}
         self.initial.setdefault("rev_heading", rev.get("heading", ""))
@@ -1318,14 +1453,7 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
                 }
                 for i in range(3)
             ],
-            "columns": [
-                {
-                    "title": cd[f"why_c{i}_title"].strip(),
-                    "text": cd[f"why_c{i}_text"].strip(),
-                    "icon": cd[f"why_c{i}_icon"].strip() or "•",
-                }
-                for i in range(4)
-            ],
+            "columns": [_why_us_column(cd, i) for i in range(4)],
         }
         base["reviews"] = {
             "heading": cd["rev_heading"].strip(),

@@ -1,5 +1,5 @@
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import type { AboutIntro, AboutManufacturer, AboutMetric, AboutPagePayload } from '../../types/aboutPage'
 import { AboutFactValue } from './AboutFactValue'
 
@@ -148,7 +148,6 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
   const intro = payload.intro
   const hasCustomIntroH1 = Boolean(intro && (intro.title || intro.titleAccent))
   const facts = payload.facts
-  const [galleryIdx, setGalleryIdx] = useState(0)
   const blockEnter = (delay = 0) =>
     reduce
       ? {}
@@ -163,15 +162,6 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
     () => (payload.spotlightGallery || []).filter((g) => (g.url || '').trim()),
     [payload.spotlightGallery],
   )
-
-  const galleryNext = useCallback(() => {
-    if (!gallery.length) return
-    setGalleryIdx((i) => (i + 1) % gallery.length)
-  }, [gallery.length])
-  const galleryPrev = useCallback(() => {
-    if (!gallery.length) return
-    setGalleryIdx((i) => (i - 1 + gallery.length) % gallery.length)
-  }, [gallery.length])
 
   const showFacts = Boolean(facts && (facts.items?.length || facts.badge || facts.subtitle))
   const factsOnPhoto = showFacts && Boolean(facts?.backgroundUrl)
@@ -268,54 +258,34 @@ export function AboutPageLayout({ payload, pageTitle }: Props) {
           viewport={ABOUT_VIEW}
           transition={{ duration: 0.6, ease: ABOUT_EASE }}
         >
-          <div className="flex gap-2 overflow-x-auto pb-1 md:gap-3">
+          <ul className="m-0 list-none space-y-3 p-0 sm:columns-2 sm:gap-3 lg:columns-3">
             {gallery.map((g, i) => (
-              <motion.button
-                key={i}
-                type="button"
-                onClick={() => setGalleryIdx(i)}
-                className={`relative h-40 w-52 shrink-0 overflow-hidden rounded-xl border transition md:h-48 md:w-64 ${
-                  i === galleryIdx
-                    ? 'border-text/35 ring-1 ring-border'
-                    : 'border-border/80 opacity-95 hover:opacity-100'
-                }`}
-                initial={reduce ? false : { opacity: 0, y: 14, scale: 0.98 }}
+              <motion.li
+                key={g.url + String(i)}
+                className="mb-3 break-inside-avoid first:mt-0"
+                initial={reduce ? false : { opacity: 0, y: 14, scale: 0.99 }}
                 whileInView={reduce ? undefined : { opacity: 1, y: 0, scale: 1 }}
                 viewport={ABOUT_VIEW}
-                transition={{ duration: 0.5, delay: reduce ? 0 : i * 0.07, ease: ABOUT_EASE }}
+                transition={{ duration: 0.5, delay: reduce ? 0 : Math.min(i, 10) * 0.04, ease: ABOUT_EASE }}
               >
-                {g.url ? (
-                  <img src={g.url} alt={g.alt || ''} className="h-full w-full object-cover" loading="lazy" />
-                ) : null}
-              </motion.button>
+                <figure className="group relative overflow-hidden rounded-xl border border-border/80 bg-surface/30 shadow-sm">
+                  {g.url ? (
+                    <img
+                      src={g.url}
+                      alt={g.alt || ''}
+                      className="w-full object-cover sm:max-h-[min(70vh,520px)]"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  {g.alt ? (
+                    <figcaption className="border-t border-border/60 bg-bg-base/80 px-3 py-2 font-body text-xs text-text-muted backdrop-blur-sm sm:text-sm">
+                      {g.alt}
+                    </figcaption>
+                  ) : null}
+                </figure>
+              </motion.li>
             ))}
-          </div>
-          {gallery.length > 1 ? (
-            <motion.div
-              className="mt-4 flex justify-end gap-2"
-              initial={reduce ? false : { opacity: 0 }}
-              whileInView={reduce ? undefined : { opacity: 1 }}
-              viewport={ABOUT_VIEW}
-              transition={{ delay: 0.15, duration: 0.35 }}
-            >
-              <button
-                type="button"
-                onClick={galleryPrev}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-text/40"
-                aria-label="Предыдущее фото"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={galleryNext}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-base text-text transition hover:border-text/40"
-                aria-label="Следующее фото"
-              >
-                ›
-              </button>
-            </motion.div>
-          ) : null}
+          </ul>
         </motion.section>
       ) : null}
 

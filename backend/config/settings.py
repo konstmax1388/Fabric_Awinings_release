@@ -334,6 +334,10 @@ def unfold_admin_fabric_css(request):
     return static("admin/css/fabric_admin.css")
 
 
+def unfold_admin_fontawesome_css(request):
+    return "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+
+
 UNFOLD = {
     "SITE_TITLE": _("Фабрика Тентов — панель"),
     "SITE_HEADER": _("Фабрика Тентов"),
@@ -366,6 +370,7 @@ UNFOLD = {
     "DASHBOARD_CALLBACK": "config.admin_dashboard.admin_dashboard_callback",
     "STYLES": [
         unfold_admin_fabric_css,
+        unfold_admin_fontawesome_css,
     ],
     # Подсказки и drag-and-drop для полей файла (переопределение шаблонов unfold/widgets/*).
     "SCRIPTS": [

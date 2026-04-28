@@ -1631,6 +1631,32 @@ class StaticPage(models.Model):
         super().save(*args, **kwargs)
 
 
+class AboutSpotlightImage(models.Model):
+    """Фотографии блока «витринной» галереи на странице «О нас» (слаг o-nas); порядок — sort_order."""
+
+    static_page = models.ForeignKey(
+        "StaticPage",
+        on_delete=models.CASCADE,
+        related_name="about_spotlight_items",
+        verbose_name="страница",
+    )
+    image = models.ImageField(
+        "Фото",
+        upload_to="static_pages/about_spotlight/%Y/%m/",
+        max_length=512,
+    )
+    alt = models.CharField("Подпись (alt)", max_length=500, blank=True, default="")
+    sort_order = models.PositiveIntegerField("Порядок", default=0, db_index=True)
+
+    class Meta:
+        ordering = ("sort_order", "id")
+        verbose_name = "фото из галереи (О нас — витрина)"
+        verbose_name_plural = "Галерея (О нас, витрина): фото, перетаскивание в рамку, порядок"
+
+    def __str__(self) -> str:
+        return f"{self.static_page_id}:{self.sort_order or self.id}"
+
+
 class ConsentLog(models.Model):
     ip_address = models.CharField("IP адрес", max_length=45)
     user_agent = models.TextField("User-Agent")
