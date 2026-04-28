@@ -425,6 +425,62 @@ def test_ozon_create_order_with_logistics_sends_items_and_delivery():
     assert len(b["items"]) == 1
     assert b["items"][0]["sku"] == 999888777
     assert b["amount"]["value"] == "100000"
+    assert b["items"][0]["price"]["value"] == "100000"
+    assert b["items"][0]["quantity"] == 1
+
+
+@pytest.mark.django_db
+def test_ozon_create_order_line_price_value_matches_line_total_kopecks_for_qty_gt_one():
+    """Ozon: сумма items[].price.value согласована с amount; при qty>1 value — вся строка, не за ед."""
+    from api.models import CartOrder, Product, ProductCategory, SiteSettings
+    from api.services import ozon_acquiring as ozon_mod
+
+    cat = ProductCategory.objects.create(title="Cat", slug="cat-oz-2", sort_order=0)
+    p = Product.objects.create(
+        title="Tent2",
+        slug="tent-oz-2",
+        category=cat,
+        price_from=1000,
+        ozon_sku=111222333,
+    )
+
+    s = SiteSettings.get_solo()
+    s.ozon_pay_enabled = True
+    s.ozon_pay_client_id = "cid"
+    s.ozon_pay_client_secret = "sec"
+    s.save()
+
+    captured: dict = {}
+
+    def fake_post_json(url, body, headers=None, **kwargs):
+        captured["body"] = body
+        return {"order": {"payLink": "https://pay.test/x", "id": "o2"}}
+
+    lines = [
+        {
+            "productId": str(p.id),
+            "variantId": "",
+            "slug": p.slug,
+            "title": p.title,
+            "priceFrom": 1000,
+            "qty": 2,
+            "image": "",
+        }
+    ]
+    with patch.dict(os.environ, {"OZON_PAY_API_BASE_URL": "https://acq.test"}, clear=False):
+        with patch.object(ozon_mod, "post_json", side_effect=fake_post_json):
+            out = ozon_mod.try_begin_ozon_pay(
+                order_ref="Z2",
+                total_approx=2000,
+                settings=s,
+                delivery_method=CartOrder.DeliveryMethod.OZON_LOGISTICS,
+                cart_lines=lines,
+            )
+    assert out.get("redirectUrl") == "https://pay.test/x"
+    b = captured["body"]
+    assert b["amount"]["value"] == "200000"
+    assert b["items"][0]["price"]["value"] == "200000"
+    assert b["items"][0]["quantity"] == 2
 
 
 @pytest.mark.django_db

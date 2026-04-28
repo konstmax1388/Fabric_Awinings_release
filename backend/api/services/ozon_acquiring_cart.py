@@ -60,7 +60,11 @@ def build_create_order_items(
     order_ref: str,
     lines: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Позиции для MODE_FULL (цена строки — priceFrom за единицу, в value копейки)."""
+    """Позиции для MODE_SHORTENED / MODE_FULL.
+
+    В `price.value` уходит сумма по строке в копейках (за ед. × кол-во), чтобы
+    `amount` совпадал с суммой `items[].price.value` (API Ozon, см. createOrder).
+    """
     currency = _env("OZON_PAY_CURRENCY_CODE", "643")
     vat = _env("OZON_PAY_ITEM_VAT", "VAT_20")
     item_type = _env("OZON_PAY_ITEM_TYPE", "TYPE_PRODUCT")
@@ -70,7 +74,8 @@ def build_create_order_items(
         title = str(line.get("title") or "Товар").strip()[:500] or "Товар"
         qty = max(1, min(99, int(line.get("qty") or 1)))
         price_rub = max(0, int(line.get("priceFrom") or 0))
-        value_kop = str(price_rub * 100)
+        # Строка в копейках: та же величина, что в total_kopecks_from_cart_lines по линии.
+        value_kop = str(price_rub * 100 * qty)
         ext_id = f"{order_ref}-L{i + 1}"
 
         item: dict[str, Any] = {
