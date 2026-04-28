@@ -1,7 +1,7 @@
 """Формы админки: удобный ввод вместо сырого JSON где возможно."""
 
 from django import forms
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.utils.translation import gettext_lazy as _
 from unfold.widgets import UnfoldAdminPasswordWidget
 
@@ -436,11 +436,26 @@ class SiteSettingsOzonLogisticsSectionForm(forms.ModelForm):
                 self.initial.setdefault("ozon_seller_api_key", cred.api_key)
 
     def save(self, commit=True):
-        instance = super().save(commit=commit)
-        if not commit:
-            return instance
-        cred, _ = OzonSellerApiSettings.objects.get_or_create(site=instance)
-        cred.client_id = (self.cleaned_data.get("ozon_seller_client_id") or "").strip()
-        cred.api_key = (self.cleaned_data.get("ozon_seller_api_key") or "").strip()
-        cred.save()
+        """Ozon + SiteSettings в одной транзакции; Api-Key: пустое поле = не трогать (как у пароля)."""
+        with transaction.atomic():
+            instance = super().save(commit=commit)
+            if not commit:
+                return instance
+            cid = (self.cleaned_data.get("ozon_seller_client_id") or "").strip()
+            try:
+                old = OzonSellerApiSettings.objects.get(site_id=instance.pk)
+            except OzonSellerApiSettings.DoesNotExist:
+                old = None
+            if "ozon_seller_api_key" in self.data:
+                k = (self.cleaned_data.get("ozon_seller_api_key") or "").strip()
+                if k == "" and old and (old.api_key or "").strip():
+                    new_key = old.api_key
+                else:
+                    new_key = k
+            else:
+                new_key = (old.api_key or "") if old else ""
+            OzonSellerApiSettings.objects.update_or_create(
+                site=instance,
+                defaults={"client_id": cid, "api_key": new_key},
+            )
         return instance

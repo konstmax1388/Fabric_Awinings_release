@@ -1887,9 +1887,24 @@ class SiteSettingsAdmin(ModelAdmin):
                 if slug == "crm_astrum":
                     _validate_astrum_crm_section(form)
                 if form.is_valid():
-                    form.save()
-                    messages.success(request, _("Изменения сохранены."))
-                    return redirect("admin:api_sitesettings_section", slug=slug)
+                    try:
+                        form.save()
+                    except Exception as exc:
+                        _logger.exception(
+                            "SiteSettings section save failed (slug=%s): %s", slug, exc
+                        )
+                        messages.error(
+                            request,
+                            _(
+                                "Сохранение не удалось. "
+                                "Для блока с ключами Ozon: выполните `migrate` (таблица api_ozonsellerapisettings) "
+                                "и проверьте лог. Ошибка: %(err)s"
+                            )
+                            % {"err": str(exc)[:500]},
+                        )
+                    else:
+                        messages.success(request, _("Изменения сохранены."))
+                        return redirect("admin:api_sitesettings_section", slug=slug)
         else:
             form = SectionForm(instance=obj)
         meta = SS_SECTIONS[slug]
