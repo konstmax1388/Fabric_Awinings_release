@@ -5,6 +5,8 @@ Ozon Seller API: остатки по товарам (перед createOrder / Oz
 совпадает** с `product_id` в кабинете. Тогда запрос `v4/.../stocks` с `filter.product_id` не
 возвращает товар. Запрашиваем остатки и по `product_id`, и по `offer_id`, и по `sku` (v4), плюс
 `v3/product/info/list` по списку `sku` — ответы склеиваем; в индексе учитываем `sources[]` (FBS).
+Плюс **`/v1/product/info/stocks-by-warehouse/fbs`**: по каждому SKU суммируем `present` по
+складам (v3/v4 иногда не отражают FBS-остаток в `stocks`, хотя в кабинете он есть).
 
 Ключи: OZON_SELLER_CLIENT_ID, OZON_SELLER_API_KEY (см. кабинет — Product read-only + Warehouse
 или Admin read-only). Кэш: OZON_SELLER_STOCK_CACHE_SECONDS (по умолчанию 120).
@@ -77,7 +79,7 @@ def _cache_ttl_seconds() -> int:
 def _batch_cache_key(skus: list[int]) -> str:
     raw = json.dumps(sorted(skus), separators=(",", ":"), ensure_ascii=True)
     h = zlib.crc32(raw.encode("utf-8")) & 0xFFFFFFFF
-    return f"ozon_seller:stocks:batch:v2:{h}:{len(skus)}"
+    return f"ozon_seller:stocks:batch:v3:{h}:{len(skus)}"
 
 
 def _extract_present(item: dict[str, Any]) -> int:
@@ -229,11 +231,57 @@ def _v3_product_info_list_by_sku(
     return []
 
 
+def _v1_fbs_warehouse_present_by_sku(
+    creds: tuple[str, str], skus: list[int]
+) -> dict[int, int]:
+    """
+    POST /v1/product/info/stocks-by-warehouse/fbs (см. ProductAPI_ProductStocksByWarehouseFbs):
+    остатки FBS и rFBS в разбивке по складам. По одному `sku` может быть несколько строк —
+    суммируем `present`.
+    """
+    if not skus:
+        return {}
+    url = f"{SELLER_BASE}/v1/product/info/stocks-by-warehouse/fbs"
+    hdrs = _auth_headers(creds)
+    out: dict[int, int] = {}
+    # Разумный лимит на пакет (связанные эндпоинты — до 200 SKU)
+    for i in range(0, len(skus), 200):
+        batch = skus[i : i + 200]
+        try:
+            data = post_json(url, {"sku": batch}, headers=hdrs, timeout=45.0)
+        except HttpJsonError as e:
+            logger.info("Ozon v1/stocks-by-warehouse/fbs: %s", e)
+            continue
+        if not isinstance(data, dict):
+            continue
+        rows = data.get("result")
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            raw = row.get("sku")
+            if raw is None or raw is False:
+                continue
+            try:
+                k = int(str(raw).strip())
+            except (TypeError, ValueError):
+                continue
+            if k < 0:
+                continue
+            p = row.get("present")
+            if not isinstance(p, (int, float)) or p < 0:
+                p = 0
+            p = int(p)
+            out[k] = out.get(k, 0) + p
+    return out
+
+
 def _fetch_fresh(
     skus: list[int],
     creds: tuple[str, str],
 ) -> dict[int, int]:
-    """Для списка идентификаторов из БД: сколько в наличии (по данным v4, лучшая оценка)."""
+    """Сколько в наличии: v4 + v3 и отдельно FBS-склады (см. _v1_fbs_warehouse_present_by_sku)."""
     sset = sorted({s for s in skus if s and s > 0})
     if not sset:
         return {}
@@ -247,7 +295,8 @@ def _fetch_fresh(
         logger.info("Ozon v4/stocks filter=sku: %s (ok if keys — product_id)", e)
     all_items.extend(_v3_product_info_list_by_sku(creds, sset))
     by_id = _index_availability(all_items)
-    return {k: by_id.get(k, 0) for k in sset}
+    fbs = _v1_fbs_warehouse_present_by_sku(creds, sset)
+    return {k: max(int(by_id.get(k, 0) or 0), int(fbs.get(k, 0) or 0)) for k in sset}
 
 
 def get_ozon_stock_availability(
@@ -281,7 +330,7 @@ def get_ozon_stock_availability(
     out = _fetch_fresh(u, creds)
     cache.set(batch_key, {str(k): v for k, v in out.items()}, ttl)
     for k, v in out.items():
-        cache.set(f"ozon_seller:stock:single:v2:{k}", v, ttl)
+        cache.set(f"ozon_seller:stock:single:v3:{k}", v, ttl)
     return out
 
 
