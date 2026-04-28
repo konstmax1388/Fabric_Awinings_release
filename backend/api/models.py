@@ -1326,6 +1326,21 @@ class SiteSettings(models.Model):
         default="",
         help_text="Кратко опишите условия; ссылка на справку Ozon при необходимости.",
     )
+    ozon_seller_client_id = models.CharField(
+        "Ozon Seller API: Client-Id",
+        max_length=256,
+        blank=True,
+        default="",
+        help_text="Кабинет seller.ozon.ru — права: Product read-only, Warehouse (или Admin read-only). "
+        "Нужен для проверки остатков перед оплатой с доставкой Ozon. Env: OZON_SELLER_CLIENT_ID.",
+    )
+    ozon_seller_api_key = models.CharField(
+        "Ozon Seller API: Api-Key",
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Секрет API (заголовок Api-Key). Env: OZON_SELLER_API_KEY.",
+    )
 
     ozon_pay_enabled = models.BooleanField(
         "Ozon Pay Checkout: включить онлайн-оплату",

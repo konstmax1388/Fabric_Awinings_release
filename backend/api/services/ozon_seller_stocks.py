@@ -45,8 +45,21 @@ def _env_int(name: str, default: int) -> int:
 
 
 def seller_credentials() -> tuple[str, str] | None:
-    cid = (os.environ.get("OZON_SELLER_CLIENT_ID") or "").strip()
-    key = (os.environ.get("OZON_SELLER_API_KEY") or "").strip()
+    """Пара Client-Id + Api-Key: сначала env, иначе поля в SiteSettings (админка)."""
+    env_cid = (os.environ.get("OZON_SELLER_CLIENT_ID") or "").strip()
+    env_key = (os.environ.get("OZON_SELLER_API_KEY") or "").strip()
+    db_cid = ""
+    db_key = ""
+    try:
+        from api.models import SiteSettings
+
+        s = SiteSettings.get_solo()
+        db_cid = (s.ozon_seller_client_id or "").strip()
+        db_key = (s.ozon_seller_api_key or "").strip()
+    except Exception:
+        pass
+    cid = env_cid or db_cid
+    key = env_key or db_key
     if not cid or not key:
         return None
     return cid, key

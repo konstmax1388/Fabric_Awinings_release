@@ -151,6 +151,7 @@ def _sitesettings_section_modelform_factory(request, fields: tuple[str, ...]):
             "cdek_secure_password",
             "ozon_pay_client_secret",
             "ozon_pay_webhook_secret",
+            "ozon_seller_api_key",
         ):
             kwargs["widget"] = UnfoldAdminPasswordWidget(
                 attrs={"autocomplete": "new-password"},
@@ -1794,10 +1795,14 @@ class SiteSettingsAdmin(ModelAdmin):
                     "ozon_logistics_enabled",
                     "ozon_logistics_delivery_payer",
                     "ozon_logistics_buyer_note",
+                    "ozon_seller_client_id",
+                    "ozon_seller_api_key",
                 ),
                 "description": _(
                     "Доставка через Ozon Логистику: подключение в кабинете продавца Ozon. "
-                    "На витрине доступна только вместе с онлайн-оплатой (Ozon Pay)."
+                    "На витрине доступна только вместе с онлайн-оплатой (Ozon Pay). "
+                    "Поля Seller API (Client-Id, Api-Key) используются для проверки остатков на Ozon "
+                    "перед созданием заказа оплаты; при необходимости их можно задать в .env (см. help_text)."
                 ),
             },
         ),
