@@ -251,12 +251,9 @@ def validate_ozon_logistics_stock(needed: dict[int, int]) -> None:
     for sku, qty in needed.items():
         a = int(avail.get(sku, 0) or 0)
         if a < int(qty):
-            short.append(f"товар (идентификатор Ozon {sku}): нужно {int(qty)}, в наличии {a} на Ozon")
+            short.append(f"Ozon SKU {sku}: в заказе {int(qty)} шт., на Ozon {a} шт.")
     if short:
-        msg = (
-            "По данным кабинета Ozon сейчас нельзя оформить такой состав заказа с доставкой Ozon: "
-            + "; ".join(short[:4])
-        )
+        msg = "Недостаточно товара на Ozon. " + " ".join(short[:4])
         if len(short) > 4:
             msg += " …"
         raise ValidationError(msg)

@@ -169,8 +169,13 @@ export function CheckoutPage() {
   }, [step])
 
   const deliveryLabel = useMemo(() => {
-    return effectiveDeliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
-  }, [effectiveDeliveryOptions, deliveryMethod])
+    const base =
+      effectiveDeliveryOptions.find((o) => o.id === deliveryMethod)?.label ?? deliveryMethod
+    if (deliveryMethod === 'ozon_logistics') {
+      return `${base} — ${checkout.ozonLogistics.deliveryPayerLabel}`
+    }
+    return base
+  }, [effectiveDeliveryOptions, deliveryMethod, checkout.ozonLogistics.deliveryPayerLabel])
 
   const paymentLabel = useMemo(() => {
     return checkout.paymentLabels[paymentMethod] ?? paymentMethod
@@ -690,18 +695,25 @@ export function CheckoutPage() {
                           }}
                           className="mt-1"
                         />
-                        <span className="flex min-h-[1.25rem] flex-1 flex-wrap items-center gap-2 font-body text-sm text-text">
+                        <span className="flex min-h-[1.25rem] flex-1 flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 font-body text-sm text-text">
                           {o.id === 'ozon_logistics' ? (
                             <img
                               src="/delivery/ozon-logistics-logo.svg"
                               alt="Ozon"
-                              className="h-5 w-[min(9rem,42vw)] max-w-full object-contain object-left"
+                              className="h-5 w-[min(9rem,42vw)] max-w-full shrink-0 object-contain object-left"
                             />
                           ) : null}
                           {o.id === 'cdek' ? (
                             <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-4 w-auto object-contain" />
                           ) : null}
-                          <span className="leading-snug">{o.label}</span>
+                          <span className="min-w-0 leading-snug">
+                            <span className="text-text">{o.label}</span>
+                            {o.id === 'ozon_logistics' ? (
+                              <span className="mt-0.5 block text-xs font-medium text-text-muted sm:ml-1 sm:mt-0 sm:inline">
+                                {checkout.ozonLogistics.deliveryPayerLabel}
+                              </span>
+                            ) : null}
+                          </span>
                         </span>
                       </label>
                     ))}
@@ -714,29 +726,10 @@ export function CheckoutPage() {
                     </div>
                   )}
 
-                  {deliveryMethod === 'ozon_logistics' ? (
-                    <div className="mt-5 overflow-hidden rounded-2xl border border-[#005BFF]/20 bg-gradient-to-br from-[#005BFF]/[0.07] via-bg-base to-bg-base p-5 shadow-sm dark:from-[#005BFF]/[0.12] dark:via-bg-base">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                        <img
-                          src="/delivery/ozon-logistics-logo.svg"
-                          alt="Ozon"
-                          className="h-7 w-[min(12rem,55vw)] max-w-full object-contain object-left"
-                        />
-                        <span className="inline-flex w-fit items-center rounded-full border border-[#005BFF]/25 bg-surface/95 px-3.5 py-1.5 font-body text-xs font-semibold text-[#0050e6] dark:border-[#3b7fff]/40 dark:text-[#6aa3ff]">
-                          {checkout.ozonLogistics.deliveryPayerLabel}
-                        </span>
-                      </div>
-                      <p className="mt-3 font-body text-sm leading-relaxed text-text">
-                        Онлайн-оплата картой: итог с доставкой и{' '}
-                        <strong className="font-semibold text-text">способ доставки (курьер, ПВЗ — выбор адреса)</strong>{' '}
-                        — на защищённой странице Ozon Pay, сразу перед оплатой. На сайте адрес указывать не нужно.
-                      </p>
-                      {checkout.ozonLogistics.buyerNote ? (
-                        <div className="mt-4 rounded-xl border border-border-light/90 bg-bg-base/90 p-3 font-body text-sm text-text-muted">
-                          {checkout.ozonLogistics.buyerNote}
-                        </div>
-                      ) : null}
-                    </div>
+                  {deliveryMethod === 'ozon_logistics' && checkout.ozonLogistics.buyerNote ? (
+                    <p className="mt-4 rounded-xl border border-border-light/90 bg-bg-base/90 p-3 font-body text-sm text-text-muted">
+                      {checkout.ozonLogistics.buyerNote}
+                    </p>
                   ) : null}
 
                   {deliveryMethod === 'cdek' && (
@@ -977,19 +970,13 @@ export function CheckoutPage() {
                         <span>{cdekRecipientFeeRub.toLocaleString('ru-RU')} ₽</span>
                       </p>
                     ) : null}
-                    {deliveryMethod === 'ozon_logistics' ? (
-                      <p className="mt-2 text-[#0050e6] dark:text-[#6aa3ff]">
-                        <span className="text-text">Условие: </span>
-                        {checkout.ozonLogistics.deliveryPayerLabel}
-                      </p>
-                    ) : null}
                     {deliveryMethod === 'ozon_logistics' && paymentMethod === 'card_online' ? (
                       <>
                         <p className="mt-2 font-semibold text-text">
                           Товары: {orderGrandTotal.toLocaleString('ru-RU')} ₽
                         </p>
                         <p className="mt-1 font-body text-xs text-text-muted">
-                          Сумма с доставкой — на шаге оплаты Ozon Pay.
+                          С доставкой — итог увидите в Ozon Pay перед оплатой.
                         </p>
                       </>
                     ) : (
@@ -1075,18 +1062,15 @@ export function CheckoutPage() {
                   </p>
                 ) : null}
                 {deliveryMethod === 'ozon_logistics' && paymentMethod === 'card_online' ? (
-                  <p className="mt-1 font-body text-xs text-text-muted">С доставкой — сумма на шаге оплаты Ozon.</p>
+                  <p className="mt-1 font-body text-xs text-text-muted">
+                    С доставкой — итог в Ozon Pay перед оплатой.
+                  </p>
                 ) : (
                   <p className="mt-1">
                     <span className="text-text-subtle">К оплате:</span>{' '}
                     <span className="font-semibold text-text">{orderGrandTotal.toLocaleString('ru-RU')} ₽</span>
                   </p>
                 )}
-                {deliveryMethod === 'ozon_logistics' ? (
-                  <p className="mt-2 font-medium text-[#0050e6] dark:text-[#6aa3ff]">
-                    {checkout.ozonLogistics.deliveryPayerLabel}
-                  </p>
-                ) : null}
                 <p className="mt-3 text-text">
                   <span className="text-text-subtle">Доставка:</span> {deliveryLabel}
                 </p>
@@ -1106,7 +1090,7 @@ export function CheckoutPage() {
                   </div>
                 ) : deliveryMethod === 'ozon_logistics' ? (
                   <p className="mt-3 text-text-muted">
-                    Адрес доставки вы укажете на следующем шаге — в окне оплаты Ozon.
+                    Курьер, ПВЗ и адрес — в окне Ozon Pay при оплате.
                   </p>
                 ) : (city || address) ? (
                   <p className="mt-3">
