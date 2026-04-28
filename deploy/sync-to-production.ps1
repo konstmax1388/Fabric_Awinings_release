@@ -31,6 +31,7 @@ $cfg = Get-DeployEnv -Path $EnvFile
 $sshTarget = $cfg["DEPLOY_SSH_TARGET"]
 $appPath = $cfg["DEPLOY_APP_PATH"]
 $branch = if ($cfg.ContainsKey("DEPLOY_GIT_BRANCH") -and $cfg["DEPLOY_GIT_BRANCH"]) { $cfg["DEPLOY_GIT_BRANCH"] } else { "main" }
+$gitRemote = if ($cfg.ContainsKey("DEPLOY_GIT_REMOTE") -and $cfg["DEPLOY_GIT_REMOTE"]) { $cfg["DEPLOY_GIT_REMOTE"].Trim() } else { "origin" }
 $service = if ($cfg.ContainsKey("DEPLOY_SYSTEMD_SERVICE") -and $cfg["DEPLOY_SYSTEMD_SERVICE"]) { $cfg["DEPLOY_SYSTEMD_SERVICE"] } else { "fabrika-gunicorn" }
 $skipSystemd = ($cfg.ContainsKey("DEPLOY_SKIP_SYSTEMD") -and $cfg["DEPLOY_SKIP_SYSTEMD"] -eq "1")
 
@@ -49,14 +50,15 @@ if ($runPreflight) {
     }
 }
 
-Write-Host "==> $sshTarget -> $appPath (branch $branch)"
+Write-Host "==> $sshTarget -> $appPath (branch $branch, remote $gitRemote)"
 
 $remoteLines = @(
     "set -euo pipefail"
     "cd `"$appPath`""
-    "git fetch origin `"$branch`""
+    "git fetch $gitRemote `"$branch`""
     "git checkout `"$branch`""
-    "git reset --hard `"origin/$branch`""
+    "git reset --hard `"$gitRemote/$branch`""
+    "echo \"==> On server after git reset: VERSION=\`$(cat VERSION 2>/dev/null | head -1) \`$(git log -1 --oneline) (remote $gitRemote)\""
     "export GIT_SHA=`"`$(git rev-parse --short HEAD)`""
     "export BUILD_TIME=`"`$(date -u +%Y-%m-%dT%H:%M:%SZ)`""
     "STAFF_TMP=`"/tmp/fabrika_staff_prev`""

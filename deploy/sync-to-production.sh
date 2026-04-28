@@ -38,10 +38,11 @@ else
 fi
 
 BRANCH="${DEPLOY_GIT_BRANCH:-main}"
+GIT_REMOTE="${DEPLOY_GIT_REMOTE:-origin}"
 SERVICE="${DEPLOY_SYSTEMD_SERVICE:-fabrika-gunicorn}"
 APP=$(printf '%q' "$DEPLOY_APP_PATH")
 
-echo "==> $DEPLOY_SSH_TARGET → $DEPLOY_APP_PATH (ветка $BRANCH)"
+echo "==> $DEPLOY_SSH_TARGET → $DEPLOY_APP_PATH (ветка $BRANCH, remote $GIT_REMOTE)"
 
 if [[ "${DEPLOY_RUN_PREFLIGHT:-0}" == "1" ]]; then
   echo "==> Локальный preflight (как CI). Отключить: DEPLOY_RUN_PREFLIGHT=0"
@@ -52,9 +53,10 @@ if [[ "${DEPLOY_SKIP_SYSTEMD:-0}" == "1" ]]; then
   "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
-git fetch origin $BRANCH
-git checkout $BRANCH
-git reset --hard "origin/$BRANCH"
+git fetch "$GIT_REMOTE" "$BRANCH"
+git checkout "$BRANCH"
+git reset --hard "$GIT_REMOTE/$BRANCH"
+echo "==> На сервере: VERSION=\$(cat VERSION 2>/dev/null | head -1) \$(git log -1 --oneline) remote=$GIT_REMOTE"
 STAFF_TMP="/tmp/fabrika_staff_prev"
 rm -rf "\$STAFF_TMP"
 if [[ -f frontend/dist/staff/index.html ]]; then
@@ -93,9 +95,10 @@ else
   "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
-git fetch origin $BRANCH
-git checkout $BRANCH
-git reset --hard "origin/$BRANCH"
+git fetch "$GIT_REMOTE" "$BRANCH"
+git checkout "$BRANCH"
+git reset --hard "$GIT_REMOTE/$BRANCH"
+echo "==> На сервере: VERSION=\$(cat VERSION 2>/dev/null | head -1) \$(git log -1 --oneline) remote=$GIT_REMOTE"
 STAFF_TMP="/tmp/fabrika_staff_prev"
 rm -rf "\$STAFF_TMP"
 if [[ -f frontend/dist/staff/index.html ]]; then
