@@ -1,10 +1,10 @@
 """
 Ozon Seller API: остатки по товарам (перед createOrder / Ozon Pay + логистика).
 
-Использует тот же числовой идентификатор, что и в админке (ozon_sku) и в Acquiring `items[].sku`
-— в кабинете Ozon этот же номер в ряде экранов показывается как product_id; Seller API
-`/v4/product/info/stocks` даёт и `product_id`, и `sku` на товар. Ищем совпадение в ответе
-по любому из полей, чтобы ID из админки работал в обоих вариантах.
+В админке в «Ozon SKU» часто вводят **FBS sku** (как в Acquiring `items[].sku`), которое **не
+совпадает** с `product_id` в кабинете. Тогда запрос `v4/.../stocks` с `filter.product_id` не
+возвращает товар. Запрашиваем остатки и по `product_id`, и по `offer_id`, и по `sku` (v4), плюс
+`v3/product/info/list` по списку `sku` — ответы склеиваем; в индексе учитываем `sources[]` (FBS).
 
 Ключи: OZON_SELLER_CLIENT_ID, OZON_SELLER_API_KEY (см. кабинет — Product read-only + Warehouse
 или Admin read-only). Кэш: OZON_SELLER_STOCK_CACHE_SECONDS (по умолчанию 120).
@@ -77,11 +77,15 @@ def _cache_ttl_seconds() -> int:
 def _batch_cache_key(skus: list[int]) -> str:
     raw = json.dumps(sorted(skus), separators=(",", ":"), ensure_ascii=True)
     h = zlib.crc32(raw.encode("utf-8")) & 0xFFFFFFFF
-    return f"ozon_seller:stocks:batch:{h}:{len(skus)}"
+    return f"ozon_seller:stocks:batch:v2:{h}:{len(skus)}"
 
 
 def _extract_present(item: dict[str, Any]) -> int:
     stocks = item.get("stocks")
+    if isinstance(stocks, dict):
+        p = stocks.get("present")
+        if isinstance(p, (int, float)) and p >= 0:
+            return int(p)
     if isinstance(stocks, list) and stocks:
         total = 0
         for s in stocks:
@@ -142,12 +146,33 @@ def _v4_stocks_paginate(
 def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
     """
     best[int_id] = max present для любого id (sku / product_id / offer как число),
-    с которым может совпасть ввод из админки.
+    с которым может совпасть ввод из админки. В v3 в ответе часто `sources` (FBS) с полем `sku`.
     """
     best: dict[int, int] = {}
     for item in items:
+        sources = item.get("sources")
+        if isinstance(sources, list) and sources:
+            for src in sources:
+                if not isinstance(src, dict):
+                    continue
+                p_src = src.get("present")
+                if not isinstance(p_src, (int, float)) or p_src < 0:
+                    p_src = 0
+                p_src = int(p_src)
+                for key in ("sku", "product_id", "fbs_sku"):
+                    raw = src.get(key)
+                    if raw is None or raw is False:
+                        continue
+                    try:
+                        k = int(str(raw).strip())
+                    except (TypeError, ValueError):
+                        continue
+                    if k < 0:
+                        continue
+                    if p_src > best.get(k, -1):
+                        best[k] = p_src
         p = _extract_present(item)
-        for key in ("sku", "product_id"):
+        for key in ("sku", "product_id", "id"):
             raw = item.get(key)
             if raw is None or raw is False:
                 continue
@@ -172,6 +197,38 @@ def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
     return best
 
 
+def _v3_product_info_list_by_sku(
+    creds: tuple[str, str], skus: list[int]
+) -> list[dict[str, Any]]:
+    """
+    /v3/product/info/list — по полю `sku` находит товар, даже если в админке не product_id.
+    """
+    if not skus:
+        return []
+    url = f"{SELLER_BASE}/v3/product/info/list"
+    hdrs = _auth_headers(creds)
+    bodies: list[dict[str, Any]] = [
+        {"sku": skus},
+        {"product_id": [], "offer_id": [], "sku": skus},
+        {"sku": [str(x) for x in skus]},
+    ]
+    for body in bodies:
+        try:
+            data = post_json(url, body, headers=hdrs, timeout=45.0)
+        except HttpJsonError as e:
+            logger.info("Ozon v3/product/info/list: %s", e)
+            continue
+        if not isinstance(data, dict):
+            continue
+        r = data.get("result")
+        if not isinstance(r, dict):
+            continue
+        items = r.get("items")
+        if isinstance(items, list) and items:
+            return [x for x in items if isinstance(x, dict)]
+    return []
+
+
 def _fetch_fresh(
     skus: list[int],
     creds: tuple[str, str],
@@ -184,6 +241,11 @@ def _fetch_fresh(
     all_items: list[dict[str, Any]] = []
     all_items.extend(_v4_stocks_paginate(creds, filter_key="product_id", ids=sset_str))
     all_items.extend(_v4_stocks_paginate(creds, filter_key="offer_id", ids=sset_str))
+    try:
+        all_items.extend(_v4_stocks_paginate(creds, filter_key="sku", ids=sset_str))
+    except HttpJsonError as e:
+        logger.info("Ozon v4/stocks filter=sku: %s (ok if keys — product_id)", e)
+    all_items.extend(_v3_product_info_list_by_sku(creds, sset))
     by_id = _index_availability(all_items)
     return {k: by_id.get(k, 0) for k in sset}
 
@@ -219,7 +281,7 @@ def get_ozon_stock_availability(
     out = _fetch_fresh(u, creds)
     cache.set(batch_key, {str(k): v for k, v in out.items()}, ttl)
     for k, v in out.items():
-        cache.set(f"ozon_seller:stock:single:{k}", v, ttl)
+        cache.set(f"ozon_seller:stock:single:v2:{k}", v, ttl)
     return out
 
 
