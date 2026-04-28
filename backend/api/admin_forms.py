@@ -2,8 +2,9 @@
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from unfold.widgets import UnfoldAdminPasswordWidget
 
-from .models import Product, SiteSettings
+from .models import OzonSellerApiSettings, Product, SiteSettings
 
 _MP_INPUT_CLASSES = (
     "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-3xl "
@@ -389,4 +390,49 @@ class SiteSettingsMenuSectionForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
         self._header_nav_apply_to_instance(instance)
         if commit:
             instance.save()
+        return instance
+
+
+class SiteSettingsOzonLogisticsSectionForm(forms.ModelForm):
+    """Секция «логистика Ozon» + ключи в `OzonSellerApiSettings` (отдельная таблица — MySQL 65KB/строка)."""
+
+    ozon_seller_client_id = forms.CharField(
+        label=OzonSellerApiSettings._meta.get_field("client_id").verbose_name,
+        help_text=OzonSellerApiSettings._meta.get_field("client_id").help_text,
+        required=False,
+        widget=forms.TextInput(attrs={"class": _MP_INPUT_CLASSES}),
+    )
+    ozon_seller_api_key = forms.CharField(
+        label=OzonSellerApiSettings._meta.get_field("api_key").verbose_name,
+        help_text=OzonSellerApiSettings._meta.get_field("api_key").help_text,
+        required=False,
+        widget=UnfoldAdminPasswordWidget(
+            attrs={"autocomplete": "new-password"},
+            render_value=True,
+        ),
+    )
+
+    class Meta:
+        model = SiteSettings
+        fields = (
+            "ozon_logistics_enabled",
+            "ozon_logistics_delivery_payer",
+            "ozon_logistics_buyer_note",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and getattr(self.instance, "pk", None):
+            cred, _ = OzonSellerApiSettings.objects.get_or_create(site=self.instance)
+            self.initial.setdefault("ozon_seller_client_id", cred.client_id)
+            self.initial.setdefault("ozon_seller_api_key", cred.api_key)
+
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+        if not commit:
+            return instance
+        cred, _ = OzonSellerApiSettings.objects.get_or_create(site=instance)
+        cred.client_id = (self.cleaned_data.get("ozon_seller_client_id") or "").strip()
+        cred.api_key = (self.cleaned_data.get("ozon_seller_api_key") or "").strip()
+        cred.save()
         return instance

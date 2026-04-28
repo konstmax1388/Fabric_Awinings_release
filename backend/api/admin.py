@@ -40,7 +40,13 @@ from config.sitesettings_nav import (
     ss_fieldset,
 )
 
-from .admin_forms import ProductAdminForm, SiteSettingsAdminForm, SiteSettingsMenuSectionForm, teasers_list_for_save
+from .admin_forms import (
+    ProductAdminForm,
+    SiteSettingsAdminForm,
+    SiteSettingsMenuSectionForm,
+    SiteSettingsOzonLogisticsSectionForm,
+    teasers_list_for_save,
+)
 from .home_defaults import merged_home_payload
 
 _HEADER_NAV_ADMIN_FIELD_ROWS: tuple[tuple[str, str, str], ...] = tuple(
@@ -151,7 +157,6 @@ def _sitesettings_section_modelform_factory(request, fields: tuple[str, ...]):
             "cdek_secure_password",
             "ozon_pay_client_secret",
             "ozon_pay_webhook_secret",
-            "ozon_seller_api_key",
         ):
             kwargs["widget"] = UnfoldAdminPasswordWidget(
                 attrs={"autocomplete": "new-password"},
@@ -1795,8 +1800,6 @@ class SiteSettingsAdmin(ModelAdmin):
                     "ozon_logistics_enabled",
                     "ozon_logistics_delivery_payer",
                     "ozon_logistics_buyer_note",
-                    "ozon_seller_client_id",
-                    "ozon_seller_api_key",
                 ),
                 "description": _(
                     "Доставка через Ozon Логистику: подключение в кабинете продавца Ozon. "
@@ -1874,6 +1877,8 @@ class SiteSettingsAdmin(ModelAdmin):
         fields = SS_SECTION_FIELDS[slug]
         if slug == "menu_reviews":
             SectionForm = SiteSettingsMenuSectionForm
+        elif slug == "checkout_ozon_logistics":
+            SectionForm = SiteSettingsOzonLogisticsSectionForm
         else:
             SectionForm = _sitesettings_section_modelform_factory(request, fields)
         if request.method == "POST":

@@ -1326,21 +1326,6 @@ class SiteSettings(models.Model):
         default="",
         help_text="Кратко опишите условия; ссылка на справку Ozon при необходимости.",
     )
-    ozon_seller_client_id = models.CharField(
-        "Ozon Seller API: Client-Id",
-        max_length=256,
-        blank=True,
-        default="",
-        help_text="Кабинет seller.ozon.ru — права: Product read-only, Warehouse (или Admin read-only). "
-        "Нужен для проверки остатков перед оплатой с доставкой Ozon. Env: OZON_SELLER_CLIENT_ID.",
-    )
-    ozon_seller_api_key = models.CharField(
-        "Ozon Seller API: Api-Key",
-        max_length=512,
-        blank=True,
-        default="",
-        help_text="Секрет API (заголовок Api-Key). Env: OZON_SELLER_API_KEY.",
-    )
 
     ozon_pay_enabled = models.BooleanField(
         "Ozon Pay Checkout: включить онлайн-оплату",
@@ -1439,6 +1424,34 @@ class SiteSettings(models.Model):
             },
         )
         return obj
+
+
+class OzonSellerApiSettings(models.Model):
+    """Ключи Ozon Seller API вынесены из `SiteSettings`: у MySQL лимит ~65 КБ на строку `api_sitesettings`."""
+
+    site = models.OneToOneField(
+        SiteSettings,
+        on_delete=models.CASCADE,
+        related_name="ozon_seller_api",
+        primary_key=True,
+    )
+    client_id = models.TextField(
+        "Ozon Seller API: Client-Id",
+        blank=True,
+        default="",
+        help_text="Кабинет seller.ozon.ru — права: Product read-only, Warehouse (или Admin read-only). "
+        "Нужен для проверки остатков перед оплатой с доставкой Ozon. Env: OZON_SELLER_CLIENT_ID.",
+    )
+    api_key = models.TextField(
+        "Ozon Seller API: Api-Key",
+        blank=True,
+        default="",
+        help_text="Секрет API (заголовок Api-Key). Env: OZON_SELLER_API_KEY.",
+    )
+
+    class Meta:
+        verbose_name = "Ozon Seller API (логистика)"
+        verbose_name_plural = "Ozon Seller API (логистика)"
 
 
 class SiteEmailTemplate(models.Model):
