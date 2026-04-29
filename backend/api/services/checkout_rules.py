@@ -4,6 +4,26 @@ from __future__ import annotations
 
 from api.models import CartOrder, SiteSettings
 
+DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE = (
+    "Сайт в режиме подготовки: оформление и приём заказов временно недоступны. Заказы через сайт не принимаются."
+)
+
+
+def checkout_orders_blocked_public_message(settings: SiteSettings) -> str:
+    """Текст для витрины и API при включённой блокировке заказов."""
+    if not settings.checkout_orders_blocked:
+        return ""
+    custom = (settings.checkout_orders_blocked_message or "").strip()
+    return custom or DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+
+def raise_if_checkout_orders_blocked(settings: SiteSettings) -> None:
+    from rest_framework.exceptions import ValidationError
+
+    if not settings.checkout_orders_blocked:
+        return
+    raise ValidationError(checkout_orders_blocked_public_message(settings))
+
 
 def delivery_options_public(settings: SiteSettings) -> list[dict[str, str]]:
     """Список включённых способов доставки для витрины. Логистика Ozon — выше СДЭК, если обе включены."""

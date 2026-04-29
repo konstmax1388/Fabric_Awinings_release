@@ -1,8 +1,22 @@
 """
 Ozon Pay Checkout — Ozon Acquiring API: POST /v1/createOrder + подпись requestSign.
 
-При доставке «Логистика Ozon» — deliverySettings.isEnabled и MODE_FULL + items.
-В остальных режимах (MODE_SHORTENED) в createOrder также передаётся items (одна позиция или корзина), т.к. payapi валидирует непустой состав и сумму ≥ 1 ₽.
+Рабочая среда: https://payapi.ozon.ru/ (см. Ozon Acquiring API 1.0.0).
+
+Доставка Ozon (логистика): в теле createOrder — ``deliverySettings.isEnabled: true``,
+``mode: MODE_FULL``, в ``items[]`` для сопоставления с доставкой передаётся числовой
+``sku`` — идентификатор товара в системе Ozon из кабинета продавца (у нас — поле
+«Ozon SKU» в админке). Поле ``items[].extId`` в запросе — уникальный внешний ID
+позиции на стороне сайта (строка заказа), оно не заменяет ``sku`` для логистики.
+
+Синхронизация витрины эквайринга с Seller (названия, остатки — по правилам Ozon,
+часто ~15 мин; цены в эквайринге после первой загрузки при смене цены на Ozon
+обновляются вручную в кабинете эквайринга) на сторону этого кода не переносится:
+перед оплатой остаток для логистики дополнительно проверяется через Seller API
+(``api.services.ozon_seller_stocks``).
+
+В режиме без логистики (MODE_SHORTENED) в createOrder также передаётся непустой
+``items`` и сумма ≥ 1 ₽ — иначе payapi отвечает 400.
 
 Документация: https://docs.ozon.ru/api/acquiring/
 """

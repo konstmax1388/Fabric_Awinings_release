@@ -1,7 +1,10 @@
 """
 Сбор тел createOrder для Ozon Pay: позиции корзины и сумма (MODE_FULL + Ozon Логистика).
 
-https://docs.ozon.ru/api/acquiring/ — deliverySettings.isEnabled, items (extId / sku).
+Acquiring (см. https://docs.ozon.ru/api/acquiring/): при ``deliverySettings.isEnabled``
+в каждой позиции ``items[]`` для доставки нужен числовой ``sku`` (SKU в системе Ozon).
+``extId`` у позиции — наш уникальный идентификатор строки (например ``{order_ref}-L1U1``)
+для ссылок на позиции в confirm/receipt; это не ``offer_id``/артикул карточки Ozon.
 """
 
 from __future__ import annotations

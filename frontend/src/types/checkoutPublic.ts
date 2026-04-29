@@ -2,11 +2,19 @@
 
 export type CheckoutDeliveryOption = { id: string; label: string }
 
+/** Текст по умолчанию, если в админке включена блокировка, а поле сообщения пустое (совпадает с бэкендом). */
+export const DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE =
+  'Сайт в режиме подготовки: оформление и приём заказов временно недоступны. Заказы через сайт не принимаются.'
+
 export type CheckoutPublicConfig = {
   /** Минимальная сумма товаров (без доставки), 0 — нет ограничения */
   minimumOrderRub: number
   /** От какой суммы товаров доставка СДЭК бесплатна, 0 — не применять */
   freeDeliveryFromRub: number
+  /** Включено в админке: заказы с витрины и «в 1 клик» не принимаются */
+  ordersBlocked: boolean
+  /** Сообщение для баннера; при `ordersBlocked` пустое — подставить `DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE` */
+  ordersBlockedMessage: string
   deliveryOptions: CheckoutDeliveryOption[]
   paymentMatrix: Record<string, string[]>
   paymentLabels: Record<string, string>
@@ -63,6 +71,8 @@ export const CHECKOUT_DELIVERY_FALLBACK_LABELS: Record<string, string> = {
 export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
   minimumOrderRub: 0,
   freeDeliveryFromRub: 0,
+  ordersBlocked: false,
+  ordersBlockedMessage: '',
   deliveryOptions: [{ id: 'pickup', label: 'Самовывоз со склада' }],
   paymentMatrix: {
     pickup: ['cash_pickup'],

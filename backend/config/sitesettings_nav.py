@@ -122,6 +122,8 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "checkout_limits": (
         "checkout_minimum_order_rub",
         "checkout_free_delivery_from_rub",
+        "checkout_orders_blocked",
+        "checkout_orders_blocked_message",
     ),
     "checkout_pickup": (
         "checkout_pickup_enabled",

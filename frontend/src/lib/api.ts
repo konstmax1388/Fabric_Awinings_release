@@ -845,6 +845,11 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     freeDeliveryFromRub = Math.floor(o.freeDeliveryFromRub)
   }
 
+  let ordersBlocked = DEFAULT_CHECKOUT_PUBLIC.ordersBlocked
+  if (typeof o.ordersBlocked === 'boolean') ordersBlocked = o.ordersBlocked
+  let ordersBlockedMessage = DEFAULT_CHECKOUT_PUBLIC.ordersBlockedMessage
+  if (typeof o.ordersBlockedMessage === 'string') ordersBlockedMessage = o.ordersBlockedMessage.trim()
+
   const deliveryRaw = o.deliveryOptions
   let deliveryOptions: CheckoutDeliveryOption[] = []
   if (Array.isArray(deliveryRaw)) {
@@ -1021,6 +1026,8 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
   return {
     minimumOrderRub,
     freeDeliveryFromRub,
+    ordersBlocked,
+    ordersBlockedMessage,
     deliveryOptions,
     paymentMatrix,
     paymentLabels,

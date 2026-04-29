@@ -35,6 +35,7 @@ import {
 import { submitCartOrder } from '../lib/leads'
 import { publicSiteUrl } from '../config/publicSite'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../types/checkoutPublic'
 
 function extractTariffDeliveryRub(t: unknown): number | null {
   if (t == null || typeof t !== 'object') return null
@@ -181,6 +182,12 @@ export function CheckoutPage() {
     return checkout.paymentLabels[paymentMethod] ?? paymentMethod
   }, [checkout.paymentLabels, paymentMethod])
 
+  const ordersBlocked = checkout.ordersBlocked
+  const ordersBlockedNotice = useMemo(
+    () => (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE,
+    [checkout.ordersBlockedMessage],
+  )
+
   const paymentChoices = useMemo(() => {
     return checkout.paymentMatrix[deliveryMethod] ?? []
   }, [checkout.paymentMatrix, deliveryMethod])
@@ -277,6 +284,10 @@ export function CheckoutPage() {
   const goNextFromContacts = (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (ordersBlocked) {
+      setError(ordersBlockedNotice)
+      return
+    }
     const ne = personNameError(name)
     if (ne) {
       setError(ne)
@@ -309,6 +320,10 @@ export function CheckoutPage() {
   const goNextFromDelivery = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (ordersBlocked) {
+      setError(ordersBlockedNotice)
+      return
+    }
     if (!settingsLoading && effectiveDeliveryOptions.length === 0) {
       setError('Оформление заказа недоступно: включите способы доставки в настройках сайта.')
       return
@@ -366,6 +381,10 @@ export function CheckoutPage() {
   const submitOrder = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (ordersBlocked) {
+      setError(ordersBlockedNotice)
+      return
+    }
     const ne = personNameError(name)
     if (ne) {
       setError(ne)
@@ -563,6 +582,14 @@ export function CheckoutPage() {
         )}
 
         <div className="fabric-card mx-auto mt-10 w-full min-w-0 max-w-2xl p-5 sm:max-w-3xl sm:p-6 lg:max-w-5xl lg:p-8">
+          {ordersBlocked && step !== 'done' ? (
+            <div
+              className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 font-body text-sm text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
+              role="alert"
+            >
+              {ordersBlockedNotice}
+            </div>
+          ) : null}
           {step === 1 && (
             <form onSubmit={goNextFromContacts} className="flex flex-col">
               <h1 className="fabric-section-title text-2xl md:text-3xl">Контактные данные</h1>
@@ -640,7 +667,8 @@ export function CheckoutPage() {
                 </Link>
                 <button
                   type="submit"
-                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c]"
+                  disabled={ordersBlocked}
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Далее
                 </button>
@@ -1036,8 +1064,8 @@ export function CheckoutPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={settingsLoading || effectiveDeliveryOptions.length === 0}
-                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:opacity-50"
+                  disabled={settingsLoading || effectiveDeliveryOptions.length === 0 || ordersBlocked}
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Далее
                 </button>
@@ -1126,8 +1154,8 @@ export function CheckoutPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={sending}
-                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:opacity-50"
+                  disabled={sending || ordersBlocked}
+                  className="fabric-strap-btn inline-flex h-12 flex-1 items-center justify-center rounded-[40px] bg-accent font-body font-medium text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? 'Отправка…' : 'Подтвердить заказ'}
                 </button>

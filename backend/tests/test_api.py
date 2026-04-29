@@ -745,8 +745,10 @@ def test_site_settings_public(client):
     assert "ozonLogistics" in co
     assert "ozonPay" in co
     assert "cdek" in co
-
-
+    assert "ordersBlocked" in co
+    assert "ordersBlockedMessage" in co
+    assert co["ordersBlocked"] is False
+    assert co["ordersBlockedMessage"] == ""
 @pytest.mark.django_db
 def test_site_settings_public_cdek_payment_methods_depend_on_acquiring(client):
     from api.models import SiteSettings
@@ -768,6 +770,74 @@ def test_site_settings_public_cdek_payment_methods_depend_on_acquiring(client):
     pm2 = r2.json()["checkout"]["paymentMatrix"]
     assert "cod_cdek" in pm2.get("cdek", [])
     assert "card_online" in pm2.get("cdek", [])
+
+
+@pytest.mark.django_db
+def test_site_settings_checkout_orders_blocked_public_message(client):
+    from api.models import SiteSettings
+    from api.services.checkout_rules import DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+    s = SiteSettings.get_solo()
+    s.checkout_orders_blocked = True
+    s.checkout_orders_blocked_message = ""
+    s.save(update_fields=["checkout_orders_blocked", "checkout_orders_blocked_message"])
+    r = client.get("/api/site-settings/")
+    assert r.status_code == 200
+    co = r.json()["checkout"]
+    assert co["ordersBlocked"] is True
+    assert co["ordersBlockedMessage"] == DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+
+@pytest.mark.django_db
+def test_cart_order_rejected_when_checkout_orders_blocked(client):
+    from api.models import SiteSettings
+    from api.services.checkout_rules import DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+    s = SiteSettings.get_solo()
+    s.checkout_orders_blocked = True
+    s.save(update_fields=["checkout_orders_blocked"])
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "petr@mail.ru"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 2,
+            }
+        ],
+        "totalApprox": 2000,
+    }
+    r = client.post("/api/leads/cart/", data=payload, content_type="application/json")
+    assert r.status_code == 400
+    assert DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE in str(r.json())
+
+
+@pytest.mark.django_db
+def test_one_click_order_rejected_when_checkout_orders_blocked(client):
+    from api.models import SiteSettings
+    from api.services.checkout_rules import DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+    s = SiteSettings.get_solo()
+    s.checkout_orders_blocked = True
+    s.save(update_fields=["checkout_orders_blocked"])
+    payload = {
+        "customer": {"name": "Пётр", "phone": "+79997654321", "email": "petr@mail.ru"},
+        "lines": [
+            {
+                "productId": "1",
+                "slug": "x",
+                "title": "Товар",
+                "priceFrom": 1000,
+                "qty": 1,
+            }
+        ],
+        "totalApprox": 1000,
+    }
+    r = client.post("/api/leads/one-click/", data=payload, content_type="application/json")
+    assert r.status_code == 400
+    assert DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE in str(r.json())
 
 
 @pytest.mark.django_db

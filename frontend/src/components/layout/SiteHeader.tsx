@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { buildMainNavItems, type MainNavItem } from '../../lib/headerNav'
+import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../../types/checkoutPublic'
 
 function mainNavLinkBaseClass(): string {
   return 'shrink-0 font-body text-sm font-medium tracking-wide transition-colors first:pl-0 last:pr-0 sm:text-base md:text-sm lg:text-base'
@@ -111,6 +112,8 @@ export function SiteHeader() {
     portfolioEnabled,
     staticPages,
     headerNavigation,
+    checkout,
+    loading: settingsLoading,
   } = useSiteSettings()
   const buyOnLabel = home?.ui?.buyOnMarketplaces ?? 'Купить на'
   const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
@@ -217,6 +220,16 @@ export function SiteHeader() {
       ref={headerRef}
       className="fabric-liquid-glass sticky inset-x-0 top-0 z-50 border-b border-border bg-bg-base/90 md:fixed md:top-0"
     >
+      {!settingsLoading && checkout.ordersBlocked ? (
+        <div
+          className="border-b border-amber-300/90 bg-amber-100 px-3 py-2.5 text-center dark:border-amber-700/60 dark:bg-amber-950/90"
+          role="alert"
+        >
+          <p className="fabric-container font-body text-sm font-medium leading-snug text-amber-950 dark:text-amber-100">
+            {(checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE}
+          </p>
+        </div>
+      ) : null}
       <div className="fabric-container flex min-w-0 flex-nowrap items-center gap-2 py-3 md:grid md:grid-cols-[minmax(7rem,auto)_minmax(0,1fr)_auto] md:items-center md:gap-3 md:py-2.5">
         <Link
           to="/"

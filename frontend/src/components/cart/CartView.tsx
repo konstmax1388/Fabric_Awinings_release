@@ -8,6 +8,7 @@ import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { useCart } from '../../hooks/useCart'
 import { orderLinesFromCartItems } from '../../lib/orderLinePayload'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
+import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../../types/checkoutPublic'
 
 function formatRub(n: number) {
   return `${n.toLocaleString('ru-RU')} ₽`
@@ -24,10 +25,13 @@ function pluralPositions(n: number): string {
 /** Состав корзины; оформление — на `/checkout`. */
 export function CartView() {
   const { items, removeLine, setQty, totalQty, totalApprox } = useCart()
-  const { productPhotoAspect, home, staticPages } = useSiteSettings()
+  const { productPhotoAspect, home, staticPages, checkout } = useSiteSettings()
   const [oneClickOpen, setOneClickOpen] = useState(false)
   const paymentDeliveryPath = staticPagePathBySlug(staticPages, LEGAL_SLUGS.paymentDelivery, '/')
   const ui = home?.ui
+  const ordersBlocked = checkout.ordersBlocked
+  const ordersBlockedNotice =
+    (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1">
@@ -177,19 +181,38 @@ export function CartView() {
                   {ui?.cartSummaryDeliveryNote || 'Итоговая сумма появится после выбора и расчета доставки.'}
                   {' '}Подробнее: <Link to={paymentDeliveryPath} className="text-accent hover:underline">Оплата и доставка</Link>.
                 </p>
+                {ordersBlocked ? (
+                  <p
+                    className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 font-body text-xs leading-relaxed text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
+                    role="alert"
+                  >
+                    {ordersBlockedNotice}
+                  </p>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setOneClickOpen(true)}
-                  className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] border-2 border-accent font-body text-sm font-medium text-accent transition-colors hover:bg-[rgba(200,155,83,0.12)]"
+                  disabled={ordersBlocked}
+                  className="fabric-strap-btn mt-5 flex h-12 w-full items-center justify-center rounded-[40px] border-2 border-accent font-body text-sm font-medium text-accent transition-colors hover:bg-[rgba(200,155,83,0.12)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Купить в 1 клик
                 </button>
-                <Link
-                  to="/checkout"
-                  className="fabric-strap-btn mt-3 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
-                >
-                  {ui?.cartCheckoutButton || 'Оформить заказ'}
-                </Link>
+                {ordersBlocked ? (
+                  <span
+                    className="fabric-strap-btn mt-3 flex h-12 w-full cursor-not-allowed items-center justify-center rounded-[40px] bg-border font-body text-sm font-medium text-text-muted"
+                    role="text"
+                    aria-disabled
+                  >
+                    {ui?.cartCheckoutButton || 'Оформить заказ'} — недоступно
+                  </span>
+                ) : (
+                  <Link
+                    to="/checkout"
+                    className="fabric-strap-btn mt-3 flex h-12 w-full items-center justify-center rounded-[40px] bg-accent font-body text-sm font-medium text-[#0d121c] shadow-[0_4px_8px_0_rgba(200,155,83,0.25)] transition-colors hover:bg-[#d4ad72]"
+                  >
+                    {ui?.cartCheckoutButton || 'Оформить заказ'}
+                  </Link>
+                )}
                 <OneClickOrderModal
                   open={oneClickOpen}
                   onClose={() => setOneClickOpen(false)}

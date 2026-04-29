@@ -91,7 +91,11 @@ class Product(models.Model):
         "Ozon SKU (товар)",
         null=True,
         blank=True,
-        help_text="SKU в каталоге Ozon для createOrder при доставке Ozon Логистика; если задан у варианта — используется он.",
+        help_text=(
+            "Числовой SKU товара в Ozon (как в карточке продавца) — в Acquiring createOrder "
+            "уходит в items[].sku при доставке «Логистика Ozon»; без него payapi не сопоставит "
+            "позицию с доставкой. Если задан у варианта — используется SKU варианта."
+        ),
     )
     cdek_weight_grams = models.PositiveIntegerField(
         "СДЭК: вес товара, г",
@@ -192,7 +196,10 @@ class ProductVariant(models.Model):
         "Ozon SKU (вариант)",
         null=True,
         blank=True,
-        help_text="SKU в Ozon для этого предложения (приоритет над SKU товара).",
+        help_text=(
+            "Числовой SKU этого предложения в Ozon для createOrder (приоритет над SKU товара); "
+            "тот же идентификатор, что для проверки остатков Seller API перед оплатой."
+        ),
     )
 
     class Meta:
@@ -1132,6 +1139,20 @@ class SiteSettings(models.Model):
         default=0,
         help_text="0 — порог не используется. Если сумма товаров не ниже этого значения, стоимость доставки СДЭК на витрине обнуляется.",
     )
+    checkout_orders_blocked = models.BooleanField(
+        "Витрина: не принимать заказы (режим подготовки)",
+        default=False,
+        help_text=(
+            "Если включено: на сайте показывается предупреждение, оформление заказа и «купить в 1 клик» недоступны; "
+            "API создания заказов отклоняет заявки с тем же текстом (пустое поле сообщения ниже — подставится текст по умолчанию)."
+        ),
+    )
+    checkout_orders_blocked_message = models.TextField(
+        "Текст предупреждения (необязательно)",
+        blank=True,
+        default="",
+        help_text="Показывается в шапке и на шагах оформления. Пусто — стандартное сообщение о том, что сайт в подготовке и заказы не принимаются.",
+    )
     checkout_pickup_enabled = models.BooleanField(
         "Самовывоз: показывать на сайте",
         default=True,
@@ -1330,7 +1351,11 @@ class SiteSettings(models.Model):
     ozon_pay_enabled = models.BooleanField(
         "Ozon Pay Checkout: включить онлайн-оплату",
         default=False,
-        help_text="Интеграция по API Ozon Acquiring (Ozon Pay Checkout). Ключи — ниже.",
+        help_text=(
+            "Интеграция по API Ozon Acquiring (Ozon Pay Checkout). Ключи — ниже. "
+            "Цены позиций в кабинете эквайринга при изменении на Ozon при необходимости "
+            "обновляйте там вручную (автоперенос цен с Seller — по правилам Ozon, не через сайт)."
+        ),
     )
     ozon_pay_sandbox = models.BooleanField(
         "Ozon Pay: песочница / тест",

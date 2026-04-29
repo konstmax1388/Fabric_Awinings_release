@@ -505,9 +505,14 @@ class CartOrderCreateSerializer(serializers.Serializer):
             goods_subtotal_from_lines,
             quoted_cdek_delivery_rub,
         )
-        from .services.checkout_rules import delivery_options_public, validate_delivery_and_payment
+        from .services.checkout_rules import (
+            delivery_options_public,
+            raise_if_checkout_orders_blocked,
+            validate_delivery_and_payment,
+        )
 
         s = SiteSettings.get_solo()
+        raise_if_checkout_orders_blocked(s)
         if not delivery_options_public(s):
             raise serializers.ValidationError(
                 "Оформление заказа недоступно: в настройках сайта не включён ни один способ доставки."
@@ -765,8 +770,10 @@ class OneClickOrderCreateSerializer(serializers.Serializer):
     def validate(self, attrs):
         from .models import SiteSettings
         from .services.checkout_pricing import build_trusted_checkout_lines, goods_subtotal_from_lines
+        from .services.checkout_rules import raise_if_checkout_orders_blocked
 
         s = SiteSettings.get_solo()
+        raise_if_checkout_orders_blocked(s)
         lines = attrs.get("lines") or []
         if not lines:
             raise serializers.ValidationError({"lines": ["Нужна хотя бы одна позиция."]})
@@ -1011,7 +1018,11 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         from .services.cdek_dimensions import cdek_default_package
         from .services.cdek_checkout_public import cdek_widget_tariffs_public
         from .services.cdek_runtime import cdek_api_base_url
-        from .services.checkout_rules import allowed_payment_methods, delivery_options_public
+        from .services.checkout_rules import (
+            allowed_payment_methods,
+            checkout_orders_blocked_public_message,
+            delivery_options_public,
+        )
 
         def widget_sender_city() -> str:
             s = (obj.cdek_widget_sender_city or "").strip()
@@ -1039,6 +1050,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         return {
             "minimumOrderRub": int(obj.checkout_minimum_order_rub or 0),
             "freeDeliveryFromRub": int(obj.checkout_free_delivery_from_rub or 0),
+            "ordersBlocked": bool(obj.checkout_orders_blocked),
+            "ordersBlockedMessage": checkout_orders_blocked_public_message(obj),
             "deliveryOptions": deliveries,
             "paymentMatrix": matrix,
             "paymentLabels": payment_labels,

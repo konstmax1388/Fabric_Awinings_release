@@ -1,5 +1,6 @@
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { postOneClickOrder } from '../../lib/api'
+import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
 import {
   HONEYPOT_FIELD,
@@ -11,6 +12,7 @@ import {
   phoneForApi,
 } from '../../lib/formValidation'
 import { type OrderLineApiPayload, subtotalFromOrderLines } from '../../lib/orderLinePayload'
+import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../../types/checkoutPublic'
 
 type Props = {
   open: boolean
@@ -28,6 +30,12 @@ function mapLinesForPost(lines: OrderLineApiPayload[]) {
 }
 
 export function OneClickOrderModal({ open, onClose, lines, title = 'Купить в 1 клик' }: Props) {
+  const { checkout } = useSiteSettings()
+  const ordersBlocked = checkout.ordersBlocked
+  const ordersBlockedNotice = useMemo(
+    () => (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE,
+    [checkout.ordersBlockedMessage],
+  )
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -60,6 +68,10 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
       setEmailErr(null)
 
       if (honeypot.trim()) {
+        return
+      }
+      if (ordersBlocked) {
+        setErr(ordersBlockedNotice)
         return
       }
       if (Date.now() - openedAtRef.current < MIN_SUBMIT_MS) {
@@ -104,7 +116,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
       }
       setErr(res.detail)
     },
-    [name, phone, email, honeypot, lines, total],
+    [name, phone, email, honeypot, lines, total, ordersBlocked, ordersBlockedNotice],
   )
 
   const close = useCallback(() => {
@@ -137,6 +149,14 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
             {title}
           </h2>
           <p className="mt-1 font-body text-sm text-text-muted">Менеджер свяжется с вами, чтобы согласовать детали.</p>
+          {ordersBlocked ? (
+            <p
+              className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 font-body text-xs leading-relaxed text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/50 dark:text-amber-100"
+              role="alert"
+            >
+              {ordersBlockedNotice}
+            </p>
+          ) : null}
         </div>
         {done ? (
           <div className="space-y-4 px-5 py-5">
@@ -167,7 +187,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
                 maxLength={120}
                 required
                 autoComplete="name"
-                disabled={busy}
+                disabled={busy || ordersBlocked}
                 aria-invalid={Boolean(nameErr)}
                 aria-describedby={nameErr ? 'oc-name-err' : undefined}
               />
@@ -194,7 +214,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
                 inputMode="tel"
                 placeholder="+7 (900) 000-00-00"
                 autoComplete="tel"
-                disabled={busy}
+                disabled={busy || ordersBlocked}
                 aria-invalid={Boolean(phoneErr)}
                 aria-describedby={phoneErr ? 'oc-phone-err' : undefined}
               />
@@ -220,7 +240,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
                 maxLength={254}
                 required
                 autoComplete="email"
-                disabled={busy}
+                disabled={busy || ordersBlocked}
                 aria-invalid={Boolean(emailErr)}
                 aria-describedby={emailErr ? 'oc-email-err' : undefined}
               />
@@ -259,8 +279,8 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
               </button>
               <button
                 type="submit"
-                disabled={busy}
-                className="flex-1 rounded-xl bg-accent py-2.5 font-body text-sm font-medium text-[#0d121c] disabled:opacity-50"
+                disabled={busy || ordersBlocked}
+                className="flex-1 rounded-xl bg-accent py-2.5 font-body text-sm font-medium text-[#0d121c] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {busy ? 'Отправка…' : 'Отправить'}
               </button>
