@@ -62,7 +62,7 @@ remove_file frontend/tmp-capture.js
 if command -v find >/dev/null 2>&1; then
   while IFS= read -r -d '' d; do
     echo "[prune] rm -rf $d"
-    rm -rf "$d"
+    rm -rf "$d" 2>/dev/null || true
   done < <(
     find . \( -type d \( -name .venv -o -name node_modules \) \) -prune -o -type d -name __pycache__ -print0 2>/dev/null || true
   )
