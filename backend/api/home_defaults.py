@@ -245,7 +245,7 @@ def default_home_payload() -> dict[str, Any]:
             "readMoreLabel": "Читать весь отзыв",
             "collapseLabel": "Свернуть отзыв",
             "formHeading": "Оставить отзыв",
-            "formSubheading": "Публикуем только после проверки менеджером и подтверждения согласия.",
+            "formSubheading": "",
             "namePlaceholder": "Имя",
             "cityPlaceholder": "Город",
             "textPlaceholder": "Текст отзыва",
@@ -563,6 +563,23 @@ def _normalize_calculator(home: dict[str, Any]) -> None:
         calc["widthMinM"], calc["widthMaxM"] = defaults["widthMinM"], defaults["widthMaxM"]
 
 
+_LEGACY_REVIEWS_FORM_SUBHEADING = (
+    "Публикуем только после проверки менеджером и подтверждения согласия."
+)
+
+
+def _normalize_reviews_form_subheading(home: dict[str, Any]) -> None:
+    """Убрать устаревшую подпись под формой отзывов из сохранённых payload."""
+    rev = home.get("reviews")
+    if not isinstance(rev, dict):
+        return
+    raw = rev.get("formSubheading")
+    if not isinstance(raw, str):
+        return
+    if raw.strip() == _LEGACY_REVIEWS_FORM_SUBHEADING.strip():
+        rev["formSubheading"] = ""
+
+
 def _normalize_hero_v2(home: dict[str, Any]) -> None:
     hero = home.get("hero")
     if not isinstance(hero, dict):
@@ -588,6 +605,7 @@ def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)
+    _normalize_reviews_form_subheading(out)
     return out
 
 
@@ -598,5 +616,6 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     _normalize_problem_solution_cards(out)
     _normalize_hero_v2(out)
     _normalize_calculator(out)
+    _normalize_reviews_form_subheading(out)
     out["sectionLayout"] = normalize_section_layout(out.get("sectionLayout"))
     return out

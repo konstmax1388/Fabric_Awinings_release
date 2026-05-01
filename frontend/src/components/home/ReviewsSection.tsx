@@ -61,8 +61,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
   const readMoreLabel = rv?.readMoreLabel ?? 'Читать весь отзыв'
   const collapseLabel = rv?.collapseLabel ?? 'Свернуть отзыв'
   const formHeading = rv?.formHeading ?? 'Оставить отзыв'
-  const formSubheading =
-    rv?.formSubheading ?? 'Публикуем только после проверки менеджером и подтверждения согласия.'
+  const formSubheading = (rv?.formSubheading ?? '').trim()
   const namePlaceholder = rv?.namePlaceholder ?? 'Имя'
   const cityPlaceholder = rv?.cityPlaceholder ?? 'Город'
   const textPlaceholder = rv?.textPlaceholder ?? 'Текст отзыва'
@@ -300,7 +299,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
         }
       >
         <h3 className="font-heading text-2xl font-semibold text-text">{formHeading}</h3>
-        <p className="mt-2 text-sm text-text-muted">{formSubheading}</p>
+        {formSubheading ? <p className="mt-2 text-sm text-text-muted">{formSubheading}</p> : null}
         <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
           <div className="md:col-span-2">
             <FormPersonalDataConsent variant="form" />
