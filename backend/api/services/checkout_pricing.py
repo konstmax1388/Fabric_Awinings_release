@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from api.models import CartOrder, Product, ProductVariant, SiteSettings
+from api.services.cart_line_unit_prices import effective_unit_price_rub, list_unit_price_rub
 
 
 def goods_subtotal_from_lines(lines: list[dict[str, Any]]) -> int:
@@ -49,12 +50,14 @@ def build_trusted_checkout_lines(raw_lines: list[dict[str, Any]]) -> list[dict[s
         if product is None:
             # Legacy fallback для старых корзин: если товар уже недоступен в БД,
             # не блокируем оформление, но сохраняем нормализованную строку.
+            raw_unit = max(0, int(row.get("priceFrom") or 0))
             out_legacy: dict[str, Any] = {
                 "productId": pid_raw,
                 "variantId": str(row.get("variantId") or "").strip(),
                 "slug": given_slug,
                 "title": (str(row.get("title") or "").strip() or "Товар")[:500],
-                "priceFrom": max(0, int(row.get("priceFrom") or 0)),
+                "priceList": raw_unit,
+                "priceFrom": raw_unit,
                 "qty": qty,
                 "image": str(row.get("image") or "").strip()[:2048],
                 "ozonSku": row.get("ozonSku"),
@@ -81,14 +84,16 @@ def build_trusted_checkout_lines(raw_lines: list[dict[str, Any]]) -> list[dict[s
             except ProductVariant.DoesNotExist as exc:
                 raise ValueError(f"Строка корзины #{idx}: вариант не найден.") from exc
 
-        unit_price = int(variant.price_from if variant is not None else product.price_from)
+        list_u = list_unit_price_rub(product=product, variant=variant)
+        eff_u = effective_unit_price_rub(product=product, variant=variant)
         title = str(product.title or "").strip() or str(row.get("title") or "").strip() or "Товар"
         out: dict[str, Any] = {
             "productId": str(product.pk),
             "variantId": str(variant.pk) if variant is not None else "",
             "slug": product.slug,
             "title": title[:500],
-            "priceFrom": max(0, unit_price),
+            "priceList": max(0, list_u),
+            "priceFrom": max(0, eff_u),
             "qty": qty,
             "image": str(row.get("image") or "").strip()[:2048],
             "ozonSku": row.get("ozonSku"),

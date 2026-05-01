@@ -3,6 +3,7 @@ import { postOneClickOrder } from '../../lib/api'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { checkoutClientLabels } from '../../lib/checkoutUiCopy'
 import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
+import { PriceTag } from '../ui/PriceTag'
 import {
   HONEYPOT_FIELD,
   formatRuPhoneMask,
@@ -27,7 +28,20 @@ type Props = {
 const MIN_SUBMIT_MS = 1200
 
 function mapLinesForPost(lines: OrderLineApiPayload[]) {
-  return lines.map((l) => ({ ...l }))
+  return lines.map((l) => ({
+    productId: l.productId,
+    variantId: l.variantId ?? '',
+    slug: l.slug,
+    title: l.title,
+    priceFrom: l.priceFrom,
+    qty: l.qty,
+    image: (l.image ?? '').trim(),
+    ...(l.ozonSku != null && l.ozonSku > 0 ? { ozonSku: l.ozonSku } : {}),
+    ...(l.cdekWeightGrams != null && l.cdekWeightGrams > 0 ? { cdekWeightGrams: l.cdekWeightGrams } : {}),
+    ...(l.cdekLengthCm != null && l.cdekLengthCm > 0 ? { cdekLengthCm: l.cdekLengthCm } : {}),
+    ...(l.cdekWidthCm != null && l.cdekWidthCm > 0 ? { cdekWidthCm: l.cdekWidthCm } : {}),
+    ...(l.cdekHeightCm != null && l.cdekHeightCm > 0 ? { cdekHeightCm: l.cdekHeightCm } : {}),
+  }))
 }
 
 export function OneClickOrderModal({ open, onClose, lines, title = 'Купить в 1 клик' }: Props) {
@@ -50,6 +64,14 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
   const [done, setDone] = useState<string | null>(null)
   const openedAtRef = useRef(0)
   const total = subtotalFromOrderLines(lines)
+  const totalListApprox = useMemo(
+    () =>
+      lines.reduce(
+        (s, l) => s + Math.max(0, l.priceList ?? l.priceFrom) * Math.max(1, l.qty),
+        0,
+      ),
+    [lines],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -173,7 +195,10 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4 px-5 py-5" noValidate>
-            <p className="font-body text-xs text-text-subtle">Ориентировочно по товарам: {total.toLocaleString('ru-RU')} ₽</p>
+            <div className="rounded-xl bg-bg-base/80 px-3 py-2">
+              <p className="font-body text-xs text-text-subtle">Ориентировочно по товарам</p>
+              <PriceTag priceFrom={total} priceList={totalListApprox} size="sm" />
+            </div>
             <div>
               <label className="font-body text-xs font-medium text-text-subtle" htmlFor="oc-name">
                 Имя

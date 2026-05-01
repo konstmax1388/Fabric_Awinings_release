@@ -6,6 +6,8 @@ export type CartLine = {
   slug: string
   title: string
   priceFrom: number
+  /** База до акции, ₽ (для отображения; суммы считаются по priceFrom). */
+  priceList?: number
   image: string
   qty: number
   /** SKU в Ozon для createOrder при доставке Ozon Логистика (если не задан в админке у товара) */

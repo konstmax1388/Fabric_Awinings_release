@@ -1,7 +1,15 @@
 import type { HomePayload } from '../types/homePage'
 import type { StaticPageDto } from './api'
 
-export type HeaderNavKey = 'home' | 'catalog' | 'about' | 'portfolio' | 'blog' | 'reviews' | 'contacts'
+export type HeaderNavKey =
+  | 'home'
+  | 'catalog'
+  | 'about'
+  | 'portfolio'
+  | 'blog'
+  | 'reviews'
+  | 'contacts'
+  | 'promotions'
 
 export type HeaderNavRow = {
   key: HeaderNavKey
@@ -17,6 +25,7 @@ const PATHS: Record<Exclude<HeaderNavKey, 'about'>, string> = {
   blog: '/blog',
   reviews: '/reviews',
   contacts: '/contacts',
+  promotions: '/akcii',
 }
 
 export function sanitizeAboutSlug(raw: string | undefined): string {
@@ -47,6 +56,8 @@ function defaultLabelForKey(key: HeaderNavKey, ui: HomePayload['ui'] | undefined
       return u?.navReviews ?? 'Отзывы'
     case 'contacts':
       return u?.navContacts ?? 'Контакты'
+    case 'promotions':
+      return u?.navPromotions ?? 'Акции'
     default:
       return key
   }
@@ -66,7 +77,8 @@ function parseRows(raw: unknown): HeaderNavRow[] | null {
       key !== 'portfolio' &&
       key !== 'blog' &&
       key !== 'reviews' &&
-      key !== 'contacts'
+      key !== 'contacts' &&
+      key !== 'promotions'
     ) {
       continue
     }
@@ -104,11 +116,12 @@ export function buildMainNavItems(
     : [
         { key: 'home' as const, enabled: true, order: 0, label: '' },
         { key: 'catalog' as const, enabled: true, order: 1, label: '' },
-        { key: 'about' as const, enabled: true, order: 2, label: '' },
-        { key: 'blog' as const, enabled: true, order: 3, label: '' },
-        { key: 'contacts' as const, enabled: true, order: 4, label: '' },
-        { key: 'reviews' as const, enabled: true, order: 5, label: '' },
-        { key: 'portfolio' as const, enabled: true, order: 6, label: '' },
+        { key: 'promotions' as const, enabled: true, order: 2, label: '' },
+        { key: 'about' as const, enabled: true, order: 3, label: '' },
+        { key: 'blog' as const, enabled: true, order: 4, label: '' },
+        { key: 'contacts' as const, enabled: true, order: 5, label: '' },
+        { key: 'reviews' as const, enabled: true, order: 6, label: '' },
+        { key: 'portfolio' as const, enabled: true, order: 7, label: '' },
       ]
 
   const aboutOn = sorted.some((r) => r.key === 'about' && r.enabled)
@@ -168,7 +181,14 @@ export function buildMainNavItems(
         label: row.label.trim() || defaultLabelForKey('home', ui),
         end: true,
       })
-    } else if (row.key === 'catalog' || row.key === 'blog' || row.key === 'contacts' || row.key === 'portfolio' || row.key === 'reviews') {
+    } else if (
+      row.key === 'catalog' ||
+      row.key === 'blog' ||
+      row.key === 'contacts' ||
+      row.key === 'portfolio' ||
+      row.key === 'reviews' ||
+      row.key === 'promotions'
+    ) {
       out.push({
         key: row.key,
         to: PATHS[row.key],

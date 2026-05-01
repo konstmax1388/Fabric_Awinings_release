@@ -13,6 +13,7 @@ import type {
   Product,
   ProductCategory,
   ProductMaterialMap,
+  ProductPromotionSummary,
   ProductSeo,
   ProductSpecificationRow,
   ProductTeaser,
@@ -171,6 +172,13 @@ function parseVariantRow(row: unknown): ProductVariantRow | null {
   const wbUrl = typeof r.wbUrl === 'string' && r.wbUrl.trim() ? r.wbUrl : undefined
   const isDefault = Boolean(r.isDefault)
   if (!id || !label.trim() || !Number.isFinite(priceFrom)) return null
+  const rawList = r.priceList
+  const priceListParsed =
+    typeof rawList === 'number' ? rawList : rawList != null ? Number(rawList) : undefined
+  const priceList =
+    priceListParsed != null && Number.isFinite(priceListParsed) && priceListParsed >= 0
+      ? Math.floor(priceListParsed)
+      : undefined
   const rawOzon = r.ozonSku
   let ozonSku: number | undefined
   if (typeof rawOzon === 'number' && rawOzon > 0) ozonSku = Math.floor(rawOzon)
@@ -178,7 +186,16 @@ function parseVariantRow(row: unknown): ProductVariantRow | null {
     const n = Number(rawOzon)
     if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
   }
-  return { id, label, priceFrom, images, wbUrl, isDefault, ...(ozonSku !== undefined ? { ozonSku } : {}) }
+  return {
+    id,
+    label,
+    priceFrom,
+    images,
+    wbUrl,
+    isDefault,
+    ...(priceList !== undefined ? { priceList } : {}),
+    ...(ozonSku !== undefined ? { ozonSku } : {}),
+  }
 }
 
 function parseProductSeo(raw: unknown): ProductSeo | undefined {
@@ -237,6 +254,23 @@ function parseMaterialMap(raw: unknown): ProductMaterialMap | undefined {
   return { title, subtitle, imageUrl, layers }
 }
 
+function parseProductPromotionSummary(row: unknown): ProductPromotionSummary | null {
+  if (!row || typeof row !== 'object') return null
+  const r = row as Record<string, unknown>
+  if (typeof r.slug !== 'string' || typeof r.title !== 'string') return null
+  const d = r.discountPercent
+  const discountPercent =
+    typeof d === 'number' && Number.isFinite(d) ? Math.max(0, Math.min(100, Math.floor(d))) : 0
+  const ends = r.endsAt
+  return {
+    slug: r.slug,
+    title: r.title,
+    discountPercent,
+    stackWithOthers: r.stackWithOthers === true,
+    endsAt: typeof ends === 'string' && ends.length > 0 ? ends : null,
+  }
+}
+
 export function parseProduct(raw: Record<string, unknown>): Product | null {
   if (typeof raw.slug !== 'string' || typeof raw.title !== 'string') return null
   const id = typeof raw.id === 'string' ? raw.id : String(raw.id ?? '')
@@ -254,6 +288,32 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
       : {}
   const priceFrom = typeof raw.priceFrom === 'number' ? raw.priceFrom : Number(raw.priceFrom)
   if (!Number.isFinite(priceFrom)) return null
+  const rawPl = raw.priceList
+  const priceListParsed =
+    typeof rawPl === 'number' ? rawPl : rawPl != null ? Number(rawPl) : undefined
+  const priceList =
+    priceListParsed != null && Number.isFinite(priceListParsed) && priceListParsed >= 0
+      ? Math.floor(priceListParsed)
+      : undefined
+  const rawPromoEnd = raw.promoEndsAt
+  const promoEndsAt =
+    typeof rawPromoEnd === 'string' && rawPromoEnd.trim().length > 0 ? rawPromoEnd.trim() : null
+  const rawBestPct = raw.bestPromotionDiscountPercent
+  const bestPromotionDiscountPercentParsed =
+    typeof rawBestPct === 'number' && Number.isFinite(rawBestPct)
+      ? Math.max(0, Math.min(100, Math.floor(rawBestPct)))
+      : rawBestPct != null
+        ? Math.max(0, Math.min(100, Math.floor(Number(rawBestPct))))
+        : undefined
+  const bestPromotionDiscountPercent =
+    bestPromotionDiscountPercentParsed !== undefined && bestPromotionDiscountPercentParsed > 0
+      ? bestPromotionDiscountPercentParsed
+      : undefined
+  const rawPromos = raw.promotions
+  const promotions =
+    Array.isArray(rawPromos) && rawPromos.length > 0
+      ? rawPromos.map(parseProductPromotionSummary).filter((x): x is ProductPromotionSummary => x !== null)
+      : undefined
   const descriptionHtml =
     typeof raw.descriptionHtml === 'string' && raw.descriptionHtml.trim()
       ? raw.descriptionHtml
@@ -323,6 +383,10 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     categoryTitle,
     images,
     priceFrom,
+    ...(priceList !== undefined ? { priceList } : {}),
+    ...(promoEndsAt ? { promoEndsAt } : {}),
+    ...(bestPromotionDiscountPercent !== undefined ? { bestPromotionDiscountPercent } : {}),
+    ...(promotions !== undefined && promotions.length > 0 ? { promotions } : {}),
     marketplaceLinks,
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
     showOnHome: Boolean(raw.showOnHome),
@@ -586,9 +650,16 @@ export type ReviewItem = {
   video: string | null
 }
 
-export async function fetchReviews(): Promise<ReviewItem[]> {
+export async function fetchReviews(params?: { minRating?: number }): Promise<ReviewItem[]> {
   try {
-    const r = await fetch(`${apiBase()}/api/reviews/`)
+    const q =
+      params?.minRating != null &&
+      Number.isFinite(params.minRating) &&
+      params.minRating >= 1 &&
+      params.minRating <= 5
+        ? `?min_rating=${Math.floor(Number(params.minRating))}`
+        : ''
+    const r = await fetch(`${apiBase()}/api/reviews/${q}`)
     const raw = await parseJson<Record<string, unknown>[] | { results: unknown[] }>(r)
     if (!raw) return []
     const list = Array.isArray(raw) ? raw : Array.isArray(raw.results) ? raw.results : []
@@ -690,6 +761,68 @@ export async function fetchBlogPost(slug: string): Promise<BlogDetail | null> {
       body: typeof o.body === 'string' ? o.body : '',
       seo,
     }
+  } catch {
+    return null
+  }
+}
+
+export type PromotionListItem = {
+  slug: string
+  title: string
+  excerpt: string
+  imageUrl: string
+  startsAt: string
+  endsAt: string | null
+  discountPercent: number
+  appliesToAllProducts: boolean
+}
+
+export type PromotionDetail = PromotionListItem & { body: string }
+
+function parsePromotionListRow(row: Record<string, unknown>): PromotionListItem | null {
+  if (typeof row.slug !== 'string' || typeof row.title !== 'string') return null
+  const disc = row.discountPercent
+  const discountPercent = typeof disc === 'number' && Number.isFinite(disc) ? Math.max(0, Math.min(100, Math.floor(disc))) : 0
+  const ends = row.endsAt
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: typeof row.excerpt === 'string' ? row.excerpt : '',
+    imageUrl: typeof row.imageUrl === 'string' ? row.imageUrl : '',
+    startsAt: typeof row.startsAt === 'string' ? row.startsAt : '',
+    endsAt: typeof ends === 'string' && ends.length > 0 ? ends : null,
+    discountPercent,
+    appliesToAllProducts: row.appliesToAllProducts === true,
+  }
+}
+
+export async function fetchPromotions(): Promise<PromotionListItem[]> {
+  try {
+    const r = await fetch(`${apiBase()}/api/promotions/`)
+    const raw = await parseJson<Record<string, unknown>[] | { results: unknown[] }>(r)
+    if (!raw) return []
+    const list = Array.isArray(raw) ? raw : Array.isArray(raw.results) ? raw.results : []
+    return list
+      .map((row) => {
+        if (!row || typeof row !== 'object') return null
+        return parsePromotionListRow(row as Record<string, unknown>)
+      })
+      .filter((x): x is PromotionListItem => x !== null)
+  } catch {
+    return []
+  }
+}
+
+export async function fetchPromotionBySlug(slug: string): Promise<PromotionDetail | null> {
+  try {
+    const r = await fetch(`${apiBase()}/api/promotions/${encodeURIComponent(slug)}/`)
+    if (r.status === 404) return null
+    const o = await parseJson<Record<string, unknown>>(r)
+    if (!o || typeof o !== 'object') return null
+    const base = parsePromotionListRow(o)
+    if (!base) return null
+    const body = typeof o.body === 'string' ? o.body : ''
+    return { ...base, body }
   } catch {
     return null
   }

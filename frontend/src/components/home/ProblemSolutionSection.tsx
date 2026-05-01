@@ -9,6 +9,7 @@ import {
   staggerContainer,
   staggerItem,
 } from '../../lib/motion-presets'
+import { problemCardIconAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 /** Допускаем только безопасные классы Font Awesome (латиница, цифры, пробел, дефис). */
@@ -30,7 +31,13 @@ function ProblemSolutionIcon({ card }: { card: ProblemCard }) {
 
   if (kind === 'image' && url) {
     return (
-      <OptimizedImage src={url} alt="" widths={[64, 128]} sizes="32px" className="h-8 w-8 object-contain" />
+      <OptimizedImage
+        src={url}
+        alt={problemCardIconAlt(card.problem)}
+        widths={[64, 128]}
+        sizes="32px"
+        className="h-8 w-8 object-contain"
+      />
     )
   }
 

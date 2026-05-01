@@ -13,7 +13,7 @@ export type ProblemCard = {
 
 export type WhyStat = { value: number; suffix: string; label: string }
 
-export type WhyColumnIconKind = 'emoji' | 'fontawesome'
+export type WhyColumnIconKind = 'emoji' | 'fontawesome' | 'image'
 
 export type WhyColumn = {
   title: string
@@ -21,6 +21,20 @@ export type WhyColumn = {
   icon: string
   iconKind?: WhyColumnIconKind
   fontawesomeClass?: string
+  /** URL файла иконки (из админки), если iconKind === 'image' */
+  iconImageUrl?: string
+}
+
+/** Карточка в блоке «Акции» на главной (контент из админки). */
+export type HomePromotionCard = {
+  title: string
+  text?: string
+  badge?: string
+  ctaLabel?: string
+  href?: string
+  /** Дата окончания для таймера, ГГГГ-ММ-ДД (конец календарного дня в локальном времени браузера). */
+  endDate?: string
+  showTimer?: boolean
 }
 
 export type HeroActionType = 'link' | 'callback'
@@ -148,6 +162,11 @@ export type HomePayload = {
     subheading?: string
     catalogCta?: string
   }
+  promotions?: {
+    heading?: string
+    subheading?: string
+    cards?: HomePromotionCard[]
+  }
   calculator?: {
     mode?: 'calculator' | 'request_form'
     heading?: string
@@ -221,6 +240,12 @@ export type HomePayload = {
     /** Страница /reviews: заголовок и описание (мета / h1). */
     pageTitle?: string
     pageDescription?: string
+    /** Заголовок и подпись над виджетом Яндекса на /reviews. */
+    yandexBlockHeading?: string
+    yandexBlockNote?: string
+    /** На /reviews при паре «Яндекс + сайт»: заголовок и подпись над сеткой отзывов с сайта. */
+    siteReviewsListHeading?: string
+    siteReviewsListSubheading?: string
     loading?: string
     videoCaption?: string
     readMoreLabel?: string
@@ -275,6 +300,7 @@ export type HomePayload = {
     navPortfolio?: string
     navContacts?: string
     navBlog?: string
+    navPromotions?: string
     navReviews?: string
     navCart?: string
     navAccount?: string
@@ -291,6 +317,8 @@ export type HomePayload = {
     footerPrivacyLink?: string
     footerOfferLink?: string
     footerCopyrightSuffix?: string
+    /** Дисклеймер про ст. 437 ГК РФ и согласие с условиями ИМ; пусто — подставляется текст по умолчанию в футере. */
+    footerOfferDisclaimer?: string
     headerMainMenuAria?: string
     headerThemeToLightAria?: string
     headerThemeToDarkAria?: string

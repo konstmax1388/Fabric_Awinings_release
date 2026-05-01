@@ -8,6 +8,9 @@ import { GLOBAL_MARKETPLACE_URLS } from '../../config/site'
 import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { StaffEntryModal } from './StaffEntryModal'
 
+const FOOTER_OFFER_DISCLAIMER_DEFAULT =
+  'Информация о товарах на сайте не является публичной офертой, определяемой положениями Статьи 437 Гражданского кодекса Российской Федерации. Делая заказ на нашем сайте, Вы соглашаетесь с условиями работы нашего интернет-магазина.'
+
 export function SiteFooter() {
   const {
     enabledMarketplaces,
@@ -35,6 +38,7 @@ export function SiteFooter() {
   const navPortfolioLabel = ui.navPortfolio ?? 'Портфолио'
   const navContactsLabel = ui.navContacts ?? 'Контакты'
   const navBlogLabel = ui.navBlog ?? 'Блог'
+  const navPromotionsLabel = ui.navPromotions ?? 'Акции'
   const footerNavTitle = ui.footerNavTitle ?? 'Навигация'
   const footerMarketplacesTitle = ui.footerMarketplacesTitle ?? 'Маркетплейсы'
   const footerSocialTitle = ui.footerSocialTitle ?? 'Соцсети'
@@ -45,6 +49,9 @@ export function SiteFooter() {
   const footerPrivacyLink = ui.footerPrivacyLink ?? 'Политика конфиденциальности'
   const footerOfferLink = ui.footerOfferLink ?? 'Публичная оферта'
   const footerCopyrightSuffix = ui.footerCopyrightSuffix ?? 'Все права защищены.'
+  const footerOfferDisclaimerRaw =
+    typeof ui.footerOfferDisclaimer === 'string' ? ui.footerOfferDisclaimer.trim() : ''
+  const footerOfferDisclaimer = footerOfferDisclaimerRaw || FOOTER_OFFER_DISCLAIMER_DEFAULT
   const staffModalCloseOverlayAria = ui.staffModalCloseOverlayAria ?? 'Закрыть окно'
   const staffModalCloseButtonAria = ui.staffModalCloseButtonAria ?? 'Закрыть'
   const staffModalTitle = ui.staffModalTitle ?? 'Вход для сотрудников'
@@ -101,6 +108,11 @@ export function SiteFooter() {
               <li>
                 <Link to="/catalog" className="hover:text-accent">
                   {navCatalogLabel}
+                </Link>
+              </li>
+              <li>
+                <Link to="/akcii" className="hover:text-accent">
+                  {navPromotionsLabel}
                 </Link>
               </li>
               <li>
@@ -240,6 +252,10 @@ export function SiteFooter() {
             )}
           </div>
         </div>
+
+        <p className="mt-8 max-w-4xl font-body text-xs leading-relaxed text-text-subtle md:mt-10 md:text-sm">
+          {footerOfferDisclaimer}
+        </p>
       </div>
     </footer>
   )

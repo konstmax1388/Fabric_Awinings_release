@@ -235,6 +235,7 @@ class ProductAdminForm(forms.ModelForm):
 _HEADER_NAV_SLUGS: tuple[str, ...] = (
     "home",
     "catalog",
+    "promotions",
     "about",
     "portfolio",
     "reviews",
@@ -249,6 +250,7 @@ _HEADER_NAV_LABELS: dict[str, str] = {
     "reviews": "Отзывы",
     "blog": "Блог",
     "contacts": "Контакты",
+    "promotions": "Акции",
 }
 
 

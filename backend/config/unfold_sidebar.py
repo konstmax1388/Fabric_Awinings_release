@@ -64,6 +64,11 @@ def build_unfold_sidebar() -> list[dict]:
                     "link": reverse_lazy("admin:api_product_changelist"),
                 },
                 {
+                    "title": _("Акции"),
+                    "icon": "local_offer",
+                    "link": reverse_lazy("admin:api_promotion_changelist"),
+                },
+                {
                     "title": _("Фильтр каталога"),
                     "icon": "tune",
                     "link": reverse_lazy("admin:api_catalogfilterkey_changelist"),

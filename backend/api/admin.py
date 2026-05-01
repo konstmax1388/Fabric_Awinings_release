@@ -51,7 +51,7 @@ from .home_defaults import merged_home_payload
 
 _HEADER_NAV_ADMIN_FIELD_ROWS: tuple[tuple[str, str, str], ...] = tuple(
     (f"nav_item_{k}_enabled", f"nav_item_{k}_order", f"nav_item_{k}_label")
-    for k in ("home", "catalog", "portfolio", "reviews", "blog", "contacts")
+    for k in ("home", "catalog", "promotions", "portfolio", "reviews", "blog", "contacts")
 )
 from .home_page_admin_form import (
     HomePageContentAdminForm,
@@ -87,6 +87,7 @@ from .models import (
     ProductImage,
     ProductSpecification,
     ProductVariant,
+    Promotion,
     Review,
     ShippingAddress,
     StaticPage,
@@ -270,6 +271,42 @@ class ProductCategoryAdmin(ModelAdmin):
             '<img src="{}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;" />',
             obj.image.url,
         )
+
+
+@admin.register(Promotion)
+class PromotionAdmin(ModelAdmin):
+    list_display = (
+        "title",
+        "slug",
+        "discount_percent",
+        "applies_to_all_products",
+        "is_published",
+        "starts_at",
+        "ends_at",
+        "sort_order",
+    )
+    list_filter = ("is_published", "applies_to_all_products")
+    search_fields = ("title", "slug", "excerpt")
+    ordering = ("sort_order", "-starts_at", "id")
+    filter_horizontal = ("products",)
+    readonly_fields = ("slug",)
+    fieldsets = (
+        (_("Витрина"), {"fields": ("title", "slug", "is_published", "sort_order")}),
+        (_("Период действия"), {"fields": ("starts_at", "ends_at")}),
+        (_("Страница акции на сайте"), {"fields": ("excerpt", "body", "image")}),
+        (
+            _("Скидка при заказе на сайте"),
+            {
+                "fields": ("discount_percent", "stack_with_others", "applies_to_all_products", "products"),
+                "description": _(
+                    "Процент вычитается от цены в каталоге. «На весь каталог» — для всех опубликованных товаров; "
+                    "иначе выберите товары. Для только информационной страницы укажите 0 %%."
+                    " «Суммировать с другими» — проценты таких акций складываются между собой (до 100 %%), "
+                    "затем к сумме добавляется максимальный процент среди акций без этой галочки."
+                ),
+            },
+        ),
+    )
 
 
 @admin.register(Product)
@@ -2297,7 +2334,7 @@ class HomePageContentAdmin(ModelAdmin):
             {
                 "classes": ("collapse",),
                 "description": _(
-                    "Для каждой карточки: тип значка — эмодзи, иконка Font Awesome (список или класс вручную) или загрузка картинки."
+                    "Для каждой карточки: тип значка — эмодзи, иконка Font Awesome (список или класс вручную) или загрузка файла (в т.ч. SVG)."
                 ),
                 "fields": (
                     "ps_heading",
@@ -2466,6 +2503,9 @@ class HomePageContentAdmin(ModelAdmin):
             "why",
             {
                 "classes": ("collapse",),
+                "description": _(
+                    "Колонки: тип значка — эмодзи, Font Awesome или загрузка файла иконки (PNG, WebP, JPEG, GIF или SVG)."
+                ),
                 "fields": (
                     "why_heading",
                     "why_subheading",
@@ -2484,24 +2524,28 @@ class HomePageContentAdmin(ModelAdmin):
                     "why_c0_icon",
                     "why_c0_fa_preset",
                     "why_c0_fontawesome",
+                    "why_c0_icon_file",
                     "why_c1_title",
                     "why_c1_text",
                     "why_c1_icon_kind",
                     "why_c1_icon",
                     "why_c1_fa_preset",
                     "why_c1_fontawesome",
+                    "why_c1_icon_file",
                     "why_c2_title",
                     "why_c2_text",
                     "why_c2_icon_kind",
                     "why_c2_icon",
                     "why_c2_fa_preset",
                     "why_c2_fontawesome",
+                    "why_c2_icon_file",
                     "why_c3_title",
                     "why_c3_text",
                     "why_c3_icon_kind",
                     "why_c3_icon",
                     "why_c3_fa_preset",
                     "why_c3_fontawesome",
+                    "why_c3_icon_file",
                 ),
             },
         ),
@@ -2527,6 +2571,10 @@ class HomePageContentAdmin(ModelAdmin):
                     "rev_submitting",
                     "rev_success_message",
                     "rev_error_message",
+                    "rev_yandex_block_heading",
+                    "rev_yandex_block_note",
+                    "rev_site_list_heading",
+                    "rev_site_list_subheading",
                 ),
             },
         ),

@@ -1,18 +1,16 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { OptimizedImage } from '../ui/OptimizedImage'
-import { OneClickOrderModal } from '../order/OneClickOrderModal'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
-import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { useCart } from '../../hooks/useCart'
+import { cartLineThumbnailAlt } from '../../lib/imageAlt'
+import { LEGAL_SLUGS, staticPagePathBySlug } from '../../lib/legalPages'
 import { orderLinesFromCartItems } from '../../lib/orderLinePayload'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
 import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../../types/checkoutPublic'
-
-function formatRub(n: number) {
-  return `${n.toLocaleString('ru-RU')} ₽`
-}
+import { OneClickOrderModal } from '../order/OneClickOrderModal'
+import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
+import { OptimizedImage } from '../ui/OptimizedImage'
+import { PriceTag } from '../ui/PriceTag'
 
 function pluralPositions(n: number): string {
   const n10 = n % 10
@@ -32,6 +30,11 @@ export function CartView() {
   const ordersBlocked = checkout.ordersBlocked
   const ordersBlockedNotice =
     (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE
+
+  const totalListApprox = useMemo(
+    () => items.reduce((s, l) => s + (l.priceList ?? l.priceFrom) * l.qty, 0),
+    [items],
+  )
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1">
@@ -76,6 +79,7 @@ export function CartView() {
               <ul className="fabric-card mt-4 flex flex-col divide-y divide-border">
                 {items.map((line) => {
                   const lineApprox = line.priceFrom * line.qty
+                  const lineListApprox = (line.priceList ?? line.priceFrom) * line.qty
                   return (
                     <li key={line.lineId} className="flex flex-col gap-4 p-4 sm:flex-row sm:gap-5 sm:p-5">
                       <Link
@@ -85,7 +89,7 @@ export function CartView() {
                         {line.image ? (
                           <OptimizedImage
                             src={line.image}
-                            alt=""
+                            alt={cartLineThumbnailAlt(line.title)}
                             widths={[160, 320, 480]}
                             sizes="96px"
                             className="h-full w-full object-contain p-1"
@@ -105,14 +109,27 @@ export function CartView() {
                             >
                               {line.title}
                             </Link>
-                            <p className="mt-1 font-body text-sm text-text-muted">
-                              {ui?.cartPricePerUnitPrefix || 'Цена в каталоге —'} {formatRub(line.priceFrom)}{' '}
-                              {ui?.cartPricePerUnitSuffix || 'за единицу'}
-                            </p>
+                            <div className="mt-1">
+                              <PriceTag
+                                prefix={ui?.cartPricePerUnitPrefix || 'Цена за единицу'}
+                                priceFrom={line.priceFrom}
+                                priceList={line.priceList ?? line.priceFrom}
+                                size="sm"
+                              />
+                              <span className="mt-0.5 block font-body text-xs text-text-subtle">
+                                {ui?.cartPricePerUnitSuffix || 'за единицу'}
+                              </span>
+                            </div>
                           </div>
-                          <p className="shrink-0 font-heading text-base font-semibold text-text sm:text-right">
-                            ≈ {formatRub(lineApprox)}
-                          </p>
+                          <div className="flex shrink-0 flex-col items-end gap-0.5 sm:text-right">
+                            <span className="font-body text-xs text-text-subtle">≈</span>
+                            <PriceTag
+                              priceFrom={lineApprox}
+                              priceList={lineListApprox}
+                              size="md"
+                              alignEnd
+                            />
+                          </div>
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -172,8 +189,13 @@ export function CartView() {
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border-light pt-3">
                     <dt className="font-medium text-text">{ui?.cartSummaryApproxLabel || 'Ориентировочно'}</dt>
-                    <dd className="font-heading text-xl font-semibold tabular-nums text-text">
-                      {formatRub(totalApprox)}
+                    <dd className="text-right">
+                      <PriceTag
+                        priceFrom={totalApprox}
+                        priceList={totalListApprox}
+                        size="md"
+                        alignEnd
+                      />
                     </dd>
                   </div>
                 </dl>

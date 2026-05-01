@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { WhyColumn, WhyColumnIconKind, WhyStat } from '../../types/homePage'
 import { AnimatedCounter } from '../motion/AnimatedCounter'
+import { whyUsColumnIconAlt } from '../../lib/imageAlt'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { OptimizedImage } from '../ui/OptimizedImage'
 
 const DEFAULT_COLS: WhyColumn[] = [
   {
@@ -65,6 +67,23 @@ function isSafeFontAwesomeClass(s: string): boolean {
 }
 
 function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
+  const url = (col.iconImageUrl || '').trim()
+  if (col.iconKind === 'image' && url) {
+    return (
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center text-current [&_img]:max-h-9 [&_img]:max-w-9 [&_img]:object-contain"
+        aria-hidden
+      >
+        <OptimizedImage
+          src={url}
+          alt={whyUsColumnIconAlt(col.title)}
+          widths={[64, 96, 128]}
+          sizes="36px"
+          className="max-h-9 max-w-9 object-contain"
+        />
+      </span>
+    )
+  }
   const fromClass = (col.fontawesomeClass || '').trim()
   const fromIcon = (col.icon || '').trim()
   const fa = fromClass || (fromIcon && /\bfa-/.test(fromIcon) ? fromIcon : '')
@@ -92,8 +111,9 @@ function normalizeColumns(raw: unknown): WhyColumn[] {
     const text = typeof o.text === 'string' ? o.text : ''
     const icon = typeof o.icon === 'string' ? o.icon : '•'
     const fontawesomeClass = typeof o.fontawesomeClass === 'string' ? o.fontawesomeClass : undefined
+    const iconImageUrl = typeof o.iconImageUrl === 'string' && o.iconImageUrl.trim() ? o.iconImageUrl.trim() : undefined
     let iconKind: WhyColumnIconKind | undefined
-    if (o.iconKind === 'fontawesome' || o.iconKind === 'emoji') iconKind = o.iconKind
+    if (o.iconKind === 'fontawesome' || o.iconKind === 'emoji' || o.iconKind === 'image') iconKind = o.iconKind
     if (!title || !text) continue
     out.push({
       title,
@@ -101,6 +121,7 @@ function normalizeColumns(raw: unknown): WhyColumn[] {
       icon: icon || '•',
       iconKind,
       fontawesomeClass: fontawesomeClass || undefined,
+      ...(iconImageUrl ? { iconImageUrl } : {}),
     })
   }
   return out.length ? out : DEFAULT_COLS

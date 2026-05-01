@@ -33,6 +33,10 @@ _HP_IMAGE_RELATIVE: dict[str, str] = {
     "ps1IconImageRelativePath": "ps1_icon_image",
     "ps2IconImageRelativePath": "ps2_icon_image",
     "ps3IconImageRelativePath": "ps3_icon_image",
+    "whyC0IconFileRelativePath": "why_c0_icon_file",
+    "whyC1IconFileRelativePath": "why_c1_icon_file",
+    "whyC2IconFileRelativePath": "why_c2_icon_file",
+    "whyC3IconFileRelativePath": "why_c3_icon_file",
 }
 
 
@@ -49,6 +53,10 @@ def _home_image_urls(request, obj: HomePageContent) -> dict[str, str]:
         "ps1IconImageUrl": _abs_media(request, obj.ps1_icon_image),
         "ps2IconImageUrl": _abs_media(request, obj.ps2_icon_image),
         "ps3IconImageUrl": _abs_media(request, obj.ps3_icon_image),
+        "whyC0IconFileUrl": _abs_media(request, obj.why_c0_icon_file),
+        "whyC1IconFileUrl": _abs_media(request, obj.why_c1_icon_file),
+        "whyC2IconFileUrl": _abs_media(request, obj.why_c2_icon_file),
+        "whyC3IconFileUrl": _abs_media(request, obj.why_c3_icon_file),
     }
 
 

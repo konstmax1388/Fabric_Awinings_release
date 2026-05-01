@@ -5,8 +5,15 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
+import { useCart } from '../../hooks/useCart'
 import { buildMainNavItems, type MainNavItem } from '../../lib/headerNav'
+import { homeLogoAlt } from '../../lib/imageAlt'
 import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../../types/checkoutPublic'
+import { MarketplaceLinks } from '../icons/MarketplaceLinks'
+import { MagneticHover } from '../motion/MagneticHover'
+import { OptimizedImage } from '../ui/OptimizedImage'
+import { HeaderSearchPanel } from './HeaderSearchPanel'
 
 function mainNavLinkBaseClass(): string {
   return 'shrink-0 font-body text-sm font-medium tracking-wide transition-colors first:pl-0 last:pr-0 sm:text-base md:text-sm lg:text-base'
@@ -18,12 +25,6 @@ function mainNavBranchActive(pathname: string, item: MainNavItem): boolean {
   if (item.to !== '/' && pathname.startsWith(`${item.to}/`)) return true
   return item.children?.some((c) => pathname === c.to || pathname.startsWith(`${c.to}/`)) ?? false
 }
-import { GLOBAL_MARKETPLACE_URLS, MARKETPLACES } from '../../config/site'
-import { MagneticHover } from '../motion/MagneticHover'
-import { useCart } from '../../hooks/useCart'
-import { MarketplaceLinks } from '../icons/MarketplaceLinks'
-import { OptimizedImage } from '../ui/OptimizedImage'
-import { HeaderSearchPanel } from './HeaderSearchPanel'
 
 const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   `block rounded-2xl px-4 py-3.5 font-body text-[17px] font-semibold tracking-wide transition-colors ${
@@ -238,12 +239,11 @@ export function SiteHeader() {
         <Link
           to="/"
           className="fabric-logo-link flex min-w-[7rem] shrink-0 max-w-[min(280px,42vw)] items-center md:min-w-0"
-          aria-label={siteName}
         >
           {!logoBroken ? (
             <OptimizedImage
               src={logoUrl}
-              alt=""
+              alt={homeLogoAlt(siteName)}
               priority
               widths={[160, 320, 480]}
               sizes="(max-width: 768px) 200px, min(280px, 28vw)"

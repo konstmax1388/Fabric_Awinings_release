@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { CartLine } from '../../cart/cartTypes'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
+import { cartLineThumbnailAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { PriceTag } from '../ui/PriceTag'
 
 /** Компактный список позиций с фото (оформление заказа и т.п.). */
 export function CartReadonlyLinesList({ items }: { items: CartLine[] }) {
@@ -19,7 +21,7 @@ export function CartReadonlyLinesList({ items }: { items: CartLine[] }) {
             {line.image ? (
               <OptimizedImage
                 src={line.image}
-                alt=""
+                alt={cartLineThumbnailAlt(line.title)}
                 widths={[128, 256, 384]}
                 sizes="72px"
                 className="h-full w-full object-contain p-0.5"
@@ -37,9 +39,14 @@ export function CartReadonlyLinesList({ items }: { items: CartLine[] }) {
             >
               {line.title}
             </Link>
-            <p className="mt-1 font-body text-xs text-text-muted">
-              {line.priceFrom.toLocaleString('ru-RU')} ₽ × {line.qty}
-            </p>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <PriceTag
+                priceFrom={line.priceFrom}
+                priceList={line.priceList ?? line.priceFrom}
+                size="sm"
+              />
+              <span className="font-body text-xs text-text-muted">× {line.qty}</span>
+            </div>
           </div>
         </li>
       ))}

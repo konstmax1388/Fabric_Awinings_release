@@ -6,6 +6,7 @@ import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../../config/site'
 import type { Product } from '../../data/products'
 import { orderLineFromProduct } from '../../lib/orderLinePayload'
+import { productCardPhotoAlt } from '../../lib/imageAlt'
 import { productCardImageFrameClass } from '../../lib/productPhotoAspect'
 import { useCart } from '../../hooks/useCart'
 import { OneClickOrderModal } from '../order/OneClickOrderModal'
@@ -14,6 +15,8 @@ import { MarketplaceLinks } from '../icons/MarketplaceLinks'
 import { ProductTeaserBadges } from './ProductTeaserBadges'
 import { ProductTrustStrip } from './ProductTrustStrip'
 import { cardHoverTransition, subtleHoverLift, subtleButtonHover } from '../../lib/motion-presets'
+import { PromoEndsCountdown } from '../promo/PromoEndsCountdown'
+import { PriceTag } from '../ui/PriceTag'
 
 type Props = { product: Product }
 
@@ -54,7 +57,7 @@ export function ProductCard({ product }: Props) {
           {cover && !imgFailed ? (
             <OptimizedImage
               src={cover}
-              alt=""
+              alt={productCardPhotoAlt(product.title)}
               widths={[480, 640, 960]}
               onError={() => setImgFailed(true)}
               className="h-full w-full object-contain p-2 transition-opacity duration-300 hover:opacity-95"
@@ -69,9 +72,25 @@ export function ProductCard({ product }: Props) {
         <ProductTeaserBadges teasers={product.teasers} className="absolute left-2 top-2 max-w-[calc(100%-1rem)]" />
       </Link>
       <div className="flex flex-1 flex-col p-4 md:p-5">
-        <p className="font-body text-xs font-semibold uppercase tracking-wide text-accent">
-          {ui?.productPricePrefix || 'Цена'} {product.priceFrom.toLocaleString('ru-RU')} ₽
+        <p className="font-body text-xs font-semibold uppercase tracking-wide text-text-subtle">
+          {ui?.productPricePrefix || 'Цена'}
         </p>
+        <div className="mt-1">
+          {product.bestPromotionDiscountPercent != null && product.bestPromotionDiscountPercent > 0 ? (
+            <p className="mb-1.5 font-body text-xs text-text-muted">
+              <span className="mr-2 inline-flex rounded-full bg-accent/20 px-2 py-0.5 font-semibold text-accent">
+                −{product.bestPromotionDiscountPercent}% по акциям
+              </span>
+              <span className="text-text-subtle">итог с учётом всех действующих правил</span>
+            </p>
+          ) : null}
+          <PriceTag
+            priceFrom={product.priceFrom}
+            priceList={product.priceList ?? product.priceFrom}
+            size="sm"
+          />
+          <PromoEndsCountdown endsAt={product.promoEndsAt} size="sm" />
+        </div>
         <Link to={`/catalog/${product.slug}`} className="group mt-1 block">
           <h2 className="line-clamp-2 font-heading text-lg font-semibold leading-snug text-text group-hover:text-accent md:text-xl">
             {product.title}

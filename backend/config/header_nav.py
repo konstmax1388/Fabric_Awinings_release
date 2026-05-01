@@ -8,7 +8,7 @@ from typing import Any
 from django.utils.translation import gettext_lazy as _
 
 VALID_HEADER_NAV_KEYS: frozenset[str] = frozenset(
-    {"home", "catalog", "about", "portfolio", "blog", "reviews", "contacts"},
+    {"home", "catalog", "about", "portfolio", "blog", "reviews", "contacts", "promotions"},
 )
 
 # Человекочитаемые подписи по умолчанию (если в JSON пусто label)
@@ -20,6 +20,7 @@ HEADER_NAV_KEY_LABELS: dict[str, str] = {
     "blog": str(_("Блог")),
     "reviews": str(_("Отзывы")),
     "contacts": str(_("Контакты")),
+    "promotions": str(_("Акции")),
 }
 
 
@@ -27,11 +28,12 @@ def default_header_navigation() -> list[dict[str, Any]]:
     return [
         {"key": "home", "enabled": True, "order": 0, "label": ""},
         {"key": "catalog", "enabled": True, "order": 1, "label": ""},
-        {"key": "about", "enabled": True, "order": 2, "label": ""},
-        {"key": "blog", "enabled": True, "order": 3, "label": ""},
-        {"key": "contacts", "enabled": True, "order": 4, "label": ""},
-        {"key": "reviews", "enabled": True, "order": 5, "label": ""},
-        {"key": "portfolio", "enabled": True, "order": 6, "label": ""},
+        {"key": "promotions", "enabled": True, "order": 2, "label": ""},
+        {"key": "about", "enabled": True, "order": 3, "label": ""},
+        {"key": "blog", "enabled": True, "order": 4, "label": ""},
+        {"key": "contacts", "enabled": True, "order": 5, "label": ""},
+        {"key": "reviews", "enabled": True, "order": 6, "label": ""},
+        {"key": "portfolio", "enabled": True, "order": 7, "label": ""},
     ]
 
 

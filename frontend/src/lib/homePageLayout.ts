@@ -8,6 +8,7 @@ export const HOME_SECTION_IDS = [
   'processTimeline',
   'tentTypes',
   'featured',
+  'promotions',
   'calculator',
   'portfolio',
   'whyUs',

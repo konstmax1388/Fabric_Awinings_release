@@ -5,6 +5,7 @@ import {
   productGalleryMainFrameClass,
   productGalleryThumbClass,
 } from '../../lib/productPhotoAspect'
+import { productGalleryMainAlt, productGalleryThumbAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 type Props = {
@@ -83,7 +84,7 @@ export function ProductGallery({ images, title, aspect }: Props) {
               >
                 <OptimizedImage
                   src={safe[active]}
-                  alt={title}
+                  alt={productGalleryMainAlt(title)}
                   priority
                   widths={[640, 960, 1200]}
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -134,7 +135,7 @@ export function ProductGallery({ images, title, aspect }: Props) {
                 {src ? (
                   <OptimizedImage
                     src={src}
-                    alt=""
+                    alt={productGalleryThumbAlt(title, i + 1)}
                     widths={[160, 320, 480]}
                     sizes="80px"
                     className="max-h-full max-w-full object-contain bg-bg-base p-0.5"

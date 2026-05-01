@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from collections import OrderedDict
 from typing import Any
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminImageFieldWidget
+from unfold.widgets import UnfoldAdminFileFieldWidget
 
 from config.home_section_layout import normalize_section_layout
 
@@ -38,6 +37,7 @@ HERO_USP_ACCENT_VARIANT_CHOICES = (
     ("pulse", _("Акцент с пульсирующей точкой")),
     ("shimmer", _("Акцент с эффектом shimmer")),
 )
+
 
 CALCULATOR_MODE_CHOICES = (
     ("calculator", _("Конструктор (калькулятор)")),
@@ -125,12 +125,13 @@ def _int_val(label: str, initial: int = 0) -> forms.IntegerField:
 PS_ICON_KIND_CHOICES = (
     ("emoji", _("Текст или эмодзи")),
     ("fontawesome", _("Иконка Font Awesome")),
-    ("image", _("Загруженное изображение")),
+    ("image", _("Загруженный файл (PNG, WebP, JPEG, GIF или SVG)")),
 )
 
 WHY_ICON_KIND_CHOICES = (
     ("emoji", _("Текст или эмодзи")),
     ("fontawesome", _("Иконка Font Awesome")),
+    ("image", _("Загруженный файл (PNG, WebP, JPEG, GIF или SVG)")),
 )
 
 
@@ -150,10 +151,19 @@ def _resolved_why_fa_class(cd: dict[str, Any], i: int) -> str:
 
 def _why_us_column(cd: dict[str, Any], i: int) -> dict[str, Any]:
     kind = cd.get(f"why_c{i}_icon_kind") or "emoji"
-    if kind not in ("emoji", "fontawesome"):
+    if kind not in ("emoji", "fontawesome", "image"):
         kind = "emoji"
     icon_text = (cd.get(f"why_c{i}_icon") or "").strip() or "•"
     fa = _resolved_why_fa_class(cd, i)
+    if kind == "image":
+        return {
+            "title": cd[f"why_c{i}_title"].strip(),
+            "text": cd[f"why_c{i}_text"].strip(),
+            "icon": icon_text,
+            "iconKind": "image",
+            "fontawesomeClass": "",
+            "iconImageUrl": "",
+        }
     if kind == "fontawesome" and not fa:
         kind = "emoji"
     return {
@@ -162,6 +172,7 @@ def _why_us_column(cd: dict[str, Any], i: int) -> dict[str, Any]:
         "icon": icon_text,
         "iconKind": kind,
         "fontawesomeClass": fa if kind == "fontawesome" else "",
+        "iconImageUrl": "",
     }
 
 
@@ -189,6 +200,10 @@ _MODEL_IMAGE_FIELDS: tuple[str, ...] = (
     "ps1_icon_image",
     "ps2_icon_image",
     "ps3_icon_image",
+    "why_c0_icon_file",
+    "why_c1_icon_file",
+    "why_c2_icon_file",
+    "why_c3_icon_file",
 )
 
 
@@ -735,6 +750,16 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     rev_submitting = _req_txt(_("Форма отзыва: текст при отправке"))
     rev_success_message = _area(_("Форма отзыва: сообщение после успеха"), rows=2)
     rev_error_message = _area(_("Форма отзыва: сообщение при ошибке"), rows=2)
+    rev_yandex_block_heading = _txt(
+        _("Страница отзывов: заголовок блока Яндекс"),
+        help_text=_("Над виджетом на /reviews, если в настройках сайта задан виджет или ссылка."),
+    )
+    rev_yandex_block_note = _area(_("Страница отзывов: подпись под заголовком блока Яндекс"), rows=2)
+    rev_site_list_heading = _txt(
+        _("Страница отзывов: заголовок списка «на сайте»"),
+        help_text=_("На /reviews, когда выше показан блок Яндекса — заголовок над сеткой отзывов с сайта."),
+    )
+    rev_site_list_subheading = _area(_("Страница отзывов: подзаголовок списка «на сайте»"), rows=2)
 
     # --- blog ---
     blog_heading = _req_txt(_("Заголовок"))
@@ -891,6 +916,10 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "ps1_icon_image",
             "ps2_icon_image",
             "ps3_icon_image",
+            "why_c0_icon_file",
+            "why_c1_icon_file",
+            "why_c2_icon_file",
+            "why_c3_icon_file",
         )
         widgets = {
             "hero_slide_1_image": UnfoldAdminFileFieldWidget(
@@ -911,10 +940,30 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "hero_slide_6_image": UnfoldAdminFileFieldWidget(
                 attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
             ),
-            "ps0_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "ps1_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "ps2_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
-            "ps3_icon_image": UnfoldAdminImageFieldWidget(attrs={"accept": "image/*"}),
+            "ps0_icon_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "ps1_icon_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "ps2_icon_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "ps3_icon_image": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "why_c0_icon_file": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "why_c1_icon_file": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "why_c2_icon_file": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
+            "why_c3_icon_file": UnfoldAdminFileFieldWidget(
+                attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -1184,6 +1233,10 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         self.initial.setdefault("rev_submitting", rev.get("submitting", ""))
         self.initial.setdefault("rev_success_message", rev.get("successMessage", ""))
         self.initial.setdefault("rev_error_message", rev.get("errorMessage", ""))
+        self.initial.setdefault("rev_yandex_block_heading", rev.get("yandexBlockHeading", ""))
+        self.initial.setdefault("rev_yandex_block_note", rev.get("yandexBlockNote", ""))
+        self.initial.setdefault("rev_site_list_heading", rev.get("siteReviewsListHeading", ""))
+        self.initial.setdefault("rev_site_list_subheading", rev.get("siteReviewsListSubheading", ""))
 
         blog = m.get("blog") or {}
         self.initial.setdefault("blog_heading", blog.get("heading", ""))
@@ -1381,6 +1434,7 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "subheading": cd["feat_subheading"].strip(),
             "catalogCta": cd["feat_catalog_cta"].strip(),
         }
+        base["promotions"] = {"heading": "", "subheading": "", "cards": []}
         calc_materials: list[dict[str, Any]] = []
         for i in range(5):
             label = str(cd.get(f"calc_m{i}_label") or "").strip()
@@ -1497,6 +1551,10 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "submitting": cd["rev_submitting"].strip(),
             "successMessage": cd["rev_success_message"].strip(),
             "errorMessage": cd["rev_error_message"].strip(),
+            "yandexBlockHeading": cd["rev_yandex_block_heading"].strip(),
+            "yandexBlockNote": cd["rev_yandex_block_note"].strip(),
+            "siteReviewsListHeading": cd["rev_site_list_heading"].strip(),
+            "siteReviewsListSubheading": cd["rev_site_list_subheading"].strip(),
         }
         base["blog"] = {
             "heading": cd["blog_heading"].strip(),

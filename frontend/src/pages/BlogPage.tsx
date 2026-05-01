@@ -70,7 +70,7 @@ export function BlogPage() {
                 {post.img ? (
                   <OptimizedImage
                     src={post.img}
-                    alt=""
+                    alt={post.title}
                     widths={[480, 640, 800]}
                     sizes="(max-width: 640px) 100vw, 192px"
                     className="h-40 w-full shrink-0 rounded-2xl object-cover sm:h-32 sm:w-48"

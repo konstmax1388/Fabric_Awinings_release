@@ -188,6 +188,20 @@ class ReviewViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Review.objects.filter(is_published=True).all()
     serializer_class = ReviewSerializer
 
+    def get_queryset(self):
+        qs = Review.objects.filter(is_published=True)
+        raw = self.request.query_params.get("min_rating")
+        if raw is None:
+            raw = self.request.query_params.get("minRating")
+        if raw is not None and str(raw).strip() != "":
+            try:
+                n = int(str(raw).strip())
+            except (TypeError, ValueError):
+                return qs
+            if 1 <= n <= 5:
+                qs = qs.filter(rating__gte=n)
+        return qs
+
 
 class ReviewSubmissionCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
@@ -200,6 +214,11 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     queryset = BlogPost.objects.filter(is_published=True).all()
     lookup_field = "slug"
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["site_settings"] = SiteSettings.get_solo()
+        return ctx
 
     def get_serializer_class(self):
         if self.action == "retrieve":

@@ -109,6 +109,7 @@ def default_home_payload() -> dict[str, Any]:
             "subheading": "Подборка популярных позиций. Полный ассортимент — в каталоге.",
             "catalogCta": "Весь каталог",
         },
+        "promotions": {"heading": "", "subheading": "", "cards": []},
         "calculator": {
             "mode": "calculator",
             "heading": "Конструктор тента",
@@ -229,6 +230,16 @@ def default_home_payload() -> dict[str, Any]:
             "teaserMaxItems": 6,
             "pageTitle": "Отзывы клиентов",
             "pageDescription": "Отзывы на Яндексе и на сайте, форма обратной связи.",
+            "yandexBlockHeading": "Отзывы на Яндекс.Маркете",
+            "yandexBlockNote": (
+                "Ниже — виджет с отзывами магазина на Яндекс.Маркете (набор и сортировка задаются "
+                "в кабинете Маркета при подключении виджета)."
+            ),
+            "siteReviewsListHeading": "Отзывы на сайте",
+            "siteReviewsListSubheading": (
+                "Публикуем отзывы гостей с оценкой от 4 из 5. Оставьте свой отзыв — после модерации "
+                "он появится в этом списке."
+            ),
             "loading": "Загрузка отзывов…",
             "videoCaption": "Видеоотзыв",
             "readMoreLabel": "Читать весь отзыв",
@@ -440,7 +451,7 @@ def _normalize_why_us_columns(home: dict[str, Any]) -> None:
         k = c.get("iconKind")
         fa = (c.get("fontawesomeClass") or "").strip()
         ic = str(c.get("icon") or "")
-        if k not in ("emoji", "fontawesome"):
+        if k not in ("emoji", "fontawesome", "image"):
             if fa:
                 c["iconKind"] = "fontawesome"
             elif "fa-" in ic:
@@ -450,6 +461,7 @@ def _normalize_why_us_columns(home: dict[str, Any]) -> None:
             else:
                 c["iconKind"] = "emoji"
         c.setdefault("fontawesomeClass", "")
+        c.setdefault("iconImageUrl", "")
 
 
 def _normalize_problem_solution_cards(home: dict[str, Any]) -> None:

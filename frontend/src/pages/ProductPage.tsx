@@ -4,6 +4,7 @@ import { startTransition, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { publicSiteUrl } from '../config/publicSite'
+import { productMaterialMapAlt } from '../lib/imageAlt'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { ProductDetailsDrawer } from '../components/catalog/ProductDetailsDrawer'
 import { ProductGallery } from '../components/catalog/ProductGallery'
@@ -12,6 +13,8 @@ import { ProductTrustStrip } from '../components/catalog/ProductTrustStrip'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
 import { HeroCallbackModal } from '../components/home/HeroCallbackModal'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
+import { PriceTag } from '../components/ui/PriceTag'
+import { PromoEndsCountdown } from '../components/promo/PromoEndsCountdown'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { OneClickOrderModal } from '../components/order/OneClickOrderModal'
@@ -181,7 +184,7 @@ function MaterialLayersHint({
         {materialMap.imageUrl ? (
           <OptimizedImage
             src={materialMap.imageUrl}
-            alt=""
+            alt={productMaterialMapAlt(materialMap.title)}
             className="absolute inset-0 h-full w-full object-cover"
             widths={[480, 960, 1280]}
             sizes="(max-width: 1024px) 100vw, 60vw"
@@ -246,6 +249,9 @@ export function ProductPage() {
   }, [product, selectedVariant])
 
   const displayPrice = selectedVariant?.priceFrom ?? product?.priceFrom ?? 0
+  const displayPriceList = selectedVariant
+    ? (selectedVariant.priceList ?? selectedVariant.priceFrom)
+    : (product?.priceList ?? product?.priceFrom ?? displayPrice)
 
   const marketplaceMerged = useMemo(() => {
     if (!product) return {}
@@ -281,10 +287,20 @@ export function ProductPage() {
         sku: offerSku,
         priceCurrency: 'RUB',
         price: String(displayPrice),
+        ...(displayPriceList > displayPrice
+          ? {
+              priceSpecification: {
+                '@type': 'UnitPriceSpecification',
+                priceCurrency: 'RUB',
+                price: String(displayPriceList),
+                priceType: 'https://schema.org/ListPrice',
+              },
+            }
+          : {}),
         availability: 'https://schema.org/InStock',
       },
     })
-  }, [product, galleryImages, displayPrice, seoDefaults.region, selectedVariant?.id])
+  }, [product, galleryImages, displayPrice, displayPriceList, seoDefaults.region, selectedVariant?.id])
 
   const displayMpKeys = useMemo(() => {
     const merged = marketplaceMerged
@@ -455,12 +471,49 @@ export function ProductPage() {
                 <h1 className="fabric-section-title mt-2 break-words lg:text-[2.75rem] lg:leading-[1.1]">
                   {product.title}
                 </h1>
-                <div className="mt-5 inline-flex items-baseline gap-2 rounded-2xl bg-accent/10 px-4 py-2.5">
-                  <span className="font-body text-sm font-medium text-text-muted">{ui?.productPriceLabel || 'Цена'}</span>
-                  <span className="font-heading text-2xl font-bold tabular-nums text-accent md:text-3xl">
-                    {displayPrice.toLocaleString('ru-RU')} ₽
-                  </span>
+                <div className="mt-5 rounded-2xl bg-accent/10 px-4 py-3 sm:py-2.5">
+                  {product.bestPromotionDiscountPercent != null && product.bestPromotionDiscountPercent > 0 ? (
+                    <p className="mb-2 font-body text-sm text-text">
+                      <span className="inline-flex rounded-full bg-accent/25 px-2.5 py-0.5 text-sm font-semibold text-accent">
+                        −{product.bestPromotionDiscountPercent}% по акциям
+                      </span>
+                    </p>
+                  ) : null}
+                  <PriceTag
+                    prefix={ui?.productPriceLabel || 'Цена'}
+                    priceFrom={displayPrice}
+                    priceList={displayPriceList}
+                    size="lg"
+                  />
                 </div>
+                <PromoEndsCountdown endsAt={product.promoEndsAt} className="max-w-lg" />
+                {product.promotions && product.promotions.length > 0 ? (
+                  <div className="mt-3 max-w-lg">
+                    <p className="font-body text-xs font-semibold uppercase tracking-wide text-text-subtle">
+                      Акции на этот товар
+                    </p>
+                    <ul className="mt-2 flex flex-wrap gap-2" aria-label="Список акций">
+                      {product.promotions.map((pr) => (
+                        <li key={pr.slug}>
+                          <Link
+                            to={`/akcii/${encodeURIComponent(pr.slug)}`}
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border-light bg-surface px-3 py-1.5 font-body text-xs text-text transition hover:border-accent/50 hover:text-accent"
+                          >
+                            <span className="line-clamp-2">{pr.title}</span>
+                            {pr.discountPercent > 0 ? (
+                              <span className="shrink-0 font-semibold text-accent">−{pr.discountPercent}%</span>
+                            ) : null}
+                            {pr.stackWithOthers ? (
+                              <span className="shrink-0 rounded bg-primary/15 px-1 py-0 text-[10px] text-text-muted">
+                                +
+                              </span>
+                            ) : null}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 <ProductTrustStrip
                   className="mt-4 max-w-lg"
                   warrantyMonths={product.warrantyMonths}

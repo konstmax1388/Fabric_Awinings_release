@@ -5,6 +5,7 @@ import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchProductCategories } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 import { FabricDriftOverlay } from '../ui/FabricDriftOverlay'
+import { tentTypeSectionCardAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 function categoryCardImage(_slug: string, imageUrl: string | null | undefined): string {
@@ -73,7 +74,7 @@ export function TentTypesSection() {
                   <div className="relative aspect-[288/200] overflow-hidden">
                     <OptimizedImage
                       src={c.img}
-                      alt=""
+                      alt={tentTypeSectionCardAlt(c.title)}
                       widths={[480, 640, 800]}
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"

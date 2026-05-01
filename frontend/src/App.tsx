@@ -54,6 +54,10 @@ const ContactsPage = lazy(() => import('./pages/ContactsPage').then((m) => ({ de
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })))
 const BlogPage = lazy(() => import('./pages/BlogPage').then((m) => ({ default: m.BlogPage })))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((m) => ({ default: m.BlogPostPage })))
+const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((m) => ({ default: m.PromotionsPage })))
+const PromotionDetailPage = lazy(() =>
+  import('./pages/PromotionDetailPage').then((m) => ({ default: m.PromotionDetailPage })),
+)
 const StaticPageRoute = lazy(() =>
   import('./pages/StaticPageRoute').then((m) => ({ default: m.StaticPageRoute })),
 )
@@ -125,6 +129,8 @@ const router = createBrowserRouter([
       { path: '/reviews', element: <ReviewsPage /> },
       { path: '/blog', element: <BlogPage /> },
       { path: '/blog/:slug', element: <BlogPostPage /> },
+      { path: '/akcii', element: <PromotionsPage /> },
+      { path: '/akcii/:slug', element: <PromotionDetailPage /> },
       { path: '/privacy', element: <Navigate to={LEGACY_PRIVACY_REDIRECT} replace /> },
       { path: '/offer', element: <Navigate to={LEGACY_OFFER_REDIRECT} replace /> },
       { path: '/:slug', element: <StaticPageRoute /> },

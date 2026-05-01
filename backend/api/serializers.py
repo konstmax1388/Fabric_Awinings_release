@@ -27,6 +27,7 @@ from .models import (
     ProductImage,
     ProductSpecification,
     ProductVariant,
+    Promotion,
     Review,
     ShippingAddress,
     SiteSettings,
@@ -110,7 +111,8 @@ class ProductCategoryPublicSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
-    priceFrom = serializers.IntegerField(source="price_from")
+    priceFrom = serializers.SerializerMethodField()
+    priceList = serializers.SerializerMethodField()
     showOnHome = serializers.BooleanField(source="show_on_home")
     marketplaceLinks = serializers.JSONField(source="marketplace_links")
     updatedAt = serializers.DateTimeField(source="updated_at", format="%Y-%m-%d")
@@ -123,6 +125,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     warrantyMonths = serializers.SerializerMethodField()
     returnDays = serializers.SerializerMethodField()
     ozonSku = serializers.IntegerField(source="ozon_sku", allow_null=True, read_only=True)
+    promoEndsAt = serializers.SerializerMethodField()
+    promotions = serializers.SerializerMethodField()
+    bestPromotionDiscountPercent = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -136,6 +141,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             "categoryTitle",
             "images",
             "priceFrom",
+            "priceList",
+            "promoEndsAt",
+            "bestPromotionDiscountPercent",
+            "promotions",
             "marketplaceLinks",
             "updatedAt",
             "showOnHome",
@@ -151,6 +160,34 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj: Product) -> str:
         return str(obj.pk)
+
+    def get_priceFrom(self, obj: Product) -> int:
+        from api.services.cart_line_unit_prices import effective_unit_price_rub
+
+        return effective_unit_price_rub(product=obj, variant=None)
+
+    def get_priceList(self, obj: Product) -> int:
+        from api.services.cart_line_unit_prices import list_unit_price_rub
+
+        return list_unit_price_rub(product=obj, variant=None)
+
+    def get_promoEndsAt(self, obj: Product) -> str | None:
+        from api.services.promotions import promo_countdown_end_for_product
+
+        end = promo_countdown_end_for_product(obj)
+        if end is None:
+            return None
+        return end.isoformat()
+
+    def get_promotions(self, obj: Product) -> list[dict[str, object]]:
+        from api.services.promotions import active_promotion_summaries_for_product
+
+        return active_promotion_summaries_for_product(obj)
+
+    def get_bestPromotionDiscountPercent(self, obj: Product) -> int:
+        from api.services.promotions import best_discount_percent_for_product
+
+        return int(best_discount_percent_for_product(obj))
 
     def get_images(self, obj: Product) -> list[str]:
         request = self.context.get("request")
@@ -197,7 +234,8 @@ class ProductSpecificationSerializer(serializers.ModelSerializer):
 
 class ProductVariantDetailSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    priceFrom = serializers.IntegerField(source="price_from")
+    priceFrom = serializers.SerializerMethodField()
+    priceList = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     wbUrl = serializers.URLField(source="marketplace_wb_url", allow_blank=True)
     isDefault = serializers.BooleanField(source="is_default", read_only=True)
@@ -205,10 +243,18 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductVariant
-        fields = ("id", "label", "priceFrom", "images", "wbUrl", "isDefault", "ozonSku")
+        fields = ("id", "label", "priceFrom", "priceList", "images", "wbUrl", "isDefault", "ozonSku")
 
     def get_id(self, obj: ProductVariant) -> str:
         return str(obj.pk)
+
+    def get_priceFrom(self, obj: ProductVariant) -> int:
+        from api.services.cart_line_unit_prices import effective_unit_price_rub
+
+        return effective_unit_price_rub(product=obj.product, variant=obj)
+
+    def get_priceList(self, obj: ProductVariant) -> int:
+        return int(obj.price_from)
 
     def get_images(self, obj: ProductVariant) -> list[str]:
         request = self.context.get("request")
@@ -388,12 +434,100 @@ class BlogPostListSerializer(serializers.ModelSerializer):
 
 class BlogPostDetailSerializer(BlogPostListSerializer):
     body = serializers.SerializerMethodField()
+    seo = serializers.SerializerMethodField()
 
     class Meta(BlogPostListSerializer.Meta):
-        fields = BlogPostListSerializer.Meta.fields + ("body",)
+        fields = BlogPostListSerializer.Meta.fields + ("body", "seo")
 
     def get_body(self, obj: BlogPost) -> str:
         return sanitize_html_fragment(obj.body or "")
+
+    def get_seo(self, obj: BlogPost) -> dict[str, str]:
+        from api.models import SiteSettings
+        from api.seo_public import blog_post_public_seo_dict
+
+        ss = self.context.get("site_settings")
+        if ss is None:
+            ss = SiteSettings.get_solo()
+        request = self.context.get("request")
+        return blog_post_public_seo_dict(obj, request, ss)
+
+
+class PromotionListSerializer(serializers.ModelSerializer):
+    """Публичный список акций (только активные отдаёт view)."""
+
+    imageUrl = serializers.SerializerMethodField()
+    startsAt = serializers.DateTimeField(source="starts_at")
+    endsAt = serializers.DateTimeField(source="ends_at", allow_null=True)
+    discountPercent = serializers.IntegerField(source="discount_percent", read_only=True)
+    appliesToAllProducts = serializers.BooleanField(source="applies_to_all_products", read_only=True)
+    stackWithOthers = serializers.BooleanField(source="stack_with_others", read_only=True)
+
+    class Meta:
+        model = Promotion
+        fields = (
+            "slug",
+            "title",
+            "excerpt",
+            "imageUrl",
+            "startsAt",
+            "endsAt",
+            "discountPercent",
+            "appliesToAllProducts",
+            "stackWithOthers",
+        )
+
+    def get_imageUrl(self, obj: Promotion) -> str:
+        return media_file_absolute(self.context.get("request"), getattr(obj, "image", None))
+
+
+class PromotionDetailSerializer(PromotionListSerializer):
+    body = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
+
+    class Meta(PromotionListSerializer.Meta):
+        fields = PromotionListSerializer.Meta.fields + ("body", "products")
+
+    def get_body(self, obj: Promotion) -> str:
+        return sanitize_html_fragment(obj.body or "")
+
+    def get_products(self, obj: Promotion) -> list[dict[str, object]]:
+        if obj.applies_to_all_products:
+            return []
+        from api.services.cart_line_unit_prices import effective_unit_price_rub, list_unit_price_rub
+
+        request = self.context.get("request")
+        out: list[dict[str, object]] = []
+        for p in obj.products.filter(is_published=True, category__is_published=True).order_by("sort_order", "id")[:80]:
+            eff = effective_unit_price_rub(product=p, variant=None)
+            lst = list_unit_price_rub(product=p, variant=None)
+            qs = p.images_rel.all()
+            dv = p.variants.filter(is_default=True).first()
+            if dv is None:
+                dv = p.variants.order_by("sort_order", "id").first()
+            if dv is not None:
+                qs = qs.filter(variant=dv)
+            else:
+                qs = qs.filter(variant__isnull=True)
+            img = ""
+            for im in qs.order_by("sort_order", "id")[:1]:
+                u = product_image_absolute_url(request, im)
+                if u:
+                    img = u
+            excerpt = (p.excerpt or "").strip()
+            if len(excerpt) > 400:
+                excerpt = excerpt[:399] + "…"
+            out.append(
+                {
+                    "slug": p.slug,
+                    "title": p.title,
+                    "excerpt": excerpt,
+                    "priceFrom": eff,
+                    "priceList": lst,
+                    "imageUrl": img,
+                }
+            )
+        return out
 
 
 class CalculatorLeadCreateSerializer(serializers.ModelSerializer):

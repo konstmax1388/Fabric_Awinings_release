@@ -9,6 +9,7 @@ import { fetchCustomerOrder } from '../../lib/api'
 import { fulfillmentLabel, paymentLabel } from '../../lib/orderStatusLabels'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
 import { buildSeoTitle } from '../../lib/seoVitrine'
+import { cartLineThumbnailAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../../components/ui/OptimizedImage'
 
 function lineTitle(line: unknown): string {
@@ -186,7 +187,7 @@ export function AccountOrderDetailPage() {
                       {src ? (
                         <OptimizedImage
                           src={src}
-                          alt=""
+                          alt={cartLineThumbnailAlt(lineTitle(line))}
                           widths={[128, 256, 384]}
                           sizes="72px"
                           className="h-full w-full object-contain p-0.5"
@@ -204,7 +205,7 @@ export function AccountOrderDetailPage() {
                       {src ? (
                         <OptimizedImage
                           src={src}
-                          alt=""
+                          alt={cartLineThumbnailAlt(lineTitle(line))}
                           widths={[128, 256, 384]}
                           sizes="72px"
                           className="h-full w-full object-contain p-0.5"

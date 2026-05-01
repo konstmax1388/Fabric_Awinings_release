@@ -45,6 +45,14 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
     ) {
       continue
     }
+    const rawList = r.priceList
+    const priceListParsed =
+      typeof rawList === 'number' ? rawList : rawList != null ? Number(rawList) : undefined
+    const priceList =
+      priceListParsed != null && Number.isFinite(priceListParsed) && priceListParsed >= 0
+        ? Math.floor(priceListParsed)
+        : undefined
+
     const line: CartLine = {
       lineId,
       productId,
@@ -86,7 +94,9 @@ function sanitizeCartLines(raw: unknown): CartLine[] {
       const n = Number(rawOzon)
       if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
     }
-    out.push(ozonSku !== undefined ? { ...line, ozonSku } : line)
+    const withList =
+      priceList !== undefined && priceList > priceFrom ? { ...line, priceList } : line
+    out.push(ozonSku !== undefined ? { ...withList, ozonSku } : withList)
   }
   return out
 }
@@ -218,6 +228,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ? `${product.title} (${variant.label})`
       : product.title
     const priceFrom = variant ? variant.priceFrom : product.priceFrom
+    const priceListBase = variant
+      ? (variant.priceList ?? variant.priceFrom)
+      : (product.priceList ?? product.priceFrom)
+    const priceList = priceListBase > priceFrom ? priceListBase : undefined
     const rawImg = variant?.images?.[0] ?? product.images[0] ?? ''
     const image = typeof rawImg === 'string' ? rawImg.trim() : ''
     const resolvedOzon = resolveOzonSkuForCartLine(product, variant?.id)
@@ -227,10 +241,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const next = [...prev]
         const img = (next[i].image || '').trim() || (typeof image === 'string' ? image.trim() : '')
         const ozonSku = next[i].ozonSku ?? resolvedOzon
+        const { priceList: _drop, ...rest } = next[i]
         next[i] = {
-          ...next[i],
+          ...rest,
           qty: Math.min(99, next[i].qty + q),
           image: img,
+          priceFrom,
+          ...(priceList !== undefined ? { priceList } : {}),
           ...(ozonSku !== undefined ? { ozonSku } : {}),
         }
         return next
@@ -244,6 +261,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: product.slug,
           title,
           priceFrom,
+          ...(priceList !== undefined ? { priceList } : {}),
           image,
           qty: q,
           cdekWeightGrams: product.cdekWeightGrams ?? null,
@@ -276,7 +294,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const i = next.findIndex((l) => l.lineId === line.lineId)
         if (i >= 0) {
           const mergedImg = (next[i].image || '').trim() || (line.image || '').trim() || ''
-          next[i] = { ...next[i], qty: Math.min(99, next[i].qty + line.qty), image: mergedImg }
+          const pl =
+            line.priceList != null && line.priceList > line.priceFrom ? line.priceList : undefined
+          const { priceList: _drop, ...rest } = next[i]
+          next[i] = {
+            ...rest,
+            qty: Math.min(99, next[i].qty + line.qty),
+            image: mergedImg,
+            priceFrom: line.priceFrom,
+            ...(pl !== undefined ? { priceList: pl } : {}),
+          }
         } else {
           next.push(line)
         }

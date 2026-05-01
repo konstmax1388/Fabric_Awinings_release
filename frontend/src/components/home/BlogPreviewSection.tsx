@@ -93,7 +93,7 @@ export function BlogPreviewSection() {
                 {post.img ? (
                   <OptimizedImage
                     src={post.img}
-                    alt=""
+                    alt={post.title}
                     widths={[480, 640, 800]}
                     sizes="(max-width: 768px) 100vw, 33vw"
                     className="h-full w-full object-cover"

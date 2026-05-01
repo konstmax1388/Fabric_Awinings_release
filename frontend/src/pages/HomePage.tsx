@@ -7,6 +7,7 @@ import { PortfolioSection } from '../components/home/PortfolioSection'
 import { PriceCalculatorSection } from '../components/home/PriceCalculatorSection'
 import { ProblemSolutionSection } from '../components/home/ProblemSolutionSection'
 import { ProcessTimelineSection } from '../components/home/ProcessTimelineSection'
+import { PromotionsSection } from '../components/home/PromotionsSection'
 import { ReviewsSection } from '../components/home/ReviewsSection'
 import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection'
 import { TentTypesSection } from '../components/home/TentTypesSection'
@@ -101,6 +102,8 @@ export function HomePage() {
         return <TentTypesSection key="tentTypes" />
       case 'featured':
         return <FeaturedProductsSection key="featured" />
+      case 'promotions':
+        return <PromotionsSection key="promotions" />
       case 'calculator':
         return <PriceCalculatorSection key="calculator" />
       case 'portfolio':

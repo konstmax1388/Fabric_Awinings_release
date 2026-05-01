@@ -17,6 +17,8 @@ export function ReviewsPage() {
   const yandexVisible = Boolean(
     (reviewsYandex?.widgetHtml ?? '').trim() || (reviewsYandex?.profileUrl ?? '').trim(),
   )
+  const yandexBlockTitle = (rv?.yandexBlockHeading ?? '').trim() || 'Отзывы на Яндекс.Маркете'
+  const yandexBlockNote = (rv?.yandexBlockNote ?? '').trim()
   const docTitle = buildSeoTitle('emdash', { title: pageTitle, siteName }, seoDefaults)
   const desc = metaDescription
     ? truncateMetaDescription(metaDescription, undefined, seoDefaults)
@@ -49,7 +51,9 @@ export function ReviewsPage() {
             {metaDescription ? (
               <p className="mt-3 max-w-3xl font-body text-text-muted md:text-lg">{metaDescription}</p>
             ) : null}
-            {yandexVisible ? <ReviewsYandexBlock className="mt-8" title="Отзывы в Яндексе" /> : null}
+            {yandexVisible ? (
+              <ReviewsYandexBlock className="mt-8" title={yandexBlockTitle} note={yandexBlockNote} />
+            ) : null}
           </div>
           <ReviewsSection mode="page" showListHeading={yandexVisible} />
           <div className="fabric-container pb-10">

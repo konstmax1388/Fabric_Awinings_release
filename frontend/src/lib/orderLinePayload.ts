@@ -7,6 +7,8 @@ export type OrderLineApiPayload = {
   slug: string
   title: string
   priceFrom: number
+  /** База до акции (UI / локальные расчёты; в POST не уходит). */
+  priceList?: number
   qty: number
   image: string
   ozonSku?: number
@@ -28,6 +30,7 @@ export function orderLinesFromCartItems(items: CartLine[]): OrderLineApiPayload[
       qty: line.qty,
       image: line.image || '',
     }
+    if (line.priceList != null && line.priceList > line.priceFrom) row.priceList = line.priceList
     if (line.ozonSku) row.ozonSku = line.ozonSku
     if (line.cdekWeightGrams) row.cdekWeightGrams = line.cdekWeightGrams
     if (line.cdekLengthCm) row.cdekLengthCm = line.cdekLengthCm
@@ -44,6 +47,8 @@ export function orderLineFromProduct(
 ): OrderLineApiPayload {
   const v = variant ?? product.variants?.[0] ?? null
   const priceFrom = v ? v.priceFrom : product.priceFrom
+  const priceListBase = v ? (v.priceList ?? v.priceFrom) : (product.priceList ?? product.priceFrom)
+  const priceList = priceListBase > priceFrom ? priceListBase : undefined
   const mainImage = v?.images?.[0] || product.images[0] || ''
   return {
     productId: product.id,
@@ -51,6 +56,7 @@ export function orderLineFromProduct(
     slug: product.slug,
     title: product.title,
     priceFrom,
+    ...(priceList !== undefined ? { priceList } : {}),
     qty,
     image: mainImage,
     cdekWeightGrams: product.cdekWeightGrams,

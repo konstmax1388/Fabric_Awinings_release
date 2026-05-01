@@ -4,11 +4,14 @@ from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator
 from django.db import models
 import re
 
 from .slug_utils import ensure_slug_from_title
+
+HOME_SECTION_ICON_EXT = ("svg", "png", "webp", "jpg", "jpeg", "gif")
+HOME_SECTION_ICON_FILE_VALIDATOR = FileExtensionValidator(allowed_extensions=list(HOME_SECTION_ICON_EXT))
 
 
 class ProductCategory(models.Model):
@@ -209,6 +212,73 @@ class ProductVariant(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product_id}: {self.label}"
+
+
+class Promotion(models.Model):
+    """Акция на витрине: отдельная страница и скидка на каталог / выбранные товары (заказ с сайта)."""
+
+    slug = models.SlugField("Слаг (URL)", max_length=120, unique=True, db_index=True)
+    title = models.CharField("Заголовок", max_length=255)
+    excerpt = models.TextField("Краткое описание", blank=True)
+    body = models.TextField(
+        "Текст на странице акции",
+        blank=True,
+        help_text="Простой текст или разметка; на витрине выводится с переносами строк.",
+    )
+    image = models.ImageField(
+        "Изображение",
+        upload_to="promotions/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+    )
+    starts_at = models.DateTimeField("Дата начала")
+    ends_at = models.DateTimeField(
+        "Дата окончания",
+        null=True,
+        blank=True,
+        help_text="Пусто — акция без конечной даты.",
+    )
+    is_published = models.BooleanField("Опубликовано", default=True, db_index=True)
+    sort_order = models.PositiveIntegerField("Порядок в списках", default=0)
+    applies_to_all_products = models.BooleanField(
+        "На весь каталог",
+        default=False,
+        help_text="Если включено, скидка действует на все опубликованные товары в каталоге.",
+    )
+    products = models.ManyToManyField(
+        Product,
+        blank=True,
+        related_name="promotions",
+        verbose_name="Товары",
+        help_text="Имеет смысл, если «На весь каталог» выключено: акция только на выбранные позиции.",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        "Скидка, %",
+        default=0,
+        validators=[MaxValueValidator(100)],
+        help_text="0 — информационная акция (цены в каталоге не меняются). 1–100 — скидка от цены в каталоге.",
+    )
+    stack_with_others = models.BooleanField(
+        "Суммировать с другими акциями",
+        default=False,
+        help_text="Включите, если эту скидку нужно складывать с другими суммируемыми акциями на тот же товар. "
+        "Выключено — участвует в правиле «максимум среди несуммируемых», затем к результату добавляются суммируемые.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "-starts_at", "id"]
+        verbose_name = "Акция"
+        verbose_name_plural = "Акции"
+
+    def __str__(self) -> str:
+        return self.title
+
+    def save(self, *args, **kwargs):
+        ensure_slug_from_title(self)
+        super().save(*args, **kwargs)
 
 
 class ProductSpecification(models.Model):
@@ -1569,33 +1639,69 @@ class HomePageContent(models.Model):
         blank=True,
         null=True,
     )
-    ps0_icon_image = models.ImageField(
-        "Карточка «Проблема—решение» 1: картинка вместо значка",
+    ps0_icon_image = models.FileField(
+        "Карточка «Проблема—решение» 1: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
         upload_to="home/ps_icons/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
     )
-    ps1_icon_image = models.ImageField(
-        "Карточка «Проблема—решение» 2: картинка вместо значка",
+    ps1_icon_image = models.FileField(
+        "Карточка «Проблема—решение» 2: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
         upload_to="home/ps_icons/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
     )
-    ps2_icon_image = models.ImageField(
-        "Карточка «Проблема—решение» 3: картинка вместо значка",
+    ps2_icon_image = models.FileField(
+        "Карточка «Проблема—решение» 3: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
         upload_to="home/ps_icons/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
     )
-    ps3_icon_image = models.ImageField(
-        "Карточка «Проблема—решение» 4: картинка вместо значка",
+    ps3_icon_image = models.FileField(
+        "Карточка «Проблема—решение» 4: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
         upload_to="home/ps_icons/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+    )
+    why_c0_icon_file = models.FileField(
+        "«Почему мы», колонка 1: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
+        upload_to="home/why_icons/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+    )
+    why_c1_icon_file = models.FileField(
+        "«Почему мы», колонка 2: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
+        upload_to="home/why_icons/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+    )
+    why_c2_icon_file = models.FileField(
+        "«Почему мы», колонка 3: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
+        upload_to="home/why_icons/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+    )
+    why_c3_icon_file = models.FileField(
+        "«Почему мы», колонка 4: файл иконки (PNG, WebP, JPEG, GIF или SVG)",
+        upload_to="home/why_icons/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
     )
 
     class Meta:

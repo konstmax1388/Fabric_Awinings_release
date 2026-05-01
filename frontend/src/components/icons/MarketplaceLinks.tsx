@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../../config/site'
+import { marketplaceLogoAlt } from '../../lib/imageAlt'
 
 const linkClassDefault =
   'flex h-9 min-w-9 items-center justify-center rounded-lg px-1.5 ring-1 ring-border-light/80 bg-surface/80 md:h-9'
@@ -80,7 +81,7 @@ export function MarketplaceLinks({
             >
               <img
                 src={'iconSrc' in m && m.iconSrc ? m.iconSrc : m.logoSrc}
-                alt=""
+                alt={marketplaceLogoAlt(m.label)}
                 width={32}
                 height={32}
                 className={imgClassCompact}
@@ -113,7 +114,7 @@ export function MarketplaceLinks({
           >
             <img
               src={m.logoSrc}
-              alt=""
+              alt={marketplaceLogoAlt(m.label)}
               width={120}
               height={32}
               className={imgClassById[m.id]}

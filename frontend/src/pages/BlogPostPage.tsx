@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSiteSettings } from '../context/SiteSettingsContext'
+import { articleCoverAlt } from '../lib/imageAlt'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function BlogPostPage() {
@@ -99,20 +100,24 @@ export function BlogPostPage() {
         <article className="fabric-page-main fabric-card min-w-0 max-w-[820px] p-5 md:p-8">
           <time className="font-body text-sm text-text-subtle">{post.date}</time>
           <h1 className="fabric-section-title mt-2 break-words md:text-4xl">{post.title}</h1>
-          {post.img ? (
-            <OptimizedImage
-              src={post.img}
-              alt=""
-              priority
-              widths={[640, 960, 1200]}
-              sizes="(max-width: 768px) 100vw, 720px"
-              className="mt-8 w-full rounded-2xl object-cover"
+          <div className="mt-6 flow-root md:mt-8">
+            {post.img ? (
+              <figure className="mb-6 sm:float-left sm:mb-4 sm:mr-6 sm:mt-1 sm:w-[min(42%,18rem)] md:mr-8 md:w-[min(40%,20rem)]">
+                <OptimizedImage
+                  src={post.img}
+                  alt={articleCoverAlt(post.title)}
+                  priority
+                  widths={[480, 640, 960]}
+                  sizes="(max-width: 640px) 100vw, 320px"
+                  className="w-full rounded-2xl object-cover"
+                />
+              </figure>
+            ) : null}
+            <div
+              className="cms-html space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4 sm:[&_p:first-child]:mt-0"
+              dangerouslySetInnerHTML={{ __html: post.body }}
             />
-          ) : null}
-          <div
-            className="cms-html mt-8 space-y-4 font-body text-base leading-relaxed text-text [&_p]:mt-4"
-            dangerouslySetInnerHTML={{ __html: post.body }}
-          />
+          </div>
         </article>
         <div className="fabric-page-main max-w-[820px] pt-0">
         <Link to="/blog" className="fabric-strap-btn mt-6 inline-block rounded-full border border-border px-5 py-2 font-medium text-accent hover:border-accent/60">

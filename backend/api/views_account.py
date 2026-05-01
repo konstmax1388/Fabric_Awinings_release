@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .home_defaults import stored_home_payload
+from .home_defaults import merged_home_payload, stored_home_payload
 from .models import CartOrder, CustomerProfile, HomePageContent, ShippingAddress, SiteSettings, StaticPage
 from .permissions import MustNotBePasswordChangeOverdue
 from .throttles import AuthRegisterThrottle
@@ -110,6 +110,21 @@ class HomePageContentPublicView(APIView):
                         card["iconImageUrl"] = request.build_absolute_uri(img.url)
                     else:
                         card["iconImageUrl"] = ""
+        why = home.get("whyUs")
+        if isinstance(why, dict):
+            cols = why.get("columns")
+            if isinstance(cols, list):
+                for i, col in enumerate(cols[:4]):
+                    if not isinstance(col, dict):
+                        continue
+                    if col.get("iconKind") != "image":
+                        col["iconImageUrl"] = ""
+                        continue
+                    f = getattr(h, f"why_c{i}_icon_file", None)
+                    if f:
+                        col["iconImageUrl"] = request.build_absolute_uri(f.url)
+                    else:
+                        col["iconImageUrl"] = ""
         response = Response({"home": home})
         # Как site-settings: не кэшировать у CDN/браузером — иначе после правок в админке
         # долго виден старый whyUs, sectionLayout, hero и т.д.

@@ -11,6 +11,8 @@ export type ProductVariantRow = {
   id: string
   label: string
   priceFrom: number
+  /** Цена в каталоге до акции, ₽; при отсутствии совпадает с priceFrom. */
+  priceList?: number
   images: string[]
   wbUrl?: string
   isDefault?: boolean
@@ -48,6 +50,15 @@ export type ProductSeo = {
   robots: string
 }
 
+/** Кратко об акции на товаре (для ссылок); порядок с API — по убыванию discountPercent. */
+export type ProductPromotionSummary = {
+  slug: string
+  title: string
+  discountPercent: number
+  stackWithOthers: boolean
+  endsAt: string | null
+}
+
 export const TEASER_LABELS: Record<ProductTeaser, string> = {
   recommended: 'Рекомендуем',
   bestseller: 'Хит продаж',
@@ -66,6 +77,14 @@ export type Product = {
   images: string[]
   /** Цена в каталоге, ₽ — для сортировки и карточки */
   priceFrom: number
+  /** База до акции, ₽ (для зачёркнутой цены на витрине). */
+  priceList?: number
+  /** ISO 8601 окончания действующей скидки по акции (таймер на витрине); нет — без ограниченного срока. */
+  promoEndsAt?: string | null
+  /** Итоговая скидка по правилам суммирования акций, % — то, что выгоднее всего для клиента. */
+  bestPromotionDiscountPercent?: number
+  /** Действующие акции на товар (детали / ссылки). */
+  promotions?: ProductPromotionSummary[]
   /** Индивидуальные витрины; пусто — в карточке МП не показываем или только общие из конфига */
   marketplaceLinks: Partial<Record<MarketplaceId, string>>
   updatedAt: string

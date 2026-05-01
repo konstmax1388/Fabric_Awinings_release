@@ -11,10 +11,13 @@ import {
   staggerContainer,
   staggerItem,
 } from '../../lib/motion-presets'
+import { reviewAuthorPhotoAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 const REVIEW_PREVIEW_PAGE = 190
 const REVIEW_PREVIEW_TEASER = 100
+/** На витрине показываем только опубликованные отзывы с этой оценки и выше (см. API `min_rating`). */
+const SITE_REVIEWS_MIN_RATING = 4
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -45,7 +48,6 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
   const { home } = useSiteSettings()
   const rv = home?.reviews
   const heading = rv?.heading ?? 'Отзывы клиентов'
-  const subheading = rv?.subheading ?? 'Реальные заказчики B2B и частные лица.'
   const teaserTitle = rv?.teaserTitle ?? heading
   const teaserSubtitle = rv?.teaserSubtitle ?? 'Кратко — на главной, подробно на отдельной странице.'
   const teaserCta = rv?.teaserCta ?? 'Все отзывы'
@@ -72,6 +74,11 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
     rv?.successMessage ?? 'Спасибо! Отзыв получен и отправлен менеджеру на модерацию.'
   const errorMessage =
     rv?.errorMessage ?? 'Не удалось отправить отзыв. Проверьте поля и попробуйте еще раз.'
+  const siteListHeading =
+    (rv?.siteReviewsListHeading ?? '').trim() || 'Отзывы на сайте'
+  const siteListSubheading =
+    (rv?.siteReviewsListSubheading ?? '').trim() ||
+    'Публикуем отзывы гостей с оценкой от 4 из 5. Оставьте свой отзыв — после модерации он появится в этом списке.'
 
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,7 +97,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
 
   useEffect(() => {
     let cancelled = false
-    fetchReviews().then((list) => {
+    fetchReviews({ minRating: SITE_REVIEWS_MIN_RATING }).then((list) => {
       if (!cancelled) {
         setReviews(list)
         setLoading(false)
@@ -176,7 +183,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
                   <div className="flex items-start gap-2 md:gap-3">
                     <OptimizedImage
                       src={r.photo}
-                      alt=""
+                      alt={reviewAuthorPhotoAlt(r.name)}
                       widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
                       sizes="64px"
                       className={
@@ -280,8 +287,8 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
     >
       {showListHeading ? (
         <>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl">{heading}</h2>
-          <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl">{siteListHeading}</h2>
+          <p className="mt-3 max-w-3xl font-body text-text-muted md:text-lg">{siteListSubheading}</p>
         </>
       ) : null}
       {listBlock}

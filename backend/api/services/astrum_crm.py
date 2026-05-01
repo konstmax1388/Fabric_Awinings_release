@@ -131,6 +131,23 @@ def build_astrum_payload(
             item["product_id"] = b24_id
         products.append(item)
 
+    discount_lines: list[str] = []
+    for row in lines:
+        if not isinstance(row, dict):
+            continue
+        try:
+            pl = int(row.get("priceList") if row.get("priceList") is not None else row.get("priceFrom") or 0)
+            pf = int(row.get("priceFrom") or 0)
+        except (TypeError, ValueError):
+            continue
+        if pl > pf >= 0:
+            short_title = (str(row.get("title") or "Товар").strip() or "Товар")[:120]
+            discount_lines.append(f"• {short_title}: {pf} ₽ (в каталоге {pl} ₽)")
+    if discount_lines:
+        comments_parts.append("")
+        comments_parts.append("Позиции со скидкой по акции (за единицу):")
+        comments_parts.extend(discount_lines[:15])
+
     delivery_price = max(0, int(order.delivery_price_rub or 0))
     cdek_raw = (order.delivery_snapshot or {}).get("cdek") if isinstance(order.delivery_snapshot, dict) else None
     cdek_data = cdek_raw if isinstance(cdek_raw, dict) else {}

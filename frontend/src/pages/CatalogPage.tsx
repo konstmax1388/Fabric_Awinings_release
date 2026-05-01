@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { CatalogSpecFilters } from '../components/catalog/CatalogSpecFilters'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
+import { catalogCategoryFilterAlt } from '../lib/imageAlt'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
@@ -322,7 +323,7 @@ export function CatalogPage() {
                       {c.imageUrl ? (
                         <OptimizedImage
                           src={c.imageUrl}
-                          alt=""
+                          alt={catalogCategoryFilterAlt(c.title)}
                           widths={[64, 128, 160]}
                           sizes="36px"
                           className="h-9 w-9 shrink-0 rounded-lg object-cover"
