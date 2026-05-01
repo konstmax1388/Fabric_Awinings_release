@@ -16,6 +16,8 @@ type Props = {
   onChange: (address: string) => void
   cityHint: string
   yandexApiKey: string
+  /** Текст под полем, если подсказки по адресу недоступны (нет ключа карты). */
+  suggestUnavailableNote: string
   disabled?: boolean
 }
 
@@ -26,7 +28,15 @@ const MIN_QUERY = 3
  * Адрес для СДЭК: выбор из подсказок Яндекс.Карт.
  * Если ключ не задан, работает как обычное поле ввода.
  */
-export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKey, disabled }: Props) {
+export function CdekAddressCombobox({
+  id,
+  value,
+  onChange,
+  cityHint,
+  yandexApiKey,
+  suggestUnavailableNote,
+  disabled,
+}: Props) {
   const inputId = useId()
   const listboxId = useId()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -191,9 +201,7 @@ export function CdekAddressCombobox({ id, value, onChange, cityHint, yandexApiKe
           Введите от {MIN_QUERY} символов: можно выбрать из списка или оставить адрес вручную.
         </p>
       ) : (
-        <p className="mt-1.5 font-body text-xs text-amber-800">
-          Подсказки по адресу: задайте ключ API Яндекс.Карт в настройках СДЭК (тот же, что и для карты).
-        </p>
+        <p className="mt-1.5 font-body text-xs text-amber-800">{suggestUnavailableNote}</p>
       )}
 
       {hasSuggest && open && search.trim().length >= MIN_QUERY ? (

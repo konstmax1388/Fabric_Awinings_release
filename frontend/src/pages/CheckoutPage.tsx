@@ -35,6 +35,7 @@ import {
 import { submitCartOrder } from '../lib/leads'
 import { publicSiteUrl } from '../config/publicSite'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { checkoutClientLabels } from '../lib/checkoutUiCopy'
 import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../types/checkoutPublic'
 
 function extractTariffDeliveryRub(t: unknown): number | null {
@@ -69,7 +70,7 @@ type CdekMode = 'office' | 'door'
 export function CheckoutPage() {
   const { items, totalApprox, clear, totalQty } = useCart()
   const { user, accessToken } = useAuth()
-  const { checkout, loading: settingsLoading, seoDefaults, staticPages, siteName } = useSiteSettings()
+  const { checkout, loading: settingsLoading, seoDefaults, staticPages, siteName, home } = useSiteSettings()
   const allCartLinesHaveOzonSku = useMemo(
     () => items.length > 0 && items.every((l) => typeof l.ozonSku === 'number' && l.ozonSku > 0),
     [items],
@@ -187,6 +188,8 @@ export function CheckoutPage() {
     () => (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE,
     [checkout.ordersBlockedMessage],
   )
+
+  const cx = useMemo(() => checkoutClientLabels(home?.ui), [home?.ui])
 
   const paymentChoices = useMemo(() => {
     return checkout.paymentMatrix[deliveryMethod] ?? []
@@ -325,7 +328,7 @@ export function CheckoutPage() {
       return
     }
     if (!settingsLoading && effectiveDeliveryOptions.length === 0) {
-      setError('Оформление заказа недоступно: включите способы доставки в настройках сайта.')
+      setError(cx.checkoutNoDeliveryInlineError)
       return
     }
     if (!deliveryMethod || !paymentMethod) {
@@ -338,21 +341,21 @@ export function CheckoutPage() {
       return
     }
     if (deliveryMethod === 'cdek' && !city.trim()) {
-      setError('Укажите город: начните ввод и выберите значение из списка подсказок СДЭК.')
+      setError('Укажите город: начните ввод и выберите значение из подсказки.')
       return
     }
     if (deliveryMethod === 'cdek') {
       const ff = checkout.freeDeliveryFromRub ?? 0
       const freeDel = ff > 0 && goodsSubtotal >= ff
       if (!freeDel && cdekQuotedDeliveryRub === null) {
-        setError('Укажите стоимость доставки СДЭК: выберите тариф на карте или введите сумму.')
+        setError('Укажите стоимость доставки: выберите тариф на карте или введите сумму.')
         return
       }
     }
     if (deliveryMethod === 'cdek' && cdekMode === 'office') {
       if (!useCdekWidgetUi && cdekCityCode === null) {
         setError(
-          'Выберите город из списка подсказок СДЭК — без кода города нельзя показать пункты выдачи.',
+          'Выберите город из подсказки — иначе нельзя показать список пунктов выдачи.',
         )
         return
       }
@@ -360,12 +363,12 @@ export function CheckoutPage() {
         if (checkout.cdek.manualPvzEnabled) {
           setError(
             useCdekWidgetUi
-              ? 'Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.'
-              : 'Выберите пункт выдачи из списка или введите код ПВЗ вручную.',
+              ? 'Для доставки в пункт выдачи выберите его на карте или введите код пункта вручную.'
+              : 'Выберите пункт выдачи из списка или введите код вручную.',
           )
         } else {
           setError(
-            useCdekWidgetUi ? 'Выберите пункт выдачи на карте СДЭК.' : 'Выберите пункт выдачи из списка.',
+            useCdekWidgetUi ? 'Выберите пункт выдачи на карте.' : 'Выберите пункт выдачи из списка.',
           )
         }
         return
@@ -409,21 +412,21 @@ export function CheckoutPage() {
       return
     }
     if (deliveryMethod === 'cdek' && !city.trim()) {
-      setError('Укажите город: выберите значение из списка подсказок СДЭК.')
+      setError('Укажите город: выберите значение из подсказки.')
       return
     }
     if (deliveryMethod === 'cdek') {
       const ff = checkout.freeDeliveryFromRub ?? 0
       const freeDel = ff > 0 && goodsSubtotal >= ff
       if (!freeDel && cdekQuotedDeliveryRub === null) {
-        setError('Укажите стоимость доставки СДЭК: выберите тариф на карте или введите сумму.')
+        setError('Укажите стоимость доставки: выберите тариф на карте или введите сумму.')
         return
       }
     }
     if (deliveryMethod === 'cdek' && cdekMode === 'office') {
       if (!useCdekWidgetUi && cdekCityCode === null) {
         setError(
-          'Выберите город из списка подсказок СДЭК — без кода города нельзя показать пункты выдачи.',
+          'Выберите город из подсказки — иначе нельзя показать список пунктов выдачи.',
         )
         return
       }
@@ -431,12 +434,12 @@ export function CheckoutPage() {
         if (checkout.cdek.manualPvzEnabled) {
           setError(
             useCdekWidgetUi
-              ? 'Для доставки в ПВЗ выберите пункт на карте СДЭК или введите код ПВЗ вручную.'
-              : 'Выберите пункт выдачи из списка или введите код ПВЗ вручную.',
+              ? 'Для доставки в пункт выдачи выберите его на карте или введите код пункта вручную.'
+              : 'Выберите пункт выдачи из списка или введите код вручную.',
           )
         } else {
           setError(
-            useCdekWidgetUi ? 'Выберите пункт выдачи на карте СДЭК.' : 'Выберите пункт выдачи из списка.',
+            useCdekWidgetUi ? 'Выберите пункт выдачи на карте.' : 'Выберите пункт выдачи из списка.',
           )
         }
         return
@@ -493,7 +496,7 @@ export function CheckoutPage() {
       })
       if (ok && ref) {
         if (paymentMethod === 'card_online' && !(payUrl && payUrl.trim())) {
-          setError('Онлайн-оплата не запустилась: сервер не вернул ссылку на оплату.')
+          setError(cx.checkoutOnlinePayLinkError)
           return
         }
         setOrderRef(ref)
@@ -680,25 +683,21 @@ export function CheckoutPage() {
             <form onSubmit={goNextFromDelivery} className="flex flex-col">
               <h1 className="fabric-section-title text-2xl md:text-3xl">Доставка и оплата</h1>
               {settingsLoading ? (
-                <p className="mt-4 font-body text-sm text-text-muted">Загрузка настроек…</p>
+                <p className="mt-4 font-body text-sm text-text-muted">{cx.checkoutSettingsLoading}</p>
               ) : effectiveDeliveryOptions.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 font-body text-sm text-amber-900">
-                  Сейчас нельзя оформить заказ на сайте: не включён ни один способ доставки. Обратитесь к
-                  администратору или позвоните нам.
+                  {cx.checkoutNoDeliveryBanner}
                 </div>
               ) : (
                 <>
-                  <p className="mt-2 font-body text-sm text-text-muted">
-                    Способы и оплата задаются в админке («Настройки сайта» → блоки оформления).
-                  </p>
+                  <p className="mt-2 font-body text-sm text-text-muted">{cx.checkoutDeliveryIntro}</p>
                   {!allCartLinesHaveOzonSku &&
                   checkout.deliveryOptions.some((o) => o.id === 'ozon_logistics') ? (
                     <p
                       className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 font-body text-sm text-amber-900"
                       role="status"
                     >
-                      Логистика Ozon недоступна: в заказе есть товары без Ozon SKU в каталоге. Выберите другой
-                      способ доставки.
+                      {cx.checkoutOzonPartialWarning}
                     </p>
                   ) : null}
                   <fieldset className="mt-6 space-y-3">
@@ -816,7 +815,7 @@ export function CheckoutPage() {
                         </fieldset>
                       ) : (
                         <p className="mt-3 rounded-xl border border-border-light bg-bg-base px-3 py-2 font-body text-xs text-text-muted">
-                          Тип доставки СДЭК (пункт выдачи или до двери) выбирается на карте ниже — отдельно указывать не
+                          Тип доставки (пункт выдачи или до двери) выбирается на карте ниже — отдельно указывать не
                           нужно.
                         </p>
                       )}
@@ -827,6 +826,7 @@ export function CheckoutPage() {
                             onChange={setAddress}
                             cityHint={city}
                             yandexApiKey={checkout.cdek.yandexMapApiKey}
+                            suggestUnavailableNote={cx.checkoutCdekAddressSuggestFooter}
                             disabled={settingsLoading}
                           />
                           <CdekWidgetMount
@@ -839,6 +839,9 @@ export function CheckoutPage() {
                             goods={cdekWidgetGoods}
                             tariffs={checkout.cdek.tariffs}
                             onChoose={handleCdekWidgetChoose}
+                            mapMissingKeyHelp={cx.checkoutCdekMapMissingKeyHelp}
+                            mapMissingServiceHelp={cx.checkoutCdekMapMissingServiceHelp}
+                            mapInitFailedHelp={cx.checkoutCdekMapInitFailedHelp}
                           />
                           {checkout.cdek.manualPvzEnabled ? (
                             <details className="mt-3 rounded-xl border border-border-light bg-bg-base p-3">
@@ -1171,16 +1174,8 @@ export function CheckoutPage() {
                   className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 font-body text-sm text-amber-950 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100"
                   role="status"
                 >
-                  <p className="font-medium">Заказ сохранён, но отправка в СДЭК завершилась с ошибкой.</p>
-                  <p className="mt-1 text-amber-900/90 dark:text-amber-100/90">
-                    Мы увидим заказ в админке и сможем оформить доставку вручную. Если нужно срочно — позвоните нам и
-                    назовите номер заказа.
-                  </p>
-                  {cdekSyncInfo.error ? (
-                    <p className="mt-2 font-mono text-xs text-amber-950/80 dark:text-amber-100/80">
-                      {cdekSyncInfo.error}
-                    </p>
-                  ) : null}
+                  <p className="font-medium">Заказ сохранён, но автоматическая отправка в службу доставки не удалась.</p>
+                  <p className="mt-1 text-amber-900/90 dark:text-amber-100/90">{cx.checkoutCdekAfterSubmitWarning}</p>
                 </div>
               ) : null}
               <p className="mt-2 font-body text-sm text-text-muted">

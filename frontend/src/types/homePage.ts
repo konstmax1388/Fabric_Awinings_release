@@ -350,6 +350,19 @@ export type HomePayload = {
     cartCheckoutButton?: string
     cartCheckoutFootnote?: string
     cartTermsPrefix?: string
+    /** Оформление заказа: подписи для клиента (редактируются в «Главная (контент)» → блок интерфейса). */
+    checkoutSettingsLoading?: string
+    checkoutDeliveryIntro?: string
+    checkoutNoDeliveryBanner?: string
+    checkoutNoDeliveryInlineError?: string
+    checkoutOzonPartialWarning?: string
+    checkoutCdekAfterSubmitWarning?: string
+    checkoutOnlinePayLinkError?: string
+    checkoutCdekMapMissingKeyHelp?: string
+    checkoutCdekMapMissingServiceHelp?: string
+    checkoutCdekMapInitFailedHelp?: string
+    checkoutCdekAddressSuggestFooter?: string
+    oneClickConsentTail?: string
     productNotFoundTitle?: string
     productNotFoundText?: string
     productBackToCatalog?: string

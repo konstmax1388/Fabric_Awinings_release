@@ -7,6 +7,7 @@ import {
   type CheckoutDeliveryOption,
   type CheckoutPublicConfig,
 } from '../types/checkoutPublic'
+import { sanitizeClientApiErrorMessage } from './apiErrorClient'
 import { parseProductPhotoAspect, type ProductPhotoAspect } from './productPhotoAspect'
 import type {
   Product,
@@ -1550,7 +1551,8 @@ export async function postCartOrder(
         firstApiErrorText(err) ??
         (await parseTextAny(rForText)) ??
         ''
-      return { ok: false, detail: detailRaw || 'Не удалось оформить заказ' }
+      const detail = sanitizeClientApiErrorMessage(detailRaw, 'Не удалось оформить заказ')
+      return { ok: false, detail }
     }
     const data = await parseJson<{
       orderRef: string
@@ -1563,7 +1565,7 @@ export async function postCartOrder(
         tracking?: string | null
       } | null
     }>(r)
-    if (!data) return { ok: false, detail: 'Пустой ответ сервера' }
+    if (!data) return { ok: false, detail: 'Не удалось оформить заказ' }
     return { ok: true, ...data }
   } catch {
     return { ok: false, detail: 'Ошибка сети при оформлении заказа' }
@@ -1613,10 +1615,11 @@ export async function postOneClickOrder(body: {
         firstApiErrorText(err) ??
         (await parseTextAny(rForText)) ??
         ''
-      return { ok: false, detail: detailRaw || 'Не удалось отправить заявку' }
+      const detail = sanitizeClientApiErrorMessage(detailRaw, 'Не удалось отправить заявку')
+      return { ok: false, detail }
     }
     const data = await parseJson<{ orderRef: string; clientAck: string }>(r)
-    if (!data) return { ok: false, detail: 'Пустой ответ сервера' }
+    if (!data) return { ok: false, detail: 'Не удалось отправить заявку' }
     return { ok: true, orderRef: data.orderRef, clientAck: data.clientAck }
   } catch {
     return { ok: false, detail: 'Ошибка сети' }

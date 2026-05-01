@@ -854,6 +854,18 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
     ui_cart_checkout_button = _req_txt(_("Корзина: кнопка оформления"))
     ui_cart_checkout_footnote = _req_txt(_("Корзина: примечание под кнопкой"))
     ui_cart_terms_prefix = _req_txt(_("Корзина: префикс перед ссылками оферты/политики"))
+    ui_checkout_settings_loading = _area(_("Оформление: «загрузка способов доставки»"), rows=2)
+    ui_checkout_delivery_intro = _area(_("Оформление: вводный текст под заголовком шага доставки"), rows=3)
+    ui_checkout_no_delivery_banner = _area(_("Оформление: предупреждение, если доставка не настроена"), rows=3)
+    ui_checkout_no_delivery_inline_error = _area(_("Оформление: короткая ошибка при отсутствии доставки"), rows=2)
+    ui_checkout_ozon_partial_warning = _area(_("Оформление: когда Ozon недоступен для части корзины"), rows=3)
+    ui_checkout_cdek_after_submit_warning = _area(_("Оформление: после заказа, если СДЭК не синхронизировался"), rows=4)
+    ui_checkout_online_pay_link_error = _area(_("Оформление: если нет ссылки на онлайн-оплату"), rows=3)
+    ui_checkout_cdek_map_missing_key_help = _area(_("Оформление: карта СДЭК — нет ключа карты"), rows=3)
+    ui_checkout_cdek_map_missing_service_help = _area(_("Оформление: карта СДЭК — нет прокси сервиса"), rows=3)
+    ui_checkout_cdek_map_init_failed_help = _area(_("Оформление: карта СДЭК — не загрузилась"), rows=3)
+    ui_checkout_cdek_address_suggest_footer = _area(_("Оформление: подсказка под полем адреса без ключа подсказок"), rows=2)
+    ui_one_click_consent_tail = _area(_("«Купить в 1 клик»: хвост текста согласия под формой"), rows=2)
     ui_product_not_found_title = _req_txt(_("Карточка товара: заголовок «не найдено»"))
     ui_product_not_found_text = _req_txt(_("Карточка товара: текст «не найдено»"))
     ui_product_back_to_catalog = _req_txt(_("Карточка товара: кнопка «в каталог»"))
@@ -1277,6 +1289,18 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         self.initial.setdefault("ui_cart_checkout_button", ui.get("cartCheckoutButton", ""))
         self.initial.setdefault("ui_cart_checkout_footnote", ui.get("cartCheckoutFootnote", ""))
         self.initial.setdefault("ui_cart_terms_prefix", ui.get("cartTermsPrefix", ""))
+        self.initial.setdefault("ui_checkout_settings_loading", ui.get("checkoutSettingsLoading", ""))
+        self.initial.setdefault("ui_checkout_delivery_intro", ui.get("checkoutDeliveryIntro", ""))
+        self.initial.setdefault("ui_checkout_no_delivery_banner", ui.get("checkoutNoDeliveryBanner", ""))
+        self.initial.setdefault("ui_checkout_no_delivery_inline_error", ui.get("checkoutNoDeliveryInlineError", ""))
+        self.initial.setdefault("ui_checkout_ozon_partial_warning", ui.get("checkoutOzonPartialWarning", ""))
+        self.initial.setdefault("ui_checkout_cdek_after_submit_warning", ui.get("checkoutCdekAfterSubmitWarning", ""))
+        self.initial.setdefault("ui_checkout_online_pay_link_error", ui.get("checkoutOnlinePayLinkError", ""))
+        self.initial.setdefault("ui_checkout_cdek_map_missing_key_help", ui.get("checkoutCdekMapMissingKeyHelp", ""))
+        self.initial.setdefault("ui_checkout_cdek_map_missing_service_help", ui.get("checkoutCdekMapMissingServiceHelp", ""))
+        self.initial.setdefault("ui_checkout_cdek_map_init_failed_help", ui.get("checkoutCdekMapInitFailedHelp", ""))
+        self.initial.setdefault("ui_checkout_cdek_address_suggest_footer", ui.get("checkoutCdekAddressSuggestFooter", ""))
+        self.initial.setdefault("ui_one_click_consent_tail", ui.get("oneClickConsentTail", ""))
         self.initial.setdefault("ui_product_not_found_title", ui.get("productNotFoundTitle", ""))
         self.initial.setdefault("ui_product_not_found_text", ui.get("productNotFoundText", ""))
         self.initial.setdefault("ui_product_back_to_catalog", ui.get("productBackToCatalog", ""))
@@ -1494,6 +1518,15 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "commentPlaceholder": cd["map_comment_placeholder"].strip(),
             "submitButton": cd["map_submit_button"].strip(),
         }
+        _ui_defaults = base["ui"]
+
+        def _pick_ui_f(snake: str, camel: str) -> str:
+            raw = cd.get(snake)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+            v = _ui_defaults.get(camel)
+            return v.strip() if isinstance(v, str) else ""
+
         base["ui"] = {
             "loadingFeatured": cd["ui_loading_featured"].strip(),
             "buyOnMarketplaces": cd["ui_buy_marketplaces"].strip(),
@@ -1578,6 +1611,30 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
             "cartCheckoutButton": cd["ui_cart_checkout_button"].strip(),
             "cartCheckoutFootnote": cd["ui_cart_checkout_footnote"].strip(),
             "cartTermsPrefix": cd["ui_cart_terms_prefix"].strip(),
+            "checkoutSettingsLoading": _pick_ui_f("ui_checkout_settings_loading", "checkoutSettingsLoading"),
+            "checkoutDeliveryIntro": _pick_ui_f("ui_checkout_delivery_intro", "checkoutDeliveryIntro"),
+            "checkoutNoDeliveryBanner": _pick_ui_f("ui_checkout_no_delivery_banner", "checkoutNoDeliveryBanner"),
+            "checkoutNoDeliveryInlineError": _pick_ui_f(
+                "ui_checkout_no_delivery_inline_error", "checkoutNoDeliveryInlineError"
+            ),
+            "checkoutOzonPartialWarning": _pick_ui_f("ui_checkout_ozon_partial_warning", "checkoutOzonPartialWarning"),
+            "checkoutCdekAfterSubmitWarning": _pick_ui_f(
+                "ui_checkout_cdek_after_submit_warning", "checkoutCdekAfterSubmitWarning"
+            ),
+            "checkoutOnlinePayLinkError": _pick_ui_f("ui_checkout_online_pay_link_error", "checkoutOnlinePayLinkError"),
+            "checkoutCdekMapMissingKeyHelp": _pick_ui_f(
+                "ui_checkout_cdek_map_missing_key_help", "checkoutCdekMapMissingKeyHelp"
+            ),
+            "checkoutCdekMapMissingServiceHelp": _pick_ui_f(
+                "ui_checkout_cdek_map_missing_service_help", "checkoutCdekMapMissingServiceHelp"
+            ),
+            "checkoutCdekMapInitFailedHelp": _pick_ui_f(
+                "ui_checkout_cdek_map_init_failed_help", "checkoutCdekMapInitFailedHelp"
+            ),
+            "checkoutCdekAddressSuggestFooter": _pick_ui_f(
+                "ui_checkout_cdek_address_suggest_footer", "checkoutCdekAddressSuggestFooter"
+            ),
+            "oneClickConsentTail": _pick_ui_f("ui_one_click_consent_tail", "oneClickConsentTail"),
             "productNotFoundTitle": cd["ui_product_not_found_title"].strip(),
             "productNotFoundText": cd["ui_product_not_found_text"].strip(),
             "productBackToCatalog": cd["ui_product_back_to_catalog"].strip(),

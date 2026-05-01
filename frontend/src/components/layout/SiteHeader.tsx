@@ -30,6 +30,12 @@ const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-accent/15 text-accent ring-1 ring-accent/30' : 'text-text hover:bg-primary/70'
   }`
 
+/** Единый вид круглых кнопок справа в шапке (тема, аккаунт, поиск, корзина, меню). */
+const headerIconBtn =
+  'relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/40 bg-primary/15 text-text transition hover:border-accent/50 hover:bg-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base md:border-border/50 md:bg-primary/20'
+
+const headerIconNavActive = 'border-accent/40 bg-primary/80 text-accent'
+
 const mobileBarIcon = 'h-[22px] w-[22px] shrink-0'
 function MobileBarHomeIcon({ className = '' }: { className?: string }) {
   return (
@@ -62,13 +68,11 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
     <NavLink
       to="/cart"
       className={({ isActive }) =>
-        `relative flex h-11 w-11 items-center justify-center rounded-xl text-text hover:bg-primary/70 ${
-          isActive ? 'bg-primary/80 text-accent' : ''
-        } ${className}`
+        `${headerIconBtn} ${isActive ? headerIconNavActive : ''} ${className}`.trim()
       }
       aria-label={`Корзина${totalQty ? `, ${totalQty} поз.` : ''}`}
     >
-      <FontAwesomeIcon icon={faCartShopping} className="h-6 w-6" aria-hidden />
+      <FontAwesomeIcon icon={faCartShopping} className="h-[22px] w-[22px]" aria-hidden />
       {totalQty > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 font-body text-[10px] font-bold text-surface">
           {totalQty > 99 ? '99+' : totalQty}
@@ -326,28 +330,24 @@ export function SiteHeader() {
           </div>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
           <button
             type="button"
-            className="fabric-theme-toggle hidden h-9 w-9 items-center justify-center md:inline-flex md:rounded-full"
+            className={`${headerIconBtn} hidden md:inline-flex`}
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
             aria-label={theme === 'dark' ? themeToLightAria : themeToDarkAria}
             title={theme === 'dark' ? themeLightTitle : themeDarkTitle}
           >
             <FontAwesomeIcon
               icon={theme === 'dark' ? faSun : faMoon}
-              className="h-5 w-5 text-current"
+              className="h-[22px] w-[22px] text-current"
               aria-hidden
             />
           </button>
           <NavLink
             to="/account"
             className={({ isActive }) =>
-              `hidden h-10 w-10 items-center justify-center rounded-full border text-text transition md:inline-flex ${
-                isActive
-                  ? 'border-accent/50 bg-primary/80 text-accent'
-                  : 'border-border/50 bg-primary/30 hover:border-accent/40 hover:bg-primary/50'
-              }`
+              `${headerIconBtn} hidden md:inline-flex ${isActive ? headerIconNavActive : ''}`.trim()
             }
             title={navAccountLabel}
             aria-label={navAccountLabel}
@@ -360,7 +360,7 @@ export function SiteHeader() {
           </NavLink>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/40 bg-primary/15 text-text transition hover:border-accent/50 hover:bg-primary/35 md:border-border/50 md:bg-primary/20"
+            className={headerIconBtn}
             onClick={openHeaderSearch}
             aria-label="Поиск по каталогу"
             aria-haspopup="dialog"
@@ -373,17 +373,22 @@ export function SiteHeader() {
               aria-hidden
             />
           </button>
-          <CartHeaderLink className="rounded-full border border-border/40 bg-primary/15 hover:border-accent/50 md:border-border/50 md:bg-primary/20" />
+          <CartHeaderLink />
           <div className="hidden min-w-0 items-center gap-2 lg:flex">
-            <span className="shrink-0 font-body text-[10px] font-medium uppercase tracking-wide text-text-muted xl:text-[11px]">
+            <span className="inline-flex h-10 shrink-0 items-center font-body text-[10px] font-medium uppercase leading-none tracking-wide text-text-muted xl:text-[11px]">
               {buyOnLabel}
             </span>
-            <MarketplaceLinks compact hrefById={mergedMpUrls} linkKeys={enabledMarketplaces} />
-            <span className="h-6 w-px bg-border-light" aria-hidden />
+            <MarketplaceLinks
+              compact
+              className="h-10 items-center"
+              hrefById={mergedMpUrls}
+              linkKeys={enabledMarketplaces}
+            />
+            <span className="h-6 w-px shrink-0 self-center bg-border-light" aria-hidden />
             <MagneticHover radius={90} strength={0.1}>
               <a
                 href={phoneHref}
-                className="max-w-[8.5rem] shrink-0 truncate font-body text-xs font-medium text-text-muted hover:text-accent sm:max-w-none sm:text-sm"
+                className="inline-flex h-10 max-w-[8.5rem] shrink-0 items-center truncate rounded-full border border-transparent px-2 font-body text-xs font-medium text-text-muted transition hover:border-border/40 hover:bg-primary/15 hover:text-accent sm:max-w-none sm:text-sm"
                 title={phone}
               >
                 {phone}
@@ -392,7 +397,7 @@ export function SiteHeader() {
           </div>
           <button
             type="button"
-            className="relative flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl md:hidden"
+            className={`${headerIconBtn} flex-col gap-1.5 md:hidden`}
             aria-expanded={open}
             aria-label={open ? menuCloseAria : menuOpenAria}
             onClick={() => setOpen((v) => !v)}

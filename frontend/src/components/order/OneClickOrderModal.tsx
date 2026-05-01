@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { postOneClickOrder } from '../../lib/api'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { checkoutClientLabels } from '../../lib/checkoutUiCopy'
 import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
 import {
   HONEYPOT_FIELD,
@@ -30,7 +31,8 @@ function mapLinesForPost(lines: OrderLineApiPayload[]) {
 }
 
 export function OneClickOrderModal({ open, onClose, lines, title = 'Купить в 1 клик' }: Props) {
-  const { checkout } = useSiteSettings()
+  const { checkout, home } = useSiteSettings()
+  const cx = useMemo(() => checkoutClientLabels(home?.ui), [home?.ui])
   const ordersBlocked = checkout.ordersBlocked
   const ordersBlockedNotice = useMemo(
     () => (checkout.ordersBlockedMessage || '').trim() || DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE,
@@ -265,7 +267,7 @@ export function OneClickOrderModal({ open, onClose, lines, title = 'Купить
             <FormPersonalDataConsent
               variant="request"
               onLinkClick={close}
-              tail="На сервере действуют лимит заявок с одного адреса и проверка контактных данных."
+              tail={cx.oneClickConsentTail}
             />
             {err ? <p className="font-body text-sm text-rose-600">{err}</p> : null}
             <div className="flex gap-2">

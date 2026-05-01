@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiBase } from '../../lib/api'
+import { sanitizeClientApiErrorMessage } from '../../lib/apiErrorClient'
 
 export type CdekPickupPointRow = { code: string; name: string; address: string }
 
@@ -29,7 +30,14 @@ export function CdekPickupListCustom({ cityCode, selectedCode, disabled, onSelec
       .then(async (r) => {
         const data = (await r.json()) as { detail?: string; points?: unknown }
         if (!r.ok) {
-          return { ok: false as const, detail: typeof data.detail === 'string' ? data.detail : 'Не удалось загрузить пункты.' }
+          const raw = typeof data.detail === 'string' ? data.detail : ''
+          return {
+            ok: false as const,
+            detail: sanitizeClientApiErrorMessage(
+              raw,
+              'Не удалось загрузить список пунктов. Попробуйте позже.',
+            ),
+          }
         }
         const raw = data.points
         const list: CdekPickupPointRow[] = []
@@ -92,8 +100,8 @@ export function CdekPickupListCustom({ cityCode, selectedCode, disabled, onSelec
   if (!points.length) {
     return (
       <p className="mt-2 font-body text-sm text-text-muted">
-        Для этого города нет пунктов выдачи в ответе СДЭК. Попробуйте другой населённый пункт или введите код ПВЗ вручную
-        ниже.
+        Для этого города список пунктов выдачи недоступен. Попробуйте другой населённый пункт или укажите код пункта
+        выдачи вручную ниже.
       </p>
     )
   }

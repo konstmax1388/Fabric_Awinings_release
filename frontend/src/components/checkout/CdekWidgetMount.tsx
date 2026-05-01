@@ -73,6 +73,9 @@ export function CdekWidgetMount({
   goods,
   tariffs,
   onChoose,
+  mapMissingKeyHelp,
+  mapMissingServiceHelp,
+  mapInitFailedHelp,
 }: {
   scriptUrl: string
   apiKey: string
@@ -85,6 +88,12 @@ export function CdekWidgetMount({
   /** Ограничение тарифов виджета (пустой объект — не передаём, все тарифы). */
   tariffs?: { office?: number[]; door?: number[]; pickup?: number[] }
   onChoose: (mode: string, tariff: unknown, address: Record<string, unknown>) => void
+  /** Текст, если не задан ключ карты (покупателю). */
+  mapMissingKeyHelp: string
+  /** Текст, если не задан сервис виджета (покупателю). */
+  mapMissingServiceHelp: string
+  /** Текст при ошибке инициализации карты (покупателю). */
+  mapInitFailedHelp: string
 }) {
   const widgetRef = useRef<unknown>(null)
   const [initError, setInitError] = useState<string | null>(null)
@@ -147,9 +156,7 @@ export function CdekWidgetMount({
           },
         })
       } catch {
-        setInitError(
-          'Не удалось инициализировать виджет. Частые причины: неверный ключ JavaScript API Яндекс.Карт; в кабинете Яндекса не указан HTTP Referrer для этого сайта (см. https://yandex.ru/dev/jsapi30/doc/ru/limit); в настройках сайта неверные Account/Secure СДЭК (прокси /api/cdek-widget/service/).',
-        )
+        setInitError(mapInitFailedHelp)
       }
     })()
 
@@ -159,7 +166,7 @@ export function CdekWidgetMount({
       if (root) root.innerHTML = ''
       widgetRef.current = null
     }
-  }, [scriptUrl, apiKey, servicePath, fromCity, mapLine, rootId, goodsJson, tariffsJson, onChoose])
+  }, [scriptUrl, apiKey, servicePath, fromCity, mapLine, rootId, goodsJson, tariffsJson, onChoose, mapInitFailedHelp])
 
   const missingKey = !apiKey.trim()
   const missingService = !servicePath.trim()
@@ -167,18 +174,10 @@ export function CdekWidgetMount({
   return (
     <div className="mt-4 rounded-xl border border-border-light bg-bg-base p-4">
       {missingKey ? (
-        <p className="font-body text-xs text-amber-800 dark:text-amber-200">
-          Укажите ключ сервиса «JavaScript API и HTTP Геокодер» в админке (Настройки сайта → СДЭК). В кабинете Яндекса
-          обязательно задайте HTTP Referrer для вашего домена (например{' '}
-          <code className="rounded bg-surface px-1">https://ваш-сайт.ru/*</code>
-          ), иначе карта остаётся серой после загрузки.
-        </p>
+        <p className="font-body text-xs text-amber-800 dark:text-amber-200">{mapMissingKeyHelp}</p>
       ) : null}
       {missingService ? (
-        <p className="mt-2 font-body text-xs text-amber-800 dark:text-amber-200">
-          Не задан URL прокси виджета (servicePath). Обычно он подставляется автоматически; проверьте{' '}
-          <code className="rounded bg-surface px-1">VITE_API_URL</code> и доступность API с браузера.
-        </p>
+        <p className="mt-2 font-body text-xs text-amber-800 dark:text-amber-200">{mapMissingServiceHelp}</p>
       ) : null}
       {!missingKey && !missingService ? (
         <>
