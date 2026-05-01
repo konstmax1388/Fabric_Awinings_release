@@ -236,6 +236,7 @@ export type HomePayload = {
     teaserTitle?: string
     teaserSubtitle?: string
     teaserCta?: string
+    /** Сколько карточек на главной (тизер); на сервере до 24, в админке JSON главной. */
     teaserMaxItems?: number
     /** Страница /reviews: заголовок и описание (мета / h1). */
     pageTitle?: string

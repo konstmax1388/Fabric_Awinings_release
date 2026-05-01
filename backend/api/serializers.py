@@ -355,11 +355,12 @@ class ReviewSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     reviewedOn = serializers.DateField(source="reviewed_on", format="%Y-%m-%d", allow_null=True)
     photo = serializers.SerializerMethodField()
+    productPhoto = serializers.SerializerMethodField()
     video = serializers.URLField(source="video_url", allow_blank=True, allow_null=True)
 
     class Meta:
         model = Review
-        fields = ("id", "name", "city", "reviewedOn", "text", "rating", "photo", "video")
+        fields = ("id", "name", "city", "reviewedOn", "text", "rating", "photo", "productPhoto", "video")
 
     def get_id(self, obj: Review) -> str:
         return str(obj.pk)
@@ -367,6 +368,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     def get_photo(self, obj: Review) -> str:
         req = self.context.get("request")
         return media_file_absolute(req, obj.photo_file)
+
+    def get_productPhoto(self, obj: Review) -> str:
+        req = self.context.get("request")
+        return media_file_absolute(req, obj.product_photo_file)
 
 
 class ReviewSubmissionCreateSerializer(serializers.ModelSerializer):

@@ -444,6 +444,14 @@ class Review(models.Model):
         blank=True,
         null=True,
     )
+    product_photo_file = models.ImageField(
+        "Фото товара (к заказу)",
+        upload_to="reviews/products/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Необязательно: скрин или фото позиции из заказа (как на маркетплейсе).",
+    )
     video_url = models.URLField("Видео (URL)", max_length=2048, blank=True)
     is_published = models.BooleanField("На сайте", default=False, db_index=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)

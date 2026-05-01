@@ -105,6 +105,7 @@ class PortfolioProjectStaffSerializer(serializers.ModelSerializer):
 
 class ReviewStaffSerializer(serializers.ModelSerializer):
     photoRelativePath = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    productPhotoRelativePath = serializers.CharField(write_only=True, required=False, allow_blank=True)
     videoUrl = serializers.URLField(source="video_url", allow_blank=True, required=False, max_length=2048)
     isPublished = serializers.BooleanField(source="is_published")
     isModerated = serializers.BooleanField(source="is_moderated", required=False)
@@ -125,6 +126,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
             "publicationConsent",
             "isModerated",
             "photoRelativePath",
+            "productPhotoRelativePath",
             "videoUrl",
             "isPublished",
             "sortOrder",
@@ -143,6 +145,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
             "publicationConsent": instance.publication_consent,
             "isModerated": instance.is_moderated,
             "photoUrl": _abs_media(req, instance.photo_file),
+            "productPhotoUrl": _abs_media(req, instance.product_photo_file),
             "videoUrl": instance.video_url or "",
             "isPublished": instance.is_published,
             "sortOrder": instance.sort_order,
@@ -169,6 +172,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict) -> Review:
         p = validated_data.pop("photoRelativePath", None)
+        pp = validated_data.pop("productPhotoRelativePath", None)
         if validated_data.get("is_published") and not validated_data.get("is_moderated"):
             validated_data["is_moderated"] = True
             validated_data["moderated_at"] = timezone.now()
@@ -178,6 +182,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
         instance = Review.objects.create(**validated_data)
         try:
             _apply_image_relative_path(instance, "photo_file", p, "photoRelativePath")
+            _apply_image_relative_path(instance, "product_photo_file", pp, "productPhotoRelativePath")
         except serializers.ValidationError:
             instance.delete()
             raise
@@ -186,6 +191,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
 
     def update(self, instance: Review, validated_data: dict) -> Review:
         p = validated_data.pop("photoRelativePath", None)
+        pp = validated_data.pop("productPhotoRelativePath", None)
         is_published_next = validated_data.get("is_published", instance.is_published)
         is_moderated_next = validated_data.get("is_moderated", instance.is_moderated)
         if is_published_next and not is_moderated_next:
@@ -196,6 +202,7 @@ class ReviewStaffSerializer(serializers.ModelSerializer):
                 validated_data["moderated_by"] = request.user
         instance = super().update(instance, validated_data)
         _apply_image_relative_path(instance, "photo_file", p, "photoRelativePath")
+        _apply_image_relative_path(instance, "product_photo_file", pp, "productPhotoRelativePath")
         instance.save()
         return instance
 

@@ -11,7 +11,7 @@ import {
   staggerContainer,
   staggerItem,
 } from '../../lib/motion-presets'
-import { reviewAuthorPhotoAlt } from '../../lib/imageAlt'
+import { reviewAuthorPhotoAlt, reviewProductPhotoAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
 
 const REVIEW_PREVIEW_PAGE = 190
@@ -53,8 +53,8 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
   const teaserCta = rv?.teaserCta ?? 'Все отзывы'
   const teaserMax = (() => {
     const n = rv?.teaserMaxItems
-    if (typeof n === 'number' && Number.isFinite(n) && n >= 1 && n <= 12) return Math.floor(n)
-    return 6
+    if (typeof n === 'number' && Number.isFinite(n) && n >= 1 && n <= 24) return Math.floor(n)
+    return 12
   })()
   const loadingText = rv?.loading ?? 'Загрузка отзывов…'
   const videoCaption = rv?.videoCaption ?? 'Видеоотзыв'
@@ -179,29 +179,44 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
               const shownText = isExpanded ? text : previewText
               return (
                 <>
-                  <div className="flex items-start gap-2 md:gap-3">
-                    <OptimizedImage
-                      src={r.photo}
-                      alt={reviewAuthorPhotoAlt(r.name)}
-                      widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
-                      sizes="64px"
-                      className={
-                        isTeaser
-                          ? 'h-12 w-12 shrink-0 rounded-full object-cover md:h-14 md:w-14'
-                          : 'h-14 w-14 shrink-0 rounded-full object-cover md:h-16 md:w-16'
-                      }
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-body text-sm font-semibold leading-snug text-text md:text-base">{r.name}</p>
-                      {r.city || r.reviewedOn ? (
-                        <p className="mt-0.5 text-xs text-text-muted">
-                          {[r.city, r.reviewedOn].filter(Boolean).join(' • ')}
-                        </p>
-                      ) : null}
-                      <div className="mt-1">
-                        <Stars rating={r.rating} />
+                  <div className="flex items-start gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-2 md:gap-3">
+                      <OptimizedImage
+                        src={r.photo}
+                        alt={reviewAuthorPhotoAlt(r.name)}
+                        widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
+                        sizes="64px"
+                        className={
+                          isTeaser
+                            ? 'h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-14 md:w-14'
+                            : 'h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-16 md:w-16'
+                        }
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-body text-sm font-semibold leading-snug text-text md:text-base">{r.name}</p>
+                        {r.city || r.reviewedOn ? (
+                          <p className="mt-0.5 text-xs text-text-muted">
+                            {[r.city, r.reviewedOn].filter(Boolean).join(' • ')}
+                          </p>
+                        ) : null}
+                        <div className="mt-1">
+                          <Stars rating={r.rating} />
+                        </div>
                       </div>
                     </div>
+                    {r.productPhoto ? (
+                      <OptimizedImage
+                        src={r.productPhoto}
+                        alt={reviewProductPhotoAlt(r.name)}
+                        widths={isTeaser ? [80, 160, 120] : [96, 192, 144]}
+                        sizes="(max-width: 768px) 72px, 88px"
+                        className={
+                          isTeaser
+                            ? 'h-[72px] w-[72px] shrink-0 rounded-xl border border-border-light object-cover shadow-sm md:h-20 md:w-20'
+                            : 'h-20 w-20 shrink-0 rounded-xl border border-border-light object-cover shadow-sm md:h-[5.5rem] md:w-[5.5rem]'
+                        }
+                      />
+                    ) : null}
                   </div>
                   <p
                     className={

@@ -647,6 +647,7 @@ export type ReviewItem = {
   text: string
   rating: number
   photo: string
+  productPhoto: string
   video: string | null
 }
 
@@ -678,6 +679,7 @@ export async function fetchReviews(params?: { minRating?: number }): Promise<Rev
           text: o.text,
           rating,
           photo: typeof o.photo === 'string' ? o.photo : '',
+          productPhoto: typeof o.productPhoto === 'string' ? o.productPhoto : '',
           video: typeof vid === 'string' && vid.length > 0 ? vid : null,
         } satisfies ReviewItem
       })

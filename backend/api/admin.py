@@ -776,8 +776,10 @@ class ReviewAdmin(ModelAdmin):
         (
             _("Медиа (опционально)"),
             {
-                "fields": ("photo_file", "video_url"),
-                "description": _("Фото — только загрузка файла. Видео — ссылка на ролик (YouTube и т.п.)."),
+                "fields": ("photo_file", "product_photo_file", "video_url"),
+                "description": _(
+                    "Фото автора и фото товара — только загрузка файла с ПК. Видео — ссылка на ролик (YouTube и т.п.)."
+                ),
             },
         ),
         (

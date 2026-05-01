@@ -44,6 +44,10 @@ export function reviewAuthorPhotoAlt(authorName: string): string {
   return `Фото автора отзыва: ${imageAltText(authorName, 'клиент')}`
 }
 
+export function reviewProductPhotoAlt(authorName: string): string {
+  return `Фото товара из отзыва: ${imageAltText(authorName, 'клиент')}`
+}
+
 export function problemCardIconAlt(cardTitle: string): string {
   return `Значок: ${imageAltText(cardTitle, 'этап')}`
 }
