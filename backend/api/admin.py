@@ -69,6 +69,7 @@ from .static_page_about_admin_form import (
 )
 from .product_wb_import import WbImportError, import_one_from_wb_url
 from .product_excel_import import (
+    ExcelImportDuplicateError,
     ExcelImportParseError,
     build_excel_template_bytes,
     import_one_excel_row,
@@ -749,6 +750,11 @@ class ProductAdmin(ModelAdmin):
                                 )
                             except WbImportError as e:
                                 messages.error(
+                                    request,
+                                    _excel_import_row_prefix(row.sheet_row) + " " + str(e),
+                                )
+                            except ExcelImportDuplicateError as e:
+                                messages.warning(
                                     request,
                                     _excel_import_row_prefix(row.sheet_row) + " " + str(e),
                                 )

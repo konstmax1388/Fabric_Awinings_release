@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+from django.db.models.functions import Lower, Trim
 from django.db import transaction
 from django.utils.text import slugify
 
@@ -166,6 +167,93 @@ class ExcelProductRow:
 
 class ExcelImportParseError(ValueError):
     pass
+
+
+class ExcelImportDuplicateError(ExcelImportParseError):
+    """Строка Excel совпадает с уже существующим товаром (SKU Ozon или ссылки МП)."""
+
+
+def _strip_url(u: str) -> str:
+    return (u or "").strip()
+
+
+def _norm_url_for_compare(u: str) -> str:
+    return _strip_url(u).rstrip("/").lower()
+
+
+def find_existing_product_for_excel_row(row: ExcelProductRow) -> tuple[Product | None, list[str]]:
+    """
+    Ищет товар, который уже совпадает со строкой импорта (SKU Ozon, ссылка WB/Ozon в товаре или варианте, nm WB).
+    Возвращает (товар или None, список причин совпадения для сообщения).
+    """
+    reasons: list[str] = []
+
+    if row.ozon_sku is not None:
+        p = Product.objects.filter(ozon_sku=row.ozon_sku).first()
+        if p is not None:
+            return p, ["SKU Ozon в карточке товара"]
+        pv = ProductVariant.objects.filter(ozon_sku=row.ozon_sku).select_related("product").first()
+        if pv is not None:
+            return pv.product, ["SKU Ozon в варианте товара"]
+
+    wb = _strip_url(row.wb_url)
+    if wb:
+        try:
+            nm = parse_nm_from_url(wb)
+        except WbImportError:
+            nm = None
+        if nm is not None:
+            pv = ProductVariant.objects.filter(wb_nm_id=nm).select_related("product").first()
+            if pv is not None:
+                return pv.product, [f"артикул Wildberries nm={nm}"]
+
+        pv = ProductVariant.objects.filter(marketplace_wb_url=wb).select_related("product").first()
+        if pv is not None:
+            return pv.product, ["ссылка Wildberries в варианте (точное совпадение)"]
+        p = Product.objects.filter(marketplace_links__wb=wb).first()
+        if p is not None:
+            return p, ["ссылка Wildberries в marketplace_links (точное совпадение)"]
+
+        n = _norm_url_for_compare(wb)
+        pv2 = (
+            ProductVariant.objects.exclude(marketplace_wb_url="")
+            .annotate(_nu=Lower(Trim("marketplace_wb_url")))
+            .filter(_nu=n)
+            .select_related("product")
+            .first()
+        )
+        if pv2 is not None:
+            return pv2.product, ["ссылка Wildberries в варианте (без учёта регистра и хвостового /)"]
+
+        for p in Product.objects.filter(marketplace_links__has_key="wb").only("id", "slug", "title", "marketplace_links").iterator(chunk_size=200):
+            mp = p.marketplace_links or {}
+            raw = mp.get("wb") or mp.get("WB")
+            if raw and _norm_url_for_compare(str(raw)) == n:
+                return p, ["ссылка Wildberries в marketplace_links (нормализованное сравнение)"]
+
+    oz = _strip_url(row.ozon_url)
+    if oz:
+        p = Product.objects.filter(marketplace_links__ozon=oz).first()
+        if p is not None:
+            return p, ["ссылка Ozon в marketplace_links (точное совпадение)"]
+        n2 = _norm_url_for_compare(oz)
+        for p in Product.objects.filter(marketplace_links__has_key="ozon").only("id", "slug", "title", "marketplace_links").iterator(chunk_size=200):
+            mp = p.marketplace_links or {}
+            raw = mp.get("ozon") or mp.get("Ozon")
+            if raw and _norm_url_for_compare(str(raw)) == n2:
+                return p, ["ссылка Ozon в marketplace_links (нормализованное сравнение)"]
+
+    return None, reasons
+
+
+def _ensure_excel_row_not_duplicate(row: ExcelProductRow) -> None:
+    dup, rlist = find_existing_product_for_excel_row(row)
+    if dup is None:
+        return
+    detail = ", ".join(rlist)
+    raise ExcelImportDuplicateError(
+        f"Товар уже на сайте (слаг «{dup.slug}», «{dup.title[:100]}»). Совпало: {detail}."
+    )
 
 
 def parse_product_rows_from_workbook(file_content: bytes) -> tuple[list[ExcelProductRow], list[str]]:
@@ -340,6 +428,7 @@ def import_one_excel_row(
     цена и название с файла; создаётся только один вариант — по этой ссылке (без остальных nm группы WB).
     Без ссылки WB — минимальная карточка из файла.
     """
+    _ensure_excel_row_not_duplicate(row)
     extra = marketplace_extra_from_row(row)
     if row.wb_url:
         try:
@@ -400,9 +489,11 @@ def build_excel_template_bytes() -> bytes:
 
 
 __all__ = [
+    "ExcelImportDuplicateError",
     "ExcelImportParseError",
     "ExcelProductRow",
     "build_excel_template_bytes",
+    "find_existing_product_for_excel_row",
     "import_one_excel_row",
     "parse_product_rows_from_workbook",
     "parse_price_int",
