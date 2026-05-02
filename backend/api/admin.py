@@ -42,6 +42,7 @@ from config.sitesettings_nav import (
 
 from .admin_forms import (
     ProductAdminForm,
+    PromotionAdminForm,
     SiteSettingsAdminForm,
     SiteSettingsMenuSectionForm,
     SiteSettingsOzonLogisticsSectionForm,
@@ -275,6 +276,7 @@ class ProductCategoryAdmin(ModelAdmin):
 
 @admin.register(Promotion)
 class PromotionAdmin(ModelAdmin):
+    form = PromotionAdminForm
     list_display = (
         "title",
         "slug",
@@ -291,9 +293,9 @@ class PromotionAdmin(ModelAdmin):
     filter_horizontal = ("products",)
     readonly_fields = ("slug",)
     fieldsets = (
-        (_("Витрина"), {"fields": ("title", "slug", "is_published", "sort_order")}),
-        (_("Период действия"), {"fields": ("starts_at", "ends_at")}),
-        (_("Страница акции на сайте"), {"fields": ("excerpt", "body", "image")}),
+        (_("Витрина"), {"fields": ("title", "slug", "is_published", "sort_order"), "classes": ("wide",)}),
+        (_("Период действия"), {"fields": ("starts_at", "ends_at"), "classes": ("wide",)}),
+        (_("Страница акции на сайте"), {"fields": ("excerpt", "body", "image"), "classes": ("wide",)}),
         (
             _("Скидка при заказе на сайте"),
             {
@@ -304,6 +306,7 @@ class PromotionAdmin(ModelAdmin):
                     " «Суммировать с другими» — проценты таких акций складываются между собой (до 100 %%), "
                     "затем к сумме добавляется максимальный процент среди акций без этой галочки."
                 ),
+                "classes": ("wide",),
             },
         ),
     )

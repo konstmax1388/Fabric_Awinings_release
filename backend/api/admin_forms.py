@@ -5,7 +5,7 @@ from django.db import DatabaseError, transaction
 from django.utils.translation import gettext_lazy as _
 from unfold.widgets import UnfoldAdminPasswordWidget
 
-from .models import OzonSellerApiSettings, Product, SiteSettings
+from .models import OzonSellerApiSettings, Product, Promotion, SiteSettings
 
 _MP_INPUT_CLASSES = (
     "border border-base-200 rounded-default px-3 py-2 text-sm w-full max-w-3xl "
@@ -46,6 +46,18 @@ def teasers_list_for_save(raw_t: object, cleaned: dict) -> list[str]:
             out.append(k)
             seen.add(k)
     return out
+
+
+class PromotionAdminForm(forms.ModelForm):
+    """Крупные области ввода для текста страницы акции — заметнее, что поля нужно заполнять."""
+
+    class Meta:
+        model = Promotion
+        fields = "__all__"
+        widgets = {
+            "excerpt": forms.Textarea(attrs={"rows": 4}),
+            "body": forms.Textarea(attrs={"rows": 14}),
+        }
 
 
 class ProductAdminForm(forms.ModelForm):
@@ -384,6 +396,12 @@ class SiteSettingsMenuSectionForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
         )
         widgets = {
             "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),
+            "market_goods_feedback_business_id": forms.TextInput(
+                attrs={
+                    "placeholder": _("ID бизнеса из кабинета Маркета (Partner API), не URL магазина"),
+                    "style": "max-width: 32rem;",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):

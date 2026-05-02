@@ -76,46 +76,54 @@ export function PromotionsPage() {
           ) : items.length === 0 ? (
             <p className="mt-10 font-body text-text-muted">Сейчас нет активных акций. Загляните позже.</p>
           ) : (
-            <ul className="mt-10 flex flex-col gap-6">
+            <ul className="mt-10 grid grid-cols-1 gap-6 sm:gap-7 lg:grid-cols-2">
               {items.map((p) => (
-                <li key={p.slug} className="fabric-card flex flex-col gap-4 p-5 sm:flex-row">
-                  {p.imageUrl ? (
-                    <OptimizedImage
-                      src={p.imageUrl}
-                      alt={promotionCoverAlt(p.title)}
-                      widths={[480, 640, 800]}
-                      sizes="(max-width: 640px) 100vw, 192px"
-                      className="h-40 w-full shrink-0 rounded-2xl object-cover sm:h-32 sm:w-48"
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {p.discountPercent > 0 ? (
-                        <span className="rounded-full bg-accent/15 px-2.5 py-0.5 font-body text-xs font-semibold text-accent">
-                          −{p.discountPercent}%
-                        </span>
-                      ) : null}
-                      {p.appliesToAllProducts ? (
-                        <span className="rounded-full border border-border px-2 py-0.5 font-body text-xs text-text-muted">
-                          Весь каталог
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 font-body text-xs text-text-subtle">{formatPeriod(p)}</p>
-                    <PromoEndsCountdown endsAt={p.endsAt} size="sm" className="max-w-md" />
-                    <h2 className="mt-2 font-heading text-2xl font-semibold text-text">
-                      <Link to={`/sales/${p.slug}`} className="hover:text-accent">
-                        {p.title}
+                <li key={p.slug}>
+                  <article className="fabric-card flex h-full min-h-[280px] flex-col overflow-hidden p-0 sm:min-h-[300px]">
+                    {p.imageUrl ? (
+                      <Link to={`/sales/${p.slug}`} className="block shrink-0">
+                        <OptimizedImage
+                          src={p.imageUrl}
+                          alt={promotionCoverAlt(p.title)}
+                          widths={[640, 800, 960]}
+                          sizes="(max-width: 1024px) 100vw, 50vw"
+                          className="aspect-[21/9] min-h-[11rem] w-full object-cover sm:min-h-[13rem] sm:aspect-[2/1]"
+                        />
                       </Link>
-                    </h2>
-                    {p.excerpt ? <p className="mt-2 font-body text-text-muted">{p.excerpt}</p> : null}
-                    <Link
-                      to={`/sales/${p.slug}`}
-                      className="mt-3 inline-block font-medium text-accent hover:underline"
-                    >
-                      Подробнее →
-                    </Link>
-                  </div>
+                    ) : null}
+                    <div className="flex min-h-0 flex-1 flex-col p-5 md:p-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {p.discountPercent > 0 ? (
+                          <span className="rounded-full bg-accent/15 px-2.5 py-0.5 font-body text-xs font-semibold text-accent">
+                            −{p.discountPercent}%
+                          </span>
+                        ) : null}
+                        {p.appliesToAllProducts ? (
+                          <span className="rounded-full border border-border px-2 py-0.5 font-body text-xs text-text-muted">
+                            Весь каталог
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 font-body text-xs text-text-subtle">{formatPeriod(p)}</p>
+                      <PromoEndsCountdown endsAt={p.endsAt} size="sm" className="max-w-full" />
+                      <h2 className="mt-2 font-heading text-xl font-semibold leading-snug text-text md:text-2xl">
+                        <Link to={`/sales/${p.slug}`} className="hover:text-accent">
+                          {p.title}
+                        </Link>
+                      </h2>
+                      {p.excerpt ? (
+                        <p className="mt-2 line-clamp-4 font-body text-sm leading-relaxed text-text-muted md:text-[15px]">
+                          {p.excerpt}
+                        </p>
+                      ) : null}
+                      <Link
+                        to={`/sales/${p.slug}`}
+                        className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-center font-body text-sm font-semibold text-surface shadow-sm transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base md:w-auto md:min-w-[10rem]"
+                      >
+                        Подробнее
+                      </Link>
+                    </div>
+                  </article>
                 </li>
               ))}
             </ul>

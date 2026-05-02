@@ -106,3 +106,46 @@ html.dark #content-main .fabric-hero-slide-chip:focus-visible,
 html.dark #content-main .fabric-hero-jump-select:focus-visible {
   outline-color: rgb(251 146 60);
 }
+
+/* Секции настроек сайта: корень без дубля id #content-main (родитель Unfold уже #content-main) */
+.fabric-admin-section-root {
+  min-width: 0;
+}
+
+/* Широкие блоки формы и M2M: не обрезать по горизонтали, заметные списки выбора */
+#content-main fieldset.module {
+  min-width: 0;
+}
+
+#content-main .form-row,
+#content-main .aligned .form-row {
+  min-width: 0;
+}
+
+#content-main .selector,
+#content-main .selector-available,
+#content-main .selector-chosen {
+  min-height: 12rem;
+}
+
+#content-main .related-widget-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Подсказки к полям — чуть контрастнее */
+#content-main .help,
+#content-main .helptext,
+#content-main p.help,
+#content-main .fieldBox .help {
+  color: rgb(72 64 56) !important;
+  opacity: 1 !important;
+}
+
+html.dark #content-main .help,
+html.dark #content-main .helptext,
+html.dark #content-main p.help,
+html.dark #content-main .fieldBox .help {
+  color: rgb(196 188 178) !important;
+}
