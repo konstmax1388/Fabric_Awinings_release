@@ -93,7 +93,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'api',
-    'ozon_logistics',
 ]
 
 MIDDLEWARE = [

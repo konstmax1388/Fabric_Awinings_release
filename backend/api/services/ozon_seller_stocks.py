@@ -79,29 +79,6 @@ def seller_credentials() -> tuple[str, str] | None:
     return cid, key
 
 
-def stock_check_credentials() -> tuple[tuple[str, str] | None, bool]:
-    """
-    (Client-Id + Api-Key, bypass_shared_cache).
-
-    Если в приложении ``ozon_logistics`` включён новый поток и заданы отдельные ключи —
-    проверка остатков для «Логистика Ozon» идёт с них (без смешивания с кэшем старых ключей).
-    Иначе — прежние ``seller_credentials()`` и общий кэш.
-    """
-    try:
-        from ozon_logistics.services.credentials import logistics_seller_credentials
-        from ozon_logistics.services.exceptions import OzonLogisticsConfigError
-        from ozon_logistics.services.order_guard import seller_delivery_api_enabled
-
-        if seller_delivery_api_enabled():
-            try:
-                return logistics_seller_credentials(), True
-            except OzonLogisticsConfigError:
-                pass
-    except Exception:
-        pass
-    return seller_credentials(), False
-
-
 def _auth_headers(creds: tuple[str, str]) -> dict[str, str]:
     return {"Client-Id": creds[0], "Api-Key": creds[1]}
 
@@ -478,15 +455,12 @@ def validate_ozon_logistics_stock(needed: dict[int, int]) -> None:
         return
     if not needed:
         return
-    creds, bypass_cache = stock_check_credentials()
+    creds = seller_credentials()
     if not creds:
         return
     try:
         u = sorted(needed.keys())
-        if bypass_cache:
-            avail = _fetch_fresh(u, creds)
-        else:
-            avail = get_ozon_stock_availability(u)
+        avail = get_ozon_stock_availability(u)
     except HttpJsonError as e:
         logger.warning("Ozon Seller stock: HTTP error: %s", e)
         raise ValidationError(

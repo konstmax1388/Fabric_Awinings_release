@@ -54,12 +54,6 @@ export type CheckoutPublicConfig = {
     deliveryPayer: 'store' | 'buyer'
     /** Готовая строка с витрины: «Доставка за наш счёт» / «Доставка за счёт покупателя» */
     deliveryPayerLabel: string
-    /** Новый поток Seller API (приложение ozon_logistics); false — только эквайринг как раньше */
-    sellerDeliveryApiEnabled?: boolean
-    /** Ограничение создания заказа в Seller API по списку телефонов */
-    orderCreateInternalPhonesOnly?: boolean
-    /** Env OZON_LOGISTICS_ORDER_INTERNAL_PHONES_ONLY перекрывает чекбокс */
-    orderCreateInternalPhonesOnlyEnvOverride?: boolean
   }
   ozonPay: {
     enabled: boolean
@@ -118,8 +112,6 @@ export const DEFAULT_CHECKOUT_PUBLIC: CheckoutPublicConfig = {
     buyerNote: '',
     deliveryPayer: 'store',
     deliveryPayerLabel: 'Доставка за наш счёт',
-    sellerDeliveryApiEnabled: false,
-    orderCreateInternalPhonesOnly: false,
   },
   ozonPay: {
     enabled: false,
