@@ -496,7 +496,7 @@ export function ProductPage() {
                       {product.promotions.map((pr) => (
                         <li key={pr.slug}>
                           <Link
-                            to={`/akcii/${encodeURIComponent(pr.slug)}`}
+                            to={`/sales/${encodeURIComponent(pr.slug)}`}
                             className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border-light bg-surface px-3 py-1.5 font-body text-xs text-text transition hover:border-accent/50 hover:text-accent"
                           >
                             <span className="line-clamp-2">{pr.title}</span>

@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 from .views_checkout import OzonPayWebhookView
 from .views_promotions import ActivePromotionDetailView, ActivePromotionListView
+from .views_market_goods_feedback import MarketGoodsFeedbacksPublicView
 from .views_cdek_address_suggest import CdekYandexAddressSuggestView
 from .views_cdek_cities import CdekSuggestCitiesView
 from .views_cdek_pickup_points import CdekPickupPointsView
@@ -46,6 +47,7 @@ urlpatterns = [
     path("home-content/", HomePageContentPublicView.as_view(), name="home-content"),
     path("promotions/", ActivePromotionListView.as_view(), name="promotion-list"),
     path("promotions/<slug:slug>/", ActivePromotionDetailView.as_view(), name="promotion-detail"),
+    path("market-goods-feedbacks/", MarketGoodsFeedbacksPublicView.as_view(), name="market-goods-feedbacks"),
     path("static-pages/", StaticPageListPublicView.as_view(), name="static-pages"),
     path("static-pages/<slug:slug>/", StaticPageDetailPublicView.as_view(), name="static-page-detail"),
     path("leads/calculator/", views.CalculatorLeadCreateView.as_view(), name="lead-calculator"),

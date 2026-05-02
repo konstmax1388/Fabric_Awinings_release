@@ -52,11 +52,11 @@ export function PromotionsPage() {
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/akcii`} />
+        <link rel="canonical" href={`${site}/sales`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/akcii`} />
+        <meta property="og:url" content={`${site}/sales`} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDesc} />
@@ -104,13 +104,13 @@ export function PromotionsPage() {
                     <p className="mt-1 font-body text-xs text-text-subtle">{formatPeriod(p)}</p>
                     <PromoEndsCountdown endsAt={p.endsAt} size="sm" className="max-w-md" />
                     <h2 className="mt-2 font-heading text-2xl font-semibold text-text">
-                      <Link to={`/akcii/${p.slug}`} className="hover:text-accent">
+                      <Link to={`/sales/${p.slug}`} className="hover:text-accent">
                         {p.title}
                       </Link>
                     </h2>
                     {p.excerpt ? <p className="mt-2 font-body text-text-muted">{p.excerpt}</p> : null}
                     <Link
-                      to={`/akcii/${p.slug}`}
+                      to={`/sales/${p.slug}`}
                       className="mt-3 inline-block font-medium text-accent hover:underline"
                     >
                       Подробнее →

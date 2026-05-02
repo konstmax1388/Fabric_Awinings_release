@@ -1705,11 +1705,16 @@ class SiteSettingsAdmin(ModelAdmin):
                 + (
                     "reviews_yandex_profile_url",
                     "reviews_yandex_widget_html",
+                    "market_goods_feedback_enabled",
+                    "market_goods_feedback_business_id",
                 ),
                 "description": _(
                     "Для каждого пункта: включение, порядок (меньше — левее), при необходимости своя подпись. "
                     "Пустая подпись — из «Главная страница (контент)», «Интерфейс витрин». "
                     "Отзывы в Яндексе на /reviews: код виджета (iframe) и при необходимости ссылка на карточку организации. "
+                    "Отзывы о товарах с Маркета (свои карточки на сайте): включите блок, укажите businessId кабинета "
+                    "и задайте на сервере переменную окружения YANDEX_MARKET_PARTNER_API_KEY (токен Api-Key из кабинета "
+                    "продавца, см. документацию Partner API). "
                 ),
             },
         ),

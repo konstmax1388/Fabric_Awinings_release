@@ -111,7 +111,7 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/akcii" className="hover:text-accent">
+                <Link to="/sales" className="hover:text-accent">
                   {navPromotionsLabel}
                 </Link>
               </li>

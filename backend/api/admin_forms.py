@@ -379,6 +379,8 @@ class SiteSettingsMenuSectionForm(SiteSettingsHeaderNavMixin, forms.ModelForm):
         fields = (
             "reviews_yandex_profile_url",
             "reviews_yandex_widget_html",
+            "market_goods_feedback_enabled",
+            "market_goods_feedback_business_id",
         )
         widgets = {
             "reviews_yandex_widget_html": forms.Textarea(attrs={"rows": 8}),

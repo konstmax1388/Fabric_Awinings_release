@@ -227,6 +227,7 @@ REST_FRAMEWORK = {
         "auth_login": "30/hour",
         "staff_auth": "30/hour",
         "consent_log": "120/hour",
+        "market_goods_feedback": "60/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }

@@ -1,6 +1,6 @@
 import { HelmetProvider } from 'react-helmet-async'
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartProvider'
 import { AnalyticsSnippets } from './components/analytics/AnalyticsSnippets'
@@ -64,6 +64,16 @@ const StaticPageRoute = lazy(() =>
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
 const LEGACY_PRIVACY_REDIRECT = '/politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh'
 const LEGACY_OFFER_REDIRECT = '/publichnaia-oferta'
+
+function LegacyAkciiListRedirect() {
+  return <Navigate to="/sales" replace />
+}
+
+function LegacyAkciiDetailRedirect() {
+  const { slug } = useParams<{ slug: string }>()
+  if (!slug) return <Navigate to="/sales" replace />
+  return <Navigate to={`/sales/${encodeURIComponent(slug)}`} replace />
+}
 
 function RouteFallback() {
   return (
@@ -129,8 +139,10 @@ const router = createBrowserRouter([
       { path: '/reviews', element: <ReviewsPage /> },
       { path: '/blog', element: <BlogPage /> },
       { path: '/blog/:slug', element: <BlogPostPage /> },
-      { path: '/akcii', element: <PromotionsPage /> },
-      { path: '/akcii/:slug', element: <PromotionDetailPage /> },
+      { path: '/sales', element: <PromotionsPage /> },
+      { path: '/sales/:slug', element: <PromotionDetailPage /> },
+      { path: '/akcii', element: <LegacyAkciiListRedirect /> },
+      { path: '/akcii/:slug', element: <LegacyAkciiDetailRedirect /> },
       { path: '/privacy', element: <Navigate to={LEGACY_PRIVACY_REDIRECT} replace /> },
       { path: '/offer', element: <Navigate to={LEGACY_OFFER_REDIRECT} replace /> },
       { path: '/:slug', element: <StaticPageRoute /> },

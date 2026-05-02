@@ -39,3 +39,15 @@ class ConsentLogThrottle(SimpleRateThrottle):
             "scope": self.scope,
             "ident": self.get_ident(request),
         }
+
+
+class MarketGoodsFeedbackThrottle(SimpleRateThrottle):
+    """Публичная выдача отзывов Маркета — ограничение частоты к Partner API."""
+
+    scope = "market_goods_feedback"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {
+            "scope": self.scope,
+            "ident": self.get_ident(request),
+        }

@@ -25,7 +25,7 @@ const PATHS: Record<Exclude<HeaderNavKey, 'about'>, string> = {
   blog: '/blog',
   reviews: '/reviews',
   contacts: '/contacts',
-  promotions: '/akcii',
+  promotions: '/sales',
 }
 
 export function sanitizeAboutSlug(raw: string | undefined): string {

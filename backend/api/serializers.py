@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+import os
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -1052,6 +1053,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     seoDefaults = serializers.SerializerMethodField()
     headerNavigation = serializers.SerializerMethodField()
     reviewsYandex = serializers.SerializerMethodField()
+    reviewsMarket = serializers.SerializerMethodField()
 
     class Meta:
         model = SiteSettings
@@ -1088,6 +1090,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "seoDefaults",
             "headerNavigation",
             "reviewsYandex",
+            "reviewsMarket",
         )
 
     def _absolute_media(self, request, f) -> str | None:
@@ -1281,6 +1284,12 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "profileUrl": (obj.reviews_yandex_profile_url or "").strip(),
             "widgetHtml": (obj.reviews_yandex_widget_html or "").strip(),
         }
+
+    def get_reviewsMarket(self, obj: SiteSettings) -> dict[str, bool]:
+        api_key = (os.environ.get("YANDEX_MARKET_PARTNER_API_KEY") or "").strip()
+        bid = (obj.market_goods_feedback_business_id or "").strip()
+        active = bool(obj.market_goods_feedback_enabled and api_key and bid)
+        return {"goodsFeedbackActive": active}
 
 
 class StaticPagePublicSerializer(serializers.ModelSerializer):

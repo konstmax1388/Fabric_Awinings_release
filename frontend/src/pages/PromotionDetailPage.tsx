@@ -67,7 +67,7 @@ export function PromotionDetailPage() {
         <main className="fabric-page">
           <div className="fabric-page-main min-w-0 p-6">
             <h1 className="font-heading text-2xl font-semibold text-text">Акция не найдена</h1>
-            <Link to="/akcii" className="mt-4 inline-block text-accent hover:underline">
+            <Link to="/sales" className="mt-4 inline-block text-accent hover:underline">
               ← К списку акций
             </Link>
           </div>
@@ -79,7 +79,7 @@ export function PromotionDetailPage() {
 
   const pageTitle = buildSeoTitle('listing', { title: promo.title, siteName }, seoDefaults)
   const pageDesc = truncateMetaDescription(promo.excerpt || promo.body || pageTitle, undefined, seoDefaults)
-  const canonical = `${site}/akcii/${promo.slug}`
+  const canonical = `${site}/sales/${promo.slug}`
 
   return (
     <>
@@ -105,7 +105,7 @@ export function PromotionDetailPage() {
               Главная
             </Link>
             <span className="mx-2 text-text-subtle">/</span>
-            <Link to="/akcii" className="hover:text-accent">
+            <Link to="/sales" className="hover:text-accent">
               Акции
             </Link>
           </nav>
@@ -150,7 +150,7 @@ export function PromotionDetailPage() {
           ) : null}
 
           <div className="mt-10 flex flex-wrap gap-4">
-            <Link to="/akcii" className="font-medium text-accent hover:underline">
+            <Link to="/sales" className="font-medium text-accent hover:underline">
               ← Все акции
             </Link>
             <Link to="/catalog" className="font-medium text-accent hover:underline">

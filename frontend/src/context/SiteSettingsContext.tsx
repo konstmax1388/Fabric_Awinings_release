@@ -57,6 +57,8 @@ export type SiteSettingsContextValue = {
   headerNavigation: unknown
   /** Виджет/ссылка на отзывы в Яндексе. */
   reviewsYandex: { profileUrl: string; widgetHtml: string }
+  /** Partner API Маркета: отзывы о товарах (вкл. в админке + ключ в env). */
+  reviewsMarket: { goodsFeedbackActive: boolean }
   catalogWarrantyMonths: number
   catalogReturnDays: number
 }
@@ -114,6 +116,7 @@ const initialValue: SiteSettingsContextValue = {
   staticPages: [],
   headerNavigation: undefined,
   reviewsYandex: { profileUrl: '', widgetHtml: '' },
+  reviewsMarket: { goodsFeedbackActive: false },
   catalogWarrantyMonths: 3,
   catalogReturnDays: 14,
 }
@@ -163,6 +166,9 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
     profileUrl: string
     widgetHtml: string
   }>({ profileUrl: '', widgetHtml: '' })
+  const [reviewsMarket, setReviewsMarket] = useState<{ goodsFeedbackActive: boolean }>({
+    goodsFeedbackActive: false,
+  })
   const [catalogWarrantyMonths, setCatalogWarrantyMonths] = useState(3)
   const [catalogReturnDays, setCatalogReturnDays] = useState(14)
 
@@ -232,6 +238,11 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             widgetHtml: s.reviewsYandex.widgetHtml ?? '',
           })
         }
+        if (s.reviewsMarket) {
+          setReviewsMarket({
+            goodsFeedbackActive: s.reviewsMarket.goodsFeedbackActive === true,
+          })
+        }
         if (s.catalogWarrantyMonths !== undefined) setCatalogWarrantyMonths(s.catalogWarrantyMonths)
         if (s.catalogReturnDays !== undefined) setCatalogReturnDays(s.catalogReturnDays)
       }
@@ -279,6 +290,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       staticPages,
       headerNavigation,
       reviewsYandex,
+      reviewsMarket,
       catalogWarrantyMonths,
       catalogReturnDays,
     }),
@@ -316,6 +328,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       staticPages,
       headerNavigation,
       reviewsYandex,
+      reviewsMarket,
       catalogWarrantyMonths,
       catalogReturnDays,
     ],

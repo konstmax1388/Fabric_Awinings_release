@@ -689,6 +689,77 @@ export async function fetchReviews(params?: { minRating?: number }): Promise<Rev
   }
 }
 
+export type MarketGoodsFeedbackItem = {
+  id: string
+  author: string
+  createdAt: string
+  rating: number
+  text: string
+  offerId: string
+  photos: string[]
+}
+
+export type MarketGoodsFeedbacksResponse = {
+  active: boolean
+  items: MarketGoodsFeedbackItem[]
+  nextPageToken: string | null
+  error: string | null
+}
+
+export async function fetchMarketGoodsFeedbacks(params?: {
+  limit?: number
+  minRating?: number
+  pageToken?: string
+}): Promise<MarketGoodsFeedbacksResponse | null> {
+  try {
+    const sp = new URLSearchParams()
+    if (params?.limit != null && Number.isFinite(params.limit)) {
+      sp.set('limit', String(Math.floor(Number(params.limit))))
+    }
+    if (params?.minRating != null && Number.isFinite(params.minRating)) {
+      sp.set('min_rating', String(Math.floor(Number(params.minRating))))
+    }
+    if (params?.pageToken && params.pageToken.trim()) {
+      sp.set('page_token', params.pageToken.trim())
+    }
+    const q = sp.toString()
+    const r = await fetch(`${apiBase()}/api/market-goods-feedbacks/${q ? `?${q}` : ''}`)
+    const raw = await parseJson<Record<string, unknown>>(r)
+    if (!raw || typeof raw !== 'object') return null
+    const active = raw.active === true
+    const err = typeof raw.error === 'string' && raw.error ? raw.error : null
+    const nextPageToken =
+      typeof raw.nextPageToken === 'string' && raw.nextPageToken.trim() ? raw.nextPageToken.trim() : null
+    const itemsRaw = raw.items
+    const items: MarketGoodsFeedbackItem[] = []
+    if (Array.isArray(itemsRaw)) {
+      for (const row of itemsRaw) {
+        if (!row || typeof row !== 'object') continue
+        const o = row as Record<string, unknown>
+        const photos: string[] = []
+        const pr = o.photos
+        if (Array.isArray(pr)) {
+          for (const u of pr) {
+            if (typeof u === 'string' && u.trim()) photos.push(u.trim())
+          }
+        }
+        items.push({
+          id: typeof o.id === 'string' ? o.id : String(o.id ?? ''),
+          author: typeof o.author === 'string' ? o.author : '',
+          createdAt: typeof o.createdAt === 'string' ? o.createdAt : '',
+          rating: typeof o.rating === 'number' && o.rating >= 0 && o.rating <= 5 ? o.rating : 0,
+          text: typeof o.text === 'string' ? o.text : '',
+          offerId: typeof o.offerId === 'string' ? o.offerId : '',
+          photos,
+        })
+      }
+    }
+    return { active, items, nextPageToken, error: err }
+  } catch {
+    return null
+  }
+}
+
 export type BlogListItem = {
   slug: string
   title: string
@@ -782,13 +853,21 @@ export type PromotionListItem = {
 export type PromotionDetail = PromotionListItem & { body: string }
 
 function parsePromotionListRow(row: Record<string, unknown>): PromotionListItem | null {
-  if (typeof row.slug !== 'string' || typeof row.title !== 'string') return null
+  const slug = typeof row.slug === 'string' ? row.slug : row.slug != null ? String(row.slug) : ''
+  const title = typeof row.title === 'string' ? row.title : row.title != null ? String(row.title) : ''
+  if (!slug.trim() || !title) return null
   const disc = row.discountPercent
-  const discountPercent = typeof disc === 'number' && Number.isFinite(disc) ? Math.max(0, Math.min(100, Math.floor(disc))) : 0
+  let discountPercent = 0
+  if (typeof disc === 'number' && Number.isFinite(disc)) {
+    discountPercent = Math.max(0, Math.min(100, Math.floor(disc)))
+  } else if (typeof disc === 'string' && disc.trim()) {
+    const n = Number.parseInt(disc, 10)
+    if (Number.isFinite(n)) discountPercent = Math.max(0, Math.min(100, n))
+  }
   const ends = row.endsAt
   return {
-    slug: row.slug,
-    title: row.title,
+    slug: slug.trim(),
+    title,
     excerpt: typeof row.excerpt === 'string' ? row.excerpt : '',
     imageUrl: typeof row.imageUrl === 'string' ? row.imageUrl : '',
     startsAt: typeof row.startsAt === 'string' ? row.startsAt : '',
@@ -800,7 +879,7 @@ function parsePromotionListRow(row: Record<string, unknown>): PromotionListItem 
 
 export async function fetchPromotions(): Promise<PromotionListItem[]> {
   try {
-    const r = await fetch(`${apiBase()}/api/promotions/`)
+    const r = await fetch(`${apiBase()}/api/promotions/`, { cache: 'no-store' })
     const raw = await parseJson<Record<string, unknown>[] | { results: unknown[] }>(r)
     if (!raw) return []
     const list = Array.isArray(raw) ? raw : Array.isArray(raw.results) ? raw.results : []
@@ -817,7 +896,7 @@ export async function fetchPromotions(): Promise<PromotionListItem[]> {
 
 export async function fetchPromotionBySlug(slug: string): Promise<PromotionDetail | null> {
   try {
-    const r = await fetch(`${apiBase()}/api/promotions/${encodeURIComponent(slug)}/`)
+    const r = await fetch(`${apiBase()}/api/promotions/${encodeURIComponent(slug)}/`, { cache: 'no-store' })
     if (r.status === 404) return null
     const o = await parseJson<Record<string, unknown>>(r)
     if (!o || typeof o !== 'object') return null
@@ -949,6 +1028,8 @@ export type SiteSettingsDto = {
   /** Нормализованный JSON из SiteSettings (порядок/вкл пунктов шапки). */
   headerNavigation?: unknown
   reviewsYandex?: { profileUrl: string; widgetHtml: string }
+  /** Partner API Маркета: отзывы о товарах на /reviews (флаг из site-settings). */
+  reviewsMarket?: { goodsFeedbackActive: boolean }
 }
 
 export type StaticPageDto = {
@@ -1319,6 +1400,14 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
           profileUrl: typeof o.profileUrl === 'string' ? o.profileUrl : '',
           widgetHtml: typeof o.widgetHtml === 'string' ? o.widgetHtml : '',
         }
+      })(),
+      reviewsMarket: (() => {
+        const rm = data.reviewsMarket
+        if (!rm || typeof rm !== 'object' || Array.isArray(rm)) {
+          return { goodsFeedbackActive: false }
+        }
+        const o = rm as Record<string, unknown>
+        return { goodsFeedbackActive: o.goodsFeedbackActive === true }
       })(),
     }
   } catch {

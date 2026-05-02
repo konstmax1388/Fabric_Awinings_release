@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { ReviewsSection } from '../components/home/ReviewsSection'
+import { MarketGoodsReviewsSection } from '../components/reviews/MarketGoodsReviewsSection'
 import { ReviewsYandexBlock } from '../components/reviews/ReviewsYandexBlock'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
@@ -10,13 +11,15 @@ import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function ReviewsPage() {
   const site = publicSiteUrl()
-  const { siteName, home, reviewsYandex, contactsBackLinkLabel, seoDefaults } = useSiteSettings()
+  const { siteName, home, reviewsYandex, reviewsMarket, contactsBackLinkLabel, seoDefaults } =
+    useSiteSettings()
   const rv = home?.reviews
   const pageTitle = (rv?.pageTitle ?? 'Отзывы').trim() || 'Отзывы'
   const metaDescription = (rv?.pageDescription ?? '').trim()
   const yandexVisible = Boolean(
     (reviewsYandex?.widgetHtml ?? '').trim() || (reviewsYandex?.profileUrl ?? '').trim(),
   )
+  const marketGoodsReviewsEnabled = reviewsMarket?.goodsFeedbackActive === true
   const yandexBlockTitle = (rv?.yandexBlockHeading ?? '').trim() || 'Отзывы на Яндекс.Маркете'
   const yandexBlockNote = (rv?.yandexBlockNote ?? '').trim()
   const docTitle = buildSeoTitle('emdash', { title: pageTitle, siteName }, seoDefaults)
@@ -51,11 +54,12 @@ export function ReviewsPage() {
             {metaDescription ? (
               <p className="mt-3 max-w-3xl font-body text-text-muted md:text-lg">{metaDescription}</p>
             ) : null}
+            {marketGoodsReviewsEnabled ? <MarketGoodsReviewsSection className="mt-8" /> : null}
             {yandexVisible ? (
               <ReviewsYandexBlock className="mt-8" title={yandexBlockTitle} note={yandexBlockNote} />
             ) : null}
           </div>
-          <ReviewsSection mode="page" showListHeading={yandexVisible} />
+          <ReviewsSection mode="page" showListHeading={yandexVisible || marketGoodsReviewsEnabled} />
           <div className="fabric-container pb-10">
             <Link
               to="/"

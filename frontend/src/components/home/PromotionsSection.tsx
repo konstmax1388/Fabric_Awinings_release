@@ -34,7 +34,7 @@ export function PromotionsSection() {
     let cancelled = false
     fetchPromotions().then((list) => {
       if (!cancelled) {
-        setPromos(list.slice(0, 3))
+        setPromos(list.slice(0, 4))
         setLoading(false)
       }
     })
@@ -85,7 +85,7 @@ export function PromotionsSection() {
               </h2>
               {subheading ? <p className="font-body text-sm text-text-muted md:text-base">{subheading}</p> : null}
             </div>
-            <Link to="/akcii" className="font-body font-medium text-accent hover:underline md:shrink-0">
+            <Link to="/sales" className="font-body font-medium text-accent hover:underline md:shrink-0">
               {allLink}
             </Link>
           </header>
@@ -95,7 +95,7 @@ export function PromotionsSection() {
               <li key={p.slug}>
                 <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-surface/90 shadow-sm ring-1 ring-border/40 backdrop-blur-sm transition hover:border-accent/35 hover:ring-accent/20">
                   {p.imageUrl ? (
-                    <Link to={`/akcii/${p.slug}`} className="block shrink-0">
+                    <Link to={`/sales/${p.slug}`} className="block shrink-0">
                       <OptimizedImage
                         src={p.imageUrl}
                         alt={promotionCoverAlt(p.title)}
@@ -120,8 +120,8 @@ export function PromotionsSection() {
                     </div>
                     <p className="mt-1 font-body text-xs text-text-subtle">{formatPeriod(p)}</p>
                     <PromoEndsCountdown endsAt={p.endsAt} size="sm" className="max-w-full" />
-                    <h3 className="mt-2 font-heading text-lg font-semibold leading-snug text-text md:text-xl">
-                      <Link to={`/akcii/${p.slug}`} className="hover:text-accent">
+                    <h3 className="mt-2 font-heading text-xl font-semibold leading-snug text-text md:text-2xl">
+                      <Link to={`/sales/${p.slug}`} className="hover:text-accent">
                         {p.title}
                       </Link>
                     </h3>
@@ -131,7 +131,7 @@ export function PromotionsSection() {
                       </p>
                     ) : null}
                     <Link
-                      to={`/akcii/${p.slug}`}
+                      to={`/sales/${p.slug}`}
                       className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-center font-body text-sm font-semibold text-surface shadow-sm transition hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base md:w-auto md:min-w-[10rem]"
                     >
                       Подробнее

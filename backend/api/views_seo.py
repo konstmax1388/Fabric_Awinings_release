@@ -9,10 +9,8 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 
-from django.db.models import Q
-from django.utils import timezone
-
-from .models import BlogPost, Product, Promotion, StaticPage
+from .models import BlogPost, Product, StaticPage
+from .views_promotions import _public_promotions_catalog_queryset
 
 
 def _site_base() -> str:
@@ -44,7 +42,7 @@ def sitemap_xml_view(request):
         (f"{base}/portfolio", "weekly", "0.7", today),
         (f"{base}/contacts", "monthly", "0.8", today),
         (f"{base}/blog", "weekly", "0.8", today),
-        (f"{base}/akcii", "weekly", "0.82", today),
+        (f"{base}/sales", "weekly", "0.82", today),
     ]
     for loc, cf, pr, lm in static_pages:
         urls_xml.append(_xml_url(loc, lm, cf, pr))
@@ -62,14 +60,9 @@ def sitemap_xml_view(request):
         d = post.published_at or post.updated_at.date()
         urls_xml.append(_xml_url(f"{base}/blog/{post.slug}", d, "monthly", "0.75"))
 
-    now = timezone.now()
-    for promo in (
-        Promotion.objects.filter(is_published=True, starts_at__lte=now)
-        .filter(Q(ends_at__isnull=True) | Q(ends_at__gte=now))
-        .order_by("slug")
-    ):
+    for promo in _public_promotions_catalog_queryset().order_by("slug"):
         lm = promo.updated_at.date() if getattr(promo, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/akcii/{promo.slug}", lm, "weekly", "0.78"))
+        urls_xml.append(_xml_url(f"{base}/sales/{promo.slug}", lm, "weekly", "0.78"))
 
     for page in StaticPage.objects.filter(is_published=True).order_by("slug"):
         lm = page.updated_at.date() if getattr(page, "updated_at", None) else today

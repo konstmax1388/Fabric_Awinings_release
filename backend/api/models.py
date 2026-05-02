@@ -1482,6 +1482,18 @@ class SiteSettings(models.Model):
         default="",
         help_text="Код вставки из кабинета организации (обычно iframe). Показывается на /reviews первым блоком. Автоматическая подгрузка отзывов по URL без виджета невозможна (ограничения Яндекса).",
     )
+    market_goods_feedback_enabled = models.BooleanField(
+        "Маркет: отзывы о товарах на сайте (Partner API)",
+        default=False,
+        help_text="Если включено и заданы businessId и переменная окружения YANDEX_MARKET_PARTNER_API_KEY, на /reviews подгружаются отзывы через POST /v2/businesses/{id}/goods-feedback.",
+    )
+    market_goods_feedback_business_id = models.CharField(
+        "Маркет: businessId (идентификатор кабинета)",
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Числовой идентификатор кабинета в Partner API (см. GET /v2/campaigns в документации). Не путать с произвольным числом из URL витрины — сверьте в кабинете продавца.",
+    )
 
     class Meta:
         verbose_name = "Настройки сайта"
