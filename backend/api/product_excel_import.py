@@ -325,7 +325,6 @@ def import_one_excel_row(
     category: ProductCategory,
     publish: bool,
     dry_run: bool,
-    price_source_mode: str = "auto",
 ) -> tuple[Any, Product | None, list[str]]:
     """
     Одна строка Excel: при наличии ссылки WB — импорт описания/характеристик/фото с WB,
@@ -344,11 +343,12 @@ def import_one_excel_row(
             publish=publish,
             dry_run=dry_run,
             create_variants=False,
-            price_source_mode=price_source_mode,
+            price_source_mode="auto",
             title_override=row.title or None,
             price_from_override=row.price_from,
             marketplace_links_extra=extra or None,
             product_ozon_sku=row.ozon_sku,
+            excel_import=True,
         )
     return import_product_excel_only_row(
         row,

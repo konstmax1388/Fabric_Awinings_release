@@ -1,4 +1,4 @@
-import { faCartShopping, faMagnifyingGlass, faMoon } from '@fortawesome/free-solid-svg-icons'
+import { faCartShopping, faMagnifyingGlass, faMoon, faPercent } from '@fortawesome/free-solid-svg-icons'
 import { faCircleUser, faSun } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -50,14 +50,6 @@ function MobileBarBagIcon({ className = '' }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" />
       <path d="M4.2 7.2h15.6l-1.4 8.5a2 2 0 0 1-2 1.6H7.5a2 2 0 0 1-1.9-1.4L4.2 7.2Z" />
-    </svg>
-  )
-}
-function MobileBarTagIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 5.5h5.2L21 18.3a1.6 1.6 0 1 1-2.3 2.3L5.9 7.7V5.5H3Z" />
-      <circle cx="7.2" cy="8.8" r="1.35" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -626,7 +618,7 @@ export function SiteHeader() {
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <MobileBarTagIcon className={mobileBarIcon} />
+                <FontAwesomeIcon icon={faPercent} className={`${mobileBarIcon} text-current`} aria-hidden />
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navPromotionsLabel}</span>
               </div>
             )}

@@ -57,6 +57,7 @@ def import_one_from_wb_url(
     price_from_override: int | None = None,
     marketplace_links_extra: dict[str, str] | None = None,
     product_ozon_sku: int | None = None,
+    excel_import: bool = False,
 ):
     """
     Возвращает (preview, product, warnings).
@@ -64,8 +65,10 @@ def import_one_from_wb_url(
     При dry_run: (WbImportBundle, None, warnings). После импорта: (None, Product, warnings).
 
     title_override / price_from_override / marketplace_links_extra / product_ozon_sku —
-    для импорта из Excel (название и цена «от» с файла, ссылки МП; цены вариантов — из файла,
-    если задан price_from_override).
+    для импорта из Excel (название и цена с файла, ссылки МП; при заданном price_from_override
+    цена товара и вариантов на сайте — из файла, не с WB).
+
+    excel_import: не добавлять в warnings справку про источник цены WB; при override — текст про цену из Excel.
     """
     seed_nm = parse_nm_from_url(raw_url)
     try:
@@ -74,17 +77,23 @@ def import_one_from_wb_url(
         raise
 
     warnings = list(bundle.warnings)
-    warnings.append(
-        f"Цена WB: источник={bundle.price_from_min_source}, режим={bundle.price_source_mode}, цена_от={bundle.price_from_min} ₽"
-    )
+    if not excel_import:
+        warnings.append(
+            f"Цена WB: источник={bundle.price_from_min_source}, режим={bundle.price_source_mode}, цена_от={bundle.price_from_min} ₽"
+        )
     title_for_product = (title_override or "").strip() or bundle.title
     if (title_override or "").strip():
         warnings.append("Название на сайте будет взято из файла (не с WB).")
     price_main = bundle.price_from_min if price_from_override is None else int(price_from_override)
     if price_from_override is not None:
-        warnings.append(
-            f"Цена «от» и цены вариантов на сайте будут из файла: {price_main} ₽ (цены WB не используются)."
-        )
+        if excel_import:
+            warnings.append(
+                f"Цена на сайте из файла Excel: {price_main} ₽ (цены Wildberries не используются)."
+            )
+        else:
+            warnings.append(
+                f"Цена «от» и цены вариантов на сайте будут из файла: {price_main} ₽ (цены WB не используются)."
+            )
 
     if dry_run:
         return bundle, None, warnings

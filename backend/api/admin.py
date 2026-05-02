@@ -689,7 +689,6 @@ class ProductAdmin(ModelAdmin):
                     category = form.cleaned_data["category"]
                     publish = form.cleaned_data["publish"]
                     dry = form.cleaned_data["dry_run"]
-                    price_source_mode = form.cleaned_data["price_source_mode"]
                     if not rows:
                         messages.warning(
                             request,
@@ -704,7 +703,6 @@ class ProductAdmin(ModelAdmin):
                                     category=category,
                                     publish=publish,
                                     dry_run=dry,
-                                    price_source_mode=price_source_mode,
                                 )
                             except WbImportError as e:
                                 messages.error(
@@ -763,7 +761,7 @@ class ProductAdmin(ModelAdmin):
                                         _(
                                             "Строка %(row)d: проверка WB nm=%(nm)s — %(title)s — на сайте будет "
                                             "один вариант по ссылке; фото этого варианта ≈%(n)d, характеристик %(ns)d; "
-                                            "цена из файла: %(file_price)s ₽ (на WB в группе вариантов: %(nv)d)"
+                                            "цена из Excel: %(file_price)s ₽ (на WB в группе вариантов: %(nv)d)"
                                         )
                                         % {
                                             "row": row.sheet_row,
@@ -894,9 +892,9 @@ class ExcelBulkImportForm(forms.Form):
         label=_("Файл Excel (.xlsx)"),
         help_text=_(
             "Первый лист, первая строка — заголовки столбцов. "
-            "Название и цена на сайте обязательны; при наличии ссылки WB подтягиваются описание, "
-            "характеристики и фото с Wildberries для варианта из ссылки (остальные варианты группы WB не создаются), "
-            "цены на сайте — из файла."
+            "Название и цена в файле обязательны; при наличии ссылки WB подтягиваются описание, "
+            "характеристики и фото для варианта из ссылки (остальные варианты группы WB не создаются). "
+            "Цена на сайте всегда из столбца цены в Excel, не с маркетплейсов."
         ),
         widget=forms.FileInput(
             attrs={
@@ -922,16 +920,6 @@ class ExcelBulkImportForm(forms.Form):
         required=False,
         initial=False,
         widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
-    )
-    price_source_mode = forms.ChoiceField(
-        label=_("Источник цены WB (только для предпросмотра API)"),
-        choices=WbBulkImportForm.PRICE_SOURCE_CHOICES,
-        initial="auto",
-        widget=forms.Select(attrs={"class": _WB_SELECT_CLASSES}),
-        help_text=_(
-            "При импорте строк с WB цены на сайте всё равно берутся из столбца «цена» в файле; "
-            "режим влияет на то, какие цены WB показываются в предупреждениях и при проверке ответа API."
-        ),
     )
 
 
