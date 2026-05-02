@@ -112,6 +112,14 @@ def build_unfold_sidebar() -> list[dict]:
             "items": [
                 *site_settings_sidebar_block_items(),
                 {
+                    "title": _("Ozon Доставка (Seller API)"),
+                    "icon": "local_shipping",
+                    "link": reverse_lazy(
+                        "admin:ozon_logistics_ozonlogisticssettings_change",
+                        args=(1,),
+                    ),
+                },
+                {
                     "title": _("Шаблоны писем"),
                     "icon": "description",
                     "link": reverse_lazy("admin:api_siteemailtemplate_changelist"),

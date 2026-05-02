@@ -797,6 +797,13 @@ class CartOrderCreateSerializer(serializers.Serializer):
             ol_d = dict(ol0) if isinstance(ol0, dict) else {}
             ol_d["deliveryPayer"] = (settings.ozon_logistics_delivery_payer or "store").strip() or "store"
             delivery_snapshot["ozonLogistics"] = ol_d
+            from .services.ozon_logistics_seller_checkout_enrich import enrich_ozon_logistics_delivery_snapshot
+
+            delivery_snapshot = enrich_ozon_logistics_delivery_snapshot(
+                delivery_snapshot,
+                lines_plain=lines_plain,
+                customer_phone=(customer.get("phone") or "").strip(),
+            )
 
         total_expected = expected_total_approx(goods_sub, delivery_charge, recipient_fee)
         if int(validated_data["totalApprox"]) != total_expected:
@@ -1189,6 +1196,23 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
         matrix = {d["id"]: allowed_payment_methods(d["id"], obj) for d in deliveries}
         payment_labels = {c.value: str(c.label) for c in CartOrder.PaymentMethod}
         tariffs = cdek_widget_tariffs_public(obj)
+
+        ozon_logistics_extra: dict = {}
+        try:
+            from ozon_logistics.models import OzonLogisticsSettings
+            from ozon_logistics.services.order_guard import seller_delivery_api_enabled
+
+            ol_s = OzonLogisticsSettings.get_solo()
+            ozon_logistics_extra = {
+                "sellerDeliveryApiEnabled": bool(seller_delivery_api_enabled()),
+                "orderCreateInternalPhonesOnly": bool(ol_s.order_create_only_internal_phones),
+            }
+            ev = (os.environ.get("OZON_LOGISTICS_ORDER_INTERNAL_PHONES_ONLY") or "").strip().lower()
+            if ev in ("1", "true", "yes", "0", "false", "no"):
+                ozon_logistics_extra["orderCreateInternalPhonesOnlyEnvOverride"] = True
+        except Exception:
+            pass
+
         return {
             "minimumOrderRub": int(obj.checkout_minimum_order_rub or 0),
             "freeDeliveryFromRub": int(obj.checkout_free_delivery_from_rub or 0),
@@ -1233,6 +1257,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
                     if (obj.ozon_logistics_delivery_payer or "").strip() == "buyer"
                     else "Доставка за наш счёт"
                 ),
+                **ozon_logistics_extra,
             },
             "ozonPay": {
                 "enabled": obj.ozon_pay_enabled,

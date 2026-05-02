@@ -1201,6 +1201,11 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
     } else {
       ozonLogistics.deliveryPayerLabel = 'Доставка за наш счёт'
     }
+    if (typeof z.sellerDeliveryApiEnabled === 'boolean') ozonLogistics.sellerDeliveryApiEnabled = z.sellerDeliveryApiEnabled
+    if (typeof z.orderCreateInternalPhonesOnly === 'boolean')
+      ozonLogistics.orderCreateInternalPhonesOnly = z.orderCreateInternalPhonesOnly
+    if (typeof z.orderCreateInternalPhonesOnlyEnvOverride === 'boolean')
+      ozonLogistics.orderCreateInternalPhonesOnlyEnvOverride = z.orderCreateInternalPhonesOnlyEnvOverride
   }
 
   const ozonPay = { ...DEFAULT_CHECKOUT_PUBLIC.ozonPay }

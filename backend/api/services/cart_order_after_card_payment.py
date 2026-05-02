@@ -9,8 +9,10 @@
 2. **СДЭК + Ozon Pay (`card_online`)** — накладная СДЭК и CRM **после** фиксации оплаты (здесь + `sync_cdek`).
 
 3. **Логистика Ozon + Ozon Pay** — в CRM **после** оплаты (здесь). Заказ в эквайринге с
-   `deliverySettings` и товарами создаётся в `try_begin_ozon_pay` при оформлении (нужен `payLink`);
-   отдельного «второго» API доставки Ozon у нас после вебхука нет — оплата завершает сделку у Ozon.
+   `deliverySettings` и товарами создаётся в `try_begin_ozon_pay` при оформлении (нужен `payLink`).
+   Если в приложении ``ozon_logistics`` включён новый поток Seller API доставки, после оплаты
+   дополнительно вызывается ``try_seller_logistics_after_ozon_payment`` (проверка телефона,
+   ``/v1/delivery/check``, при наличии тела — ``/v2/order/create``); иначе поведение как раньше.
 
 При оформлении с `card_online` в CRM/СДЭК на POST /api/leads/cart/ не уходим (кроме п.1).
 """
@@ -72,6 +74,13 @@ def run_post_payment_integrations_for_card_order(
             push_cart_order_to_astrum_crm(co)
     except Exception:
         logger.exception("post_payment: CRM push failed for order=%s", co.order_ref)
+
+    try:
+        from api.services.ozon_logistics_bridge import try_seller_logistics_after_ozon_payment
+
+        try_seller_logistics_after_ozon_payment(co)
+    except Exception:
+        logger.exception("post_payment: ozon_logistics_bridge failed for order=%s", co.order_ref)
 
     if not send_buyer_confirmation:
         return
