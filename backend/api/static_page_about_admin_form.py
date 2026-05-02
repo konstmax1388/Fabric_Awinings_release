@@ -368,7 +368,7 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
         "Пустые поля на сайте не показываются; при снятом флаге «Включить макет» используется только HTML ниже. "
         "Фото и видео можно задать файлами в блоках или внешними URL — файлы имеют приоритет. "
         "Галерея «плитка» на витрине: загрузка только через инлайн "
-        "«Галерея (О нас, витрина)…» под полем «Содержимое» (сверните «Контент», чтобы дойти быстрее): "
+        "«Галерея (О нас, витрина)…» под полем «Содержимое»: "
         "неограниченно фото, клик или перетаскивание в рамку, при необходимости подпись. "
         "Старые поля «URL фото 1–3» в админке сняты — на сервере с актуальным кодом (релиз 3.2.16+) их нет. "
         "Пока в инлайне нет загруженных файлов, в JSON остаётся ранее сохранённый список. "
@@ -400,14 +400,12 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_intro_video_cta",
                     "ab_intro_video_sub",
                 ),
-                "classes": ("collapse",),
             },
         ),
         (
             _("Блок: преимущества (список)"),
             {
                 "fields": ("ab_fb0", "ab_fb1", "ab_fb2", "ab_fb3", "ab_fb4", "ab_fb5"),
-                "classes": ("collapse",),
             },
         ),
         (
@@ -425,7 +423,6 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_mnf_lead",
                     "ab_mnf_legal",
                 ),
-                "classes": ("collapse",),
             },
         ),
         (
@@ -442,7 +439,6 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_met2_value",
                     "ab_met2_bar",
                 ),
-                "classes": ("collapse",),
             },
         ),
         (
@@ -461,7 +457,6 @@ def about_page_admin_fieldsets() -> tuple[tuple[str, dict[str, Any]], ...]:
                     "ab_f3_val",
                     "ab_f3_lbl",
                 ),
-                "classes": ("collapse",),
             },
         ),
     )

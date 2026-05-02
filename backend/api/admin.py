@@ -1244,12 +1244,10 @@ class StaticPageAdmin(ModelAdmin):
             ),
         }
         if slug == "o-nas":
-            content_block["classes"] = ("collapse",)
             content_block["description"] = _(
                 "Запасной HTML при отключённом макете v1; при макете v1 основной контент задаётся полями выше. "
                 "Галерея плиткой: после сохранения страницы смотрите инлайн под этим полем — "
-                "«Галерея (О нас, витрина): …» (файлы с ПК, зона с перетаскиванием). "
-                "Блок «Контент» свернут по умолчанию, чтобы быстрее дойти до загрузки фото."
+                "«Галерея (О нас, витрина): …» (файлы с ПК, зона с перетаскиванием)."
             )
         head.append((_("Контент"), content_block))
         return tuple(head)
@@ -1265,7 +1263,7 @@ class CalculatorLeadAdmin(ModelAdmin):
     fieldsets = (
         (_("Заявка с главной (калькулятор)"), {"fields": ("name", "phone", "comment")}),
         (_("Параметры расчёта"), {"fields": ("length_m", "width_m", "material_id", "material_label", "options", "estimated_price_rub")}),
-        (_("Системное"), {"fields": ("created_at",), "classes": ("collapse",)}),
+        (_("Системное"), {"fields": ("created_at",)}),
     )
 
 
@@ -1288,7 +1286,7 @@ class CallbackLeadAdmin(ModelAdmin):
     readonly_fields = ("created_at",)
     fieldsets = (
         (_("Заявка"), {"fields": ("name", "phone", "comment", "source")}),
-        (_("Системное"), {"fields": ("created_at",), "classes": ("collapse",)}),
+        (_("Системное"), {"fields": ("created_at",)}),
     )
 
 
@@ -1338,7 +1336,6 @@ class CartOrderAdmin(ModelAdmin):
             _("Отладка"),
             {
                 "fields": ("lines",),
-                "classes": ("collapse",),
                 "description": _("Технический формат; обычно достаточно таблицы позиций выше."),
             },
         ),
@@ -1380,13 +1377,12 @@ class CartOrderAdmin(ModelAdmin):
             _("Битрикс24: поля для правки (при необходимости)"),
             {
                 "fields": ("bitrix_entity_id", "bitrix_sync_status", "bitrix_sync_error", "bitrix_sync_attempts"),
-                "classes": ("collapse",),
                 "description": _(
                     "Обычно заполняются автоматически. Повторная отправка — кнопка «Отправить в CRM» в поле «Сводка по CRM» или команда retry_astrum_crm_orders."
                 ),
             },
         ),
-        (_("Письма и текст для клиента"), {"fields": ("manager_letter", "client_ack"), "classes": ("collapse",)}),
+        (_("Письма и текст для клиента"), {"fields": ("manager_letter", "client_ack")}),
     )
 
     def get_queryset(self, request):
@@ -2560,7 +2556,6 @@ class HomePageContentAdmin(ModelAdmin):
         (
             _("Hero: слайд 2"),
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
                 ),
@@ -2570,7 +2565,6 @@ class HomePageContentAdmin(ModelAdmin):
         (
             _("Hero: слайд 3"),
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
                 ),
@@ -2580,7 +2574,6 @@ class HomePageContentAdmin(ModelAdmin):
         (
             _("Hero: слайд 4"),
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
                 ),
@@ -2590,7 +2583,6 @@ class HomePageContentAdmin(ModelAdmin):
         (
             _("Hero: слайд 5"),
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
                 ),
@@ -2600,7 +2592,6 @@ class HomePageContentAdmin(ModelAdmin):
         (
             _("Hero: слайд 6"),
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Та же сетка, что у слайда 1: чекбоксы видимости (бейдж, доверие, метки, KPI) и поля ввода."
                 ),
@@ -2610,7 +2601,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "ps",
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Для каждой карточки: тип значка — эмодзи, иконка Font Awesome (список или класс вручную) или загрузка файла (в т.ч. SVG)."
                 ),
@@ -2651,7 +2641,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "proc",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "proc_heading",
                     "proc_subheading",
@@ -2669,7 +2658,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "paths",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "paths_eyebrow",
                     "paths_heading",
@@ -2702,7 +2690,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "calc",
             {
-                "classes": ("collapse",),
                 "description": _("Видимость блока на сайте — переключатель «Показывать калькулятор» в «Настройки сайта»."),
                 "fields": (
                     "calc_mode",
@@ -2764,7 +2751,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "port",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "port_heading",
                     "port_subheading",
@@ -2780,7 +2766,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "why",
             {
-                "classes": ("collapse",),
                 "description": _(
                     "Колонки: тип значка — эмодзи, Font Awesome или загрузка файла иконки (PNG, WebP, JPEG, GIF или SVG)."
                 ),
@@ -2830,7 +2815,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "rev",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "rev_heading",
                     "rev_subheading",
@@ -2859,7 +2843,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "blog",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "blog_heading",
                     "blog_subheading",
@@ -2872,7 +2855,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "map",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "map_heading",
                     "map_subheading",
@@ -2891,7 +2873,6 @@ class HomePageContentAdmin(ModelAdmin):
         hp_fieldset(
             "ui",
             {
-                "classes": ("collapse",),
                 "fields": (
                     "ui_loading_featured",
                     "ui_buy_marketplaces",
