@@ -81,32 +81,50 @@ export function BlogPreviewSection() {
                 reduce
                   ? undefined
                   : {
-                      scale: 1.03,
-                      y: -4,
-                      boxShadow: '0 16px 32px -12px rgba(0,0,0,0.12)',
+                      y: -6,
+                      boxShadow: '0 20px 40px -14px rgba(0,0,0,0.14)',
                     }
               }
-              transition={{ type: 'spring', stiffness: 400, damping: 26 }}
-              className="overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)]"
+              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              className="group overflow-hidden rounded-2xl bg-surface shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] transition-shadow duration-300 hover:ring-accent/15"
             >
-              <div className="aspect-[16/10] overflow-hidden">
+              <Link
+                to={`/blog/${post.slug}`}
+                className="relative block aspect-[16/10] w-full overflow-hidden bg-border-light/25 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+              >
                 {post.img ? (
-                  <OptimizedImage
-                    src={post.img}
-                    alt={post.title}
-                    widths={[480, 640, 800]}
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="h-full w-full object-cover"
-                  />
+                  <>
+                    <OptimizedImage
+                      src={post.img}
+                      alt={post.title}
+                      widths={[480, 640, 800, 960]}
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="h-full w-full object-cover transition-[transform,filter] duration-500 ease-out will-change-transform motion-safe:group-hover:scale-[1.06] motion-reduce:transition-none"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent opacity-0 transition-opacity duration-300 motion-safe:group-hover:opacity-100 motion-reduce:opacity-0"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 ring-0 ring-inset ring-white/0 transition-[box-shadow] duration-300 motion-safe:group-hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]"
+                    />
+                  </>
                 ) : (
-                  <div className="h-full w-full bg-border-light/40" />
+                  <div className="flex h-full min-h-[8rem] w-full items-center justify-center bg-gradient-to-br from-border-light/50 to-border-light/20 font-body text-sm text-text-muted">
+                    Нет обложки
+                  </div>
                 )}
-              </div>
+              </Link>
               <div className="p-5">
                 <time className="font-body text-xs text-text-subtle" dateTime={post.date}>
                   {post.date}
                 </time>
-                <h3 className="mt-2 font-heading text-xl font-semibold text-text">{post.title}</h3>
+                <h3 className="mt-2 font-heading text-xl font-semibold text-text">
+                  <Link to={`/blog/${post.slug}`} className="text-text hover:text-accent">
+                    {post.title}
+                  </Link>
+                </h3>
                 <div
                   className="cms-html mt-2 font-body text-sm leading-relaxed text-text-muted [&_p]:m-0 [&_table]:max-w-full"
                   dangerouslySetInnerHTML={{ __html: post.excerpt }}
