@@ -83,7 +83,10 @@ export function BlogPage() {
                       {post.title}
                     </Link>
                   </h2>
-                  <p className="mt-2 font-body text-text-muted">{post.excerpt}</p>
+                  <div
+                    className="cms-html mt-2 font-body text-text-muted [&_p]:m-0 [&_table]:max-w-full"
+                    dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                  />
                   <Link
                     to={`/blog/${post.slug}`}
                     className="mt-3 inline-block font-medium text-accent hover:underline"

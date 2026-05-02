@@ -71,3 +71,20 @@ def test_blog_post_meta_from_body_when_excerpt_empty():
     desc = data["seo"]["metaDescription"]
     assert "Первый абзац" in desc
     assert len(desc) <= 80
+
+
+@pytest.mark.django_db
+def test_blog_post_list_excerpt_is_sanitized_html():
+    BlogPost.objects.create(
+        title="List HTML",
+        slug="list-html-san",
+        excerpt='<p class="x">Анонс</p><script>evil()</script>',
+        body="",
+        is_published=True,
+    )
+    post = BlogPost.objects.get(slug="list-html-san")
+    from api.serializers import BlogPostListSerializer
+
+    data = BlogPostListSerializer(post).data
+    assert "<script>" not in (data.get("excerpt") or "")
+    assert "Анонс" in (data.get("excerpt") or "")

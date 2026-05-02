@@ -107,7 +107,10 @@ export function BlogPreviewSection() {
                   {post.date}
                 </time>
                 <h3 className="mt-2 font-heading text-xl font-semibold text-text">{post.title}</h3>
-                <p className="mt-2 font-body text-sm leading-relaxed text-text-muted">{post.excerpt}</p>
+                <div
+                  className="cms-html mt-2 font-body text-sm leading-relaxed text-text-muted [&_p]:m-0 [&_table]:max-w-full"
+                  dangerouslySetInnerHTML={{ __html: post.excerpt }}
+                />
                 <Link
                   to={`/blog/${post.slug}`}
                   className="mt-4 inline-block font-body text-sm font-medium text-accent hover:underline"

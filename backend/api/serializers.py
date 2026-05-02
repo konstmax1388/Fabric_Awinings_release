@@ -427,10 +427,14 @@ class ReviewSubmissionCreateSerializer(serializers.ModelSerializer):
 class BlogPostListSerializer(serializers.ModelSerializer):
     img = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
+    excerpt = serializers.SerializerMethodField()
 
     class Meta:
         model = BlogPost
         fields = ("slug", "title", "excerpt", "date", "img")
+
+    def get_excerpt(self, obj: BlogPost) -> str:
+        return sanitize_html_fragment(obj.excerpt or "")
 
     def get_img(self, obj: BlogPost) -> str:
         req = self.context.get("request")

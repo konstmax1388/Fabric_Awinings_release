@@ -244,6 +244,8 @@ class BlogPostStaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict) -> BlogPost:
         c = validated_data.pop("coverImageRelativePath", None)
+        if "excerpt" in validated_data:
+            validated_data["excerpt"] = sanitize_html_fragment(str(validated_data.get("excerpt") or ""))
         if "body" in validated_data:
             validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
         instance = BlogPost.objects.create(**validated_data)
@@ -257,6 +259,8 @@ class BlogPostStaffSerializer(serializers.ModelSerializer):
 
     def update(self, instance: BlogPost, validated_data: dict) -> BlogPost:
         c = validated_data.pop("coverImageRelativePath", None)
+        if "excerpt" in validated_data:
+            validated_data["excerpt"] = sanitize_html_fragment(str(validated_data.get("excerpt") or ""))
         if "body" in validated_data:
             validated_data["body"] = sanitize_html_fragment(str(validated_data.get("body") or ""))
         instance = super().update(instance, validated_data)

@@ -67,6 +67,7 @@ from .static_page_about_admin_form import (
     apply_about_layout_initial,
     build_about_payload,
 )
+from .html_sanitize import sanitize_html_fragment
 from .product_wb_import import WbImportError, import_one_from_wb_url
 from .product_excel_import import (
     ExcelImportDuplicateError,
@@ -1104,8 +1105,45 @@ class ReviewAdmin(ModelAdmin):
         self.message_user(request, _("Подтверждено: %(count)s.") % {"count": count}, level=messages.SUCCESS)
 
 
+class BlogPostAdminForm(forms.ModelForm):
+    """TinyMCE (таблицы, списки, ссылки) для анонса и текста — тот же стек, что у статичных страниц."""
+
+    class Meta:
+        model = BlogPost
+        fields = "__all__"
+        widgets = {
+            "excerpt": forms.Textarea(
+                attrs={
+                    "class": "vLargeTextField js-static-page-html-editor",
+                    "rows": 8,
+                    "data-editor": "blog-excerpt",
+                }
+            ),
+            "body": forms.Textarea(
+                attrs={
+                    "class": "vLargeTextField js-static-page-html-editor",
+                    "rows": 22,
+                    "data-editor": "blog-body",
+                }
+            ),
+        }
+
+    def clean_excerpt(self) -> str:
+        return sanitize_html_fragment(self.cleaned_data.get("excerpt", "") or "")
+
+    def clean_body(self) -> str:
+        return sanitize_html_fragment(self.cleaned_data.get("body", "") or "")
+
+    class Media:
+        js = (
+            "https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js",
+            "admin/js/static_page_html_editor.js",
+        )
+
+
 @admin.register(BlogPost)
 class BlogPostAdmin(ModelAdmin):
+    form = BlogPostAdminForm
     list_display = ("title", "slug", "published_at", "is_published")
     list_filter = ("is_published",)
     date_hierarchy = "published_at"
@@ -1124,7 +1162,10 @@ class BlogPostAdmin(ModelAdmin):
             _("Текст и обложка"),
             {
                 "fields": ("excerpt", "body", "cover_image"),
-                "description": _("Обложка — только загрузка файла."),
+                "description": _(
+                    "Анонс и текст — HTML (редактор с таблицами). Вставляйте изображения по URL или "
+                    "загружайте обложку отдельным полем ниже."
+                ),
             },
         ),
     )
