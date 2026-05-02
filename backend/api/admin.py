@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from typing import Any
 
 from django import forms
@@ -310,6 +311,11 @@ class PromotionAdmin(ModelAdmin):
             },
         ),
     )
+
+
+def _excel_import_row_prefix(row_num: int) -> str:
+    """Префикс «Строка N:»; текст предупреждений WB подставляйте отдельно (в нём может быть символ %)."""
+    return str(_("Строка %(row)d:") % {"row": row_num})
 
 
 @admin.register(Product)
@@ -683,9 +689,17 @@ class ProductAdmin(ModelAdmin):
                     rows, parse_warns = parse_product_rows_from_workbook(content)
                 except ExcelImportParseError as e:
                     messages.error(request, str(e))
+                except Exception as e:
+                    _logger.exception("Excel parse failed (admin)")
+                    messages.error(
+                        request,
+                        _("Не удалось прочитать файл как .xlsx. Проверьте формат и размер файла.")
+                        + " "
+                        + str(e),
+                    )
                 else:
                     for w in parse_warns:
-                        messages.warning(request, w)
+                        messages.warning(request, str(w))
                     category = form.cleaned_data["category"]
                     publish = form.cleaned_data["publish"]
                     dry = form.cleaned_data["dry_run"]
@@ -695,6 +709,11 @@ class ProductAdmin(ModelAdmin):
                             _("Нет строк для импорта: проверьте заголовки столбцов и что у каждой строки есть цена."),
                         )
                     else:
+                        messages.info(
+                            request,
+                            _("К обработке: %(total)d строк. После строк со ссылкой Wildberries делается пауза ~1 с, чтобы снизить нагрузку на API.")
+                            % {"total": len(rows)},
+                        )
                         ok = 0
                         for row in rows:
                             try:
@@ -707,85 +726,107 @@ class ProductAdmin(ModelAdmin):
                             except WbImportError as e:
                                 messages.error(
                                     request,
-                                    _("Строка %(row)d: %(err)s")
-                                    % {"row": row.sheet_row, "err": str(e)},
+                                    _excel_import_row_prefix(row.sheet_row) + " " + str(e),
                                 )
-                                continue
                             except ExcelImportParseError as e:
                                 messages.error(
                                     request,
-                                    _("Строка %(row)d: %(err)s")
-                                    % {"row": row.sheet_row, "err": str(e)},
+                                    _excel_import_row_prefix(row.sheet_row) + " " + str(e),
                                 )
-                                continue
                             except Exception as e:
                                 _logger.exception("Excel import failed (admin)")
                                 messages.error(
                                     request,
-                                    _("Строка %(row)d: внутренняя ошибка — %(err)s")
-                                    % {"row": row.sheet_row, "err": str(e)},
+                                    _excel_import_row_prefix(row.sheet_row)
+                                    + " "
+                                    + _("внутренняя ошибка — см. журнал сервера.")
+                                    + " "
+                                    + str(e),
                                 )
-                                continue
-                            for w in row_warns:
-                                messages.warning(
-                                    request,
-                                    _("Строка %(row)d: %(w)s")
-                                    % {"row": row.sheet_row, "w": w},
-                                )
-                            if dry:
-                                assert preview is not None
-                                if isinstance(preview, dict) and preview.get("kind") == "excel_only":
-                                    messages.info(
-                                        request,
-                                        _(
-                                            "Строка %(row)d (без WB): «%(title)s», цена %(price)s ₽, "
-                                            "слаг %(slug)s, ссылки МП: %(mp)s"
-                                        )
-                                        % {
-                                            "row": preview["sheet_row"],
-                                            "title": preview["title"][:120],
-                                            "price": preview["price_from"],
-                                            "slug": preview["slug_preview"],
-                                            "mp": preview.get("marketplace_links") or {},
-                                        },
-                                    )
-                                else:
-                                    b = preview
-                                    seed_v = next(
-                                        (v for v in b.variants if v.nm == b.seed_nm),
-                                        b.variants[0] if b.variants else None,
-                                    )
-                                    n_img = len(seed_v.image_urls) if seed_v else 0
-                                    messages.info(
-                                        request,
-                                        _(
-                                            "Строка %(row)d: проверка WB nm=%(nm)s — %(title)s — на сайте будет "
-                                            "один вариант по ссылке; фото этого варианта ≈%(n)d, характеристик %(ns)d; "
-                                            "цена из Excel: %(file_price)s ₽ (на WB в группе вариантов: %(nv)d)"
-                                        )
-                                        % {
-                                            "row": row.sheet_row,
-                                            "nm": b.seed_nm,
-                                            "title": b.title[:120],
-                                            "nv": len(b.variants),
-                                            "n": n_img,
-                                            "ns": len(b.specifications),
-                                            "file_price": row.price_from,
-                                        },
-                                    )
                             else:
-                                assert p is not None
-                                ok += 1
-                                messages.success(
-                                    request,
-                                    _("Строка %(row)d: создан товар «%(title)s» (слаг %(slug)s), цена %(price)s ₽")
-                                    % {
-                                        "row": row.sheet_row,
-                                        "title": p.title,
-                                        "slug": p.slug,
-                                        "price": p.price_from,
-                                    },
-                                )
+                                for w in row_warns:
+                                    messages.warning(
+                                        request,
+                                        _excel_import_row_prefix(row.sheet_row) + " " + str(w),
+                                    )
+                                if dry:
+                                    assert preview is not None
+                                    if isinstance(preview, dict) and preview.get("kind") == "excel_only":
+                                        mp = preview.get("marketplace_links") or {}
+                                        messages.info(
+                                            request,
+                                            _excel_import_row_prefix(preview["sheet_row"])
+                                            + " "
+                                            + _("(без WB)")
+                                            + " «"
+                                            + str(preview["title"])[:120]
+                                            + "», "
+                                            + _("цена")
+                                            + " "
+                                            + str(preview["price_from"])
+                                            + " ₽, "
+                                            + _("слаг")
+                                            + " "
+                                            + str(preview["slug_preview"])
+                                            + ", "
+                                            + _("ссылки МП")
+                                            + ": "
+                                            + str(mp),
+                                        )
+                                    else:
+                                        b = preview
+                                        seed_v = next(
+                                            (v for v in b.variants if v.nm == b.seed_nm),
+                                            b.variants[0] if b.variants else None,
+                                        )
+                                        n_img = len(seed_v.image_urls) if seed_v else 0
+                                        messages.info(
+                                            request,
+                                            _excel_import_row_prefix(row.sheet_row)
+                                            + " "
+                                            + _("Проверка WB: nm=%(nm)s; один вариант по ссылке; фото ≈%(n)d; характеристик %(ns)d; цена из Excel %(fp)s ₽; вариантов в группе на WB: %(nv)d.")
+                                            % {
+                                                "nm": b.seed_nm,
+                                                "n": n_img,
+                                                "ns": len(b.specifications),
+                                                "fp": row.price_from,
+                                                "nv": len(b.variants),
+                                            }
+                                            + " «"
+                                            + str(b.title)[:120]
+                                            + "»",
+                                        )
+                                else:
+                                    assert p is not None
+                                    ok += 1
+                                    messages.success(
+                                        request,
+                                        _excel_import_row_prefix(row.sheet_row)
+                                        + " "
+                                        + _("создан товар")
+                                        + " «"
+                                        + str(p.title)
+                                        + "» ("
+                                        + str(p.slug)
+                                        + "), "
+                                        + str(p.price_from)
+                                        + " ₽",
+                                    )
+                            finally:
+                                if row.wb_url.strip():
+                                    time.sleep(1.0)
+                        if dry:
+                            messages.info(
+                                request,
+                                _("Проверка завершена по %(total)d строкам.")
+                                % {"total": len(rows)},
+                            )
+                        else:
+                            messages.info(
+                                request,
+                                _("Импорт завершён: создано %(ok)d из %(total)d товаров.")
+                                % {"ok": ok, "total": len(rows)},
+                            )
                         if ok and not dry:
                             return redirect("admin:api_product_changelist")
         else:

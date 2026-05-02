@@ -12,6 +12,9 @@
     <p class="text-sm leading-relaxed text-font-subtle-light dark:text-font-subtle-dark max-w-3xl">
       {% trans "Загрузите таблицу .xlsx: из файла подставляются название и цена на сайт, при необходимости — ссылки на Wildberries и Ozon и числовой SKU Ozon для товара." %}
     </p>
+    <p class="text-sm leading-relaxed text-font-subtle-light dark:text-font-subtle-dark max-w-3xl">
+      {% trans "После запуска импорта смотрите блок сообщений вверху страницы: там появится прогресс по строкам и итог. Для строк со ссылкой Wildberries между запросами к API делается пауза ~1 с." %}
+    </p>
     <ul class="mt-1 list-disc pl-5 text-sm text-font-subtle-light dark:text-font-subtle-dark space-y-1 max-w-3xl">
       <li>{% trans "Если в строке есть ссылка WB, подтягиваются описание, характеристики и фото для одного варианта — того, что в ссылке (остальные варианты группы на WB не создаются). Цена на витрине — только из столбца цены в Excel." %}</li>
       <li>{% trans "Если ссылки WB нет, создаётся минимальная карточка: название, цена, ссылки МП (если указаны), один вариант без описания и без фото — их можно добавить вручную в админке." %}</li>

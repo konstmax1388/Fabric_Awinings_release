@@ -180,7 +180,15 @@ def parse_product_rows_from_workbook(file_content: bytes) -> tuple[list[ExcelPro
         ) from e
 
     warns: list[str] = []
-    wb = load_workbook(filename=BytesIO(file_content), read_only=True, data_only=True)
+    if not file_content:
+        return [], ["Файл пустой или не был передан."]
+    try:
+        wb = load_workbook(filename=BytesIO(file_content), read_only=False, data_only=True)
+    except Exception as e:
+        raise ExcelImportParseError(
+            "Не удалось открыть файл как таблицу Excel (.xlsx). Сохраните книгу в формате xlsx и повторите импорт. "
+            + str(e)
+        ) from e
     try:
         ws = wb[wb.sheetnames[0]]
         rows_iter = ws.iter_rows(values_only=True)
