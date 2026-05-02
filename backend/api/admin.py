@@ -12,7 +12,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms.models import modelform_factory
 from django.http import Http404
 from django.http import JsonResponse
-from django.http import HttpResponseRedirect, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -551,6 +551,16 @@ class ProductAdmin(ModelAdmin):
                 self.admin_site.admin_view(self.import_wb_view),
                 name=f"{info[0]}_{info[1]}_import_wb",
             ),
+            path(
+                "import-excel/",
+                self.admin_site.admin_view(self.import_excel_view),
+                name=f"{info[0]}_{info[1]}_import_excel",
+            ),
+            path(
+                "import-excel-template.xlsx",
+                self.admin_site.admin_view(self.import_excel_template_view),
+                name=f"{info[0]}_{info[1]}_import_excel_template",
+            ),
             *super().get_urls(),
         ]
 
@@ -648,6 +658,148 @@ class ProductAdmin(ModelAdmin):
         }
         return TemplateResponse(request, "admin/api/product/import_wb.html", context)
 
+    def import_excel_template_view(self, request):
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+
+        data = build_excel_template_bytes()
+        resp = HttpResponse(
+            data,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        resp["Content-Disposition"] = 'attachment; filename="import_tovarov_shablon.xlsx"'
+        return resp
+
+    def import_excel_view(self, request):
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+
+        if request.method == "POST":
+            form = ExcelBulkImportForm(request.POST, request.FILES)
+            if form.is_valid():
+                up = form.cleaned_data["file"]
+                content = up.read()
+                try:
+                    rows, parse_warns = parse_product_rows_from_workbook(content)
+                except ExcelImportParseError as e:
+                    messages.error(request, str(e))
+                else:
+                    for w in parse_warns:
+                        messages.warning(request, w)
+                    category = form.cleaned_data["category"]
+                    publish = form.cleaned_data["publish"]
+                    dry = form.cleaned_data["dry_run"]
+                    create_variants = form.cleaned_data["create_variants"]
+                    price_source_mode = form.cleaned_data["price_source_mode"]
+                    if not rows:
+                        messages.warning(
+                            request,
+                            _("Нет строк для импорта: проверьте заголовки столбцов и что у каждой строки есть цена."),
+                        )
+                    else:
+                        ok = 0
+                        for row in rows:
+                            try:
+                                preview, p, row_warns = import_one_excel_row(
+                                    row,
+                                    category=category,
+                                    publish=publish,
+                                    dry_run=dry,
+                                    create_variants=create_variants,
+                                    price_source_mode=price_source_mode,
+                                )
+                            except WbImportError as e:
+                                messages.error(
+                                    request,
+                                    _("Строка %(row)d: %(err)s")
+                                    % {"row": row.sheet_row, "err": str(e)},
+                                )
+                                continue
+                            except ExcelImportParseError as e:
+                                messages.error(
+                                    request,
+                                    _("Строка %(row)d: %(err)s")
+                                    % {"row": row.sheet_row, "err": str(e)},
+                                )
+                                continue
+                            except Exception as e:
+                                _logger.exception("Excel import failed (admin)")
+                                messages.error(
+                                    request,
+                                    _("Строка %(row)d: внутренняя ошибка — %(err)s")
+                                    % {"row": row.sheet_row, "err": str(e)},
+                                )
+                                continue
+                            for w in row_warns:
+                                messages.warning(
+                                    request,
+                                    _("Строка %(row)d: %(w)s")
+                                    % {"row": row.sheet_row, "w": w},
+                                )
+                            if dry:
+                                assert preview is not None
+                                if isinstance(preview, dict) and preview.get("kind") == "excel_only":
+                                    messages.info(
+                                        request,
+                                        _(
+                                            "Строка %(row)d (без WB): «%(title)s», цена %(price)s ₽, "
+                                            "слаг %(slug)s, ссылки МП: %(mp)s"
+                                        )
+                                        % {
+                                            "row": preview["sheet_row"],
+                                            "title": preview["title"][:120],
+                                            "price": preview["price_from"],
+                                            "slug": preview["slug_preview"],
+                                            "mp": preview.get("marketplace_links") or {},
+                                        },
+                                    )
+                                else:
+                                    b = preview
+                                    n_img = sum(len(v.image_urls) for v in b.variants)
+                                    messages.info(
+                                        request,
+                                        _(
+                                            "Строка %(row)d: проверка WB nm=%(nm)s — %(title)s — вариантов %(nv)d, "
+                                            "фото ≈%(n)d, характеристик %(ns)d; на сайте цена из файла: %(file_price)s ₽"
+                                        )
+                                        % {
+                                            "row": row.sheet_row,
+                                            "nm": b.seed_nm,
+                                            "title": b.title[:120],
+                                            "nv": len(b.variants),
+                                            "n": n_img,
+                                            "ns": len(b.specifications),
+                                            "file_price": row.price_from,
+                                        },
+                                    )
+                            else:
+                                assert p is not None
+                                ok += 1
+                                messages.success(
+                                    request,
+                                    _("Строка %(row)d: создан товар «%(title)s» (слаг %(slug)s), цена %(price)s ₽")
+                                    % {
+                                        "row": row.sheet_row,
+                                        "title": p.title,
+                                        "slug": p.slug,
+                                        "price": p.price_from,
+                                    },
+                                )
+                        if ok and not dry:
+                            return redirect("admin:api_product_changelist")
+        else:
+            form = ExcelBulkImportForm()
+
+        template_url = reverse("admin:api_product_import_excel_template")
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Импорт товаров из Excel"),
+            "form": form,
+            "opts": self.model._meta,
+            "excel_template_url": template_url,
+        }
+        return TemplateResponse(request, "admin/api/product/import_excel.html", context)
+
 
 _WB_TEXTAREA_CLASSES = (
     "block w-full max-w-3xl font-mono text-sm leading-relaxed "
@@ -723,6 +875,69 @@ class WbBulkImportForm(forms.Form):
         initial="auto",
         widget=forms.Select(attrs={"class": _WB_SELECT_CLASSES}),
         help_text=_("Какое поле цены использовать при импорте и расчёте «цены от»."),
+    )
+
+
+_EXCEL_FILE_WIDGET_CLASSES = (
+    "block w-full max-w-xl text-sm "
+    "border border-base-200 rounded-default px-3 py-2 "
+    "bg-white text-font-default-light shadow-xs "
+    "dark:border-base-700 dark:bg-base-900 dark:text-font-default-dark"
+)
+
+
+class ExcelBulkImportForm(forms.Form):
+    file = forms.FileField(
+        label=_("Файл Excel (.xlsx)"),
+        help_text=_(
+            "Первый лист, первая строка — заголовки столбцов. "
+            "Название и цена на сайте обязательны; при наличии ссылки WB подтягиваются описание, "
+            "характеристики, варианты и фото с Wildberries, а цены подставляются из файла."
+        ),
+        widget=forms.FileInput(
+            attrs={
+                "accept": ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "class": _EXCEL_FILE_WIDGET_CLASSES,
+            }
+        ),
+    )
+    category = forms.ModelChoiceField(
+        label=_("Категория на сайте"),
+        queryset=ProductCategory.objects.order_by("sort_order", "title"),
+        empty_label=None,
+        widget=forms.Select(attrs={"class": _WB_SELECT_CLASSES}),
+    )
+    publish = forms.BooleanField(
+        label=_("Сразу опубликовать на витрине"),
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
+    )
+    dry_run = forms.BooleanField(
+        label=_("Только проверить (ничего не сохранять)"),
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
+    )
+    create_variants = forms.BooleanField(
+        label=_("Создавать варианты товара (как на WB), если в строке есть ссылка WB"),
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
+        help_text=_(
+            "Для строк только из файла (без WB) всегда создаётся один вариант. "
+            "Для строк с WB — как в импорте Wildberries."
+        ),
+    )
+    price_source_mode = forms.ChoiceField(
+        label=_("Источник цены WB (только для предпросмотра API)"),
+        choices=WbBulkImportForm.PRICE_SOURCE_CHOICES,
+        initial="auto",
+        widget=forms.Select(attrs={"class": _WB_SELECT_CLASSES}),
+        help_text=_(
+            "При импорте строк с WB цены на сайте всё равно берутся из столбца «цена» в файле; "
+            "режим влияет на то, какие цены WB показываются в предупреждениях и при проверке ответа API."
+        ),
     )
 
 

@@ -53,13 +53,11 @@ function MobileBarBagIcon({ className = '' }: { className?: string }) {
     </svg>
   )
 }
-function MobileBarGridIcon({ className = '' }: { className?: string }) {
+function MobileBarTagIcon({ className = '' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
+      <path d="M3 5.5h5.2L21 18.3a1.6 1.6 0 1 1-2.3 2.3L5.9 7.7V5.5H3Z" />
+      <circle cx="7.2" cy="8.8" r="1.35" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -124,7 +122,7 @@ export function SiteHeader() {
   const buyOnMobileLabel = home?.ui?.buyOnMarketplacesMobile ?? 'Купить на маркетплейсе'
   const navHomeLabel = home?.ui?.navHome ?? 'Главная'
   const navCatalogLabel = home?.ui?.navCatalog ?? 'Каталог'
-  const navPortfolioLabel = home?.ui?.navPortfolio ?? 'Портфолио'
+  const navPromotionsLabel = home?.ui?.navPromotions ?? 'Акции'
   const navCartLabel = home?.ui?.navCart ?? 'Корзина'
   const navAccountLabel = home?.ui?.navAccount ?? 'Личный кабинет'
   const navMenuTitle = home?.ui?.navMenuTitle ?? 'Меню'
@@ -620,24 +618,19 @@ export function SiteHeader() {
               </div>
             )}
           </NavLink>
-          {portfolioEnabled ? (
-            <NavLink
-              to="/portfolio"
-              className="flex min-w-0 flex-1 justify-center"
-            >
-              {({ isActive }) => (
-                <div
-                  className={[
-                    'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
-                    isActive ? mobileBarTabActive : mobileBarTabIdle,
-                  ].join(' ')}
-                >
-                  <MobileBarGridIcon className={mobileBarIcon} />
-                  <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navPortfolioLabel}</span>
-                </div>
-              )}
-            </NavLink>
-          ) : null}
+          <NavLink to="/sales" className="flex min-w-0 flex-1 justify-center">
+            {({ isActive }) => (
+              <div
+                className={[
+                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  isActive ? mobileBarTabActive : mobileBarTabIdle,
+                ].join(' ')}
+              >
+                <MobileBarTagIcon className={mobileBarIcon} />
+                <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navPromotionsLabel}</span>
+              </div>
+            )}
+          </NavLink>
           <NavLink
             to="/cart"
             className="flex min-w-0 flex-1 justify-center"

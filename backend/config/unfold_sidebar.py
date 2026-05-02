@@ -79,6 +79,11 @@ def build_unfold_sidebar() -> list[dict]:
                     "link": reverse_lazy("admin:api_product_import_wb"),
                 },
                 {
+                    "title": _("Импорт из Excel"),
+                    "icon": "upload_file",
+                    "link": reverse_lazy("admin:api_product_import_excel"),
+                },
+                {
                     "title": _("Портфолио"),
                     "icon": "photo_camera",
                     "link": reverse_lazy("admin:api_portfolioproject_changelist"),

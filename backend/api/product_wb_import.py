@@ -53,11 +53,19 @@ def import_one_from_wb_url(
     dry_run: bool,
     create_variants: bool = True,
     price_source_mode: str = "auto",
+    title_override: str | None = None,
+    price_from_override: int | None = None,
+    marketplace_links_extra: dict[str, str] | None = None,
+    product_ozon_sku: int | None = None,
 ):
     """
     Возвращает (preview, product, warnings).
     warnings — предупреждения (пропущенные варианты WB и т.п.).
     При dry_run: (WbImportBundle, None, warnings). После импорта: (None, Product, warnings).
+
+    title_override / price_from_override / marketplace_links_extra / product_ozon_sku —
+    для импорта из Excel (название и цена «от» с файла, ссылки МП; цены вариантов — из файла,
+    если задан price_from_override).
     """
     seed_nm = parse_nm_from_url(raw_url)
     try:
@@ -69,6 +77,14 @@ def import_one_from_wb_url(
     warnings.append(
         f"Цена WB: источник={bundle.price_from_min_source}, режим={bundle.price_source_mode}, цена_от={bundle.price_from_min} ₽"
     )
+    title_for_product = (title_override or "").strip() or bundle.title
+    if (title_override or "").strip():
+        warnings.append("Название на сайте будет взято из файла (не с WB).")
+    price_main = bundle.price_from_min if price_from_override is None else int(price_from_override)
+    if price_from_override is not None:
+        warnings.append(
+            f"Цена «от» и цены вариантов на сайте будут из файла: {price_main} ₽ (цены WB не используются)."
+        )
 
     if dry_run:
         return bundle, None, warnings
@@ -83,18 +99,26 @@ def import_one_from_wb_url(
         mp: dict = {}
         if seed_v and seed_v.marketplace_wb_url:
             mp["wb"] = seed_v.marketplace_wb_url
+        if marketplace_links_extra:
+            for k, v in marketplace_links_extra.items():
+                vv = (v or "").strip()
+                if vv:
+                    mp[str(k)] = vv
 
-        p = Product.objects.create(
+        create_kwargs: dict = dict(
             slug=slug,
-            title=bundle.title,
+            title=title_for_product,
             excerpt=bundle.excerpt,
             description=bundle.description_plain,
             description_html=bundle.description_html,
             category=category,
-            price_from=bundle.price_from_min,
+            price_from=price_main,
             is_published=publish,
             marketplace_links=mp,
         )
+        if product_ozon_sku is not None:
+            create_kwargs["ozon_sku"] = product_ozon_sku
+        p = Product.objects.create(**create_kwargs)
 
         for gname, name, value, sort_order in bundle.specifications:
             ProductSpecification.objects.create(
@@ -115,11 +139,12 @@ def import_one_from_wb_url(
 
         for order, vd in enumerate(variants_to_create):
             is_def = vd.nm == bundle.seed_nm
+            variant_price = vd.price_from if price_from_override is None else int(price_from_override)
             v = ProductVariant.objects.create(
                 product=p,
                 label=vd.label,
                 wb_nm_id=vd.nm,
-                price_from=vd.price_from,
+                price_from=variant_price,
                 sort_order=order,
                 is_default=is_def,
                 marketplace_wb_url=vd.marketplace_wb_url,

@@ -173,6 +173,11 @@ def admin_dashboard_callback(request, context: dict[str, Any]) -> dict[str, Any]
             "icon": "link",
         },
         {
+            "title": _("Импорт из Excel"),
+            "url": reverse("admin:api_product_import_excel"),
+            "icon": "upload_file",
+        },
+        {
             "title": _("Портфолио"),
             "url": reverse("admin:api_portfolioproject_changelist"),
             "icon": "photo_camera",
