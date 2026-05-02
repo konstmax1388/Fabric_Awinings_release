@@ -1608,6 +1608,18 @@ export type CustomerOrderRow = {
   paymentStatusLabel?: string
   totalApprox: number
   lines: unknown[]
+  /** Код способа доставки (как в CartOrder.DeliveryMethod). */
+  deliveryMethod?: string
+  /** Подпись способа доставки для покупателя. */
+  deliveryMethodLabel?: string
+  /** Трек СДЭК (только для deliveryMethod === "cdek"). */
+  cdekTracking?: string
+  /** Публичная ссылка отслеживания на сайте СДЭК. */
+  cdekTrackingUrl?: string
+  /** ID заказа у Ozon Pay после оплаты (для логистики Ozon). */
+  ozonPayExternalOrderId?: string
+  /** Ссылка в ЛК Ozon на список заказов (после входа). */
+  ozonMyOrdersUrl?: string
 }
 
 export async function fetchCustomerOrders(accessToken: string): Promise<CustomerOrderRow[] | null> {

@@ -16,6 +16,10 @@ from .validators import (
     reject_honeypot,
 )
 from .html_sanitize import sanitize_about_payload, sanitize_html_fragment
+from .services.customer_order_public_tracking import (
+    OZON_MY_ORDERS_PUBLIC_URL,
+    cdek_public_tracking_url,
+)
 from .models import (
     BlogPost,
     CalculatorLead,
@@ -1381,6 +1385,12 @@ class CustomerOrderListSerializer(serializers.ModelSerializer):
     totalApprox = serializers.IntegerField(source="total_approx")
     fulfillmentStatusLabel = serializers.SerializerMethodField()
     paymentStatusLabel = serializers.SerializerMethodField()
+    deliveryMethod = serializers.CharField(source="delivery_method", read_only=True)
+    deliveryMethodLabel = serializers.SerializerMethodField()
+    cdekTracking = serializers.SerializerMethodField()
+    cdekTrackingUrl = serializers.SerializerMethodField()
+    ozonPayExternalOrderId = serializers.SerializerMethodField()
+    ozonMyOrdersUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = CartOrder
@@ -1393,6 +1403,12 @@ class CustomerOrderListSerializer(serializers.ModelSerializer):
             "paymentStatusLabel",
             "totalApprox",
             "lines",
+            "deliveryMethod",
+            "deliveryMethodLabel",
+            "cdekTracking",
+            "cdekTrackingUrl",
+            "ozonPayExternalOrderId",
+            "ozonMyOrdersUrl",
         )
 
     def get_fulfillmentStatusLabel(self, obj: CartOrder) -> str:
@@ -1400,6 +1416,30 @@ class CustomerOrderListSerializer(serializers.ModelSerializer):
 
     def get_paymentStatusLabel(self, obj: CartOrder) -> str:
         return obj.get_payment_status_display()
+
+    def get_deliveryMethodLabel(self, obj: CartOrder) -> str:
+        return obj.get_delivery_method_display()
+
+    def get_cdekTracking(self, obj: CartOrder) -> str:
+        if obj.delivery_method != CartOrder.DeliveryMethod.CDEK:
+            return ""
+        return (obj.cdek_tracking or "").strip()
+
+    def get_cdekTrackingUrl(self, obj: CartOrder) -> str:
+        if obj.delivery_method != CartOrder.DeliveryMethod.CDEK:
+            return ""
+        url = cdek_public_tracking_url(obj.cdek_tracking)
+        return url or ""
+
+    def get_ozonPayExternalOrderId(self, obj: CartOrder) -> str:
+        if obj.delivery_method != CartOrder.DeliveryMethod.OZON_LOGISTICS:
+            return ""
+        return (obj.payment_external_id or "").strip()
+
+    def get_ozonMyOrdersUrl(self, obj: CartOrder) -> str:
+        if obj.delivery_method != CartOrder.DeliveryMethod.OZON_LOGISTICS:
+            return ""
+        return OZON_MY_ORDERS_PUBLIC_URL
 
 
 class CustomerOrderDetailSerializer(CustomerOrderListSerializer):

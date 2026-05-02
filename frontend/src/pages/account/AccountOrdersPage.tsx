@@ -87,37 +87,90 @@ export function AccountOrdersPage() {
               key={o.orderRef}
               className="flex flex-col gap-3 rounded-2xl border border-border-light bg-bg-base p-4 sm:flex-row sm:items-stretch sm:justify-between"
             >
-              <Link
-                to={`/account/orders/${encodeURIComponent(o.orderRef)}`}
-                className="flex min-w-0 flex-1 flex-col gap-2 transition-colors hover:text-accent sm:justify-center"
-              >
-                <div>
-                  <p className="font-mono text-sm font-medium text-accent">{o.orderRef}</p>
-                  <p className="mt-1 font-body text-xs text-text-muted">
-                    {new Date(o.createdAt).toLocaleString('ru-RU', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:justify-center">
+                <Link
+                  to={`/account/orders/${encodeURIComponent(o.orderRef)}`}
+                  className="flex flex-col gap-2 transition-colors hover:text-accent"
+                >
+                  <div>
+                    <p className="font-mono text-sm font-medium text-accent">{o.orderRef}</p>
+                    <p className="mt-1 font-body text-xs text-text-muted">
+                      {new Date(o.createdAt).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="rounded-full bg-border-light px-3 py-1 font-body text-xs text-text">
+                      {fulfillmentLabel(o.fulfillment_status, o.fulfillmentStatusLabel)}
+                    </span>
+                    <span
+                      className="rounded-full border border-border-light bg-bg-base px-3 py-1 font-body text-xs text-text-muted"
+                      title="Статус оплаты"
+                    >
+                      {paymentLabel(o.payment_status, o.paymentStatusLabel)}
+                    </span>
+                    <span className="font-heading text-lg font-semibold text-text">
+                      {o.totalApprox.toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                </Link>
+                {(o.deliveryMethodLabel || o.deliveryMethod) && (
+                  <p className="font-body text-xs text-text-muted">
+                    <span className="text-text-subtle">Доставка:</span>{' '}
+                    <span className="text-text">{o.deliveryMethodLabel ?? o.deliveryMethod}</span>
+                    {o.deliveryMethod === 'cdek' && (o.cdekTracking || '').trim() ? (
+                      <>
+                        {' '}
+                        ·{' '}
+                        {o.cdekTrackingUrl ? (
+                          <a
+                            href={o.cdekTrackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent hover:underline"
+                          >
+                            трек {(o.cdekTracking ?? '').trim()}
+                          </a>
+                        ) : (
+                          <span className="text-text">трек {(o.cdekTracking ?? '').trim()}</span>
+                        )}
+                      </>
+                    ) : null}
+                    {o.deliveryMethod === 'ozon_logistics' ? (
+                      <>
+                        {(o.ozonPayExternalOrderId || '').trim() ? (
+                          <>
+                            {' '}
+                            ·{' '}
+                            <span className="text-text">
+                              Ozon Pay: {(o.ozonPayExternalOrderId ?? '').trim()}
+                            </span>
+                          </>
+                        ) : null}
+                        {o.ozonMyOrdersUrl ? (
+                          <>
+                            {' '}
+                            ·{' '}
+                            <a
+                              href={o.ozonMyOrdersUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent hover:underline"
+                            >
+                              заказы на Ozon
+                            </a>
+                          </>
+                        ) : null}
+                      </>
+                    ) : null}
                   </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-border-light px-3 py-1 font-body text-xs text-text">
-                    {fulfillmentLabel(o.fulfillment_status, o.fulfillmentStatusLabel)}
-                  </span>
-                  <span
-                    className="rounded-full border border-border-light bg-bg-base px-3 py-1 font-body text-xs text-text-muted"
-                    title="Статус оплаты"
-                  >
-                    {paymentLabel(o.payment_status, o.paymentStatusLabel)}
-                  </span>
-                  <span className="font-heading text-lg font-semibold text-text">
-                    {o.totalApprox.toLocaleString('ru-RU')} ₽
-                  </span>
-                </div>
-              </Link>
+                )}
+              </div>
               <div className="flex shrink-0 flex-col justify-center gap-2 border-t border-border-light pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                 <button
                   type="button"

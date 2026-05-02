@@ -88,6 +88,15 @@ export function AccountOrderDetailPage() {
   const delivery = data.deliverySnapshot
   const customerName = typeof data.customer_name === 'string' ? data.customer_name : ''
   const customerPhone = typeof data.customer_phone === 'string' ? data.customer_phone : ''
+  const deliveryMethod = typeof data.deliveryMethod === 'string' ? data.deliveryMethod : ''
+  const deliveryMethodLabel =
+    typeof data.deliveryMethodLabel === 'string' ? data.deliveryMethodLabel : ''
+  const cdekTracking = typeof data.cdekTracking === 'string' ? data.cdekTracking.trim() : ''
+  const cdekTrackingUrl = typeof data.cdekTrackingUrl === 'string' ? data.cdekTrackingUrl.trim() : ''
+  const ozonPayExternalOrderId =
+    typeof data.ozonPayExternalOrderId === 'string' ? data.ozonPayExternalOrderId.trim() : ''
+  const ozonMyOrdersUrl =
+    typeof data.ozonMyOrdersUrl === 'string' ? data.ozonMyOrdersUrl.trim() : ''
 
   function onReorder() {
     setReorderHint(null)
@@ -102,6 +111,30 @@ export function AccountOrderDetailPage() {
   }
 
   const orderTitle = buildSeoTitle('listing', { title: `Заказ ${ref}`, siteName }, seoDefaults)
+
+  const deliveryObj =
+    delivery && typeof delivery === 'object' && !Array.isArray(delivery)
+      ? (delivery as Record<string, unknown>)
+      : null
+  const snapCity = deliveryObj && typeof deliveryObj.city === 'string' ? deliveryObj.city.trim() : ''
+  const snapAddress =
+    deliveryObj && typeof deliveryObj.address === 'string' ? deliveryObj.address.trim() : ''
+  const snapComment =
+    deliveryObj && typeof deliveryObj.comment === 'string' ? deliveryObj.comment.trim() : ''
+  const hasSnapReadable = Boolean(snapCity || snapAddress || snapComment)
+  const hasMethodLine = Boolean(deliveryMethodLabel || deliveryMethod)
+  const hasCdekLine = deliveryMethod === 'cdek' && Boolean(cdekTracking)
+  const hasOzonLine =
+    deliveryMethod === 'ozon_logistics' &&
+    (Boolean(ozonPayExternalOrderId) || Boolean(ozonMyOrdersUrl))
+  const showDeliveryRawJson =
+    Boolean(deliveryObj) &&
+    !hasSnapReadable &&
+    !hasMethodLine &&
+    !hasCdekLine &&
+    !hasOzonLine
+  const showDeliverySection =
+    hasMethodLine || hasCdekLine || hasOzonLine || hasSnapReadable || showDeliveryRawJson
 
   return (
     <>
@@ -228,41 +261,89 @@ export function AccountOrderDetailPage() {
         </div>
       )}
 
-      {delivery && typeof delivery === 'object' && !Array.isArray(delivery) && (() => {
-        const d = delivery as Record<string, unknown>
-        const city = typeof d.city === 'string' ? d.city.trim() : ''
-        const address = typeof d.address === 'string' ? d.address.trim() : ''
-        const comment = typeof d.comment === 'string' ? d.comment.trim() : ''
-        const hasReadable = city || address || comment
-        return (
-          <div className="mt-6">
-            <h2 className="font-body text-sm font-semibold text-text">Доставка</h2>
-            <div className="mt-2 rounded-xl border border-border-light bg-bg-base p-4 font-body text-sm text-text-muted">
-              {hasReadable ? (
-                <>
-                  {city ? (
-                    <p>
-                      <span className="text-text-subtle">Город:</span> {city}
-                    </p>
-                  ) : null}
-                  {address ? (
-                    <p className={city ? 'mt-1' : ''}>
-                      <span className="text-text-subtle">Адрес:</span> {address}
-                    </p>
-                  ) : null}
-                  {comment ? (
-                    <p className={city || address ? 'mt-1' : ''}>
-                      <span className="text-text-subtle">Комментарий:</span> {comment}
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <pre className="whitespace-pre-wrap font-mono text-xs">{JSON.stringify(delivery, null, 2)}</pre>
-              )}
-            </div>
+      {showDeliverySection ? (
+        <div className="mt-6">
+          <h2 className="font-body text-sm font-semibold text-text">Доставка</h2>
+          <div className="mt-2 rounded-xl border border-border-light bg-bg-base p-4 font-body text-sm text-text-muted">
+            {hasMethodLine ? (
+              <p>
+                <span className="text-text-subtle">Способ:</span>{' '}
+                <span className="text-text">{deliveryMethodLabel || deliveryMethod}</span>
+              </p>
+            ) : null}
+            {hasCdekLine ? (
+              <p className={hasMethodLine ? 'mt-2' : ''}>
+                <span className="text-text-subtle">Трек СДЭК:</span>{' '}
+                {cdekTrackingUrl ? (
+                  <a
+                    href={cdekTrackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-accent hover:underline"
+                  >
+                    {cdekTracking}
+                  </a>
+                ) : (
+                  <span className="text-text">{cdekTracking}</span>
+                )}
+              </p>
+            ) : null}
+            {hasOzonLine ? (
+              <div className={hasMethodLine || hasCdekLine ? 'mt-2' : ''}>
+                {ozonPayExternalOrderId ? (
+                  <p>
+                    <span className="text-text-subtle">Номер оплаты Ozon Pay:</span>{' '}
+                    <span className="font-mono text-text">{ozonPayExternalOrderId}</span>
+                  </p>
+                ) : null}
+                {ozonMyOrdersUrl ? (
+                  <p className={ozonPayExternalOrderId ? 'mt-1' : ''}>
+                    <a
+                      href={ozonMyOrdersUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-accent hover:underline"
+                    >
+                      Открыть «Мои заказы» на Ozon
+                    </a>
+                    <span className="mt-1 block font-body text-xs text-text-subtle">
+                      Статус доставки Ozon отображается в вашем аккаунте на Ozon после входа.
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {hasSnapReadable ? (
+              <>
+                {snapCity ? (
+                  <p className={hasMethodLine || hasCdekLine || hasOzonLine ? 'mt-2' : ''}>
+                    <span className="text-text-subtle">Город:</span> {snapCity}
+                  </p>
+                ) : null}
+                {snapAddress ? (
+                  <p
+                    className={
+                      snapCity ? 'mt-1' : hasMethodLine || hasCdekLine || hasOzonLine ? 'mt-2' : ''
+                    }
+                  >
+                    <span className="text-text-subtle">Адрес:</span> {snapAddress}
+                  </p>
+                ) : null}
+                {snapComment ? (
+                  <p className={snapCity || snapAddress ? 'mt-1' : ''}>
+                    <span className="text-text-subtle">Комментарий:</span> {snapComment}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+            {showDeliveryRawJson && deliveryObj ? (
+              <pre className="whitespace-pre-wrap font-mono text-xs">
+                {JSON.stringify(deliveryObj, null, 2)}
+              </pre>
+            ) : null}
           </div>
-        )
-      })()}
+        </div>
+      ) : null}
 
       {clientAck ? (
         <div className="mt-6">

@@ -1817,6 +1817,74 @@ def test_customer_order_list_includes_russian_status_labels(client):
     assert row["paymentStatusLabel"] == "Оплата не требовалась"
 
 
+@pytest.mark.django_db
+def test_customer_order_list_includes_delivery_method_cdek_and_ozon_fields(client):
+    from django.contrib.auth import get_user_model
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    from api.models import CartOrder
+
+    User = get_user_model()
+    user = User.objects.create_user(
+        username="trackbuyer@example.com",
+        email="trackbuyer@example.com",
+        password="pass12345",
+    )
+    CartOrder.objects.create(
+        order_ref="TEST-CDEK-TRACK",
+        user=user,
+        customer_name="Иван",
+        customer_phone="+79990001122",
+        lines=[],
+        total_approx=100,
+        delivery_method=CartOrder.DeliveryMethod.CDEK,
+        payment_status=CartOrder.PaymentStatus.NOT_REQUIRED,
+        cdek_tracking="  1161234567  ",
+    )
+    CartOrder.objects.create(
+        order_ref="TEST-OZON-LK",
+        user=user,
+        customer_name="Пётр",
+        customer_phone="+79990001133",
+        lines=[],
+        total_approx=200,
+        delivery_method=CartOrder.DeliveryMethod.OZON_LOGISTICS,
+        payment_method=CartOrder.PaymentMethod.CARD_ONLINE,
+        payment_status=CartOrder.PaymentStatus.CAPTURED,
+        payment_external_id="oz-pay-42",
+    )
+    token = str(RefreshToken.for_user(user).access_token)
+    r = client.get("/api/orders/", HTTP_AUTHORIZATION=f"Bearer {token}")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 2
+    by_ref = {row["orderRef"]: row for row in data}
+    cdek_row = by_ref["TEST-CDEK-TRACK"]
+    assert cdek_row["deliveryMethod"] == "cdek"
+    assert cdek_row["deliveryMethodLabel"] == "СДЭК (ПВЗ / курьер)"
+    assert cdek_row["cdekTracking"] == "1161234567"
+    assert "1161234567" in cdek_row["cdekTrackingUrl"]
+    assert cdek_row["cdekTrackingUrl"].startswith("https://www.cdek.ru/ru/tracking/")
+    assert cdek_row["ozonPayExternalOrderId"] == ""
+    assert cdek_row["ozonMyOrdersUrl"] == ""
+
+    oz_row = by_ref["TEST-OZON-LK"]
+    assert oz_row["deliveryMethod"] == "ozon_logistics"
+    assert oz_row["deliveryMethodLabel"] == "Логистика Ozon"
+    assert oz_row["cdekTracking"] == ""
+    assert oz_row["cdekTrackingUrl"] == ""
+    assert oz_row["ozonPayExternalOrderId"] == "oz-pay-42"
+    assert oz_row["ozonMyOrdersUrl"] == "https://www.ozon.ru/my/orderlist"
+
+    r_detail = client.get("/api/orders/TEST-CDEK-TRACK/", HTTP_AUTHORIZATION=f"Bearer {token}")
+    assert r_detail.status_code == 200
+    detail = r_detail.json()
+    assert detail["deliveryMethod"] == "cdek"
+    assert detail["cdekTracking"] == "1161234567"
+    assert "1161234567" in detail["cdekTrackingUrl"]
+
+
 @patch("api.services.cdek_order_create.sync_cdek_order_with_retry", return_value=(True, None))
 @pytest.mark.django_db
 def test_retry_cdek_sync_command_includes_cod_cdek(mock_sync):
