@@ -18,6 +18,9 @@ Ozon Seller API: остатки по товарам (перед createOrder / Oz
 **`/v1/product/related-sku/get`** (док-ция ProductAPI_ProductGetRelatedSKU) — у одного товара
 несколько SKU (FBO / FBS и т.д.); по одному введённому в админке ищем **все связанные `sku`**
 (группировка по `product_id` в ответе) и сравниваем остаток по **максимуму внутри кластера**.
+Ответ **``/v4/product/info/stocks``** часто кладёт остатки в ``stocks[]`` с полем ``sku`` на каждой
+строке склада — в индексе учитываем и эти ``sku``, иначе в админке указанный marketplace SKU
+даёт ноль при проверке.
 
 Ключи: OZON_SELLER_CLIENT_ID, OZON_SELLER_API_KEY (см. кабинет — Product read-only + Warehouse
 или Admin read-only). Кэш: OZON_SELLER_STOCK_CACHE_SECONDS (по умолчанию 120).
@@ -94,8 +97,19 @@ def _batch_cache_key(skus: list[int]) -> str:
 
 
 def _coerce_nonneg_int(val: Any) -> int | None:
-    if isinstance(val, (int, float)) and val >= 0:
-        return int(val)
+    if isinstance(val, (int, float)):
+        if isinstance(val, float) and val != val:  # NaN
+            return None
+        if val >= 0:
+            return int(val)
+        return None
+    if isinstance(val, str) and val.strip():
+        try:
+            n = int(val.strip())
+            if n >= 0:
+                return n
+        except ValueError:
+            pass
     return None
 
 
@@ -128,15 +142,17 @@ def _extract_present(item: dict[str, Any]) -> int:
             if not isinstance(s, dict):
                 continue
             p = s.get("present")
-            if isinstance(p, (int, float)) and p > 0:
-                total += int(p)
+            w = _coerce_nonneg_int(p) if p is not None else None
+            if w is not None and w > 0:
+                total += int(w)
             else:
                 total += _row_presentish(s)
         if total > 0:
             return total
     p = item.get("present")
-    if isinstance(p, (int, float)) and p >= 0:
-        return int(p)
+    w = _coerce_nonneg_int(p) if p is not None else None
+    if w is not None:
+        return int(w)
     return 0
 
 
@@ -194,8 +210,9 @@ def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
                 if not isinstance(src, dict):
                     continue
                 ps0 = src.get("present")
-                if isinstance(ps0, (int, float)) and ps0 >= 0:
-                    p_src = int(ps0)
+                pi = _coerce_nonneg_int(ps0)
+                if pi is not None:
+                    p_src = int(pi)
                 else:
                     p_src = _row_presentish(src)
                 if p_src < 0:
@@ -225,6 +242,32 @@ def _index_availability(items: list[dict[str, Any]]) -> dict[int, int]:
                 continue
             if p > best.get(k, -1):
                 best[k] = p
+        # v4/product/info/stocks: остатки по складам в stocks[] с sku на строке — иначе
+        # в админке указанный marketplace SKU не попадает в индекс (остаётся только product_id).
+        stocks_rows = item.get("stocks")
+        if isinstance(stocks_rows, list):
+            for srow in stocks_rows:
+                if not isinstance(srow, dict):
+                    continue
+                pr = _coerce_nonneg_int(srow.get("present"))
+                if pr is None:
+                    pr = _row_presentish(srow)
+                else:
+                    pr = int(pr)
+                if pr < 0:
+                    pr = 0
+                for key in ("sku", "product_id", "fbs_sku"):
+                    raw = srow.get(key)
+                    if raw is None or raw is False:
+                        continue
+                    try:
+                        rk = int(str(raw).strip())
+                    except (TypeError, ValueError):
+                        continue
+                    if rk < 0:
+                        continue
+                    if pr > best.get(rk, -1):
+                        best[rk] = pr
         oid = item.get("offer_id")
         if oid is not None and str(oid).strip() != "":
             s = str(oid).strip()
