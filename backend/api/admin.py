@@ -689,7 +689,6 @@ class ProductAdmin(ModelAdmin):
                     category = form.cleaned_data["category"]
                     publish = form.cleaned_data["publish"]
                     dry = form.cleaned_data["dry_run"]
-                    create_variants = form.cleaned_data["create_variants"]
                     price_source_mode = form.cleaned_data["price_source_mode"]
                     if not rows:
                         messages.warning(
@@ -705,7 +704,6 @@ class ProductAdmin(ModelAdmin):
                                     category=category,
                                     publish=publish,
                                     dry_run=dry,
-                                    create_variants=create_variants,
                                     price_source_mode=price_source_mode,
                                 )
                             except WbImportError as e:
@@ -755,12 +753,17 @@ class ProductAdmin(ModelAdmin):
                                     )
                                 else:
                                     b = preview
-                                    n_img = sum(len(v.image_urls) for v in b.variants)
+                                    seed_v = next(
+                                        (v for v in b.variants if v.nm == b.seed_nm),
+                                        b.variants[0] if b.variants else None,
+                                    )
+                                    n_img = len(seed_v.image_urls) if seed_v else 0
                                     messages.info(
                                         request,
                                         _(
-                                            "Строка %(row)d: проверка WB nm=%(nm)s — %(title)s — вариантов %(nv)d, "
-                                            "фото ≈%(n)d, характеристик %(ns)d; на сайте цена из файла: %(file_price)s ₽"
+                                            "Строка %(row)d: проверка WB nm=%(nm)s — %(title)s — на сайте будет "
+                                            "один вариант по ссылке; фото этого варианта ≈%(n)d, характеристик %(ns)d; "
+                                            "цена из файла: %(file_price)s ₽ (на WB в группе вариантов: %(nv)d)"
                                         )
                                         % {
                                             "row": row.sheet_row,
@@ -892,7 +895,8 @@ class ExcelBulkImportForm(forms.Form):
         help_text=_(
             "Первый лист, первая строка — заголовки столбцов. "
             "Название и цена на сайте обязательны; при наличии ссылки WB подтягиваются описание, "
-            "характеристики, варианты и фото с Wildberries, а цены подставляются из файла."
+            "характеристики и фото с Wildberries для варианта из ссылки (остальные варианты группы WB не создаются), "
+            "цены на сайте — из файла."
         ),
         widget=forms.FileInput(
             attrs={
@@ -918,16 +922,6 @@ class ExcelBulkImportForm(forms.Form):
         required=False,
         initial=False,
         widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
-    )
-    create_variants = forms.BooleanField(
-        label=_("Создавать варианты товара (как на WB), если в строке есть ссылка WB"),
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
-        help_text=_(
-            "Для строк только из файла (без WB) всегда создаётся один вариант. "
-            "Для строк с WB — как в импорте Wildberries."
-        ),
     )
     price_source_mode = forms.ChoiceField(
         label=_("Источник цены WB (только для предпросмотра API)"),

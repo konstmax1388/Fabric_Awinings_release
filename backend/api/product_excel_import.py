@@ -325,12 +325,12 @@ def import_one_excel_row(
     category: ProductCategory,
     publish: bool,
     dry_run: bool,
-    create_variants: bool,
     price_source_mode: str = "auto",
 ) -> tuple[Any, Product | None, list[str]]:
     """
-    Одна строка Excel: при наличии ссылки WB — импорт медиа/описания с WB, цена и название с файла;
-    иначе — минимальная карточка из файла.
+    Одна строка Excel: при наличии ссылки WB — импорт описания/характеристик/фото с WB,
+    цена и название с файла; создаётся только один вариант — по этой ссылке (без остальных nm группы WB).
+    Без ссылки WB — минимальная карточка из файла.
     """
     extra = marketplace_extra_from_row(row)
     if row.wb_url:
@@ -343,7 +343,7 @@ def import_one_excel_row(
             category=category,
             publish=publish,
             dry_run=dry_run,
-            create_variants=create_variants,
+            create_variants=False,
             price_source_mode=price_source_mode,
             title_override=row.title or None,
             price_from_override=row.price_from,
