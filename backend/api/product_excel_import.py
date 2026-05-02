@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 from django.db import transaction
@@ -367,7 +368,16 @@ def import_one_excel_row(
 
 
 def build_excel_template_bytes() -> bytes:
-    from openpyxl import Workbook
+    """Байты шаблона .xlsx для скачивания в админке. Сначала — файл из репозитория (без openpyxl), иначе сборка через openpyxl."""
+    _fixture = Path(__file__).resolve().parent / "fixtures" / "import_excel_template.xlsx"
+    if _fixture.is_file():
+        return _fixture.read_bytes()
+    try:
+        from openpyxl import Workbook
+    except ImportError as e:
+        raise ExcelImportParseError(
+            "Не установлен пакет openpyxl. Установите зависимости: pip install -r requirements.txt"
+        ) from e
 
     wb = Workbook()
     ws = wb.active

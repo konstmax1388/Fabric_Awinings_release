@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from io import BytesIO
 from typing import Any
 
 from django import forms
@@ -13,7 +14,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms.models import modelform_factory
 from django.http import Http404
 from django.http import JsonResponse
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -67,6 +68,12 @@ from .static_page_about_admin_form import (
     build_about_payload,
 )
 from .product_wb_import import WbImportError, import_one_from_wb_url
+from .product_excel_import import (
+    ExcelImportParseError,
+    build_excel_template_bytes,
+    import_one_excel_row,
+    parse_product_rows_from_workbook,
+)
 from api.services.astrum_crm import (
     astrum_crm_enabled,
     humanize_astrum_api_error_for_admin,
@@ -668,13 +675,30 @@ class ProductAdmin(ModelAdmin):
         if not self.has_add_permission(request):
             raise PermissionDenied
 
-        data = build_excel_template_bytes()
-        resp = HttpResponse(
-            data,
+        try:
+            data = build_excel_template_bytes()
+        except ExcelImportParseError as e:
+            _logger.warning("Excel template unavailable: %s", e)
+            return HttpResponse(
+                str(_("Не удалось сформировать шаблон Excel.")) + "\n" + str(e),
+                status=503,
+                content_type="text/plain; charset=utf-8",
+            )
+        except Exception as e:
+            _logger.exception("Excel template build failed (admin)")
+            return HttpResponse(
+                str(_("Не удалось сформировать шаблон Excel. См. журнал сервера.")) + "\n" + str(e),
+                status=503,
+                content_type="text/plain; charset=utf-8",
+            )
+        buf = BytesIO(data)
+        buf.seek(0)
+        return FileResponse(
+            buf,
+            as_attachment=True,
+            filename="import_tovarov_shablon.xlsx",
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        resp["Content-Disposition"] = 'attachment; filename="import_tovarov_shablon.xlsx"'
-        return resp
 
     def import_excel_view(self, request):
         if not self.has_add_permission(request):

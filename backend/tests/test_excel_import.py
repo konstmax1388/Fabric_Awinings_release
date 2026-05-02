@@ -2,6 +2,7 @@ import pytest
 
 from api.product_excel_import import (
     build_header_map,
+    build_excel_template_bytes,
     normalize_header_cell,
     parse_price_int,
     parse_product_rows_from_workbook,
@@ -71,3 +72,9 @@ def test_parse_workbook_minimal_xlsx():
     assert rows[0].title == "Тестовый товар"
     assert rows[0].price_from == 100
     assert rows[0].wb_url == ""
+
+
+def test_build_excel_template_bytes_is_valid_xlsx():
+    data = build_excel_template_bytes()
+    assert len(data) > 100
+    assert data[:4] == b"PK\x03\x04"
