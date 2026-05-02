@@ -87,7 +87,7 @@ $remoteLines = @(
     "python manage.py migrate --noinput"
     "python manage.py collectstatic --noinput"
     "cd .."
-    "bash deploy/prune-production-tree.sh ."
+    "bash deploy/prune-production-tree.sh --drop-sqlite ."
 )
 
 if (-not $skipSystemd) {

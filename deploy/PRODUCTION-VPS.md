@@ -21,9 +21,11 @@ sudo apt install -y python3.12-venv python3-pip nginx mysql-client build-essenti
 
 ### Что должно остаться на сервере
 
-Для работы сайта нужны по сути: **`backend/`** (Python), **`frontend/`** (или только `frontend/dist`, если сборка на CI), при панели **`/staff/`** — **`admin-ui/`** (или только `admin-ui/dist` + nginx), файл **`.env`**, каталог **`backend/staticfiles/`** после `collectstatic`, **`backend/media/`** для загрузок. Остальное — по желанию для отладки.
+Для работы сайта нужны по сути: **`backend/`** (Python), **`frontend/dist/`** (собранная витрина; исходники `frontend/src` на VPS не обязательны **между** деплоями — скрипт `deploy/prune-production-tree.sh` их удаляет после сборки, следующий `git reset --hard` снова восстановит дерево), при панели **`/staff/`** — **`admin-ui/dist/`** (в прод-пайплайне копируется в `frontend/dist/staff/`), файл **`.env`**, каталог **`backend/staticfiles/`** после `collectstatic`, **`backend/media/`** для загрузок. Остальное — по желанию для отладки.
 
-**Не выкладывать на хостинг:** `.git`, `.cursor`, `docs/`, `Fabric_Awinings_react_admin/`, `staff-ui/`, `CHANGELOG.md`, офисные **`.docx` / `.xlsx`** в корне, тесты `backend/tests/`, `node_modules`, локальные `.venv`.
+**Не выкладывать на хостинг:** `.git` (если принципиально), `.cursor`, `docs/`, `Fabric_Awinings_react_admin/`, `staff-ui/`, `CHANGELOG.md`, офисные **`.docx` / `.xlsx`** в корне, тесты `backend/tests/`, `node_modules`, локальные `.venv`, случайный **Composer** (`vendor/`, `composer.phar`), каталог **`cursor-talk-to-figma-mcp/`**.
+
+После клона или **каждого** деплоя через `sync-to-production.*` / GitHub Actions в конце выполняется **`bash deploy/prune-production-tree.sh --drop-sqlite`** (убирает хлам, `node_modules`, исходники фронта после успешной сборки, случайный SQLite). Для отладки на сервере без удаления `node_modules`: `bash deploy/prune-production-tree.sh --keep-build-deps /path` (без `--drop-sqlite`, если нужен локальный sqlite в дереве).
 
 ### Вариант A: `git clone` на сервере
 
@@ -31,7 +33,7 @@ sudo apt install -y python3.12-venv python3-pip nginx mysql-client build-essenti
 
 ```bash
 cd /var/www/kasatkin_da/data/www/fabrika-tentov.ru
-bash deploy/prune-production-tree.sh "$(pwd)"
+bash deploy/prune-production-tree.sh --drop-sqlite "$(pwd)"
 ```
 
 Историю Git при этом **не** удаляем (удобно `git pull`). Если принципиально без `.git` — `bash deploy/prune-production-tree.sh --with-git "$(pwd)"` (дальше обновления только через rsync/архив).

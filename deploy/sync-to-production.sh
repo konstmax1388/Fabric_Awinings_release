@@ -89,7 +89,7 @@ pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 cd ..
-bash deploy/prune-production-tree.sh .
+bash deploy/prune-production-tree.sh --drop-sqlite .
 EOF
 else
   "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
@@ -131,7 +131,7 @@ pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 cd ..
-bash deploy/prune-production-tree.sh .
+bash deploy/prune-production-tree.sh --drop-sqlite .
 sudo systemctl restart $SERVICE
 EOF
 fi

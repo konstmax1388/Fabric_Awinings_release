@@ -8,6 +8,9 @@
 .git/
 .github/
 .cursor/
+.cursorrules
+.cursorignore
+.windsurfrules
 
 # --- Документация и дубликаты репозитория ---
 docs/
@@ -22,6 +25,18 @@ BACKLOG.md
 
 # --- Панель staff-ui (дубликат admin-ui; на прод обычно только admin-ui) ---
 staff-ui/
+
+# --- Случайный PHP/Composer в корне (не стек проекта) ---
+composer.phar
+composer.json
+composer.lock
+vendor/
+.cache/
+.local/
+
+# MCP/утилиты разработки (не для прод-сайта)
+cursor-talk-to-figma-mcp/
+tools/
 
 # --- Зависимости и кэши (на сервере: pip / npm ci по месту) ---
 **/node_modules/
@@ -54,7 +69,12 @@ media/
 .env
 .env.local
 .env.*.local
+.env.example
 *.pem
+
+# Compose в корне (на прод-VPS обычно не используется из этого каталога)
+/docker-compose.yml
+/docker-compose.override.yml
 
 # IDE / ОС
 .idea/

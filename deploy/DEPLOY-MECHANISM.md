@@ -34,7 +34,7 @@ bash deploy/sync-to-production.sh
 .\deploy\sync-to-production.ps1
 ```
 
-Скрипт по SSH выполнит: `git pull` → `npm ci && npm run build` в `frontend/` → `migrate` / `collectstatic` в `backend/` → `sudo systemctl restart fabrika-gunicorn`.
+Скрипт по SSH выполнит: `git fetch/checkout/reset` → `npm ci && npm run build` в `frontend/` и `admin-ui/` → `migrate` / `collectstatic` в `backend/` → **`bash deploy/prune-production-tree.sh --drop-sqlite .`** (обрезка дерева: без `node_modules`, без `frontend/src` и `admin-ui/src` до следующего деплоя, без случайного SQLite) → `sudo systemctl restart fabrika-gunicorn`.
 
 Если **sudo** с SSH запрещён хостингом — в `deploy/.env.deploy` задайте `DEPLOY_SKIP_SYSTEMD=1` и перезапускайте Gunicorn вручную из панели один раз после деплоя.
 
@@ -69,7 +69,7 @@ bash deploy/sync-to-production.sh
 | `git commit` + `git push` в GitHub / в ту ветку, с которой тянет сервер | Вы |
 | Обновить прод одной командой **или** кнопкой Actions | Вы (один раз настроив вариант 1 или 2) |
 
-Очистка лишних файлов на сервере (по желанию): `bash deploy/prune-production-tree.sh` — см. [PRODUCTION-VPS.md](PRODUCTION-VPS.md).
+Очистка лишнего на сервере после каждого деплоя встроена в `sync-to-production.*` и workflow **Deploy VPS**: `deploy/prune-production-tree.sh --drop-sqlite` — подробности [PRODUCTION-VPS.md](PRODUCTION-VPS.md). Ручной прогон с другими флагами: `--keep-build-deps` (оставить `node_modules` и `*/src`), `--with-git` (удалить `.git`).
 
 ---
 
