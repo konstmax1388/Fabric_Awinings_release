@@ -20,6 +20,11 @@ env/
 dist/
 build/
 
+# Собранный Talk-to-Figma MCP (корневой dist/ иначе скрывает эту папку)
+!cursor-talk-to-figma-mcp/dist/
+!cursor-talk-to-figma-mcp/dist/**
+cursor-talk-to-figma-mcp/node_modules/
+
 # Environment
 .env
 .env.local
