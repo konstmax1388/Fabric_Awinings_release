@@ -244,8 +244,18 @@ class ProductStaffSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f"Недопустимый ключ МП: {k}")
         return value
 
-    def _base_repr(self, instance: Product) -> dict[str, Any]:
+    def _cover_image_url(self, instance: Product) -> str:
+        """Первое изображение галереи (порядок sort_order, id) — для списков staff без полного embed."""
         req = self.context.get("request")
+        if not req:
+            return ""
+        rows = [im for im in instance.images_rel.all() if im.image and getattr(im.image, "name", "")]
+        if not rows:
+            return ""
+        rows.sort(key=lambda im: (im.sort_order, im.pk))
+        return _abs_media(req, rows[0].image) or ""
+
+    def _base_repr(self, instance: Product) -> dict[str, Any]:
         return {
             "id": str(instance.pk),
             "slug": instance.slug,
@@ -266,6 +276,7 @@ class ProductStaffSerializer(serializers.ModelSerializer):
             "createdAt": instance.created_at.isoformat() if instance.created_at else None,
             "updatedAt": instance.updated_at.isoformat() if instance.updated_at else None,
             "capabilities": {"fullEdit": True},
+            "coverImageUrl": self._cover_image_url(instance),
         }
 
     def to_representation(self, instance: Product) -> dict[str, Any]:

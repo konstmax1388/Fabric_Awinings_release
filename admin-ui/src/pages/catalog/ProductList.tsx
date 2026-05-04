@@ -3,6 +3,7 @@ import {
   BooleanInput,
   CreateButton,
   Datagrid,
+  FunctionField,
   List,
   ReferenceField,
   ReferenceInput,
@@ -12,6 +13,9 @@ import {
   TopToolbar,
   NumberField,
 } from 'react-admin'
+
+import { StaffImageThumb } from '../../components/StaffImageThumb'
+import { StaffResourceIntro } from '../../components/StaffResourceIntro'
 
 const Actions = () => (
   <TopToolbar>
@@ -31,7 +35,13 @@ const filters = [
 export default function ProductList() {
   return (
     <List perPage={25} actions={<Actions />} filters={filters} sort={{ field: 'sortOrder', order: 'ASC' }}>
+      <StaffResourceIntro />
       <Datagrid rowClick="edit" bulkActionButtons={false}>
+        <FunctionField
+          label="Превью"
+          sortable={false}
+          render={(r: { coverImageUrl?: string }) => <StaffImageThumb src={r.coverImageUrl} size={56} />}
+        />
         <TextField source="title" label="Название" />
         <TextField source="slug" label="Слаг" />
         <ReferenceField source="categoryId" reference="product-categories" label="Категория" link={false}>

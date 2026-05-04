@@ -7,6 +7,8 @@ import {
   TextField,
 } from 'react-admin'
 
+import { StaffResourceIntro } from '../../components/StaffResourceIntro'
+
 const filters = [
   <BooleanInput key="is_default" source="is_default" label="Только адрес по умолчанию" alwaysOn={false} />,
 ]
@@ -14,6 +16,7 @@ const filters = [
 export default function ShippingAddressList() {
   return (
     <List perPage={25} sort={{ field: 'createdAt', order: 'DESC' }} filters={filters}>
+      <StaffResourceIntro />
       <Datagrid rowClick="edit" bulkActionButtons={false}>
         <TextField source="userId" label="ID пользователя" />
         <TextField source="label" label="Название" />

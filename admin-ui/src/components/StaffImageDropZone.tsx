@@ -1,7 +1,8 @@
 import { alpha } from '@mui/material/styles'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
-import { Box, Button, CircularProgress, Typography } from '@mui/material'
-import { useCallback, useRef, useState } from 'react'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import { Box, Button, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { staffMediaPublicUrl } from '../lib/staffMediaUrl'
 import { staffApiUrl } from '../lib/apiBase'
@@ -41,32 +42,64 @@ export function StaffImageDropZone({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  /** Локальный предпросмотр до ответа сервера (object URL). */
+  const [localBlobUrl, setLocalBlobUrl] = useState<string | null>(null)
+  const localBlobRef = useRef<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const clearLocalBlob = useCallback(() => {
+    if (localBlobRef.current) {
+      URL.revokeObjectURL(localBlobRef.current)
+      localBlobRef.current = null
+    }
+    setLocalBlobUrl(null)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (localBlobRef.current) {
+        URL.revokeObjectURL(localBlobRef.current)
+        localBlobRef.current = null
+      }
+    },
+    [],
+  )
 
   const previewSrc =
     previewAbsoluteUrl?.trim() ||
     (relativePath?.trim() ? staffMediaPublicUrl(relativePath.trim()) : '') ||
     ''
 
-  const uploadFile = async (file: File) => {
-    setBusy(true)
-    setErr(null)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await staffFetch(staffApiUrl('/api/staff/v1/uploads/'), { method: 'POST', body: fd })
-      const json = (await res.json()) as { relativePath?: string; file?: string[] }
-      if (!res.ok) {
-        const msg = Array.isArray(json.file) ? json.file[0] : `HTTP ${res.status}`
-        throw new Error(msg)
+  const displaySrc = localBlobUrl || previewSrc
+  const canOpenFull = Boolean(previewSrc && !localBlobUrl)
+
+  const uploadFile = useCallback(
+    async (file: File) => {
+      setBusy(true)
+      setErr(null)
+      clearLocalBlob()
+      const blobUrl = URL.createObjectURL(file)
+      localBlobRef.current = blobUrl
+      setLocalBlobUrl(blobUrl)
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const res = await staffFetch(staffApiUrl('/api/staff/v1/uploads/'), { method: 'POST', body: fd })
+        const json = (await res.json()) as { relativePath?: string; file?: string[] }
+        if (!res.ok) {
+          const msg = Array.isArray(json.file) ? json.file[0] : `HTTP ${res.status}`
+          throw new Error(msg)
+        }
+        if (json.relativePath) onRelativePath(json.relativePath)
+      } catch (x) {
+        setErr(x instanceof Error ? x.message : 'Ошибка загрузки')
+      } finally {
+        setBusy(false)
+        clearLocalBlob()
       }
-      if (json.relativePath) onRelativePath(json.relativePath)
-    } catch (x) {
-      setErr(x instanceof Error ? x.message : 'Ошибка загрузки')
-    } finally {
-      setBusy(false)
-    }
-  }
+    },
+    [clearLocalBlob, onRelativePath],
+  )
 
   const onInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -88,7 +121,7 @@ export function StaffImageDropZone({
       }
       await uploadFile(file)
     },
-    [busy, disabled],
+    [busy, disabled, uploadFile],
   )
 
   return (
@@ -126,35 +159,58 @@ export function StaffImageDropZone({
         }}
       >
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-          <Box
-            sx={{
-              width: 120,
-              height: 120,
-              flexShrink: 0,
-              borderRadius: 1.5,
-              overflow: 'hidden',
-              bgcolor: 'action.hover',
-              border: `1px solid ${alpha(BRAND.text, 0.08)}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {previewSrc ? (
-              <Box
-                component="img"
-                src={previewSrc}
-                alt=""
-                sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                onError={(e) => {
-                  ;(e.target as HTMLImageElement).style.display = 'none'
-                }}
-              />
-            ) : (
-              <Typography variant="caption" color="text.disabled" sx={{ px: 1, textAlign: 'center' }}>
-                Нет файла
-              </Typography>
-            )}
+          <Box sx={{ position: 'relative', flexShrink: 0 }}>
+            <Box
+              sx={{
+                width: 152,
+                height: 152,
+                borderRadius: 1.5,
+                overflow: 'hidden',
+                bgcolor: 'action.hover',
+                border: `1px solid ${alpha(BRAND.text, 0.08)}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {displaySrc ? (
+                <Box
+                  component="img"
+                  src={displaySrc}
+                  alt=""
+                  sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  onError={(e) => {
+                    ;(e.target as HTMLImageElement).style.display = 'none'
+                  }}
+                />
+              ) : (
+                <Typography variant="caption" color="text.disabled" sx={{ px: 1, textAlign: 'center' }}>
+                  Нет файла
+                </Typography>
+              )}
+            </Box>
+            {canOpenFull ? (
+              <Tooltip title="Открыть в полном размере">
+                <IconButton
+                  component="a"
+                  href={previewSrc}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    bgcolor: 'background.paper',
+                    boxShadow: 1,
+                    '&:hover': { bgcolor: 'background.paper' },
+                  }}
+                  aria-label="Открыть изображение в новой вкладке"
+                >
+                  <OpenInNewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : null}
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -177,13 +233,21 @@ export function StaffImageDropZone({
                 {busy ? 'Загрузка…' : 'Выбрать файл'}
               </Button>
               {onClear ? (
-                <Button size="small" disabled={disabled || busy} onClick={onClear}>
+                <Button
+                  size="small"
+                  disabled={disabled || busy}
+                  onClick={() => {
+                    clearLocalBlob()
+                    onClear()
+                  }}
+                >
                   Убрать
                 </Button>
               ) : null}
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-              Перетащите изображение сюда или нажмите «Выбрать файл». После сохранения формы файл появится на сайте.
+              Сразу после выбора файла показывается предпросмотр; после загрузки — версия с сервера. Сохраните форму,
+              чтобы картинка появилась на сайте.
             </Typography>
           </Box>
         </Box>

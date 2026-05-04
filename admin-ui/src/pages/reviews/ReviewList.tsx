@@ -17,6 +17,8 @@ import {
   useUpdateMany,
 } from 'react-admin'
 
+import { StaffResourceIntro } from '../../components/StaffResourceIntro'
+
 const BOOLEAN_FILTER_CHOICES = [
   { id: '', name: 'Все' },
   { id: 'true', name: 'Да' },
@@ -134,6 +136,7 @@ export default function ReviewList() {
         />,
       ]}
     >
+      <StaffResourceIntro />
       <Datagrid rowClick="edit" bulkActionButtons={<ReviewBulkActions />}>
         <TextField source="name" label="Имя" />
         <TextField source="city" label="Город" />

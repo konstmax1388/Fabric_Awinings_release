@@ -203,6 +203,10 @@ const options = deepmerge(defaultLightTheme, {
       styleOverrides: {
         root: ({ theme }: { theme: Theme }) => ({
           '& .RaList-main': {
+            paddingTop: theme.spacing(1),
+            paddingBottom: theme.spacing(0.5),
+          },
+          '& .RaList-content': {
             paddingTop: theme.spacing(0.5),
           },
         }),

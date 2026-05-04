@@ -10,6 +10,7 @@ import {
   ExportButton,
 } from 'react-admin'
 
+import { StaffResourceIntro } from '../../components/StaffResourceIntro'
 import {
   enumLabelRu,
   FULFILLMENT_STATUS_RU,
@@ -73,6 +74,7 @@ export default function OrderList() {
       filters={filters}
       actions={<ListActions />}
     >
+      <StaffResourceIntro />
       <Datagrid rowClick="show" bulkActionButtons={false}>
         <TextField source="orderRef" label="Номер" />
         <TextField source="customerName" label="Клиент" />

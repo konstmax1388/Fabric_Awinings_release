@@ -4,6 +4,7 @@ import { Box, Button, Paper, Typography } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
 import { useRecordContext, useRefresh } from 'react-admin'
 
+import { StaffImageThumb } from '../../components/StaffImageThumb'
 import { reorderProductImages, reorderProductVariants } from '../../api/staffApi'
 
 function move<T>(arr: T[], i: number, dir: -1 | 1): T[] {
@@ -120,24 +121,32 @@ export function ProductImageReorderPanel() {
       <Typography variant="subtitle1" gutterBottom>
         Порядок изображений
       </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        {ids.map((id, i) => (
-          <Box key={id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ flex: 1, fontFamily: 'monospace' }}>
-              {id}
-            </Typography>
-            <Button size="small" disabled={busy || i === 0} onClick={() => setIds((a) => move(a, i, -1))}>
-              <ArrowUpwardIcon fontSize="small" />
-            </Button>
-            <Button
-              size="small"
-              disabled={busy || i === ids.length - 1}
-              onClick={() => setIds((a) => move(a, i, 1))}
-            >
-              <ArrowDownwardIcon fontSize="small" />
-            </Button>
-          </Box>
-        ))}
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        Миниатюры соответствуют галерее на витрине. Вверх/вниз — затем «Сохранить порядок изображений».
+      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {ids.map((id, i) => {
+          const images = record?.images as { id: string; imageUrl?: string }[] | undefined
+          const row = Array.isArray(images) ? images.find((x) => String(x.id) === id) : undefined
+          return (
+            <Box key={id} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <StaffImageThumb src={row?.imageUrl} size={52} />
+              <Typography variant="body2" sx={{ flex: 1, fontFamily: 'monospace', minWidth: 0 }} noWrap title={id}>
+                {id}
+              </Typography>
+              <Button size="small" disabled={busy || i === 0} onClick={() => setIds((a) => move(a, i, -1))}>
+                <ArrowUpwardIcon fontSize="small" />
+              </Button>
+              <Button
+                size="small"
+                disabled={busy || i === ids.length - 1}
+                onClick={() => setIds((a) => move(a, i, 1))}
+              >
+                <ArrowDownwardIcon fontSize="small" />
+              </Button>
+            </Box>
+          )
+        })}
       </Box>
       <Button sx={{ mt: 1 }} variant="contained" disabled={busy || ids.length === 0} onClick={() => void apply()}>
         Сохранить порядок изображений

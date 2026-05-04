@@ -4,12 +4,14 @@ import {
   DeleteButton,
   Edit,
   EditButton,
+  FunctionField,
   NumberField,
   ReferenceManyField,
   TextField,
 } from 'react-admin'
 import { TabbedForm } from 'react-admin'
 
+import { StaffImageThumb } from '../../components/StaffImageThumb'
 import { CatalogNestedCreateButton } from './CatalogNestedCreateButton'
 import { ProductImageReorderPanel, ProductVariantReorderPanel } from './ProductReorderPanel'
 import { ProductMainFields } from './ProductForm'
@@ -36,7 +38,12 @@ export default function ProductEdit() {
         <TabbedForm.Tab label="Изображения" path="images">
           <ReferenceManyField reference="product-images" target="productId" label={false} perPage={100}>
             <Datagrid bulkActionButtons={false} rowClick="edit">
-              <TextField source="imageUrl" label="URL" />
+              <FunctionField
+                label="Превью"
+                sortable={false}
+                render={(r: { imageUrl?: string }) => <StaffImageThumb src={r?.imageUrl} size={72} />}
+              />
+              <TextField source="imageUrl" label="Адрес файла" />
               <TextField source="variantId" label="Вариант id" />
               <NumberField source="sortOrder" label="Порядок" />
               <EditButton />

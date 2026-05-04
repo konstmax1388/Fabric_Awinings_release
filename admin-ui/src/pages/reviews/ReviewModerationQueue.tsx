@@ -16,6 +16,8 @@ import {
   useUpdateMany,
 } from 'react-admin'
 
+import { StaffResourceIntro } from '../../components/StaffResourceIntro'
+
 function ReviewModerationBulkActions() {
   const { selectedIds, data } = useListContext()
   const notify = useNotify()
@@ -103,6 +105,7 @@ export default function ReviewModerationQueue() {
       filter={{ isModerated: 'false', isPublished: 'false' }}
       filters={[<SearchInput source="search" alwaysOn key="q" />]}
     >
+      <StaffResourceIntro introKey="reviews:moderation" />
       <Datagrid rowClick="edit" bulkActionButtons={<ReviewModerationBulkActions />}>
         <TextField source="name" label="Имя" />
         <TextField source="city" label="Город" />
