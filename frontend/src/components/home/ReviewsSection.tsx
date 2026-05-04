@@ -19,6 +19,43 @@ const REVIEW_PREVIEW_TEASER = 100
 /** На витрине показываем только опубликованные отзывы с этой оценки и выше (см. API `min_rating`). */
 const SITE_REVIEWS_MIN_RATING = 4
 
+/** Статика из `frontend/public/images/` — если в отзыве нет фото автора или оно не загрузилось. */
+const REVIEW_AUTHOR_PLACEHOLDER = '/images/review-author-placeholder.png'
+
+function reviewAuthorPhotoSrc(photo: string): string {
+  const t = (photo || '').trim()
+  return t || REVIEW_AUTHOR_PLACEHOLDER
+}
+
+function ReviewAuthorAvatar({
+  photo,
+  authorName,
+  isTeaser,
+}: {
+  photo: string
+  authorName: string
+  isTeaser: boolean
+}) {
+  const [src, setSrc] = useState(() => reviewAuthorPhotoSrc(photo))
+  useEffect(() => {
+    setSrc(reviewAuthorPhotoSrc(photo))
+  }, [photo])
+  return (
+    <OptimizedImage
+      src={src}
+      alt={reviewAuthorPhotoAlt(authorName)}
+      widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
+      sizes="64px"
+      className={
+        isTeaser
+          ? 'h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-14 md:w-14'
+          : 'h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-16 md:w-16'
+      }
+      onError={() => setSrc(REVIEW_AUTHOR_PLACEHOLDER)}
+    />
+  )
+}
+
 function Stars({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5" aria-label={`Оценка ${rating} из 5`}>
@@ -181,17 +218,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
                 <>
                   <div className="flex items-start gap-3">
                     <div className="flex min-w-0 flex-1 items-start gap-2 md:gap-3">
-                      <OptimizedImage
-                        src={r.photo}
-                        alt={reviewAuthorPhotoAlt(r.name)}
-                        widths={isTeaser ? [64, 128, 96] : [64, 128, 160]}
-                        sizes="64px"
-                        className={
-                          isTeaser
-                            ? 'h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-14 md:w-14'
-                            : 'h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-border-light md:h-16 md:w-16'
-                        }
-                      />
+                      <ReviewAuthorAvatar photo={r.photo} authorName={r.name} isTeaser={isTeaser} />
                       <div className="min-w-0 flex-1">
                         <p className="font-body text-sm font-semibold leading-snug text-text md:text-base">{r.name}</p>
                         {r.city || r.reviewedOn ? (
