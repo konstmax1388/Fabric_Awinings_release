@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# С вашего ПК одной командой: на VPS — git pull, сборка frontend, migrate, collectstatic, перезапуск Gunicorn.
+# С вашего ПК одной командой: на VPS — git pull, сборка frontend, migrate, collectstatic,
+# generate_public_seo_files (sitemap.xml и robots.txt в frontend/dist), prune, перезапуск Gunicorn.
 # Нужен вход по SSH без пароля (ключ). На сервере: Node 20+, venv в backend/.venv
 #
 #   cp deploy/.env.deploy.example deploy/.env.deploy
@@ -88,6 +89,7 @@ source .venv/bin/activate
 pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+python manage.py generate_public_seo_files
 cd ..
 bash deploy/prune-production-tree.sh --drop-sqlite .
 EOF
@@ -130,6 +132,7 @@ source .venv/bin/activate
 pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+python manage.py generate_public_seo_files
 cd ..
 bash deploy/prune-production-tree.sh --drop-sqlite .
 sudo systemctl restart $SERVICE

@@ -21,7 +21,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from api.views_seo import sitemap_xml_view
+from api.views_seo import robots_txt_view, sitemap_xml_view
 
 from config.admin_captcha import apply_admin_login_form
 
@@ -43,6 +43,7 @@ urlpatterns += [
     ),
     path("api/", include("api.urls")),
     path("sitemap.xml", sitemap_xml_view, name="sitemap"),
+    path("robots.txt", robots_txt_view, name="robots"),
 ]
 
 if settings.DEBUG:

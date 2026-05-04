@@ -68,6 +68,7 @@ jobs:
             pip install -q -r requirements-prod.txt
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
+            python manage.py generate_public_seo_files
             cd ..
             bash deploy/prune-production-tree.sh --drop-sqlite .
             sudo systemctl restart fabrika-gunicorn

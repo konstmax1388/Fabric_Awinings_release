@@ -14,6 +14,10 @@ cd "$ROOT/frontend"
 npm ci
 npm run build
 
+echo "==> SEO: sitemap.xml и robots.txt в frontend/dist"
+cd "$ROOT/backend"
+python manage.py generate_public_seo_files
+
 echo "==> admin-ui: npm ci, build"
 cd "$ROOT/admin-ui"
 npm ci

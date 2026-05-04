@@ -32,11 +32,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+    # sitemap.xml и robots.txt — файлы в frontend/dist (manage.py generate_public_seo_files на сервере).
 
     location /static/ {
         alias /var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/staticfiles/;

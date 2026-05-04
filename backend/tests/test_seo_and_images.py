@@ -1,6 +1,8 @@
 import pytest
 from PIL import Image
 
+from api.models import SiteSettings
+
 
 @pytest.mark.django_db
 def test_sitemap_xml_ok(client):
@@ -10,6 +12,60 @@ def test_sitemap_xml_ok(client):
     body = r.content.decode()
     assert "urlset" in body
     assert "http://" in body or "https://" in body
+
+
+@pytest.mark.django_db
+def test_sitemap_xml_empty_when_indexing_disabled(client):
+    s = SiteSettings.get_solo()
+    s.seo_allow_indexing = False
+    s.save(update_fields=["seo_allow_indexing"])
+    r = client.get("/sitemap.xml")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "<urlset" in body
+    assert "<url>" not in body
+
+
+@pytest.mark.django_db
+def test_robots_txt_ok(client, settings):
+    settings.PUBLIC_SITE_URL = "https://example.test"
+    r = client.get("/robots.txt")
+    assert r.status_code == 200
+    assert "text/plain" in r.headers.get("Content-Type", "")
+    body = r.content.decode()
+    assert "User-agent:" in body
+    assert "Sitemap: https://example.test/sitemap.xml" in body
+    assert "Disallow: /api/" in body
+    assert "Host: https://example.test" in body
+    assert "Clean-param:" in body
+
+
+@pytest.mark.django_db
+def test_robots_txt_disallow_all_when_indexing_disabled(client, settings):
+    settings.PUBLIC_SITE_URL = "https://example.test"
+    s = SiteSettings.get_solo()
+    s.seo_allow_indexing = False
+    s.save(update_fields=["seo_allow_indexing"])
+    r = client.get("/robots.txt")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "Disallow: /" in body
+    assert "Sitemap:" not in body
+
+
+@pytest.mark.django_db
+def test_generate_public_seo_files_writes_dist(tmp_path, settings):
+    settings.PUBLIC_SITE_URL = "https://example.test"
+    dest = tmp_path / "dist"
+    dest.mkdir()
+    from django.core.management import call_command
+
+    call_command("generate_public_seo_files", "--output", str(dest))
+    sm = (dest / "sitemap.xml").read_text(encoding="utf-8")
+    rb = (dest / "robots.txt").read_text(encoding="utf-8")
+    assert "urlset" in sm
+    assert "https://example.test/" in sm
+    assert "Sitemap: https://example.test/sitemap.xml" in rb
 
 
 @pytest.mark.django_db

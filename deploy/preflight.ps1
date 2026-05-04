@@ -24,6 +24,13 @@ try {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally { Pop-Location }
 
+Write-Host "==> SEO: sitemap.xml и robots.txt в frontend/dist"
+Push-Location (Join-Path $root "backend")
+try {
+    python manage.py generate_public_seo_files
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} finally { Pop-Location }
+
 Write-Host "==> admin-ui: npm ci, build"
 Push-Location (Join-Path $root "admin-ui")
 try {
