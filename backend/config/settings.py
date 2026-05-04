@@ -338,7 +338,9 @@ def unfold_admin_fabric_css(request):
 
 
 def unfold_admin_fontawesome_css(request):
-    return "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    from django.templatetags.static import static
+
+    return static("admin/fontawesome/css/all.min.css")
 
 
 UNFOLD = {
