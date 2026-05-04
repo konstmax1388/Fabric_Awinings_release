@@ -237,8 +237,7 @@ def default_home_payload() -> dict[str, Any]:
             ),
             "siteReviewsListHeading": "Отзывы на сайте",
             "siteReviewsListSubheading": (
-                "Публикуем отзывы гостей с оценкой от 4 из 5. Оставьте свой отзыв — после модерации "
-                "он появится в этом списке."
+                "Оставьте свой отзыв — после модерации он появится в этом списке."
             ),
             "loading": "Загрузка отзывов…",
             "videoCaption": "Видеоотзыв",
@@ -567,6 +566,11 @@ _LEGACY_REVIEWS_FORM_SUBHEADING = (
     "Публикуем только после проверки менеджером и подтверждения согласия."
 )
 
+_LEGACY_SITE_REVIEWS_LIST_SUBHEADING = (
+    "Публикуем отзывы гостей с оценкой от 4 из 5. Оставьте свой отзыв — после модерации "
+    "он появится в этом списке."
+)
+
 
 def _normalize_reviews_form_subheading(home: dict[str, Any]) -> None:
     """Убрать устаревшую подпись под формой отзывов из сохранённых payload."""
@@ -578,6 +582,20 @@ def _normalize_reviews_form_subheading(home: dict[str, Any]) -> None:
         return
     if raw.strip() == _LEGACY_REVIEWS_FORM_SUBHEADING.strip():
         rev["formSubheading"] = ""
+
+
+def _normalize_site_reviews_list_subheading(home: dict[str, Any]) -> None:
+    """Заменить устаревший подзаголовок списка отзывов на /reviews."""
+    rev = home.get("reviews")
+    if not isinstance(rev, dict):
+        return
+    raw = rev.get("siteReviewsListSubheading")
+    if not isinstance(raw, str):
+        return
+    if raw.strip() == _LEGACY_SITE_REVIEWS_LIST_SUBHEADING.strip():
+        rev["siteReviewsListSubheading"] = (
+            "Оставьте свой отзыв — после модерации он появится в этом списке."
+        )
 
 
 def _normalize_hero_v2(home: dict[str, Any]) -> None:
@@ -606,6 +624,7 @@ def merged_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     _normalize_hero_v2(out)
     _normalize_calculator(out)
     _normalize_reviews_form_subheading(out)
+    _normalize_site_reviews_list_subheading(out)
     return out
 
 
@@ -617,5 +636,6 @@ def stored_home_payload(stored: dict[str, Any] | None) -> dict[str, Any]:
     _normalize_hero_v2(out)
     _normalize_calculator(out)
     _normalize_reviews_form_subheading(out)
+    _normalize_site_reviews_list_subheading(out)
     out["sectionLayout"] = normalize_section_layout(out.get("sectionLayout"))
     return out

@@ -114,7 +114,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
     (rv?.siteReviewsListHeading ?? '').trim() || 'Отзывы на сайте'
   const siteListSubheading =
     (rv?.siteReviewsListSubheading ?? '').trim() ||
-    'Публикуем отзывы гостей с оценкой от 4 из 5. Оставьте свой отзыв — после модерации он появится в этом списке.'
+    'Оставьте свой отзыв — после модерации он появится в этом списке.'
 
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [loading, setLoading] = useState(true)
