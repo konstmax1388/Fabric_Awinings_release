@@ -3,8 +3,8 @@
 
 Идемпотентность: запись не создаётся, если уже есть отзыв с тем же текстом (полное совпадение).
 
-На проде после деплоя:
-  cd /path/to/app/backend && source .venv/bin/activate && python manage.py seed_fabric_reviews_20
+На проде (MySQL из ../.env):
+  cd /path/to/app/backend && set -a && . ../.env && set +a && source .venv/bin/activate && python manage.py seed_fabric_reviews_20
 """
 
 from django.core.management.base import BaseCommand
