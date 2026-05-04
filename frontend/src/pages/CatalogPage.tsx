@@ -293,32 +293,43 @@ export function CatalogPage() {
           <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{catalogIntro}</p>
         </motion.div>
 
-        <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-start">
-          <aside className="fabric-card shrink-0 self-start p-4 lg:sticky lg:top-[calc(var(--site-header-height)+1rem)] lg:w-56 lg:p-5">
-            <p className="font-body text-sm font-semibold text-text">Категория</p>
-            <ul className="mt-3 flex flex-col gap-1 font-body text-sm">
-              <li>
+        <div className="mt-6 flex flex-col gap-5 lg:mt-10 lg:gap-10 lg:flex-row lg:items-start">
+          <aside
+            className={[
+              'fabric-card shrink-0 self-stretch p-3',
+              'max-lg:relative max-lg:w-[calc(100%+2*var(--space-inline-mobile))] max-lg:max-w-none max-lg:rounded-none max-lg:border-x-0 max-lg:px-3 max-lg:py-2.5',
+              'max-lg:-ms-[length:var(--space-inline-mobile)] max-lg:-me-[length:var(--space-inline-mobile)]',
+              'md:max-lg:-ms-[length:var(--space-inline-desktop)] md:max-lg:-me-[length:var(--space-inline-desktop)] md:max-lg:w-[calc(100%+2*var(--space-inline-desktop))]',
+              'lg:w-56 lg:self-start lg:rounded-2xl lg:p-5',
+              'lg:sticky lg:top-[calc(var(--site-header-height)+1rem)]',
+            ].join(' ')}
+          >
+            <p className="font-body text-xs font-semibold text-text lg:text-sm">Категория</p>
+            <ul className="mt-2 flex gap-1.5 font-body text-sm max-lg:-mx-0.5 max-lg:flex-nowrap max-lg:overflow-x-auto max-lg:pb-1 max-lg:[scrollbar-width:thin] lg:mt-3 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
+              <li className="max-lg:shrink-0 lg:w-full">
                 <button
                   type="button"
                   onClick={() => setParams({ category: null, page: 1 })}
-                  className={`w-full rounded-xl px-3 py-2 text-left transition hover:bg-primary/80 ${
+                  className={`max-lg:whitespace-nowrap max-lg:rounded-lg max-lg:px-2.5 max-lg:py-1 max-lg:text-xs lg:w-full lg:rounded-xl lg:px-3 lg:py-2 lg:text-left lg:text-sm ${
                     !category ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
-                  }`}
+                  } w-full text-left transition hover:bg-primary/80`}
                 >
                   Все
                 </button>
               </li>
               {categoryRows === null ? (
-                <li className="px-3 py-2 font-body text-sm text-text-muted">Категории…</li>
+                <li className="max-lg:shrink-0 px-2 py-1 font-body text-xs text-text-muted lg:w-full lg:px-3 lg:py-2 lg:text-sm">
+                  Категории…
+                </li>
               ) : (
                 categoryRows.map((c) => (
-                  <li key={c.slug}>
+                  <li key={c.slug} className="max-lg:shrink-0 lg:w-full">
                     <button
                       type="button"
                       onClick={() => setParams({ category: c.slug, page: 1 })}
-                      className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-primary/80 ${
+                      className={`flex max-lg:max-w-[min(100vw-4rem,22rem)] max-lg:items-center max-lg:gap-1.5 max-lg:rounded-lg max-lg:px-2 max-lg:py-1 max-lg:text-left max-lg:text-xs lg:w-full lg:gap-2 lg:rounded-xl lg:px-3 lg:py-2 lg:text-sm ${
                         category === c.slug ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
-                      }`}
+                      } w-full items-center text-left transition hover:bg-primary/80`}
                     >
                       {c.imageUrl ? (
                         <OptimizedImage
@@ -326,10 +337,10 @@ export function CatalogPage() {
                           alt={catalogCategoryFilterAlt(c.title)}
                           widths={[64, 128, 160]}
                           sizes="36px"
-                          className="h-9 w-9 shrink-0 rounded-lg object-cover"
+                          className="h-5 w-5 shrink-0 rounded object-cover lg:h-9 lg:w-9 lg:rounded-lg"
                         />
                       ) : null}
-                      <span className="min-w-0 flex-1">{c.title}</span>
+                      <span className="min-w-0 flex-1 max-lg:truncate">{c.title}</span>
                     </button>
                   </li>
                 ))
@@ -406,7 +417,7 @@ export function CatalogPage() {
                 <p className="font-heading text-xl font-semibold text-text">Пока пусто в этой категории</p>
                 <p className="mt-2 font-body text-sm text-text-muted">
                   {specFilterMap.size
-                    ? 'Снимите лишние значения в блоке «Параметры» слева или сбросьте фильтры.'
+                    ? 'Снимите лишние значения в блоке «Параметры» (вверху страницы) или сбросьте фильтры.'
                     : 'Попробуйте открыть другую категорию или сбросить фильтр до «Все».'}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
