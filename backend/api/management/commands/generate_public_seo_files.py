@@ -1,4 +1,4 @@
-"""Записать sitemap.xml и robots.txt в корень сборки витрины (frontend/dist)."""
+"""Записать sitemap.xml и robots.txt в frontend/dist и в корень выкладки на хостинге."""
 
 from pathlib import Path
 
@@ -6,26 +6,30 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from api.models import SiteSettings
-from api.seo_public_files import build_robots_txt, build_sitemap_xml, default_frontend_dist_dir
+from api.seo_public_files import (
+    build_robots_txt,
+    build_sitemap_xml,
+    default_frontend_dist_dir,
+    default_site_docroot_dir,
+)
 
 
 class Command(BaseCommand):
-    help = "Записать sitemap.xml и robots.txt в frontend/dist (после npm run build, на сервере — из .env)."
+    help = (
+        "Записать sitemap.xml и robots.txt в frontend/dist (для nginx) и в корень репозитория "
+        "(рядом с backend/, для панели хостинга)."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--output",
             type=str,
             default="",
-            help="Каталог назначения (по умолчанию: <репозиторий>/frontend/dist)",
+            help="Только один каталог (тесты): иначе пишем и в frontend/dist, и в корень сайта.",
         )
 
     def handle(self, *args, **options):
         raw_out = (options.get("output") or "").strip()
-        dest: Path = Path(raw_out).resolve() if raw_out else default_frontend_dist_dir()
-        if not dest.is_dir():
-            self.stderr.write(self.style.ERROR(f"Каталог не найден: {dest} (сначала npm run build во frontend/)"))
-            raise SystemExit(1)
 
         base = (getattr(settings, "PUBLIC_SITE_URL", "") or "").strip().rstrip("/")
         if not base:
@@ -39,9 +43,46 @@ class Command(BaseCommand):
         if not base:
             base = "http://127.0.0.1:17300"
 
-        sitemap_path = dest / "sitemap.xml"
-        robots_path = dest / "robots.txt"
-        sitemap_path.write_text(build_sitemap_xml(base, allow_indexing=allow), encoding="utf-8")
-        robots_path.write_text(build_robots_txt(base, allow_indexing=allow), encoding="utf-8")
+        sitemap_body = build_sitemap_xml(base, allow_indexing=allow)
+        robots_body = build_robots_txt(base, allow_indexing=allow)
 
-        self.stdout.write(self.style.SUCCESS(f"Записано: {sitemap_path} и {robots_path} (индексация={'да' if allow else 'нет'})"))
+        if raw_out:
+            dest = Path(raw_out).resolve()
+            if not dest.is_dir():
+                self.stderr.write(
+                    self.style.ERROR(f"Каталог не найден: {dest} (сначала npm run build во frontend/)")
+                )
+                raise SystemExit(1)
+            (dest / "sitemap.xml").write_text(sitemap_body, encoding="utf-8")
+            (dest / "robots.txt").write_text(robots_body, encoding="utf-8")
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Записано только в {dest}: sitemap.xml, robots.txt (индексация={'да' if allow else 'нет'})"
+                )
+            )
+            return
+
+        dist = default_frontend_dist_dir()
+        site_root = default_site_docroot_dir()
+        if not dist.is_dir():
+            self.stderr.write(
+                self.style.ERROR(f"Каталог не найден: {dist} (сначала npm run build во frontend/)")
+            )
+            raise SystemExit(1)
+
+        targets = [
+            dist / "sitemap.xml",
+            dist / "robots.txt",
+            site_root / "sitemap.xml",
+            site_root / "robots.txt",
+        ]
+        for p in targets:
+            body = sitemap_body if p.name == "sitemap.xml" else robots_body
+            p.write_text(body, encoding="utf-8")
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Записано: {dist / 'sitemap.xml'}, {dist / 'robots.txt'}, "
+                f"{site_root / 'sitemap.xml'}, {site_root / 'robots.txt'} (индексация={'да' if allow else 'нет'})"
+            )
+        )

@@ -1,4 +1,4 @@
-"""Генерация sitemap.xml и robots.txt для корня витрины (frontend/dist) и те же тела для HTTP-views."""
+"""Генерация sitemap.xml и robots.txt для frontend/dist, корня выкладки на хостинге и HTTP-views."""
 
 from __future__ import annotations
 
@@ -16,6 +16,11 @@ from .views_promotions import _public_promotions_catalog_queryset
 def default_frontend_dist_dir() -> Path:
     """Каталог сборки витрины: <repo>/frontend/dist (BASE_DIR = backend/)."""
     return Path(settings.BASE_DIR).parent / "frontend" / "dist"
+
+
+def default_site_docroot_dir() -> Path:
+    """Корень выкладки на хостинге (рядом с backend/, frontend/) — для панели и SFTP как «корень сайта»."""
+    return Path(settings.BASE_DIR).parent
 
 
 def _xml_url(loc: str, lastmod: date | None, changefreq: str, priority: str) -> str:

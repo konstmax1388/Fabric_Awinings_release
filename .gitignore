@@ -79,3 +79,7 @@ docs/_xlsx_sample.txt
 # Локальные ТЗ / Excel в корне репозитория (не коммитить, не тащить на прод)
 ТЗ2.0.docx
 фабрика тентов контент.xlsx
+
+# SEO: генерируются manage.py generate_public_seo_files (корень выкладки; не в Git)
+/sitemap.xml
+/robots.txt

@@ -69,6 +69,26 @@ def test_generate_public_seo_files_writes_dist(tmp_path, settings):
 
 
 @pytest.mark.django_db
+def test_generate_public_seo_files_writes_dist_and_site_root(tmp_path, settings, monkeypatch):
+    repo = tmp_path / "fabrika-site"
+    backend_dir = repo / "backend"
+    backend_dir.mkdir(parents=True)
+    (repo / "frontend" / "dist").mkdir(parents=True)
+    monkeypatch.setattr(settings, "BASE_DIR", backend_dir)
+    settings.PUBLIC_SITE_URL = "https://example.test"
+    from django.core.management import call_command
+
+    call_command("generate_public_seo_files")
+    dist_sm = repo / "frontend" / "dist" / "sitemap.xml"
+    root_sm = repo / "sitemap.xml"
+    assert dist_sm.is_file() and root_sm.is_file()
+    assert dist_sm.read_text(encoding="utf-8") == root_sm.read_text(encoding="utf-8")
+    assert (repo / "robots.txt").read_text(encoding="utf-8") == (repo / "frontend" / "dist" / "robots.txt").read_text(
+        encoding="utf-8"
+    )
+
+
+@pytest.mark.django_db
 def test_image_variant_rejects_traversal(client, settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path
     r = client.get("/api/image-variant/", {"path": "../../../etc/passwd", "w": 640, "f": "webp"})
