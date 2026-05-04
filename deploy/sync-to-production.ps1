@@ -98,7 +98,7 @@ if (-not $skipSystemd) {
 }
 
 $remoteLines += ""
-$remoteLines += 'echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"'
+$remoteLines += 'echo "==> Nginx: one-time as root if /sitemap.xml is still proxied to Django:"'
 $remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
 
 $remoteScript = ($remoteLines -join "`n") + "`n"
