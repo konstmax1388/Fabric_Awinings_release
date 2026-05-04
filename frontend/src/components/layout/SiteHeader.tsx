@@ -209,6 +209,18 @@ export function SiteHeader() {
       : '-mb-0 -mt-2.5 rounded-t-[14px] border border-b-0 border-accent/40 bg-surface px-1.5 pb-1.5 pt-2.5 text-accent shadow-[0_-4px_20px_rgba(180,134,58,0.1)]'
   const mobileBarTabIdle = 'py-1.5 text-text-muted'
 
+  const handleLogoClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      setOpen(false)
+      setSearchOpen(false)
+      if (location.pathname === '/') {
+        e.preventDefault()
+        window.scrollTo({ top: 0, left: 0, behavior: reduce ? 'instant' : 'smooth' })
+      }
+    },
+    [location.pathname, reduce],
+  )
+
   return (
     <>
     <header
@@ -228,6 +240,7 @@ export function SiteHeader() {
       <div className="fabric-container flex min-w-0 flex-nowrap items-center gap-2 py-3 md:grid md:grid-cols-[minmax(7rem,auto)_minmax(0,1fr)_auto] md:items-center md:gap-3 md:py-2.5">
         <Link
           to="/"
+          onClick={handleLogoClick}
           className="fabric-logo-link flex min-w-[7rem] shrink-0 max-w-[min(280px,42vw)] items-center md:min-w-0"
         >
           {!logoBroken ? (
