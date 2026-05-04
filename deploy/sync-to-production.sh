@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # С вашего ПК одной командой: на VPS — git pull, сборка frontend, migrate, collectstatic,
-# generate_public_seo_files (sitemap.xml и robots.txt в frontend/dist), prune, перезапуск Gunicorn.
+# generate_public_seo_files (sitemap/robots в dist и в корень выкладки), prune, повторный
+# generate_public_seo_files (чтобы SEO-файлы не пропали после prune), перезапуск Gunicorn.
 # Нужен вход по SSH без пароля (ключ). На сервере: Node 20+, venv в backend/.venv
 #
 #   cp deploy/.env.deploy.example deploy/.env.deploy
@@ -92,6 +93,11 @@ python manage.py collectstatic --noinput
 python manage.py generate_public_seo_files
 cd ..
 bash deploy/prune-production-tree.sh --drop-sqlite .
+cd backend
+if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
+source .venv/bin/activate
+python manage.py generate_public_seo_files
+cd ..
 echo ""
 echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"
 echo "    sudo bash $APP/deploy/vps-nginx-remove-seo-proxy-once.sh"
@@ -138,6 +144,11 @@ python manage.py collectstatic --noinput
 python manage.py generate_public_seo_files
 cd ..
 bash deploy/prune-production-tree.sh --drop-sqlite .
+cd backend
+if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
+source .venv/bin/activate
+python manage.py generate_public_seo_files
+cd ..
 sudo systemctl restart $SERVICE
 echo ""
 echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"

@@ -17,7 +17,8 @@ from api.seo_public_files import (
 class Command(BaseCommand):
     help = (
         "Записать sitemap.xml и robots.txt в frontend/dist (для nginx) и в корень репозитория "
-        "(рядом с backend/, для панели хостинга)."
+        "(рядом с backend/, для панели хостинга). Деплой вызывает команду дважды: до и после prune, "
+        "чтобы файлы не пропадали после очистки дерева."
     )
 
     def add_arguments(self, parser):

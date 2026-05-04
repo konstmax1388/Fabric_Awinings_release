@@ -13,6 +13,9 @@
 #   bash deploy/prune-production-tree.sh --keep-build-deps /path  # не трогать node_modules и src (отладка на сервере)
 #
 # Скрипты деплоя вызывают с --drop-sqlite после успешной сборки (см. sync-to-production.*).
+#
+# Не удалять и не добавлять в find/rm: sitemap.xml, robots.txt в корне репозитория и во
+# frontend/dist/ — их создаёт generate_public_seo_files; деплой повторно вызывает команду после prune.
 
 set -euo pipefail
 WITH_GIT=0

@@ -89,6 +89,11 @@ $remoteLines = @(
     "python manage.py generate_public_seo_files"
     "cd .."
     "bash deploy/prune-production-tree.sh --drop-sqlite ."
+    "cd backend"
+    "if [ -f ../.env ]; then set -a; source ../.env; set +a; fi"
+    "source .venv/bin/activate"
+    "python manage.py generate_public_seo_files"
+    "cd .."
 )
 
 if (-not $skipSystemd) {
