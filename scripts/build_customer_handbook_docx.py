@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Сборка руководства для заказчика (DOCX) со скриншотами из docs/customer-screenshots-2026-04-21/.
+Формат страницы: ISO A4 (210×297 мм), книжная ориентация, поля 2 см.
 Зависимости:
   pip install python-docx
   (рекомендуется) pip install Pillow — скриншоты сжимаются перед вставкой, файл DOCX заметно легче.
@@ -19,8 +20,9 @@ from pathlib import Path
 
 try:
     from docx import Document
+    from docx.enum.section import WD_ORIENT
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.shared import Inches, Pt
+    from docx.shared import Cm, Inches, Pt
 except ImportError:
     print("Установите: pip install python-docx", file=sys.stderr)
     sys.exit(1)
@@ -51,6 +53,17 @@ def _shot_path(shots: Path, filename: str) -> Path | None:
         if candidates:
             return candidates[0]
     return None
+
+
+def _apply_a4_portrait(section) -> None:
+    """Формат страницы ISO A4 (210×297 мм), книжная ориентация, поля по 2 см."""
+    section.orientation = WD_ORIENT.PORTRAIT
+    section.page_width = Cm(21)
+    section.page_height = Cm(29.7)
+    section.top_margin = Cm(2)
+    section.bottom_margin = Cm(2)
+    section.left_margin = Cm(2)
+    section.right_margin = Cm(2)
 
 
 def _add_para(doc: Document, text: str, *, bold: bool = False) -> None:
@@ -99,8 +112,7 @@ def build_doc(out_path: Path) -> None:
 
     doc = Document()
     sect = doc.sections[0]
-    sect.page_height = int(11.69 * 914400 / 2.54)
-    sect.page_width = int(8.27 * 914400 / 2.54)
+    _apply_a4_portrait(sect)
 
     title = doc.add_heading("Руководство по сайту «Фабрика тентов»", 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
