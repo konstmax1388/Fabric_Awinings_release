@@ -97,6 +97,10 @@ if (-not $skipSystemd) {
     $remoteLines += "echo '(systemd restart skipped: DEPLOY_SKIP_SYSTEMD=1)'"
 }
 
+$remoteLines += ""
+$remoteLines += 'echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"'
+$remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
+
 $remoteScript = ($remoteLines -join "`n") + "`n"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($remoteScript)
 
