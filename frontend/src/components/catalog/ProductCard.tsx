@@ -81,7 +81,7 @@ export function ProductCard({ product }: Props) {
               <span className="mr-2 inline-flex rounded-full bg-accent/20 px-2 py-0.5 font-semibold text-accent">
                 −{product.bestPromotionDiscountPercent}% по акциям
               </span>
-              <span className="text-text-subtle">итог с учётом всех действующих правил</span>
+              <span className="text-text-subtle">итог с учётом всех действующих акций</span>
             </p>
           ) : null}
           <PriceTag
