@@ -7,6 +7,7 @@ import { fetchPromotions, type PromotionListItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 import { promotionCoverAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 
 function formatPeriod(p: PromotionListItem): string {
   const start = p.startsAt ? new Date(p.startsAt).toLocaleDateString('ru-RU') : ''
@@ -81,12 +82,16 @@ export function PromotionsSection() {
                 id="fabric-promotions-heading"
                 className="font-heading text-2xl font-semibold tracking-tight text-text md:text-4xl"
               >
-                {heading}
+                <TextWithBr>{heading}</TextWithBr>
               </h2>
-              {subheading ? <p className="font-body text-sm text-text-muted md:text-base">{subheading}</p> : null}
+              {subheading ? (
+                <p className="font-body text-sm text-text-muted md:text-base">
+                  <TextWithBr>{subheading}</TextWithBr>
+                </p>
+              ) : null}
             </div>
             <Link to="/sales" className="font-body font-medium text-accent hover:underline md:shrink-0">
-              {allLink}
+              <TextWithBr>{allLink}</TextWithBr>
             </Link>
           </header>
 
@@ -122,12 +127,12 @@ export function PromotionsSection() {
                     <PromoEndsCountdown endsAt={p.endsAt} size="sm" className="max-w-full" />
                     <h3 className="mt-2 font-heading text-xl font-semibold leading-snug text-text md:text-2xl">
                       <Link to={`/sales/${p.slug}`} className="hover:text-accent">
-                        {p.title}
+                        <TextWithBr>{p.title}</TextWithBr>
                       </Link>
                     </h3>
                     {p.excerpt ? (
                       <p className="mt-2 min-h-0 flex-1 font-body text-sm leading-relaxed text-text-muted md:text-[15px]">
-                        {p.excerpt}
+                        <TextWithBr>{p.excerpt}</TextWithBr>
                       </p>
                     ) : null}
                     <Link

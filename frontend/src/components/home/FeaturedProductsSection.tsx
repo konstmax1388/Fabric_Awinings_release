@@ -7,6 +7,7 @@ import type { Product } from '../../data/products'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchFeaturedProducts } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { TextWithBr } from '../ui/TextWithBr'
 
 export function FeaturedProductsSection() {
   const reduce = useReducedMotion()
@@ -77,8 +78,12 @@ export function FeaturedProductsSection() {
         viewport={{ once: true, amount: 0.1 }}
         transition={easeOutSoft}
       >
-        <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-        <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+        <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+          <TextWithBr text={heading} />
+        </h2>
+        <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
+          <TextWithBr text={subheading} />
+        </p>
       </motion.div>
 
       <motion.div
@@ -101,7 +106,7 @@ export function FeaturedProductsSection() {
             to="/catalog"
             className="fabric-strap-btn inline-flex h-12 min-h-[44px] items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
           >
-            {catalogCta}
+            <TextWithBr text={catalogCta} />
           </Link>
         </MagneticHover>
       </div>

@@ -7,6 +7,7 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem
 import { FabricDriftOverlay } from '../ui/FabricDriftOverlay'
 import { tentTypeSectionCardAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 
 function categoryCardImage(_slug: string, imageUrl: string | null | undefined): string {
   if (imageUrl?.trim()) return imageUrl.trim()
@@ -43,10 +44,14 @@ export function TentTypesSection() {
         transition={easeOutSoft}
       >
         {heading.trim() ? (
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+            <TextWithBr text={heading} />
+          </h2>
         ) : null}
         {subheading.trim() ? (
-          <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+          <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
+            <TextWithBr text={subheading} />
+          </p>
         ) : null}
         <motion.div
           className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -89,7 +94,7 @@ export function TentTypesSection() {
                       ◆
                     </span>
                     <span className="font-heading text-lg font-semibold text-text group-hover:text-accent">
-                      {c.title}
+                      <TextWithBr text={c.title} />
                     </span>
                   </div>
                 </Link>

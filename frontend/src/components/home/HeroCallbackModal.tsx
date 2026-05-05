@@ -12,6 +12,7 @@ import { submitCallbackLead } from '../../lib/leads'
 import type { HeroCallbackModalTexts } from '../../types/homePage'
 import { easeOutSoft } from '../../lib/motion-presets'
 import { FormPersonalDataConsent } from '../legal/FormPersonalDataConsent'
+import { TextWithBr } from '../ui/TextWithBr'
 
 type Props = {
   open: boolean
@@ -121,7 +122,7 @@ export function HeroCallbackModal({ open, onClose, modal }: Props) {
           >
             <div className="mb-6 flex items-start justify-between gap-4">
               <h2 id={titleId} className="font-heading text-2xl font-bold tracking-tight text-text">
-                {title}
+                <TextWithBr>{title}</TextWithBr>
               </h2>
               <button
                 type="button"
@@ -134,7 +135,9 @@ export function HeroCallbackModal({ open, onClose, modal }: Props) {
             </div>
 
             {done ? (
-              <p className="font-body text-text md:text-lg">{success}</p>
+              <p className="font-body text-text md:text-lg">
+                <TextWithBr>{success}</TextWithBr>
+              </p>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <label className="block">

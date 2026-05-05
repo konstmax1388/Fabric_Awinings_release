@@ -13,6 +13,7 @@ import {
 } from '../../lib/motion-presets'
 import { reviewAuthorPhotoAlt, reviewProductPhotoAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 
 const REVIEW_PREVIEW_PAGE = 190
 const REVIEW_PREVIEW_TEASER = 100
@@ -173,7 +174,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
 
   const listBlock = (() => {
     if (loading) {
-      return <p className={isTeaser ? 'mt-6 font-body text-text-muted' : 'mt-10 font-body text-text-muted'}>{loadingText}</p>
+      return <p className={isTeaser ? 'mt-6 font-body text-text-muted' : 'mt-10 font-body text-text-muted'}><TextWithBr>{loadingText}</TextWithBr></p>
     }
     return (
       <motion.div
@@ -260,7 +261,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
                       onClick={() => toggleReviewExpand(r.id)}
                       className="mt-1 self-start font-body text-xs font-semibold text-accent transition hover:underline"
                     >
-                      {isExpanded ? collapseLabel : readMoreLabel}
+                      {isExpanded ? <TextWithBr>{collapseLabel}</TextWithBr> : <TextWithBr>{readMoreLabel}</TextWithBr>}
                     </button>
                   ) : null}
                   {r.video && !isTeaser && (
@@ -271,7 +272,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
                         </span>
                       </div>
                       <p className="absolute bottom-1.5 left-2 font-body text-[11px] text-text-muted">
-                        {videoCaption}
+                        <TextWithBr>{videoCaption}</TextWithBr>
                       </p>
                     </div>
                   )}
@@ -295,14 +296,18 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="font-heading text-2xl font-bold tracking-tight text-text md:text-3xl">{teaserTitle}</h2>
-            <p className="mt-1 max-w-2xl font-body text-sm text-text-muted md:text-base">{teaserSubtitle}</p>
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-text md:text-3xl">
+              <TextWithBr>{teaserTitle}</TextWithBr>
+            </h2>
+            <p className="mt-1 max-w-2xl font-body text-sm text-text-muted md:text-base">
+              <TextWithBr>{teaserSubtitle}</TextWithBr>
+            </p>
           </div>
           <Link
             to="/reviews"
             className="fabric-strap-btn hidden w-fit shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium text-accent hover:border-accent/60 md:inline-flex md:px-5"
           >
-            {teaserCta}
+            <TextWithBr>{teaserCta}</TextWithBr>
           </Link>
         </div>
         {listBlock}
@@ -311,7 +316,7 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
             to="/reviews"
             className="fabric-strap-btn inline-flex rounded-full border border-border px-5 py-2.5 text-sm font-medium text-accent hover:border-accent/60"
           >
-            {teaserCta}
+            <TextWithBr>{teaserCta}</TextWithBr>
           </Link>
         </div>
       </motion.section>
@@ -328,8 +333,12 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
     >
       {showListHeading ? (
         <>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl">{siteListHeading}</h2>
-          <p className="mt-3 max-w-3xl font-body text-text-muted md:text-lg">{siteListSubheading}</p>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-4xl">
+            <TextWithBr>{siteListHeading}</TextWithBr>
+          </h2>
+          <p className="mt-3 max-w-3xl font-body text-text-muted md:text-lg">
+            <TextWithBr>{siteListSubheading}</TextWithBr>
+          </p>
         </>
       ) : null}
       {listBlock}
@@ -340,8 +349,14 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
             : 'mt-10 rounded-2xl border border-border-light bg-surface p-5 md:mt-12 md:p-6'
         }
       >
-        <h3 className="font-heading text-2xl font-semibold text-text">{formHeading}</h3>
-        {formSubheading ? <p className="mt-2 text-sm text-text-muted">{formSubheading}</p> : null}
+        <h3 className="font-heading text-2xl font-semibold text-text">
+          <TextWithBr>{formHeading}</TextWithBr>
+        </h3>
+        {formSubheading ? (
+          <p className="mt-2 text-sm text-text-muted">
+            <TextWithBr>{formSubheading}</TextWithBr>
+          </p>
+        ) : null}
         <form className="mt-5 grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
           <div className="md:col-span-2">
             <FormPersonalDataConsent variant="form" />
@@ -372,7 +387,9 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
               onChange={(e) => setForm((v) => ({ ...v, publicationConsent: e.target.checked }))}
               required
             />
-            <label htmlFor="review-consent">{publicationConsentLabel}</label>
+            <label htmlFor="review-consent">
+              <TextWithBr>{publicationConsentLabel}</TextWithBr>
+            </label>
           </div>
           <textarea
             className="md:col-span-2 min-h-28 rounded-xl border border-border px-3 py-2 text-sm outline-none focus:border-accent"
@@ -389,10 +406,18 @@ export function ReviewsSection({ mode = 'page', showListHeading = true }: Props)
               disabled={sending}
               className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-surface disabled:opacity-60"
             >
-              {sending ? submittingLabel : submitButton}
+              {sending ? <TextWithBr>{submittingLabel}</TextWithBr> : <TextWithBr>{submitButton}</TextWithBr>}
             </button>
-            {submitOk ? <p className="text-sm text-emerald-700">{submitOk}</p> : null}
-            {submitErr ? <p className="text-sm text-rose-700">{submitErr}</p> : null}
+            {submitOk ? (
+              <p className="text-sm text-emerald-700">
+                <TextWithBr>{submitOk}</TextWithBr>
+              </p>
+            ) : null}
+            {submitErr ? (
+              <p className="text-sm text-rose-700">
+                <TextWithBr>{submitErr}</TextWithBr>
+              </p>
+            ) : null}
           </div>
         </form>
       </div>

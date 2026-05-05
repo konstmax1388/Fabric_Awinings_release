@@ -7,6 +7,7 @@ import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, subtleButtonHover, cardHoverTransition } from '../../lib/motion-presets'
 import { HeroCallbackModal } from './HeroCallbackModal'
+import { TextWithBr } from '../ui/TextWithBr'
 
 function isExternalHref(href: string) {
   return (
@@ -660,7 +661,7 @@ export function HeroSection() {
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.03 }}
             >
-              {eyebrow}
+              <TextWithBr>{eyebrow}</TextWithBr>
             </motion.p>
           ) : null}
           {usp ? (
@@ -672,24 +673,24 @@ export function HeroSection() {
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.06 }}
             >
-              {usp}
+              <TextWithBr>{usp}</TextWithBr>
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
+            className={`fabric-h1 italic break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
           >
-            {title}
+            <TextWithBr>{title}</TextWithBr>
           </motion.h1>
           <motion.p
-            className={`fabric-body mt-4 break-words ${textClasses.body}`}
+            className={`fabric-body mt-4 break-words font-normal uppercase tracking-[0.14em] ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
           >
-            {subtitle}
+            <TextWithBr>{subtitle}</TextWithBr>
           </motion.p>
           <motion.div
             className="mt-8 flex min-w-0 flex-wrap gap-3 sm:gap-4"
@@ -714,7 +715,7 @@ export function HeroSection() {
                         className={`${primaryBtnClass} ${textClasses.primaryBtn}`}
                         style={{ letterSpacing: '0.02em' }}
                       >
-                        {ctaPrimary}
+                        <TextWithBr>{ctaPrimary}</TextWithBr>
                       </button>
                     ) : (
                       <HeroCtaLink
@@ -722,7 +723,7 @@ export function HeroSection() {
                         className={`${primaryBtnClass} ${textClasses.primaryBtn}`}
                         style={{ letterSpacing: '0.02em' }}
                       >
-                        {ctaPrimary}
+                        <TextWithBr>{ctaPrimary}</TextWithBr>
                       </HeroCtaLink>
                     )}
                   </motion.span>
@@ -744,7 +745,7 @@ export function HeroSection() {
                       className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
                       style={{ letterSpacing: '0.02em' }}
                     >
-                      {ctaSecondary}
+                      <TextWithBr>{ctaSecondary}</TextWithBr>
                     </button>
                   ) : (
                     <HeroCtaLink
@@ -752,7 +753,7 @@ export function HeroSection() {
                       className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
                       style={{ letterSpacing: '0.02em' }}
                     >
-                      {ctaSecondary}
+                      <TextWithBr>{ctaSecondary}</TextWithBr>
                     </HeroCtaLink>
                   )}
                 </motion.span>
@@ -771,8 +772,12 @@ export function HeroSection() {
                   key={`hero-stat-${idx}`}
                   className={`fabric-liquid-glass-soft rounded-xl px-3 py-2 text-center ${textClasses.chipBg}`}
                 >
-                  <p className="font-heading text-lg text-text">{item.value}</p>
-                  <p className="font-body text-[11px] uppercase tracking-wider text-text-muted">{item.label}</p>
+                  <p className="font-heading text-lg text-text">
+                    <TextWithBr>{item.value}</TextWithBr>
+                  </p>
+                  <p className="font-body text-[11px] uppercase tracking-wider text-text-muted">
+                    <TextWithBr>{item.label}</TextWithBr>
+                  </p>
                 </div>
               ))}
             </motion.div>
@@ -785,7 +790,9 @@ export function HeroSection() {
               transition={{ ...easeOutSoft, delay: 0.4 }}
             >
               {showTrustBlockLine && trustLine ? (
-                <p className={`font-body text-sm sm:text-base ${textClasses.subtle}`}>{trustLine}</p>
+                <p className={`font-body text-sm sm:text-base ${textClasses.subtle}`}>
+                  <TextWithBr>{trustLine}</TextWithBr>
+                </p>
               ) : null}
               {trustItems.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -795,7 +802,7 @@ export function HeroSection() {
                         key={`hero-trust-${idx}`}
                         className={`fabric-liquid-glass-soft inline-flex max-w-full items-center rounded-full px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.08em] leading-relaxed break-words ${textClasses.trustPill}`}
                       >
-                        {item}
+                        <TextWithBr>{item}</TextWithBr>
                       </span>
                     ) : null,
                   )}

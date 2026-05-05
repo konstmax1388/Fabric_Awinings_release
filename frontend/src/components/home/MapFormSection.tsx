@@ -16,6 +16,7 @@ import {
 } from '../../lib/formValidation'
 import { submitCallbackLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
+import { TextWithBr } from '../ui/TextWithBr'
 
 export function MapFormSection({ showHeading = true }: { showHeading?: boolean }) {
   const reduce = useReducedMotion()
@@ -123,7 +124,9 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
               allowFullScreen
             />
           )}
-          <div className="border-t border-border-light p-4 font-body text-sm text-text-muted">{addressLine}</div>
+          <div className="border-t border-border-light p-4 font-body text-sm text-text-muted">
+            <TextWithBr>{addressLine}</TextWithBr>
+          </div>
         </motion.div>
 
         <motion.form
@@ -132,11 +135,15 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
           onSubmit={handleSubmit}
         >
           {done ? (
-            <p className="font-body text-text md:text-lg">{successMessage}</p>
+            <p className="font-body text-text md:text-lg">
+              <TextWithBr>{successMessage}</TextWithBr>
+            </p>
           ) : (
             <>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-text">{formNameLabel}</span>
+                <span className="mb-2 block text-sm font-medium text-text">
+                  <TextWithBr>{formNameLabel}</TextWithBr>
+                </span>
                 <input
                   type="text"
                   name="name"
@@ -149,7 +156,9 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
                 />
               </label>
               <label className="mt-4 block">
-                <span className="mb-2 block text-sm font-medium text-text">{formPhoneLabel}</span>
+                <span className="mb-2 block text-sm font-medium text-text">
+                  <TextWithBr>{formPhoneLabel}</TextWithBr>
+                </span>
                 <input
                   type="tel"
                   inputMode="tel"
@@ -165,7 +174,9 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
                 />
               </label>
               <label className="mt-4 block">
-                <span className="mb-2 block text-sm font-medium text-text">{formCommentLabel}</span>
+                <span className="mb-2 block text-sm font-medium text-text">
+                  <TextWithBr>{formCommentLabel}</TextWithBr>
+                </span>
                 <textarea
                   name="comment"
                   rows={4}
@@ -176,7 +187,11 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
                   className="w-full rounded-2xl border border-border bg-surface px-5 py-4 font-body text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(232,122,0,0.1)]"
                 />
               </label>
-              {error ? <p className="mt-3 font-body text-sm text-red-600">{error}</p> : null}
+              {error ? (
+                <p className="mt-3 font-body text-sm text-red-600">
+                  <TextWithBr>{error}</TextWithBr>
+                </p>
+              ) : null}
               <FormPersonalDataConsent variant="form" className="mt-3 font-body text-xs leading-relaxed text-text-subtle" />
               <motion.button
                 type="submit"
@@ -186,7 +201,7 @@ export function MapFormSection({ showHeading = true }: { showHeading?: boolean }
                 whileHover={reduce || sending ? undefined : { scale: 1.02 }}
                 whileTap={reduce || sending ? undefined : { scale: 0.98 }}
               >
-                {sending ? submitting : submitButton}
+                {sending ? <TextWithBr>{submitting}</TextWithBr> : <TextWithBr>{submitButton}</TextWithBr>}
               </motion.button>
             </>
           )}

@@ -7,6 +7,7 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem
 import { MagneticHover } from '../motion/MagneticHover'
 import { BeforeAfterSlider } from '../portfolio/BeforeAfterSlider'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 import { cardHoverTransition, subtleHoverLift, subtleButtonHover } from '../../lib/motion-presets'
 
 const DEFAULT_FILTERS = ['Все', 'Транспорт', 'Склады', 'Террасы']
@@ -79,8 +80,12 @@ export function PortfolioSection() {
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-          <p className="mt-3 max-w-xl font-body text-text-muted md:text-lg">{subheading}</p>
+          <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+            <TextWithBr>{heading}</TextWithBr>
+          </h2>
+          <p className="mt-3 max-w-xl font-body text-text-muted md:text-lg">
+            <TextWithBr>{subheading}</TextWithBr>
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
@@ -95,14 +100,16 @@ export function PortfolioSection() {
               }`}
               style={{ transform: 'translateZ(0)' }}
             >
-              {c}
+              <TextWithBr>{c}</TextWithBr>
             </button>
           ))}
         </div>
       </div>
 
       {loading ? (
-        <p className="mt-10 font-body text-text-muted">{loadingText}</p>
+        <p className="mt-10 font-body text-text-muted">
+          <TextWithBr>{loadingText}</TextWithBr>
+        </p>
       ) : (
         <motion.div
           key={filter}
@@ -146,7 +153,9 @@ export function PortfolioSection() {
                 <p className="font-body text-xs text-text-subtle">
                   {p.category} · {p.date}
                 </p>
-                <h3 className="mt-1 font-heading text-lg font-semibold text-text">{p.title}</h3>
+                <h3 className="mt-1 font-heading text-lg font-semibold text-text">
+                  <TextWithBr>{p.title}</TextWithBr>
+                </h3>
               </div>
             </motion.article>
           ))}
@@ -155,7 +164,9 @@ export function PortfolioSection() {
 
       {!loading && filtered.length === 0 && (
         <div className="mt-10 rounded-2xl border border-dashed border-border-light bg-bg-base px-6 py-10 text-center">
-          <p className="font-heading text-xl font-semibold text-text">{emptyText}</p>
+          <p className="font-heading text-xl font-semibold text-text">
+            <TextWithBr>{emptyText}</TextWithBr>
+          </p>
           <button
             type="button"
             onClick={() => setFilter(categories[0] ?? 'Все')}
@@ -179,7 +190,7 @@ export function PortfolioSection() {
               className="fabric-strap-btn inline-flex h-12 items-center justify-center rounded-[40px] border-2 border-accent px-8 font-body font-medium text-accent hover:bg-[rgba(232,122,0,0.08)]"
               style={{ letterSpacing: '0.02em' }}
             >
-              {allProjectsCta}
+              <TextWithBr>{allProjectsCta}</TextWithBr>
             </Link>
           </motion.span>
         </MagneticHover>
@@ -206,7 +217,9 @@ export function PortfolioSection() {
                 <p className="font-body text-xs text-text-subtle">
                   {preview.category} · {preview.date}
                 </p>
-                <h3 className="mt-1 font-heading text-lg font-semibold text-text">{preview.title}</h3>
+                <h3 className="mt-1 font-heading text-lg font-semibold text-text">
+                  <TextWithBr>{preview.title}</TextWithBr>
+                </h3>
                 <button
                   type="button"
                   className="fabric-strap-btn mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-border px-4 font-body text-sm font-medium text-text"

@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { TextWithBr } from '../ui/TextWithBr'
 
 function isExternalHref(href: string) {
   return (
@@ -60,17 +61,17 @@ export function PurchasePathsSection() {
           <header className="space-y-3">
             {eyebrow ? (
               <p className="break-words font-heading text-xs uppercase tracking-[0.18em] text-accent md:text-sm">
-                {eyebrow}
+                <TextWithBr text={eyebrow} />
               </p>
             ) : null}
             {heading ? (
               <h2 className="break-words font-heading text-2xl font-semibold text-text md:text-4xl">
-                {heading}
+                <TextWithBr text={heading} />
               </h2>
             ) : null}
             {subheading ? (
               <p className="max-w-3xl break-words font-body text-sm text-text-muted md:text-base">
-                {subheading}
+                <TextWithBr text={subheading} />
               </p>
             ) : null}
           </header>
@@ -88,14 +89,14 @@ export function PurchasePathsSection() {
               >
                 {readyTitle ? (
                   <p className="break-words font-heading text-[11px] uppercase tracking-[0.16em] text-accent/90">
-                    {readyTitle}
+                    <TextWithBr text={readyTitle} />
                   </p>
                 ) : null}
                 {readySubtitle ? (
                   <h3
                     className={`break-words font-heading text-xl text-text ${readyTitle ? 'mt-2' : ''}`}
                   >
-                    {readySubtitle}
+                    <TextWithBr text={readySubtitle} />
                   </h3>
                 ) : null}
                 {readyPoints.length > 0 ? (
@@ -104,7 +105,7 @@ export function PurchasePathsSection() {
                   >
                     {readyPoints.map((item, idx) => (
                       <li key={`ready-path-bullet-${idx}`} className="break-words">
-                        {item}
+                        <TextWithBr text={item} />
                       </li>
                     ))}
                   </ul>
@@ -119,7 +120,7 @@ export function PurchasePathsSection() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {readyCta}
+                      <TextWithBr text={readyCta} />
                     </a>
                   ) : (
                     <Link
@@ -128,7 +129,7 @@ export function PurchasePathsSection() {
                         readyAboveCta ? 'mt-5' : ''
                       }`}
                     >
-                      {readyCta}
+                      <TextWithBr text={readyCta} />
                     </Link>
                   )
                 ) : null}
@@ -143,14 +144,14 @@ export function PurchasePathsSection() {
               >
                 {customTitle ? (
                   <p className="break-words font-heading text-[11px] uppercase tracking-[0.16em] text-accent">
-                    {customTitle}
+                    <TextWithBr text={customTitle} />
                   </p>
                 ) : null}
                 {customSubtitle ? (
                   <h3
                     className={`break-words font-heading text-xl text-text ${customTitle ? 'mt-2' : ''}`}
                   >
-                    {customSubtitle}
+                    <TextWithBr text={customSubtitle} />
                   </h3>
                 ) : null}
                 {customPoints.length > 0 ? (
@@ -159,7 +160,7 @@ export function PurchasePathsSection() {
                   >
                     {customPoints.map((item, idx) => (
                       <li key={`custom-path-bullet-${idx}`} className="break-words">
-                        {item}
+                        <TextWithBr text={item} />
                       </li>
                     ))}
                   </ul>
@@ -174,7 +175,7 @@ export function PurchasePathsSection() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {customCta}
+                      <TextWithBr text={customCta} />
                     </a>
                   ) : (
                     <a
@@ -183,7 +184,7 @@ export function PurchasePathsSection() {
                         customAboveCta ? 'mt-5' : ''
                       }`}
                     >
-                      {customCta}
+                      <TextWithBr text={customCta} />
                     </a>
                   )
                 ) : null}

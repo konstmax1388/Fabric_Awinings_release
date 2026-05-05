@@ -11,6 +11,7 @@ import {
 } from '../../lib/motion-presets'
 import { problemCardIconAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 
 /** Допускаем только безопасные классы Font Awesome (латиница, цифры, пробел, дефис). */
 function isSafeFontAwesomeClass(s: string): boolean {
@@ -76,11 +77,13 @@ export function ProblemSolutionSection() {
     >
       {heading.trim() ? (
         <h2 className="break-words font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-          {heading}
+          <TextWithBr>{heading}</TextWithBr>
         </h2>
       ) : null}
       {subheading.trim() ? (
-        <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+        <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
+          <TextWithBr>{subheading}</TextWithBr>
+        </p>
       ) : null}
       <motion.div
         className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -158,14 +161,14 @@ export function ProblemSolutionSection() {
               <ProblemSolutionIcon card={card} />
             </span>
             <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text transition-colors duration-300 group-hover:text-accent motion-reduce:transition-none motion-reduce:group-hover:text-text">
-              {card.problem}
+              <TextWithBr>{card.problem}</TextWithBr>
             </h3>
             <div
               aria-hidden
               className="relative z-10 mt-3 h-px w-10 bg-gradient-to-r from-accent/70 to-transparent transition-all duration-500 ease-out group-hover:w-16 group-hover:from-accent motion-reduce:transition-none motion-reduce:group-hover:w-10"
             />
             <p className="relative z-10 mt-3 font-body text-sm leading-relaxed text-text-muted transition-colors duration-300 group-hover:text-text motion-reduce:transition-none motion-reduce:group-hover:text-text-muted md:text-base">
-              {card.solution}
+              <TextWithBr>{card.solution}</TextWithBr>
             </p>
           </motion.article>
         ))}

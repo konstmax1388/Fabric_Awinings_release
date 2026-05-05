@@ -17,6 +17,7 @@ import {
 } from '../../lib/formValidation'
 import { submitCalculatorLead } from '../../lib/leads'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
+import { TextWithBr } from '../ui/TextWithBr'
 
 export function PriceCalculatorSection() {
   const { home } = useSiteSettings()
@@ -161,8 +162,12 @@ export function PriceCalculatorSection() {
       viewport={{ once: true, amount: 0.1 }}
       transition={easeOutSoft}
     >
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-      <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{subheading}</p>
+      <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+        <TextWithBr>{heading}</TextWithBr>
+      </h2>
+      <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
+        <TextWithBr>{subheading}</TextWithBr>
+      </p>
 
       <motion.div
         className="mt-10 rounded-[24px] border border-border-light bg-surface p-4 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.08)] md:p-8 lg:p-10"
@@ -182,10 +187,14 @@ export function PriceCalculatorSection() {
           {mode === 'calculator' ? (
             <>
           <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
-            <p className="mb-3 font-heading text-lg font-semibold text-text">{step1Title}</p>
+            <p className="mb-3 font-heading text-lg font-semibold text-text">
+              <TextWithBr>{step1Title}</TextWithBr>
+            </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block font-body text-sm font-medium text-text">{lengthLabel}</span>
+                <span className="mb-2 block font-body text-sm font-medium text-text">
+                  <TextWithBr>{lengthLabel}</TextWithBr>
+                </span>
                 <input
                   type="number"
                   min={cfg.lengthMinM}
@@ -199,7 +208,9 @@ export function PriceCalculatorSection() {
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block font-body text-sm font-medium text-text">{widthLabel}</span>
+                <span className="mb-2 block font-body text-sm font-medium text-text">
+                  <TextWithBr>{widthLabel}</TextWithBr>
+                </span>
                 <input
                   type="number"
                   min={cfg.widthMinM}
@@ -214,7 +225,9 @@ export function PriceCalculatorSection() {
               </label>
             </div>
             <label className="mt-4 block">
-              <span className="mb-2 block font-body text-sm font-medium text-text">{materialLabel}</span>
+              <span className="mb-2 block font-body text-sm font-medium text-text">
+                <TextWithBr>{materialLabel}</TextWithBr>
+              </span>
               <select
                 value={materialId}
                 onChange={(e) => setMaterialId(e.target.value)}
@@ -228,7 +241,9 @@ export function PriceCalculatorSection() {
               </select>
             </label>
             <div className="mt-4">
-              <span className="mb-3 block font-body text-sm font-medium text-text">{optionsLabel}</span>
+              <span className="mb-3 block font-body text-sm font-medium text-text">
+                <TextWithBr>{optionsLabel}</TextWithBr>
+              </span>
               <div className="flex flex-col gap-3">
                 {options.map((o) => (
                   <label
@@ -242,7 +257,7 @@ export function PriceCalculatorSection() {
                       className="h-5 w-5 rounded border-border text-accent focus:ring-accent"
                     />
                     <span className="font-body text-sm text-text">
-                      {o.label}
+                      <TextWithBr>{o.label}</TextWithBr>
                       <span className="text-text-muted"> (+{o.price.toLocaleString('ru-RU')} ₽)</span>
                     </span>
                   </label>
@@ -252,10 +267,14 @@ export function PriceCalculatorSection() {
           </section>
 
           <section className="snap-start rounded-2xl border border-border-light bg-bg-base p-4 md:p-5">
-            <p className="mb-3 font-heading text-lg font-semibold text-text">{step2Title}</p>
+            <p className="mb-3 font-heading text-lg font-semibold text-text">
+              <TextWithBr>{step2Title}</TextWithBr>
+            </p>
             <div className="space-y-4">
               <label className="block">
-                <span className="mb-1 block font-body text-sm text-text-muted">{lengthLabel}</span>
+                <span className="mb-1 block font-body text-sm text-text-muted">
+                  <TextWithBr>{lengthLabel}</TextWithBr>
+                </span>
                 <input
                   type="range"
                   min={cfg.lengthMinM}
@@ -272,7 +291,9 @@ export function PriceCalculatorSection() {
                 </div>
               </label>
               <label className="block">
-                <span className="mb-1 block font-body text-sm text-text-muted">{widthLabel}</span>
+                <span className="mb-1 block font-body text-sm text-text-muted">
+                  <TextWithBr>{widthLabel}</TextWithBr>
+                </span>
                 <input
                   type="range"
                   min={cfg.widthMinM}
@@ -290,7 +311,9 @@ export function PriceCalculatorSection() {
               </label>
             </div>
             <div className="mt-5 rounded-xl border border-border-light bg-surface p-4">
-              <p className="font-body text-xs uppercase tracking-wide text-text-subtle">{virtualRulerTitle}</p>
+              <p className="font-body text-xs uppercase tracking-wide text-text-subtle">
+                <TextWithBr>{virtualRulerTitle}</TextWithBr>
+              </p>
               <div className="mt-3 grid grid-cols-[1fr_auto] gap-3">
                 <div>
                   <div className="h-2 rounded-full bg-border-light">
@@ -320,16 +343,22 @@ export function PriceCalculatorSection() {
             </>
           ) : (
             <section className="rounded-2xl border border-border-light bg-bg-base p-5 md:p-7">
-              <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent">{requestBadge}</p>
-              <h3 className="mt-3 font-heading text-2xl text-text md:text-3xl">{requestTitle}</h3>
-              <p className="mt-3 max-w-2xl font-body text-sm text-text-muted md:text-base">{requestSubtitle}</p>
+              <p className="font-heading text-xs uppercase tracking-[0.18em] text-accent">
+                <TextWithBr>{requestBadge}</TextWithBr>
+              </p>
+              <h3 className="mt-3 font-heading text-2xl text-text md:text-3xl">
+                <TextWithBr>{requestTitle}</TextWithBr>
+              </h3>
+              <p className="mt-3 max-w-2xl font-body text-sm text-text-muted md:text-base">
+                <TextWithBr>{requestSubtitle}</TextWithBr>
+              </p>
               <div className="mt-5 grid gap-3">
                 {requestBenefits.map((item, idx) => (
                   <div
                     key={`request-benefit-${idx}`}
                     className="rounded-2xl border border-border-light bg-surface/70 px-4 py-3 font-body text-sm text-text"
                   >
-                    {item}
+                    <TextWithBr>{item}</TextWithBr>
                   </div>
                 ))}
               </div>
@@ -339,7 +368,9 @@ export function PriceCalculatorSection() {
           <section className={`rounded-2xl border border-border-light bg-bg-base p-4 md:p-5 ${mode === 'calculator' ? 'snap-start' : ''}`}>
             {mode === 'calculator' ? (
               <>
-                <p className="font-body text-sm text-text-muted">{estimateLabel}</p>
+                <p className="font-body text-sm text-text-muted">
+                  <TextWithBr>{estimateLabel}</TextWithBr>
+                </p>
                 <div className="relative mt-2 min-h-[2.25rem] min-w-0 md:min-h-[2.75rem]">
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.p
@@ -354,18 +385,22 @@ export function PriceCalculatorSection() {
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="mt-3 font-body text-sm text-text-subtle">{estimateNote}</p>
+                <p className="mt-3 font-body text-sm text-text-subtle">
+                  <TextWithBr>{estimateNote}</TextWithBr>
+                </p>
               </>
             ) : null}
 
             {done ? (
               <p className="mt-6 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3 font-body text-sm text-text">
-                {successMessage}
+                <TextWithBr>{successMessage}</TextWithBr>
               </p>
             ) : (
               <>
                 <label className="mt-5 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">{nameLabel}</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">
+                    <TextWithBr>{nameLabel}</TextWithBr>
+                  </span>
                   <input
                     type="text"
                     name="calc-name"
@@ -377,7 +412,9 @@ export function PriceCalculatorSection() {
                   />
                 </label>
                 <label className="mt-3 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">{phoneLabel}</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">
+                    <TextWithBr>{phoneLabel}</TextWithBr>
+                  </span>
                   <input
                     type="tel"
                     inputMode="tel"
@@ -392,7 +429,9 @@ export function PriceCalculatorSection() {
                   />
                 </label>
                 <label className="mt-3 block">
-                  <span className="mb-2 block font-body text-sm font-medium text-text">{commentLabel}</span>
+                  <span className="mb-2 block font-body text-sm font-medium text-text">
+                    <TextWithBr>{commentLabel}</TextWithBr>
+                  </span>
                   <textarea
                     name="calc-comment"
                     rows={mode === 'calculator' ? 2 : 4}
@@ -405,7 +444,7 @@ export function PriceCalculatorSection() {
                 </label>
                 {error && (
                   <p className="mt-3 font-body text-sm text-red-600" role="alert">
-                    {error}
+                    <TextWithBr>{error}</TextWithBr>
                   </p>
                 )}
                 <FormPersonalDataConsent variant="form" className="mt-3 font-body text-xs leading-relaxed text-text-subtle" />
@@ -417,7 +456,7 @@ export function PriceCalculatorSection() {
                   whileHover={reduce || sending ? undefined : { scale: 1.02 }}
                   whileTap={reduce || sending ? undefined : { scale: 0.98 }}
                 >
-                  {sending ? submitting : submitButton}
+                  {sending ? <TextWithBr>{submitting}</TextWithBr> : <TextWithBr>{submitButton}</TextWithBr>}
                 </motion.button>
               </>
             )}

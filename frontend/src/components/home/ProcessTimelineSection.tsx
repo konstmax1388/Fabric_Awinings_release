@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible } from '../../lib/motion-presets'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
+import { TextWithBr } from '../ui/TextWithBr'
 
 const STEPS = [
   { title: 'Заявка и консультация', text: 'Уточняем задачу, сроки и бюджет.' },
@@ -55,10 +56,12 @@ export function ProcessTimelineSection() {
       transition={easeOutSoft}
     >
       <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
-        {proc?.heading?.trim() || 'От замера до монтажа'}
+        <TextWithBr>{proc?.heading?.trim() || 'От замера до монтажа'}</TextWithBr>
       </h2>
       <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">
-        {proc?.subheading?.trim() || 'Прозрачный процесс: вы всегда понимаете, на каком этапе проект.'}
+        <TextWithBr>
+          {proc?.subheading?.trim() || 'Прозрачный процесс: вы всегда понимаете, на каком этапе проект.'}
+        </TextWithBr>
       </p>
 
       <div className="mt-8">
@@ -108,8 +111,12 @@ export function ProcessTimelineSection() {
                 >
                   {idx + 1}
                 </div>
-                <h3 className="font-heading text-lg font-semibold text-text">{step.title}</h3>
-                <p className="mt-2 font-body text-sm leading-relaxed text-text-muted">{step.text}</p>
+                <h3 className="font-heading text-lg font-semibold text-text">
+                  <TextWithBr>{step.title}</TextWithBr>
+                </h3>
+                <p className="mt-2 font-body text-sm leading-relaxed text-text-muted">
+                  <TextWithBr>{step.text}</TextWithBr>
+                </p>
               </motion.article>
             )
           })}

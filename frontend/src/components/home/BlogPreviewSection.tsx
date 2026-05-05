@@ -5,6 +5,7 @@ import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchBlogPosts, type BlogListItem } from '../../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 import { OptimizedImage } from '../ui/OptimizedImage'
+import { TextWithBr } from '../ui/TextWithBr'
 
 export function BlogPreviewSection() {
   const reduce = useReducedMotion()
@@ -56,12 +57,16 @@ export function BlogPreviewSection() {
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">{heading}</h2>
-            <p className="mt-3 font-body text-text-muted md:text-lg">{subheading}</p>
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-text md:text-5xl">
+              <TextWithBr>{heading}</TextWithBr>
+            </h2>
+            <p className="mt-3 font-body text-text-muted md:text-lg">
+              <TextWithBr>{subheading}</TextWithBr>
+            </p>
           </div>
           <motion.span whileHover={reduce ? undefined : { x: 4 }} className="inline-block">
             <Link to="/blog" className="font-body font-medium text-accent hover:underline">
-              {allLink}
+              <TextWithBr>{allLink}</TextWithBr>
             </Link>
           </motion.span>
         </div>
@@ -122,7 +127,7 @@ export function BlogPreviewSection() {
                 </time>
                 <h3 className="mt-2 font-heading text-xl font-semibold text-text">
                   <Link to={`/blog/${post.slug}`} className="text-text hover:text-accent">
-                    {post.title}
+                    <TextWithBr>{post.title}</TextWithBr>
                   </Link>
                 </h3>
                 <div
@@ -133,7 +138,7 @@ export function BlogPreviewSection() {
                   to={`/blog/${post.slug}`}
                   className="mt-4 inline-block font-body text-sm font-medium text-accent hover:underline"
                 >
-                  {readMore}
+                  <TextWithBr>{readMore}</TextWithBr>
                 </Link>
               </div>
             </motion.article>
