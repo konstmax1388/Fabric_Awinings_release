@@ -77,17 +77,17 @@ function LegacyAkciiDetailRedirect() {
 }
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center bg-bg-base font-body text-sm text-text-muted">
-      Загрузка…
-    </div>
-  )
-}
-
-/** Один общий fallback для <title>: статический title в index.html даёт второй тег вместе с react-helmet-async. */
-function DocumentDefaultTitle() {
   const { siteName } = useSiteSettings()
-  return <Helmet defaultTitle={siteName} />
+  return (
+    <>
+      <Helmet>
+        <title>{siteName}</title>
+      </Helmet>
+      <div className="flex min-h-[50vh] items-center justify-center bg-bg-base font-body text-sm text-text-muted">
+        Загрузка…
+      </div>
+    </>
+  )
 }
 
 function AppShell() {
@@ -95,7 +95,6 @@ function AppShell() {
     <CanonicalUrlProvider>
       <DocumentCanonical />
       <SiteSettingsProvider>
-        <DocumentDefaultTitle />
         <ScrollToTopOnRoute />
         <BrandingFavicon />
         <AnalyticsSnippets />
