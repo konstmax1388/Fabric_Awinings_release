@@ -8,7 +8,7 @@ import { useResolvedLineImages } from '../../hooks/useResolvedLineImages'
 import { fetchCustomerOrder } from '../../lib/api'
 import { fulfillmentLabel, paymentLabel } from '../../lib/orderStatusLabels'
 import { cartLineImageFrameClass } from '../../lib/productPhotoAspect'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import { cartLineThumbnailAlt } from '../../lib/imageAlt'
 import { OptimizedImage } from '../../components/ui/OptimizedImage'
 
@@ -54,15 +54,28 @@ export function AccountOrderDetailPage() {
   }, [accessToken, decodedRef])
 
   if (data === undefined) {
-    return <p className="font-body text-sm text-text-muted">Загрузка…</p>
+    const loadTitle = buildSeoTitle('listing', { title: 'Загрузка заказа', siteName }, seoDefaults)
+    const loadDesc = resolveMetaDescription('Загрузка данных заказа в личном кабинете.', seoDefaults)
+    return (
+      <>
+        <Helmet>
+          <title>{loadTitle}</title>
+          <meta name="description" content={loadDesc} />
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <p className="font-body text-sm text-text-muted">Загрузка…</p>
+      </>
+    )
   }
 
   if (data === null) {
     const notFoundTitle = buildSeoTitle('listing', { title: 'Заказ не найден', siteName }, seoDefaults)
+    const notFoundDesc = resolveMetaDescription('Заказ не найден в личном кабинете.', seoDefaults)
     return (
       <>
         <Helmet>
           <title>{notFoundTitle}</title>
+          <meta name="description" content={notFoundDesc} />
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <p className="font-body text-sm text-text-muted">Заказ не найден.</p>
@@ -111,6 +124,7 @@ export function AccountOrderDetailPage() {
   }
 
   const orderTitle = buildSeoTitle('listing', { title: `Заказ ${ref}`, siteName }, seoDefaults)
+  const orderDesc = resolveMetaDescription(`Заказ ${ref}: статус, состав и доставка в личном кабинете.`, seoDefaults)
 
   const deliveryObj =
     delivery && typeof delivery === 'object' && !Array.isArray(delivery)
@@ -140,6 +154,7 @@ export function AccountOrderDetailPage() {
     <>
       <Helmet>
         <title>{orderTitle}</title>
+        <meta name="description" content={orderDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <Link

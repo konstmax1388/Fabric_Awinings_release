@@ -3,7 +3,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import { patchAuthProfile } from '../../lib/api'
 import { formatRuPhoneMask, isCompleteRuPhone, nationalDigitsFromInput, phoneForApi } from '../../lib/formValidation'
 
@@ -51,11 +51,13 @@ export function AccountProfilePage() {
   }
 
   const docTitle = buildSeoTitle('listing', { title: 'Профиль', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('Профиль и контакты для оформления заказов.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Профиль</h1>

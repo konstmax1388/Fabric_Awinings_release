@@ -19,7 +19,7 @@ import { publicSiteUrl } from '../config/publicSite'
 import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { orderedVisibleHomeSectionIds, type HomeSectionId } from '../lib/homePageLayout'
-import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../lib/seoVitrine'
 
 export function HomePage() {
   const site = publicSiteUrl()
@@ -77,13 +77,7 @@ export function HomePage() {
 
   const baseTitle = meta?.title ?? 'Фабрика Тентов — тенты, навесы, шатры'
   const pageTitle = buildSeoTitle('home', { title: baseTitle, siteName }, seoDefaults)
-  const pageDesc = truncateMetaDescription(
-    meta?.description?.trim() ||
-      seoDefaults.defaultMetaDescription?.trim() ||
-      'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.',
-    undefined,
-    seoDefaults,
-  )
+  const pageDesc = resolveMetaDescription(meta?.description, seoDefaults)
   const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   const sectionById = (id: HomeSectionId) => {

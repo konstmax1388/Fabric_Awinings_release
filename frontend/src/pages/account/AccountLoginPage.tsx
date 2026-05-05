@@ -6,7 +6,7 @@ import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { optionalEmailError } from '../../lib/formValidation'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 
 export function AccountLoginPage() {
   const { siteName, seoDefaults } = useSiteSettings()
@@ -42,11 +42,13 @@ export function AccountLoginPage() {
   }
 
   const docTitle = buildSeoTitle('listing', { title: 'Вход', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('Вход в личный кабинет покупателя.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />

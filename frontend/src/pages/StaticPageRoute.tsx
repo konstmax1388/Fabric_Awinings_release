@@ -9,7 +9,7 @@ import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
 import { publicSiteUrl } from '../config/publicSite'
 import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { resolveStaticPageDocumentTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription, resolveStaticPageDocumentTitle } from '../lib/seoVitrine'
 
 export function StaticPageRoute() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -41,8 +41,12 @@ export function StaticPageRoute() {
   const canonicalForMeta = useCanonicalHrefForMeta()
 
   if (page === undefined) {
+    const loadingDesc = resolveMetaDescription(undefined, seoDefaults, 'Загрузка страницы.')
     return (
       <>
+        <Helmet>
+          <meta name="description" content={loadingDesc} />
+        </Helmet>
         <SiteHeader />
         <main className="fabric-page">
           <div className="fabric-page-main min-h-[60vh] w-full max-w-[960px]">
@@ -55,8 +59,18 @@ export function StaticPageRoute() {
   }
 
   if (!page) {
+    const nfTitle = buildSeoTitle('emdash', { title: 'Страница не найдена', siteName }, seoDefaults)
+    const nfDesc = resolveMetaDescription(
+      undefined,
+      seoDefaults,
+      'Страница не найдена. Перейдите на главную или в каталог.',
+    )
     return (
       <>
+        <Helmet>
+          <title>{nfTitle}</title>
+          <meta name="description" content={nfDesc} />
+        </Helmet>
         <SiteHeader />
         <main className="fabric-page">
           <div className="fabric-page-main min-h-[60vh] w-full max-w-[960px]">
@@ -75,7 +89,7 @@ export function StaticPageRoute() {
   }
 
   const docTitle = resolveStaticPageDocumentTitle(page, siteName, seoDefaults)
-  const desc = truncateMetaDescription(page.metaDescription?.trim() || page.title, undefined, seoDefaults)
+  const desc = resolveMetaDescription(page.metaDescription?.trim(), seoDefaults, page.title)
   const aboutV1 = page.aboutPayload?.version === 1
   const aboutHeading = page.pageTitle?.trim() || page.title
   const tw = seoDefaults.twitterCard || 'summary_large_image'

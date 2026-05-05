@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import {
   deleteAddress,
   fetchAddresses,
@@ -90,11 +90,13 @@ export function AccountAddressesPage() {
   }
 
   const docTitle = buildSeoTitle('listing', { title: 'Адреса доставки', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('Сохранённые адреса доставки в личном кабинете.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Адреса доставки</h1>

@@ -22,6 +22,10 @@ export function RouteErrorPage() {
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-bg-base px-4 font-body text-text">
       <Helmet>
         <title>{`Ошибка — ${SITE.name}`}</title>
+        <meta
+          name="description"
+          content="Не удалось открыть страницу. Обновите вкладку или перейдите на главную сайта."
+        />
       </Helmet>
       <h1 className="text-xl font-semibold text-text">Не удалось открыть страницу</h1>
       <p className="max-w-md text-center text-sm text-text-muted">

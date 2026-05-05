@@ -58,3 +58,22 @@ export function truncateMetaDescription(text: string, maxLen: number | undefined
   if (t.length <= m) return t
   return `${t.slice(0, m - 1).trimEnd()}…`
 }
+
+/** Если в админке не задан defaultMetaDescription — запасной текст для публичных страниц. */
+export const PUBLIC_SITE_META_DESCRIPTION_FALLBACK =
+  'Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. Каталог, конструктор тента, заявка онлайн.'
+
+/**
+ * Текст для meta description: явный primary → default из SEO-настроек → contextualFallback → общий fallback, затем обрезка.
+ */
+export function resolveMetaDescription(
+  primary: string | null | undefined,
+  seo: SeoDefaultsDto,
+  contextualFallback?: string | null,
+): string {
+  const primaryNorm = (primary && String(primary).replace(/\s+/g, ' ').trim()) || ''
+  const settingsNorm = (seo.defaultMetaDescription && String(seo.defaultMetaDescription).replace(/\s+/g, ' ').trim()) || ''
+  const ctxNorm = (contextualFallback && String(contextualFallback).replace(/\s+/g, ' ').trim()) || ''
+  const base = primaryNorm || settingsNorm || ctxNorm || PUBLIC_SITE_META_DESCRIPTION_FALLBACK
+  return truncateMetaDescription(base, undefined, seo)
+}

@@ -20,7 +20,7 @@ import { SiteHeader } from '../components/layout/SiteHeader'
 import { OneClickOrderModal } from '../components/order/OneClickOrderModal'
 import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { MARKETPLACES, type MarketplaceId } from '../config/site'
+import { MARKETPLACES, SITE, type MarketplaceId } from '../config/site'
 import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
 import { useCart } from '../hooks/useCart'
 import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
@@ -28,7 +28,7 @@ import { orderLineFromProduct } from '../lib/orderLinePayload'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
 import { absolutizeCustomCanonical } from '../lib/canonicalPublicUrl'
-import { truncateMetaDescription } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../lib/seoVitrine'
 import type { HomePayload } from '../types/homePage'
 
 function categoryLabel(p: Product): string {
@@ -365,8 +365,12 @@ export function ProductPage() {
   }, [slug])
 
   if (product === undefined) {
+    const loadingDesc = resolveMetaDescription(undefined, seoDefaults, SITE.catalogIntro)
     return (
       <>
+        <Helmet>
+          <meta name="description" content={loadingDesc} />
+        </Helmet>
         <SiteHeader />
         <main className="fabric-page">
           <div className="fabric-page-main min-w-0 overflow-x-clip">
@@ -379,8 +383,19 @@ export function ProductPage() {
   }
 
   if (!product) {
+    const nfTitle = ui?.productNotFoundTitle || 'Товар не найден'
+    const nfDocTitle = buildSeoTitle('listing', { title: nfTitle, siteName }, seoDefaults)
+    const nfDesc = resolveMetaDescription(
+      undefined,
+      seoDefaults,
+      `${nfTitle}. Другие позиции — в каталоге ${siteName}.`,
+    )
     return (
       <>
+        <Helmet>
+          <title>{nfDocTitle}</title>
+          <meta name="description" content={nfDesc} />
+        </Helmet>
         <SiteHeader />
         <main className="fabric-page">
           <div className="fabric-page-main min-w-0 overflow-x-clip">
@@ -413,10 +428,10 @@ export function ProductPage() {
   const seo = product.seo
   const rawPageTitle = seo?.pageTitle ?? `${product.title} — каталог`
   const pageTitle = seoDefaults.titleSuffix ? `${rawPageTitle} ${seoDefaults.titleSuffix}` : rawPageTitle
-  const metaDesc = truncateMetaDescription(
+  const metaDesc = resolveMetaDescription(
     seo?.metaDescription ?? (product.excerpt || product.description || ''),
-    undefined,
     seoDefaults,
+    `${product.title}. ${SITE.catalogIntro}`,
   )
   const ogImage = seo?.ogImage || galleryImages[0] || product.images[0] || seoDefaults.ogImageUrl
   const tw = seoDefaults.twitterCard || 'summary_large_image'

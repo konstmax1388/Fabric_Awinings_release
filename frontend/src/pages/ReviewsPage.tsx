@@ -7,7 +7,7 @@ import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../lib/seoVitrine'
 
 export function ReviewsPage() {
   const { siteName, home, reviewsYandex, reviewsMarket, contactsBackLinkLabel, seoDefaults } =
@@ -23,16 +23,18 @@ export function ReviewsPage() {
   const yandexBlockTitle = (rv?.yandexBlockHeading ?? '').trim() || 'Отзывы на Яндекс.Маркете'
   const yandexBlockNote = (rv?.yandexBlockNote ?? '').trim()
   const docTitle = buildSeoTitle('emdash', { title: pageTitle, siteName }, seoDefaults)
-  const desc = metaDescription
-    ? truncateMetaDescription(metaDescription, undefined, seoDefaults)
-    : ''
+  const desc = resolveMetaDescription(
+    metaDescription || undefined,
+    seoDefaults,
+    `Отзывы клиентов о продукции и работе ${siteName}.`,
+  )
   const tw = seoDefaults.twitterCard || 'summary_large_image'
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
-        {desc ? <meta name="description" content={desc} /> : null}
+        <meta name="description" content={desc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
@@ -40,7 +42,7 @@ export function ReviewsPage() {
         <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={docTitle} />
-        {desc ? <meta property="og:description" content={desc} /> : null}
+        <meta property="og:description" content={desc} />
         {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
       </Helmet>
       <SiteHeader />

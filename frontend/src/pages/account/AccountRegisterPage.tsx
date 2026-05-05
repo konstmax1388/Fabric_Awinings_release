@@ -6,7 +6,7 @@ import { SiteFooter } from '../../components/layout/SiteFooter'
 import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import {
   formatRuPhoneMask,
   isCompleteRuPhone,
@@ -59,11 +59,13 @@ export function AccountRegisterPage() {
   }
 
   const docTitle = buildSeoTitle('listing', { title: 'Регистрация', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('Регистрация личного кабинета на сайте.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />

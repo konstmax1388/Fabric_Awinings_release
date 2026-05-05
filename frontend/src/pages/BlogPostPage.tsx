@@ -10,7 +10,7 @@ import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUr
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { articleCoverAlt } from '../lib/imageAlt'
 import { absolutizeCustomCanonical } from '../lib/canonicalPublicUrl'
-import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../lib/seoVitrine'
 
 export function BlogPostPage() {
   const site = publicSiteUrl()
@@ -42,8 +42,12 @@ export function BlogPostPage() {
   const canonicalForMeta = useCanonicalHrefForMeta()
 
   if (post === undefined) {
+    const loadingDesc = resolveMetaDescription(undefined, seoDefaults, 'Загрузка статьи блога.')
     return (
       <>
+        <Helmet>
+          <meta name="description" content={loadingDesc} />
+        </Helmet>
         <SiteHeader />
         <main className="fabric-page">
           <div className="fabric-page-main min-w-0 max-w-[720px] overflow-x-clip">
@@ -56,10 +60,16 @@ export function BlogPostPage() {
   }
 
   if (!post) {
+    const missingDesc = resolveMetaDescription(
+      undefined,
+      seoDefaults,
+      'Статья блога не найдена. Другие материалы — в разделе «Блог».',
+    )
     return (
       <>
         <Helmet>
           <title>Статья не найдена — Фабрика Тентов</title>
+          <meta name="description" content={missingDesc} />
         </Helmet>
         <SiteHeader />
         <main className="fabric-page">
@@ -78,11 +88,7 @@ export function BlogPostPage() {
   const docTitle =
     post.seo?.pageTitle?.trim() ||
     buildSeoTitle('article', { title: post.title, siteName }, seoDefaults)
-  const metaDesc = truncateMetaDescription(
-    post.seo?.metaDescription ?? post.excerpt ?? '',
-    undefined,
-    seoDefaults,
-  )
+  const metaDesc = resolveMetaDescription(post.seo?.metaDescription ?? post.excerpt ?? '', seoDefaults, post.title)
   const ogImage = post.seo?.ogImage || post.img || seoDefaults.ogImageUrl || ''
   const ogTitle = post.seo?.pageTitle?.trim() || post.title
   const tw = seoDefaults.twitterCard || 'summary_large_image'

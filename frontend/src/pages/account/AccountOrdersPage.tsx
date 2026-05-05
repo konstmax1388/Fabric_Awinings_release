@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import { useCart } from '../../hooks/useCart'
 import type { CustomerOrderRow } from '../../lib/api'
 import { fetchCustomerOrders } from '../../lib/api'
@@ -44,11 +44,13 @@ export function AccountOrdersPage() {
   }
 
   const docTitle = buildSeoTitle('listing', { title: 'Мои заказы', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('История заказов в личном кабинете.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <h1 className="font-heading text-2xl font-semibold text-text md:text-3xl">Мои заказы</h1>

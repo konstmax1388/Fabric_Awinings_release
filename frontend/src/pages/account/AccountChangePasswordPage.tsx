@@ -5,7 +5,7 @@ import { SiteFooter } from '../../components/layout/SiteFooter'
 import { SiteHeader } from '../../components/layout/SiteHeader'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
-import { buildSeoTitle } from '../../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../../lib/seoVitrine'
 import { postChangePassword } from '../../lib/api'
 
 export function AccountChangePasswordPage() {
@@ -53,11 +53,13 @@ export function AccountChangePasswordPage() {
   const deadline = user.passwordChangeDeadline
 
   const docTitle = buildSeoTitle('listing', { title: 'Смена пароля', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription('Смена пароля учётной записи.', seoDefaults)
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <SiteHeader />

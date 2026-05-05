@@ -3,16 +3,22 @@ import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { buildSeoTitle } from '../lib/seoVitrine'
+import { buildSeoTitle, resolveMetaDescription } from '../lib/seoVitrine'
 
 export function NotFoundPage() {
   const { siteName, seoDefaults } = useSiteSettings()
   const docTitle = buildSeoTitle('emdash', { title: 'Страница не найдена', siteName }, seoDefaults)
+  const docDesc = resolveMetaDescription(
+    undefined,
+    seoDefaults,
+    'Страница не найдена. Перейдите в каталог или на главную сайта.',
+  )
 
   return (
     <>
       <Helmet>
         <title>{docTitle}</title>
+        <meta name="description" content={docDesc} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">
