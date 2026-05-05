@@ -1,4 +1,6 @@
+import { Helmet } from 'react-helmet-async'
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom'
+import { SITE } from '../config/site'
 
 function isStaleChunkError(message: string): boolean {
   return /Failed to fetch dynamically imported module|Loading chunk \d+ failed|ChunkLoadError|Importing a module script failed|error loading dynamically imported module/i.test(
@@ -18,6 +20,9 @@ export function RouteErrorPage() {
   const chunkStale = isStaleChunkError(message)
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-bg-base px-4 font-body text-text">
+      <Helmet>
+        <title>{`Ошибка — ${SITE.name}`}</title>
+      </Helmet>
       <h1 className="text-xl font-semibold text-text">Не удалось открыть страницу</h1>
       <p className="max-w-md text-center text-sm text-text-muted">
         {chunkStale

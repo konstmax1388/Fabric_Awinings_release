@@ -1,10 +1,19 @@
+import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { useSiteSettings } from '../context/SiteSettingsContext'
+import { buildSeoTitle } from '../lib/seoVitrine'
 
 export function NotFoundPage() {
+  const { siteName, seoDefaults } = useSiteSettings()
+  const docTitle = buildSeoTitle('emdash', { title: 'Страница не найдена', siteName }, seoDefaults)
+
   return (
     <>
+      <Helmet>
+        <title>{docTitle}</title>
+      </Helmet>
       <SiteHeader />
       <main className="fabric-page">
         <div className="fabric-page-main min-w-0 overflow-x-clip py-24 text-center">

@@ -1,4 +1,4 @@
-import { HelmetProvider } from 'react-helmet-async'
+import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
@@ -10,7 +10,7 @@ import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { RouteTransition } from './components/layout/RouteTransition'
 import { ConsentBanner } from './components/layout/ConsentBanner'
 import { CanonicalUrlProvider, DocumentCanonical } from './context/CanonicalUrlContext'
-import { SiteSettingsProvider } from './context/SiteSettingsContext'
+import { SiteSettingsProvider, useSiteSettings } from './context/SiteSettingsContext'
 import { RouteErrorPage } from './components/RouteErrorPage'
 import { RequireAuth } from './pages/account/RequireAuth'
 
@@ -84,11 +84,18 @@ function RouteFallback() {
   )
 }
 
+/** Один общий fallback для <title>: статический title в index.html даёт второй тег вместе с react-helmet-async. */
+function DocumentDefaultTitle() {
+  const { siteName } = useSiteSettings()
+  return <Helmet defaultTitle={siteName} />
+}
+
 function AppShell() {
   return (
     <CanonicalUrlProvider>
       <DocumentCanonical />
       <SiteSettingsProvider>
+        <DocumentDefaultTitle />
         <ScrollToTopOnRoute />
         <BrandingFavicon />
         <AnalyticsSnippets />
