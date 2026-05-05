@@ -1146,7 +1146,7 @@ class BlogPostAdmin(ModelAdmin):
     form = BlogPostAdminForm
     list_display = ("title", "slug", "published_at", "is_published")
     list_filter = ("is_published",)
-    date_hierarchy = "published_at"
+    # Без date_hierarchy: на MySQL без mysql_tzinfo_to_sql Django падает при построении иерархии дат.
     ordering = ("-published_at", "-id")
     search_fields = ("title", "slug", "excerpt")
     readonly_fields = ("slug",)
@@ -1297,7 +1297,7 @@ class StaticPageAdmin(ModelAdmin):
 @admin.register(CalculatorLead)
 class CalculatorLeadAdmin(ModelAdmin):
     list_display = ("name", "phone", "length_m", "width_m", "estimated_price_rub", "created_at")
-    date_hierarchy = "created_at"
+    # Без date_hierarchy: на MySQL без mysql_tzinfo_to_sql Django падает при построении иерархии дат.
     ordering = ("-created_at", "-id")
     search_fields = ("name", "phone", "comment")
     readonly_fields = ("created_at",)
@@ -1321,7 +1321,7 @@ def _format_cart_order_rub(n: int | None) -> str:
 class CallbackLeadAdmin(ModelAdmin):
     list_display = ("name", "phone", "source", "created_at")
     list_filter = ("source",)
-    date_hierarchy = "created_at"
+    # Без date_hierarchy: на MySQL без mysql_tzinfo_to_sql Django падает при построении иерархии дат.
     ordering = ("-created_at", "-id")
     search_fields = ("name", "phone", "comment")
     readonly_fields = ("created_at",)

@@ -3,6 +3,12 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.3.35] — 2026-04-24
+
+### Исправлено
+
+- **Админка (MySQL):** убран `date_hierarchy` у `CallbackLead`, `CalculatorLead` и `BlogPost` — иначе без таблиц таймзон MySQL changelist падал с 500 (как уже было учтено у `CartOrder`).
+
 ## [3.3.34] — 2026-04-24
 
 ### Изменено
