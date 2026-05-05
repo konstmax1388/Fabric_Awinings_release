@@ -3,6 +3,14 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.3.34] — 2026-04-24
+
+### Изменено
+
+- **PageSpeed / мобильная витрина:** снова Google Fonts (`display=swap`, preconnect) в `index.html` вместо цепочки локальных woff на первом экране.
+- **Font Awesome:** только `fontawesome` + `solid` + `regular` (без `all`/brands); `--fa-display: swap` в `:root`.
+- **Примеры nginx:** `expires` для `/assets/`, `/staff/assets/`, `/fonts/`, публичных путей и `/media/` — чтобы PSI и браузеры стабильно видели TTL (после `reload nginx` на VPS).
+
 ## [3.3.33] — 2026-04-24
 
 ### Добавлено

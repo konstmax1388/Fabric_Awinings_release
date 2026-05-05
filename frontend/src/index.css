@@ -17,6 +17,8 @@
 }
 
 :root {
+  /* Font Awesome 6: по умолчанию webfont с block задерживает текст; swap мягче для PSI / INP. */
+  --fa-display: swap;
   --font-heading: 'Playfair Display', Georgia, serif;
   --font-body: 'Raleway', system-ui, sans-serif;
   --radius-card: 16px;
