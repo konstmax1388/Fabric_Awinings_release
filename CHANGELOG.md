@@ -3,6 +3,13 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.3.36] — 2026-04-24
+
+### Изменено
+
+- **PageSpeed / LCP:** Google Fonts подключаются без блокировки первого кадра (`media="print"` + `onload`, `noscript`).
+- Font Awesome вынесен в отдельный асинхронный CSS-чанк (`fontawesome.css`), основной бандл Tailwind легче.
+
 ## [3.3.35] — 2026-04-24
 
 ### Исправлено

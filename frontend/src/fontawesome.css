@@ -1,0 +1,4 @@
+/* Отдельный чанк: загружается параллельно с разбором HTML, не удлиняет render-blocking CSS с Tailwind. */
+@import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+@import '@fortawesome/fontawesome-free/css/solid.min.css';
+@import '@fortawesome/fontawesome-free/css/regular.min.css';
