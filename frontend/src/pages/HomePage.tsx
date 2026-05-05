@@ -16,6 +16,7 @@ import { PurchasePathsSection } from '../components/home/PurchasePathsSection'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { orderedVisibleHomeSectionIds, type HomeSectionId } from '../lib/homePageLayout'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
@@ -24,6 +25,7 @@ export function HomePage() {
   const site = publicSiteUrl()
   const { home, siteName, calculatorEnabled, portfolioEnabled, phone, address, seoDefaults } =
     useSiteSettings()
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const meta = home?.meta
   const sectionOrder = useMemo(
     () => orderedVisibleHomeSectionIds(home, { calculatorEnabled, portfolioEnabled }),
@@ -127,11 +129,10 @@ export function HomePage() {
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDesc} />

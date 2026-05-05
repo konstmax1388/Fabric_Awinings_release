@@ -8,8 +8,8 @@ import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { catalogCategoryFilterAlt } from '../lib/imageAlt'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
-import { publicSiteUrl } from '../config/publicSite'
 import type { Product, ProductCategory } from '../data/products'
 import {
   PAGE_SIZE,
@@ -85,7 +85,7 @@ export function CatalogPage() {
   const [search, setSearch] = useSearchParams()
   const reduce = useReducedMotion()
   const { catalogIntro, seoDefaults, siteName } = useSiteSettings()
-  const site = publicSiteUrl()
+  const canonicalForMeta = useCanonicalHrefForMeta()
 
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
@@ -261,11 +261,10 @@ export function CatalogPage() {
         <title>{catPageTitle}</title>
         <meta name="description" content={catPageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/catalog`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/catalog`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={catPageTitle} />
         <meta property="og:description" content={catPageDesc} />

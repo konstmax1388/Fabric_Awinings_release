@@ -80,8 +80,8 @@ export function TentTypesSection() {
                     <OptimizedImage
                       src={c.img}
                       alt={tentTypeSectionCardAlt(c.title)}
-                      widths={[480, 640, 800]}
-                      sizes="(max-width: 768px) 100vw, 33vw"
+                      widths={[320, 400, 480, 640]}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                     <FabricDriftOverlay className="opacity-35 mix-blend-soft-light" />

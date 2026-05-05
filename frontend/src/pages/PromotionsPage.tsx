@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { promotionCoverAlt } from '../lib/imageAlt'
-import { publicSiteUrl } from '../config/publicSite'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { PromoEndsCountdown } from '../components/promo/PromoEndsCountdown'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
@@ -20,8 +20,8 @@ function formatPeriod(p: PromotionListItem): string {
 }
 
 export function PromotionsPage() {
-  const site = publicSiteUrl()
   const { seoDefaults, siteName } = useSiteSettings()
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const pageTitle = buildSeoTitle('listing', { title: 'Акции', siteName }, seoDefaults)
   const pageDesc = truncateMetaDescription(
     seoDefaults.defaultMetaDescription?.trim() ||
@@ -52,11 +52,10 @@ export function PromotionsPage() {
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/sales`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/sales`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDesc} />

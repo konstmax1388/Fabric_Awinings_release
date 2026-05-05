@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async'
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
@@ -7,6 +7,7 @@ import { AboutPageLayout } from '../components/static/AboutPageLayout'
 import { ReviewsSection } from '../components/home/ReviewsSection'
 import { fetchStaticPageBySlug, type StaticPageDto } from '../lib/api'
 import { publicSiteUrl } from '../config/publicSite'
+import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { resolveStaticPageDocumentTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
@@ -30,6 +31,14 @@ export function StaticPageRoute() {
       cancelled = true
     }
   }, [slug])
+
+  const staticCanonicalOverride = useMemo(() => {
+    if (page === undefined || page === null) return null
+    const path = page.path.startsWith('/') ? page.path : `/${page.path}`
+    return `${siteBase}${path}`
+  }, [page, siteBase])
+  useSetCanonical(staticCanonicalOverride)
+  const canonicalForMeta = useCanonicalHrefForMeta()
 
   if (page === undefined) {
     return (
@@ -69,8 +78,6 @@ export function StaticPageRoute() {
   const desc = truncateMetaDescription(page.metaDescription?.trim() || page.title, undefined, seoDefaults)
   const aboutV1 = page.aboutPayload?.version === 1
   const aboutHeading = page.pageTitle?.trim() || page.title
-  const path = page.path.startsWith('/') ? page.path : `/${page.path}`
-  const canonical = `${siteBase}${path}`
   const tw = seoDefaults.twitterCard || 'summary_large_image'
   return (
     <>
@@ -78,11 +85,10 @@ export function StaticPageRoute() {
         <title>{docTitle}</title>
         <meta name="description" content={desc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={canonical} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={canonical} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={docTitle} />
         <meta property="og:description" content={desc} />

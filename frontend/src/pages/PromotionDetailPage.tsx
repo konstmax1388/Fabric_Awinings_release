@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { promotionCoverAlt } from '../lib/imageAlt'
-import { publicSiteUrl } from '../config/publicSite'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { PromoEndsCountdown } from '../components/promo/PromoEndsCountdown'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
@@ -21,8 +21,8 @@ function formatPeriod(p: PromotionDetail): string {
 
 export function PromotionDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const site = publicSiteUrl()
   const { seoDefaults, siteName } = useSiteSettings()
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const [promo, setPromo] = useState<PromotionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const tw = seoDefaults.twitterCard || 'summary_large_image'
@@ -79,7 +79,6 @@ export function PromotionDetailPage() {
 
   const pageTitle = buildSeoTitle('listing', { title: promo.title, siteName }, seoDefaults)
   const pageDesc = truncateMetaDescription(promo.excerpt || promo.body || pageTitle, undefined, seoDefaults)
-  const canonical = `${site}/sales/${promo.slug}`
 
   return (
     <>
@@ -87,11 +86,10 @@ export function PromotionDetailPage() {
         <title>{pageTitle}</title>
         <meta name="description" content={pageDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={canonical} />
         <meta name="twitter:card" content={tw} />
         {promo.imageUrl ? <meta name="twitter:image" content={promo.imageUrl} /> : null}
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={canonical} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDesc} />

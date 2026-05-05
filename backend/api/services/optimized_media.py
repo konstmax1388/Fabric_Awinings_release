@@ -12,7 +12,12 @@ from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_WIDTHS: frozenset[int] = frozenset({64, 128, 160, 240, 320, 480, 640, 800, 960, 1200, 1600})
+# Увеличивайте при смене алгоритма/качества, чтобы пересобрать файлы в media/_variants/.
+VARIANT_PIPELINE_VERSION = 2
+
+ALLOWED_WIDTHS: frozenset[int] = frozenset(
+    {64, 128, 160, 240, 320, 400, 480, 640, 800, 960, 1200, 1600}
+)
 ALLOWED_FORMATS: frozenset[str] = frozenset({"webp", "jpeg"})
 
 
@@ -42,7 +47,7 @@ def source_file_for_relative(rel: str) -> Path | None:
 def variant_cache_path(source_abs: Path, width: int, fmt: str) -> Path:
     st = source_abs.stat()
     h = hashlib.sha256(
-        f"{source_abs.resolve()}|{width}|{fmt}|{st.st_size}|{int(st.st_mtime)}".encode()
+        f"{source_abs.resolve()}|{width}|{fmt}|{st.st_size}|{int(st.st_mtime)}|{VARIANT_PIPELINE_VERSION}".encode()
     ).hexdigest()
     root = Path(settings.MEDIA_ROOT)
     return root / "_variants" / h[:2] / f"{h}.{fmt}"
@@ -61,13 +66,13 @@ def render_variant_bytes(source_abs: Path, width: int, fmt: str) -> bytes:
             rgba = rgba.resize((width, nh), Image.Resampling.LANCZOS)
         if fmt == "webp":
             buf = io.BytesIO()
-            rgba.save(buf, format="WEBP", quality=82, method=4)
+            rgba.save(buf, format="WEBP", quality=80, method=4)
             return buf.getvalue()
         if fmt == "jpeg":
             bg = Image.new("RGB", rgba.size, (255, 255, 255))
             bg.paste(rgba, mask=rgba.split()[3])
             buf = io.BytesIO()
-            bg.save(buf, format="JPEG", quality=82, optimize=True)
+            bg.save(buf, format="JPEG", quality=80, optimize=True)
             return buf.getvalue()
     raise ValueError("bad_format")
 

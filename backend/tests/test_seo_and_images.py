@@ -107,6 +107,8 @@ def test_image_variant_webp_from_png(client, settings, tmp_path):
     # повтор — из кэша
     r2 = client.get("/api/image-variant/", {"path": "products/t.png", "w": 640, "f": "webp"})
     assert r2.status_code == 200
+    r3 = client.get("/api/image-variant/", {"path": "products/t.png", "w": 400, "f": "webp"})
+    assert r3.status_code == 200
 
 
 @pytest.mark.django_db

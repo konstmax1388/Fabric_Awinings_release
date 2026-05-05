@@ -33,7 +33,6 @@ import {
   isCompleteRuPhone,
 } from '../lib/formValidation'
 import { submitCartOrder } from '../lib/leads'
-import { publicSiteUrl } from '../config/publicSite'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 import { checkoutClientLabels } from '../lib/checkoutUiCopy'
 import { DEFAULT_CHECKOUT_ORDERS_BLOCKED_MESSAGE } from '../types/checkoutPublic'
@@ -534,7 +533,6 @@ export function CheckoutPage() {
         : 'bg-border-light text-text-muted'
     }`
 
-  const site = publicSiteUrl()
   const checkoutTitle = buildSeoTitle('listing', { title: 'Оформление заказа', siteName }, seoDefaults)
   const checkoutDesc = truncateMetaDescription(
     'Контакты, доставка, подтверждение заказа.',
@@ -548,7 +546,6 @@ export function CheckoutPage() {
         <title>{checkoutTitle}</title>
         <meta name="description" content={checkoutDesc} />
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href={`${site}/checkout`} />
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

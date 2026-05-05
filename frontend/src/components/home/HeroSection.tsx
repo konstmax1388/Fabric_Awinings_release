@@ -5,8 +5,10 @@ import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
 import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
+import { imageVariantUrl } from '../../lib/optimizedImage'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, subtleButtonHover, cardHoverTransition } from '../../lib/motion-presets'
 import { HeroCallbackModal } from './HeroCallbackModal'
+import { OptimizedImage } from '../ui/OptimizedImage'
 import { TextWithBr } from '../ui/TextWithBr'
 
 function isExternalHref(href: string) {
@@ -57,6 +59,9 @@ const primaryBtnClass =
 const secondaryBtnClass =
   'fabric-strap-btn inline-flex h-14 min-h-[44px] max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-5 font-body text-base font-medium sm:px-8'
 const HERO_VIDEO_START_TIMEOUT_MS = 5000
+
+/** Ширины под /api/image-variant/ (hero на всю ширину экрана, без загрузки многомегабайтных оригиналов). */
+const HERO_BACKGROUND_WIDTHS = [480, 640, 800, 960, 1200, 1600] as const
 
 function slideOn(slide: HeroSlide | null | undefined, k: keyof HeroSlide): boolean {
   if (!slide) return true
@@ -263,6 +268,10 @@ export function HeroSection() {
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
   const activeImageUrl = activeSlide?.imageUrl || ''
   const activeVideoUrl = activeSlide?.videoUrl || ''
+  const heroVideoPosterUrl = useMemo(() => {
+    if (!activeImageUrl) return undefined
+    return imageVariantUrl(activeImageUrl, { w: 1600, format: 'webp' }) ?? activeImageUrl
+  }, [activeImageUrl])
   const activeSlideTextTone = activeSlide?.textTone ?? heroTextToneN
   const shouldShowVideo = Boolean(activeVideoUrl) && !failedVideoBySlide[currentSlide]
   const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
@@ -536,7 +545,7 @@ export function HeroSection() {
               loop={false}
               playsInline
               preload="metadata"
-              poster={activeImageUrl || undefined}
+              poster={heroVideoPosterUrl}
               onEnded={onHeroVideoEnded}
               onError={() =>
                 setFailedVideoBySlide((prev) => ({
@@ -580,8 +589,7 @@ export function HeroSection() {
           ) : activeImageUrl ? (
             <motion.div
               key={`hero-image-${currentSlide}`}
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${activeImageUrl})` }}
+              className="absolute inset-0 overflow-hidden"
               initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.03 }}
               animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
@@ -596,7 +604,16 @@ export function HeroSection() {
                     }
               }
               aria-hidden
-            />
+            >
+              <OptimizedImage
+                src={activeImageUrl}
+                alt=""
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center select-none"
+                widths={HERO_BACKGROUND_WIDTHS}
+                sizes="100vw"
+                priority
+              />
+            </motion.div>
           ) : null}
         </AnimatePresence>
         </div>

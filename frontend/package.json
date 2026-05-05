@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "validate:schema": "node ./scripts/validate-product-schema.mjs",
+    "fonts:download": "python ./scripts/download-self-hosted-fonts.py",
     "lint": "eslint .",
     "preview": "vite preview"
   },

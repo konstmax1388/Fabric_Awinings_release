@@ -36,10 +36,12 @@ server {
 
     location /static/ {
         alias /var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/staticfiles/;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
     }
 
     location /media/ {
         alias /var/www/kasatkin_da/data/www/fabrika-tentov.ru/backend/media/;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
     }
 
     # Панель /staff/ (admin-ui → frontend/dist/staff): F5 на /staff/orders/1/show → staff/index.html, не витрина.
@@ -53,6 +55,12 @@ server {
         try_files $uri $uri/ /staff/index.html;
     }
 
+    location ^~ /staff/assets/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
     # index.html — без долгого кэша (после деплоя старый HTML не должен ссылаться на удалённые /assets/*.js)
     location = /index.html {
         root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
@@ -62,6 +70,36 @@ server {
     location ^~ /assets/ {
         root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /branding/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /payments/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /delivery/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /marketplaces/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /fonts/ {
+        root /var/www/kasatkin_da/data/www/fabrika-tentov.ru/frontend/dist;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400" always;
         try_files $uri =404;
     }
 

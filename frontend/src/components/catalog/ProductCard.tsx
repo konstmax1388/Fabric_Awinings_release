@@ -58,7 +58,8 @@ export function ProductCard({ product }: Props) {
             <OptimizedImage
               src={cover}
               alt={productCardPhotoAlt(product.title)}
-              widths={[480, 640, 960]}
+              widths={[320, 480, 640]}
+              sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
               onError={() => setImgFailed(true)}
               className="h-full w-full object-contain p-2 transition-opacity duration-300 hover:opacity-95"
             />

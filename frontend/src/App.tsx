@@ -9,6 +9,7 @@ import { ScrollToTopButton } from './components/layout/ScrollToTopButton'
 import { ScrollToTopOnRoute } from './components/layout/ScrollToTopOnRoute'
 import { RouteTransition } from './components/layout/RouteTransition'
 import { ConsentBanner } from './components/layout/ConsentBanner'
+import { CanonicalUrlProvider, DocumentCanonical } from './context/CanonicalUrlContext'
 import { SiteSettingsProvider } from './context/SiteSettingsContext'
 import { RouteErrorPage } from './components/RouteErrorPage'
 import { RequireAuth } from './pages/account/RequireAuth'
@@ -85,20 +86,23 @@ function RouteFallback() {
 
 function AppShell() {
   return (
-    <SiteSettingsProvider>
-      <ScrollToTopOnRoute />
-      <BrandingFavicon />
-      <AnalyticsSnippets />
-      <AuthProvider>
-        <CartProvider>
-          <ScrollToTopButton />
-          <Suspense fallback={<RouteFallback />}>
-            <RouteTransition />
-          </Suspense>
-          <ConsentBanner />
-        </CartProvider>
-      </AuthProvider>
-    </SiteSettingsProvider>
+    <CanonicalUrlProvider>
+      <DocumentCanonical />
+      <SiteSettingsProvider>
+        <ScrollToTopOnRoute />
+        <BrandingFavicon />
+        <AnalyticsSnippets />
+        <AuthProvider>
+          <CartProvider>
+            <ScrollToTopButton />
+            <Suspense fallback={<RouteFallback />}>
+              <RouteTransition />
+            </Suspense>
+            <ConsentBanner />
+          </CartProvider>
+        </AuthProvider>
+      </SiteSettingsProvider>
+    </CanonicalUrlProvider>
   )
 }
 

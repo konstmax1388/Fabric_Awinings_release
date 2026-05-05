@@ -248,6 +248,8 @@ export function SiteHeader() {
               src={logoUrl}
               alt={homeLogoAlt(siteName)}
               priority
+              width={240}
+              height={48}
               widths={[160, 320, 480]}
               sizes="(max-width: 768px) 200px, min(280px, 28vw)"
               className="fabric-header-logo h-11 w-auto min-h-[40px] max-h-[52px] max-w-full object-contain object-left md:h-12"

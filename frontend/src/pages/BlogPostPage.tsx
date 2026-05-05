@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
@@ -6,8 +6,10 @@ import { fetchBlogPost, type BlogDetail } from '../lib/api'
 import { Helmet } from 'react-helmet-async'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { publicSiteUrl } from '../config/publicSite'
+import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { articleCoverAlt } from '../lib/imageAlt'
+import { absolutizeCustomCanonical } from '../lib/canonicalPublicUrl'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function BlogPostPage() {
@@ -30,6 +32,14 @@ export function BlogPostPage() {
       cancelled = true
     }
   }, [slug])
+
+  const canonicalOverride = useMemo(() => {
+    if (post === undefined || post === null) return null
+    const fallback = `${site}/blog/${encodeURIComponent(slug)}`
+    return absolutizeCustomCanonical(site, post.seo?.canonicalUrl, fallback)
+  }, [post, site, slug])
+  useSetCanonical(canonicalOverride)
+  const canonicalForMeta = useCanonicalHrefForMeta()
 
   if (post === undefined) {
     return (
@@ -74,7 +84,6 @@ export function BlogPostPage() {
     seoDefaults,
   )
   const ogImage = post.seo?.ogImage || post.img || seoDefaults.ogImageUrl || ''
-  const canonicalHref = post.seo?.canonicalUrl?.trim() || `${site}/blog/${encodeURIComponent(slug)}`
   const ogTitle = post.seo?.pageTitle?.trim() || post.title
   const tw = seoDefaults.twitterCard || 'summary_large_image'
 
@@ -84,12 +93,11 @@ export function BlogPostPage() {
         <title>{docTitle}</title>
         <meta name="description" content={metaDesc} />
         {post.seo?.robots ? <meta name="robots" content={post.seo.robots} /> : null}
-        <link rel="canonical" href={canonicalHref} />
         {ogImage ? <meta property="og:image" content={ogImage} /> : null}
         <meta name="twitter:card" content={tw} />
         {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={canonicalHref} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={ogTitle} />
         <meta property="og:description" content={metaDesc} />

@@ -5,14 +5,14 @@ import { MarketGoodsReviewsSection } from '../components/reviews/MarketGoodsRevi
 import { ReviewsYandexBlock } from '../components/reviews/ReviewsYandexBlock'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
-import { publicSiteUrl } from '../config/publicSite'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function ReviewsPage() {
-  const site = publicSiteUrl()
   const { siteName, home, reviewsYandex, reviewsMarket, contactsBackLinkLabel, seoDefaults } =
     useSiteSettings()
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const rv = home?.reviews
   const pageTitle = (rv?.pageTitle ?? 'Отзывы').trim() || 'Отзывы'
   const metaDescription = (rv?.pageDescription ?? '').trim()
@@ -34,11 +34,10 @@ export function ReviewsPage() {
         <title>{docTitle}</title>
         {desc ? <meta name="description" content={desc} /> : null}
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/reviews`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/reviews`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={docTitle} />
         {desc ? <meta property="og:description" content={desc} /> : null}

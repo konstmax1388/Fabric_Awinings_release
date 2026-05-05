@@ -1,9 +1,10 @@
 import { Helmet } from 'react-helmet-async'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Form, Link, useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { publicSiteUrl } from '../config/publicSite'
 import type { Product } from '../data/products'
@@ -62,6 +63,14 @@ export function SearchPage() {
     setSp({ q: t })
   }
 
+  const searchCanonicalOverride = useMemo(() => {
+    const base = site.replace(/\/$/, '')
+    if (!q0) return `${base}/search`
+    return `${base}/search?${new URLSearchParams({ q: q0 }).toString()}`
+  }, [site, q0])
+  useSetCanonical(searchCanonicalOverride)
+  const canonicalForMeta = useCanonicalHrefForMeta()
+
   const base = q0 ? `Поиск: ${q0}` : 'Поиск'
   const pageTitle = buildSeoTitle('listing', { title: base, siteName }, seoDefaults)
   const searchDesc = truncateMetaDescription(
@@ -69,19 +78,17 @@ export function SearchPage() {
     undefined,
     seoDefaults,
   )
-  const canonical = `${site}/search${q0 ? `?q=${encodeURIComponent(q0)}` : ''}`
 
   return (
     <>
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={searchDesc} />
-        <link rel="canonical" href={canonical} />
         <meta name="robots" content="noindex, follow" />
         <meta name="twitter:card" content={seoDefaults.twitterCard || 'summary_large_image'} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={canonical} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={searchDesc} />

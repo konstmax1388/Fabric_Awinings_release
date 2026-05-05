@@ -18,6 +18,7 @@ import { PromoEndsCountdown } from '../components/promo/PromoEndsCountdown'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { OneClickOrderModal } from '../components/order/OneClickOrderModal'
+import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { MARKETPLACES, type MarketplaceId } from '../config/site'
 import { CATEGORY_LABELS, type Product, type ProductVariantRow } from '../data/products'
@@ -26,6 +27,7 @@ import { fetchProductBySlug, fetchRelatedProducts } from '../lib/api'
 import { orderLineFromProduct } from '../lib/orderLinePayload'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, cardHoverTransition, subtleButtonHover } from '../lib/motion-presets'
 import { productPageGridClass } from '../lib/productPhotoAspect'
+import { absolutizeCustomCanonical } from '../lib/canonicalPublicUrl'
 import { truncateMetaDescription } from '../lib/seoVitrine'
 import type { HomePayload } from '../types/homePage'
 
@@ -223,6 +225,14 @@ export function ProductPage() {
   const [customOrderOpen, setCustomOrderOpen] = useState(false)
   const site = publicSiteUrl()
 
+  const canonicalOverride = useMemo(() => {
+    if (product === undefined || product === null) return null
+    const fallback = `${site}/catalog/${encodeURIComponent(product.slug)}`
+    return absolutizeCustomCanonical(site, product.seo?.canonicalUrl, fallback)
+  }, [product, site])
+  useSetCanonical(canonicalOverride)
+  const canonicalForMeta = useCanonicalHrefForMeta()
+
   useEffect(() => {
     if (!product) {
       setSelectedVariantId(null)
@@ -408,7 +418,6 @@ export function ProductPage() {
     undefined,
     seoDefaults,
   )
-  const canonicalHref = seo?.canonicalUrl || `${site}/catalog/${encodeURIComponent(product.slug)}`
   const ogImage = seo?.ogImage || galleryImages[0] || product.images[0] || seoDefaults.ogImageUrl
   const tw = seoDefaults.twitterCard || 'summary_large_image'
 
@@ -418,11 +427,10 @@ export function ProductPage() {
         <title>{pageTitle}</title>
         <meta name="description" content={metaDesc} />
         {seo?.robots ? <meta name="robots" content={seo.robots} /> : null}
-        <link rel="canonical" href={canonicalHref} />
         <meta name="twitter:card" content={tw} />
         {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
         <meta property="og:type" content="product" />
-        <meta property="og:url" content={canonicalHref} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={metaDesc} />

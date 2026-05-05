@@ -8,14 +8,14 @@ import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem
 import { Helmet } from 'react-helmet-async'
 import { BeforeAfterSlider } from '../components/portfolio/BeforeAfterSlider'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
-import { publicSiteUrl } from '../config/publicSite'
+import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 export function PortfolioPage() {
   const reduce = useReducedMotion()
-  const site = publicSiteUrl()
   const { seoDefaults, home, siteName } = useSiteSettings()
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const portfolio = home?.portfolio ?? {}
   const pageHeading = portfolio.pageHeading?.trim() || 'Портфолио'
   const pageSubheading = portfolio.pageSubheading?.trim() || 'Реализованные проекты'
@@ -48,11 +48,10 @@ export function PortfolioPage() {
         <title>{portTitle}</title>
         <meta name="description" content={portDesc} />
         {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
-        <link rel="canonical" href={`${site}/portfolio`} />
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}/portfolio`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={portTitle} />
         <meta property="og:description" content={portDesc} />

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { publicSiteUrl } from '../config/publicSite'
+import { useSetCanonical, useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
@@ -23,6 +24,9 @@ function CheckoutOzonPaymentPage({ variant }: { variant: Variant }) {
   const orderRef = (sp.get('orderRef') ?? '').trim()
 
   const path = variant === 'success' ? '/checkout/payment/success' : '/checkout/payment/failed'
+  const fixedCanonical = `${site}${path}`
+  useSetCanonical(fixedCanonical)
+  const canonicalForMeta = useCanonicalHrefForMeta()
   const titleBase =
     variant === 'success' ? 'Оплата прошла успешно' : 'Оплата не выполнена'
   const description =
@@ -39,12 +43,11 @@ function CheckoutOzonPaymentPage({ variant }: { variant: Variant }) {
         <title>{docTitle}</title>
         <meta name="description" content={metaDescription} />
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href={`${site}${path}`} />
         <meta name="twitter:card" content={tw} />
         <meta name="twitter:title" content={docTitle} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${site}${path}`} />
+        <meta property="og:url" content={canonicalForMeta} />
         <meta property="og:site_name" content={siteName} />
         <meta property="og:title" content={docTitle} />
         <meta property="og:description" content={metaDescription} />
