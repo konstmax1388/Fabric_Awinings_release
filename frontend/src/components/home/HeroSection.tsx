@@ -677,7 +677,7 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 italic break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
+            className={`fabric-h1 fabric-hero-title italic break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
@@ -685,7 +685,7 @@ export function HeroSection() {
             <TextWithBr>{title}</TextWithBr>
           </motion.h1>
           <motion.p
-            className={`fabric-body mt-4 break-words font-normal uppercase tracking-[0.14em] ${textClasses.body}`}
+            className={`fabric-body fabric-hero-subtitle mt-4 break-words font-normal uppercase tracking-[0.14em] ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}

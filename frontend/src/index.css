@@ -358,6 +358,17 @@ body {
   line-height: 1.5;
 }
 
+/* Hero: заголовок и подзаголовок чуть меньше глобальных fabric-h1 / body на мобильных и ПК */
+.fabric-h1.fabric-hero-title {
+  font-size: clamp(2rem, 1.48rem + 2.05vw, 3.875rem);
+  letter-spacing: clamp(0.045em, 0.033em + 0.047vw, 0.09em);
+}
+
+.fabric-body.fabric-hero-subtitle {
+  font-size: clamp(0.9375rem, 0.895rem + 0.18vw, 1.125rem);
+  line-height: 1.45;
+}
+
 .fabric-price {
   font-family: var(--font-heading);
   font-size: var(--price-size);
