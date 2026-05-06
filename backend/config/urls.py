@@ -18,8 +18,10 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from api.views_storefront_shell import storefront_shell_view
 
 from api.views_seo import robots_txt_view, sitemap_xml_view
 
@@ -46,5 +48,11 @@ urlpatterns += [
     path("robots.txt", robots_txt_view, name="robots"),
 ]
 
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns.append(
+    re_path(r"^(?P<_path>.*)\Z", storefront_shell_view, name="storefront-shell"),
+)
+

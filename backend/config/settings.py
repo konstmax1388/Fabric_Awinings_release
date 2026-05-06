@@ -22,6 +22,9 @@ from .version import GIT_SHA as REPO_GIT_SHA, get_app_version
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Корень собранной витрины (на VPS совпадает с root nginx для ``location /``).
+STOREFRONT_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
+
 
 def unfold_environment_callback(request):
     """Бейдж справа в шапке Unfold: номер версии; цвет намекает на окружение (DEBUG)."""

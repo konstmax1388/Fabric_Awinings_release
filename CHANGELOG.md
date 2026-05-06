@@ -3,6 +3,16 @@
 Формат основан на подходе [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/).  
 **Текущая версия** продукта хранится в файле **[VERSION](VERSION)** (источник для бейджа в Django admin).
 
+## [3.4.3] — 2026-04-24
+
+### Изменено
+
+- **Витрина / SEO:** ответ **404** для несуществующих URL вместо **200** + `index.html`: представление `api.views_storefront_shell` проверяет путь (как маршруты React) и отдаёт либо `frontend/dist/index.html`, либо HTML 404 со ссылкой на главную; в **nginx** для `location /` задан **proxy_pass** на Django (в репозитории обновлены `deploy/nginx-fabrika-tentov.ru.full.conf`, примеры ISPmanager/example).
+
+### Деплой
+
+- После выкладки кода примените конфиг **nginx** на VPS и выполните `sudo nginx -t && sudo systemctl reload nginx` (скрипт деплоя конфиг не подменяет автоматически).
+
 ## [3.4.2] — 2026-04-24
 
 ### Исправлено
