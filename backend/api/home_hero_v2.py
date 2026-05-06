@@ -73,7 +73,7 @@ def _check_box(label: str) -> forms.BooleanField:
 
 def _image_url(n: int) -> forms.CharField:
     return forms.CharField(
-        label=_("Слайд %(n)s: внешний URL изображения, если картинка не загружается файлом") % {"n": n},
+        label=_("Слайд %(n)s: внешний URL постера (картинки), если файл не загружен") % {"n": n},
         required=False,
         widget=AdminImageUrlWidget(
             attrs={
@@ -247,6 +247,10 @@ def ensure_hero_v2(hero: Any) -> None:
 
 def iter_hero_slide_model_image_names() -> tuple[str, ...]:
     return tuple(f"hero_slide_{i}_image" for i in range(1, HERO_SLIDE_COUNT + 1))
+
+
+def iter_hero_slide_model_video_names() -> tuple[str, ...]:
+    return tuple(f"hero_slide_{i}_video" for i in range(1, HERO_SLIDE_COUNT + 1))
 
 
 def _overlay_strength_0_100(cd: dict[str, Any], p: str) -> int:

@@ -273,8 +273,12 @@ export function HeroSection() {
     return imageVariantUrl(activeImageUrl, { w: 1600, format: 'webp' }) ?? activeImageUrl
   }, [activeImageUrl])
   const activeSlideTextTone = activeSlide?.textTone ?? heroTextToneN
-  const shouldShowVideo = Boolean(activeVideoUrl) && !failedVideoBySlide[currentSlide]
+  const videoFailed = Boolean(failedVideoBySlide[currentSlide])
+  const showVideoLayer = Boolean(activeVideoUrl) && !videoFailed
+  const shouldShowVideo = showVideoLayer
   const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
+  const videoRevealOpacity =
+    !showVideoLayer ? 0 : reduce ? 1 : !activeImageUrl ? 1 : hasStartedActiveVideo ? 1 : 0
 
   const primaryAction = isHeroV2
     ? (dataSrc as HeroSlide | null)?.primaryAction
@@ -534,88 +538,91 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0 overflow-hidden rounded-[24px] isolate" aria-hidden>
         <div className="absolute inset-0 overflow-hidden">
           <AnimatePresence initial={false} mode="wait">
-          {shouldShowVideo ? (
-            <motion.video
-              key={`hero-video-${currentSlide}`}
-              ref={bindHeroVideoRef}
-              className="absolute inset-0 h-full w-full object-cover"
-              src={activeVideoUrl}
-              autoPlay
-              muted
-              loop={false}
-              playsInline
-              preload="metadata"
-              poster={heroVideoPosterUrl}
-              onEnded={onHeroVideoEnded}
-              onError={() =>
-                setFailedVideoBySlide((prev) => ({
-                  ...prev,
-                  [currentSlide]: true,
-                }))
-              }
-              onPlaying={() =>
-                setStartedVideoBySlide((prev) => ({
-                  ...prev,
-                  [currentSlide]: true,
-                }))
-              }
-              onStalled={() =>
-                setFailedVideoBySlide((prev) => ({
-                  ...prev,
-                  [currentSlide]: true,
-                }))
-              }
-              onAbort={() =>
-                setFailedVideoBySlide((prev) => ({
-                  ...prev,
-                  [currentSlide]: true,
-                }))
-              }
-              initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.02 }}
-              animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
-              transition={
-                reduce
-                  ? { duration: mediaCrossfadeD }
-                  : {
-                      opacity: { duration: mediaCrossfadeD, ease: [0.2, 1, 0.32, 1] },
-                      x: parallaxTransition,
-                      y: parallaxTransition,
-                      scale: parallaxTransition,
+            {activeImageUrl || activeVideoUrl ? (
+              <motion.div
+                key={`hero-slide-bg-${currentSlide}`}
+                className="absolute inset-0 overflow-hidden"
+                initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.03 }}
+                animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
+                transition={
+                  reduce
+                    ? { duration: mediaCrossfadeD }
+                    : {
+                        opacity: { duration: mediaCrossfadeD, ease: [0.2, 1, 0.32, 1] },
+                        x: parallaxTransition,
+                        y: parallaxTransition,
+                        scale: parallaxTransition,
+                      }
+                }
+                aria-hidden
+              >
+                {activeImageUrl ? (
+                  <OptimizedImage
+                    src={activeImageUrl}
+                    alt=""
+                    className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-center select-none"
+                    widths={HERO_BACKGROUND_WIDTHS}
+                    sizes="100vw"
+                    priority
+                  />
+                ) : null}
+                {showVideoLayer ? (
+                  <motion.video
+                    ref={bindHeroVideoRef}
+                    className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover"
+                    src={activeVideoUrl}
+                    autoPlay
+                    muted
+                    loop={false}
+                    playsInline
+                    preload="metadata"
+                    poster={heroVideoPosterUrl}
+                    onEnded={onHeroVideoEnded}
+                    onError={() =>
+                      setFailedVideoBySlide((prev) => ({
+                        ...prev,
+                        [currentSlide]: true,
+                      }))
                     }
-              }
-              aria-hidden
-            />
-          ) : activeImageUrl ? (
-            <motion.div
-              key={`hero-image-${currentSlide}`}
-              className="absolute inset-0 overflow-hidden"
-              initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
-              transition={
-                reduce
-                  ? { duration: mediaCrossfadeD }
-                  : {
-                      opacity: { duration: mediaCrossfadeD, ease: [0.2, 1, 0.32, 1] },
-                      x: parallaxTransition,
-                      y: parallaxTransition,
-                      scale: parallaxTransition,
+                    onPlaying={() =>
+                      setStartedVideoBySlide((prev) => ({
+                        ...prev,
+                        [currentSlide]: true,
+                      }))
                     }
-              }
-              aria-hidden
-            >
-              <OptimizedImage
-                src={activeImageUrl}
-                alt=""
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center select-none"
-                widths={HERO_BACKGROUND_WIDTHS}
-                sizes="100vw"
-                priority
-              />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+                    onStalled={() =>
+                      setFailedVideoBySlide((prev) => ({
+                        ...prev,
+                        [currentSlide]: true,
+                      }))
+                    }
+                    onAbort={() =>
+                      setFailedVideoBySlide((prev) => ({
+                        ...prev,
+                        [currentSlide]: true,
+                      }))
+                    }
+                    initial={false}
+                    animate={{
+                      opacity: videoRevealOpacity,
+                      x: 0,
+                      y: 0,
+                      scale: 1,
+                    }}
+                    transition={
+                      reduce
+                        ? { duration: 0.12 }
+                        : {
+                            opacity: { duration: 0.55, ease: [0.2, 1, 0.32, 1] },
+                          }
+                    }
+                    aria-hidden
+                  />
+                ) : null}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
         {showScrim ? (
           <>

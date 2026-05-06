@@ -14,7 +14,7 @@ from config.home_section_layout import normalize_section_layout
 from .fa_icon_presets import FONTAWESOME_PRESET_CHOICES, PRESET_CLASS_SET
 from .home_defaults import _calc_safe_id, default_home_payload, merged_home_payload
 from .home_hero_v2 import _cd_bool, apply_hero_v2_initial, build_hero_slide_from_cd, collect_hero_v2_class_fields
-from .home_hero_v2 import iter_hero_slide_model_image_names
+from .home_hero_v2 import iter_hero_slide_model_image_names, iter_hero_slide_model_video_names
 from .models import HomePageContent
 
 HERO_ACTION_CHOICES = (
@@ -196,6 +196,7 @@ def _ps_problem_solution_card(cd: dict[str, Any], i: int) -> dict[str, Any]:
 
 _MODEL_IMAGE_FIELDS: tuple[str, ...] = (
     *iter_hero_slide_model_image_names(),
+    *iter_hero_slide_model_video_names(),
     "ps0_icon_image",
     "ps1_icon_image",
     "ps2_icon_image",
@@ -912,6 +913,7 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         fields = (
             "payload",
             *iter_hero_slide_model_image_names(),
+            *iter_hero_slide_model_video_names(),
             "ps0_icon_image",
             "ps1_icon_image",
             "ps2_icon_image",
@@ -923,22 +925,52 @@ class HomePageContentAdminForm(_HeroV2FormFieldsMixin, forms.ModelForm):
         )
         widgets = {
             "hero_slide_1_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
             ),
             "hero_slide_2_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
             ),
             "hero_slide_3_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
             ),
             "hero_slide_4_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
             ),
             "hero_slide_5_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
             ),
             "hero_slide_6_image": UnfoldAdminFileFieldWidget(
-                attrs={"accept": "image/*,video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v"}
+                attrs={
+                    "accept": "image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                }
+            ),
+            "hero_slide_1_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
+            ),
+            "hero_slide_2_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
+            ),
+            "hero_slide_3_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
+            ),
+            "hero_slide_4_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
+            ),
+            "hero_slide_5_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
+            ),
+            "hero_slide_6_video": UnfoldAdminFileFieldWidget(
+                attrs={"accept": "video/mp4,video/webm,video/ogg,.mp4,.webm,.mov,.m4v,.ogv"}
             ),
             "ps0_icon_image": UnfoldAdminFileFieldWidget(
                 attrs={"accept": ".svg,image/svg+xml,image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif"}

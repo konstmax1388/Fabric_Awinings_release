@@ -1618,46 +1618,100 @@ class HomePageContent(models.Model):
         help_text="Устаревшее поле: раньше один фон на весь hero. Сейчас — картинки в блоках «Hero, слайд 1…6».",
     )
     hero_slide_1_image = models.FileField(
-        "Hero, слайд 1: изображение или видео (файл)",
+        "Hero, слайд 1: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_1_video = models.FileField(
+        "Hero, слайд 1: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     hero_slide_2_image = models.FileField(
-        "Hero, слайд 2: изображение или видео (файл)",
+        "Hero, слайд 2: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_2_video = models.FileField(
+        "Hero, слайд 2: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     hero_slide_3_image = models.FileField(
-        "Hero, слайд 3: изображение или видео (файл)",
+        "Hero, слайд 3: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_3_video = models.FileField(
+        "Hero, слайд 3: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     hero_slide_4_image = models.FileField(
-        "Hero, слайд 4: изображение или видео (файл)",
+        "Hero, слайд 4: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_4_video = models.FileField(
+        "Hero, слайд 4: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     hero_slide_5_image = models.FileField(
-        "Hero, слайд 5: изображение или видео (файл)",
+        "Hero, слайд 5: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_5_video = models.FileField(
+        "Hero, слайд 5: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     hero_slide_6_image = models.FileField(
-        "Hero, слайд 6: изображение или видео (файл)",
+        "Hero, слайд 6: изображение (постер и запасной фон, если видео не играет)",
         upload_to="home/hero/slides/%Y/%m/",
         max_length=512,
         blank=True,
         null=True,
+        help_text="Картинка показывается сразу и остаётся под видео; при ошибке ролика остаётся только она. Раньше сюда же можно было загрузить видео — такие файлы по-прежнему обрабатываются.",
+    )
+    hero_slide_6_video = models.FileField(
+        "Hero, слайд 6: видео (файл)",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
     )
     ps0_icon_image = models.FileField(
         "Карточка «Проблема—решение» 1: файл иконки (PNG, WebP, JPEG, GIF или SVG)",

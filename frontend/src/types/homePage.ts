@@ -60,7 +60,7 @@ export type HeroStat = {
   label?: string
 }
 
-/** Слайд hero: v1 — только медиа; v2 — полные поля + imageUrl/videoUrl. */
+/** Слайд hero: v1 — только медиа; v2 — полные поля + imageUrl (постер) и videoUrl (ролик). */
 export type HeroSlide = {
   enabled?: boolean
   showEyebrow?: boolean
