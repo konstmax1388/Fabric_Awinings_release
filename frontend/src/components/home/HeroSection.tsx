@@ -1,5 +1,13 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { type CSSProperties, type SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type SyntheticEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
@@ -86,7 +94,9 @@ export function HeroSection() {
   const [failedVideoBySlide, setFailedVideoBySlide] = useState<Record<number, boolean>>({})
   const [startedVideoBySlide, setStartedVideoBySlide] = useState<Record<number, boolean>>({})
   const slideT0Ref = useRef(0)
-  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
+  const videoDeskRef = useRef<HTMLVideoElement | null>(null)
+  const videoMobRef = useRef<HTMLVideoElement | null>(null)
+  const videoUnifiedRef = useRef<HTMLVideoElement | null>(null)
   const [heroVideoNode, setHeroVideoNode] = useState<HTMLVideoElement | null>(null)
   const [barProgress, setBarProgress] = useState(0)
   const [coarsePointer, setCoarsePointer] = useState(false)
@@ -326,35 +336,48 @@ export function HeroSection() {
       : []
   }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2VisibleSlides, v2EnabledSlides])
 
-  const isNarrow = useMediaQuery('(max-width: 767px)')
+  /** До lg (1024px): mobile-first раскладка и «мобильные» медиа; с lg — десктопный hero. */
+  const isNarrow = useMediaQuery('(max-width: 1023px)')
 
   const hasSlides = slides.length > 0
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
-  const activeImageUrl = (() => {
-    if (!activeSlide) return ''
-    if (isNarrow) {
-      return activeSlide.mobileImageUrl || activeSlide.imageUrl || ''
-    }
-    return activeSlide.imageUrl || activeSlide.mobileImageUrl || ''
-  })()
-  const activeVideoUrl = (() => {
-    if (!activeSlide) return ''
-    if (isNarrow) {
-      return activeSlide.mobileVideoUrl || activeSlide.videoUrl || ''
-    }
-    return activeSlide.videoUrl || activeSlide.mobileVideoUrl || ''
-  })()
-  const heroVideoPosterUrl = useMemo(() => {
-    if (!activeImageUrl) return undefined
-    return imageVariantUrl(activeImageUrl, { w: 1600, format: 'webp' }) ?? activeImageUrl
-  }, [activeImageUrl])
+  const imgDesk = activeSlide
+    ? String(activeSlide.imageUrl || activeSlide.mobileImageUrl || '').trim()
+    : ''
+  const imgMob = activeSlide
+    ? String(activeSlide.mobileImageUrl || activeSlide.imageUrl || '').trim()
+    : ''
+  const vidDesk = activeSlide
+    ? String(activeSlide.videoUrl || activeSlide.mobileVideoUrl || '').trim()
+    : ''
+  const vidMob = activeSlide
+    ? String(activeSlide.mobileVideoUrl || activeSlide.videoUrl || '').trim()
+    : ''
+  const sameVideoUrl = Boolean(vidDesk && vidMob && vidDesk === vidMob)
+  const hasAnyBgMedia = Boolean(imgDesk || imgMob || vidDesk || vidMob)
+  const splitHeroImage = Boolean(imgDesk && imgMob && imgDesk !== imgMob)
+
+  const posterDesk = useMemo(() => {
+    const base = imgDesk || imgMob
+    if (!base) return undefined
+    return imageVariantUrl(base, { w: 1600, format: 'webp' }) ?? base
+  }, [imgDesk, imgMob])
+  const posterMob = useMemo(() => {
+    const base = imgMob || imgDesk
+    if (!base) return undefined
+    return imageVariantUrl(base, { w: 1600, format: 'webp' }) ?? base
+  }, [imgDesk, imgMob])
+
   const activeSlideTextTone = activeSlide?.textTone ?? heroTextToneN
   const videoFailed = Boolean(failedVideoBySlide[currentSlide])
-  const showVideoLayer = Boolean(activeVideoUrl) && !videoFailed
-  const shouldShowVideo = showVideoLayer
+  const showDeskVideo = Boolean(vidDesk) && !videoFailed
+  const showMobVideo = Boolean(vidMob) && !videoFailed
+  const shouldShowVideo = isNarrow ? showMobVideo : showDeskVideo
   const hasStartedActiveVideo = Boolean(startedVideoBySlide[currentSlide])
-  const videoRevealOpacity =
-    !showVideoLayer ? 0 : reduce ? 1 : !activeImageUrl ? 1 : hasStartedActiveVideo ? 1 : 0
+  const deskVideoRevealOpacity =
+    !showDeskVideo ? 0 : reduce ? 1 : !imgDesk ? 1 : hasStartedActiveVideo ? 1 : 0
+  const mobVideoRevealOpacity =
+    !showMobVideo ? 0 : reduce ? 1 : !imgMob ? 1 : hasStartedActiveVideo ? 1 : 0
 
   const primaryAction = isHeroV2
     ? (dataSrc as HeroSlide | null)?.primaryAction
@@ -473,6 +496,36 @@ export function HeroSection() {
     }, HERO_VIDEO_START_TIMEOUT_MS)
     return () => window.clearTimeout(timerId)
   }, [currentSlide, hasStartedActiveVideo, shouldShowVideo])
+
+  useLayoutEffect(() => {
+    if (sameVideoUrl && vidDesk) {
+      setHeroVideoNode(videoUnifiedRef.current)
+      return
+    }
+    setHeroVideoNode(isNarrow ? videoMobRef.current : videoDeskRef.current)
+  }, [
+    isNarrow,
+    currentSlide,
+    sameVideoUrl,
+    vidDesk,
+    vidMob,
+    showDeskVideo,
+    showMobVideo,
+  ])
+
+  useEffect(() => {
+    if (sameVideoUrl && vidDesk) return
+    const d = videoDeskRef.current
+    const m = videoMobRef.current
+    if (isNarrow) {
+      d?.pause()
+      void m?.play().catch(() => {})
+    } else {
+      m?.pause()
+      void d?.play().catch(() => {})
+    }
+  }, [isNarrow, sameVideoUrl, vidDesk, currentSlide])
+
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return
     const mq = window.matchMedia('(pointer: coarse)')
@@ -515,10 +568,10 @@ export function HeroSection() {
 
   const gradParallax = useMemo(
     () =>
-      reduce || coarsePointer
+      reduce || coarsePointer || isNarrow
         ? { x: 0, y: 0 }
         : { x: depth.gradX, y: depth.gradY },
-    [reduce, coarsePointer, depth.gradX, depth.gradY],
+    [reduce, coarsePointer, isNarrow, depth.gradX, depth.gradY],
   )
 
   const textClasses =
@@ -555,10 +608,10 @@ export function HeroSection() {
 
   const heroHeightClass =
     heroHeightMode === 'wow'
-      ? 'min-h-[32rem] md:min-h-[40rem] lg:min-h-[46rem]'
+      ? 'min-h-[32rem] lg:min-h-[46rem]'
       : heroHeightMode === 'normal'
-        ? 'min-h-[24rem] md:min-h-[30rem] lg:min-h-[34rem]'
-        : 'min-h-[28rem] md:min-h-[35rem] lg:min-h-[40rem]'
+        ? 'min-h-[24rem] lg:min-h-[34rem]'
+        : 'min-h-[28rem] lg:min-h-[40rem]'
 
   const carouselArrows =
     slides.length > 1 && showCarouselArrows
@@ -584,10 +637,16 @@ export function HeroSection() {
   const scrimA = heroOverlayStrength01
   const showScrim = scrimA > 0.001
 
-  const bindHeroVideoRef = (el: HTMLVideoElement | null) => {
-    heroVideoRef.current = el
-    setHeroVideoNode(el)
-  }
+  const unifiedVideoRevealOpacity =
+    !showDeskVideo
+      ? 0
+      : reduce
+        ? 1
+        : !imgDesk && !imgMob
+          ? 1
+          : hasStartedActiveVideo
+            ? 1
+            : 0
 
   const onHeroVideoEnded = (e: SyntheticEvent<HTMLVideoElement>) => {
     if (callbackOpen) return
@@ -603,7 +662,7 @@ export function HeroSection() {
 
   return (
     <section
-      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] max-md:flex max-md:min-h-0 max-md:flex-col ${heroHeightClass}`}
+      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] max-lg:flex max-lg:min-h-0 max-lg:flex-col ${heroHeightClass}`}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <HeroCallbackModal
@@ -614,7 +673,7 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0 overflow-hidden rounded-[24px] isolate" aria-hidden>
         <div className="absolute inset-0 overflow-hidden">
           <AnimatePresence initial={false} mode="wait">
-            {activeImageUrl || activeVideoUrl ? (
+            {hasAnyBgMedia ? (
               <motion.div
                 key={`hero-slide-bg-${currentSlide}`}
                 className="absolute inset-0 overflow-hidden"
@@ -638,81 +697,213 @@ export function HeroSection() {
                 }
                 aria-hidden
               >
-                <div
-                  className={`absolute inset-0 ${isNarrow ? 'flex justify-center px-2 pt-3' : ''}`}
-                >
-                  <div
-                    className={
-                      isNarrow
-                        ? 'relative h-[448px] w-full max-w-[430px] overflow-hidden rounded-xl'
-                        : 'absolute inset-0'
-                    }
-                  >
-                {activeImageUrl ? (
-                  <OptimizedImage
-                    src={activeImageUrl}
-                    alt=""
-                    className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-center select-none"
-                    widths={HERO_BACKGROUND_WIDTHS}
-                    sizes={isNarrow ? '(max-width:430px) 100vw, 430px' : '100vw'}
-                    priority
-                  />
-                ) : null}
-                {showVideoLayer ? (
-                  <motion.video
-                    key={`${currentSlide}-${activeVideoUrl}`}
-                    ref={bindHeroVideoRef}
-                    className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover"
-                    src={activeVideoUrl}
-                    autoPlay
-                    muted
-                    loop={false}
-                    playsInline
-                    preload="metadata"
-                    poster={heroVideoPosterUrl}
-                    onEnded={onHeroVideoEnded}
-                    onError={() =>
-                      setFailedVideoBySlide((prev) => ({
-                        ...prev,
-                        [currentSlide]: true,
-                      }))
-                    }
-                    onPlaying={() =>
-                      setStartedVideoBySlide((prev) => ({
-                        ...prev,
-                        [currentSlide]: true,
-                      }))
-                    }
-                    onStalled={() =>
-                      setFailedVideoBySlide((prev) => ({
-                        ...prev,
-                        [currentSlide]: true,
-                      }))
-                    }
-                    onAbort={() =>
-                      setFailedVideoBySlide((prev) => ({
-                        ...prev,
-                        [currentSlide]: true,
-                      }))
-                    }
-                    initial={false}
-                    animate={{
-                      opacity: videoRevealOpacity,
-                      x: 0,
-                      y: 0,
-                      scale: 1,
-                    }}
-                    transition={
-                      reduce
-                        ? { duration: 0.12 }
-                        : {
-                            opacity: { duration: 0.55, ease: [0.2, 1, 0.32, 1] },
+                <div className="absolute inset-0 overflow-hidden">
+                  {imgDesk || imgMob ? (
+                    splitHeroImage ? (
+                      <>
+                        {imgDesk ? (
+                          <OptimizedImage
+                            src={imgDesk}
+                            alt=""
+                            className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-center select-none lg:block"
+                            widths={HERO_BACKGROUND_WIDTHS}
+                            sizes="100vw"
+                            priority
+                          />
+                        ) : null}
+                        {imgMob ? (
+                          <OptimizedImage
+                            src={imgMob}
+                            alt=""
+                            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-center select-none lg:hidden"
+                            widths={HERO_BACKGROUND_WIDTHS}
+                            sizes="100vw"
+                            priority
+                          />
+                        ) : null}
+                      </>
+                    ) : (
+                      <OptimizedImage
+                        src={imgDesk || imgMob}
+                        alt=""
+                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-center select-none"
+                        widths={HERO_BACKGROUND_WIDTHS}
+                        sizes="100vw"
+                        priority
+                      />
+                    )
+                  ) : null}
+                  {sameVideoUrl && vidDesk && showDeskVideo ? (
+                    <motion.video
+                      key={`hero-vu-${currentSlide}-${vidDesk}`}
+                      ref={(el) => {
+                        videoUnifiedRef.current = el
+                      }}
+                      className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover object-center"
+                      src={vidDesk}
+                      autoPlay
+                      muted
+                      loop={false}
+                      playsInline
+                      preload="metadata"
+                      poster={posterDesk ?? posterMob}
+                      onEnded={onHeroVideoEnded}
+                      onError={() =>
+                        setFailedVideoBySlide((prev) => ({
+                          ...prev,
+                          [currentSlide]: true,
+                        }))
+                      }
+                      onPlaying={() =>
+                        setStartedVideoBySlide((prev) => ({
+                          ...prev,
+                          [currentSlide]: true,
+                        }))
+                      }
+                      onStalled={() =>
+                        setFailedVideoBySlide((prev) => ({
+                          ...prev,
+                          [currentSlide]: true,
+                        }))
+                      }
+                      onAbort={() =>
+                        setFailedVideoBySlide((prev) => ({
+                          ...prev,
+                          [currentSlide]: true,
+                        }))
+                      }
+                      initial={false}
+                      animate={{
+                        opacity: unifiedVideoRevealOpacity,
+                        x: 0,
+                        y: 0,
+                        scale: 1,
+                      }}
+                      transition={
+                        reduce
+                          ? { duration: 0.12 }
+                          : {
+                              opacity: { duration: 0.55, ease: [0.2, 1, 0.32, 1] },
+                            }
+                      }
+                      aria-hidden
+                    />
+                  ) : (
+                    <>
+                      {vidDesk && showDeskVideo ? (
+                        <motion.video
+                          key={`hero-vdesk-${currentSlide}-${vidDesk}`}
+                          ref={(el) => {
+                            videoDeskRef.current = el
+                          }}
+                          className="pointer-events-none absolute inset-0 z-[1] hidden h-full w-full object-cover object-center lg:block"
+                          src={vidDesk}
+                          autoPlay
+                          muted
+                          loop={false}
+                          playsInline
+                          preload="metadata"
+                          poster={posterDesk}
+                          onEnded={onHeroVideoEnded}
+                          onError={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
                           }
-                    }
-                    aria-hidden
-                  />
-                ) : null}
-                  </div>
+                          onPlaying={() =>
+                            setStartedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          onStalled={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          onAbort={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          initial={false}
+                          animate={{
+                            opacity: deskVideoRevealOpacity,
+                            x: 0,
+                            y: 0,
+                            scale: 1,
+                          }}
+                          transition={
+                            reduce
+                              ? { duration: 0.12 }
+                              : {
+                                  opacity: { duration: 0.55, ease: [0.2, 1, 0.32, 1] },
+                                }
+                          }
+                          aria-hidden
+                        />
+                      ) : null}
+                      {vidMob && showMobVideo ? (
+                        <motion.video
+                          key={`hero-vmob-${currentSlide}-${vidMob}`}
+                          ref={(el) => {
+                            videoMobRef.current = el
+                          }}
+                          className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover object-center lg:hidden"
+                          src={vidMob}
+                          autoPlay
+                          muted
+                          loop={false}
+                          playsInline
+                          preload="metadata"
+                          poster={posterMob}
+                          onEnded={onHeroVideoEnded}
+                          onError={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          onPlaying={() =>
+                            setStartedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          onStalled={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          onAbort={() =>
+                            setFailedVideoBySlide((prev) => ({
+                              ...prev,
+                              [currentSlide]: true,
+                            }))
+                          }
+                          initial={false}
+                          animate={{
+                            opacity: mobVideoRevealOpacity,
+                            x: 0,
+                            y: 0,
+                            scale: 1,
+                          }}
+                          transition={
+                            reduce
+                              ? { duration: 0.12 }
+                              : {
+                                  opacity: { duration: 0.55, ease: [0.2, 1, 0.32, 1] },
+                                }
+                          }
+                          aria-hidden
+                        />
+                      ) : null}
+                    </>
+                  )}
                 </div>
               </motion.div>
             ) : null}
@@ -759,13 +950,13 @@ export function HeroSection() {
         aria-hidden
       />
       <motion.div
-        className="relative z-10 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col px-4 py-8 max-md:pb-24 md:px-10 md:py-24 lg:py-28"
+        className="relative z-10 max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col px-4 py-8 max-lg:pb-24 lg:px-10 lg:py-24 xl:py-28"
         animate={{ x: isNarrow ? 0 : depth.textX, y: isNarrow ? 0 : depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
         <motion.div
           key={String(currentSlide)}
-          className={`max-w-2xl min-w-0 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:items-stretch ${
+          className={`max-w-2xl min-w-0 max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col max-lg:items-stretch ${
             slides.length > 1 ? 'pb-4 sm:pb-6' : ''
           }`}
           initial={{ opacity: reduce ? 1 : 0 }}
@@ -774,7 +965,7 @@ export function HeroSection() {
         >
           {showEyebrowBlock && eyebrow ? (
             <motion.p
-              className="fabric-hero-badge max-md:!hidden"
+              className="fabric-hero-badge max-lg:!hidden"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.03 }}
@@ -784,7 +975,7 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className={`fabric-hero-usp hidden max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] md:block md:text-sm md:tracking-[0.2em] ${
+              className={`fabric-hero-usp hidden max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] lg:block lg:text-sm lg:tracking-[0.2em] ${
                 textClasses.uspLine
               } ${showEyebrowBlock && eyebrow ? 'mt-3' : 'mt-0'}`}
               initial={from}
@@ -795,8 +986,8 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 fabric-hero-title italic break-words max-md:max-w-[min(100%,22ch)] max-md:self-start max-md:text-left max-md:text-[clamp(1.5rem,4.6vw,1.75rem)] max-md:leading-snug sm:max-md:max-w-[min(100%,28ch)] ${textClasses.heading} ${
-              usp ? 'max-md:mt-2 md:mt-3' : 'mt-4 max-md:mt-2'
+            className={`fabric-h1 fabric-hero-title italic break-words max-lg:max-w-[min(100%,22ch)] max-lg:self-start max-lg:text-left max-lg:text-[clamp(1.5rem,4.6vw,1.75rem)] max-lg:leading-snug sm:max-lg:max-w-[min(100%,28ch)] ${textClasses.heading} ${
+              usp ? 'max-lg:mt-2 lg:mt-3' : 'mt-4 max-lg:mt-2'
             }`}
             initial={from}
             animate={to}
@@ -805,7 +996,7 @@ export function HeroSection() {
             <TextWithBr>{title}</TextWithBr>
           </motion.h1>
           <motion.p
-            className={`fabric-body fabric-hero-subtitle mt-4 hidden break-words font-normal uppercase tracking-[0.14em] md:block ${textClasses.body}`}
+            className={`fabric-body fabric-hero-subtitle mt-4 hidden break-words font-normal uppercase tracking-[0.14em] lg:block ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
@@ -814,7 +1005,7 @@ export function HeroSection() {
           </motion.p>
           {subtitle.trim() && ctaSecondary.trim() ? (
             <motion.div
-              className="mt-auto flex w-full flex-row items-end gap-2 pt-6 md:hidden"
+              className="mt-auto flex w-full flex-row items-end gap-2 pt-6 lg:hidden"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
@@ -856,7 +1047,7 @@ export function HeroSection() {
             </motion.div>
           ) : subtitle.trim() ? (
             <motion.p
-              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] md:hidden ${textClasses.body}`}
+              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] lg:hidden ${textClasses.body}`}
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
@@ -865,7 +1056,7 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.div
-            className="mt-8 hidden min-w-0 flex-wrap gap-3 sm:gap-4 md:flex"
+            className="mt-8 hidden min-w-0 flex-wrap gap-3 sm:gap-4 lg:flex"
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.28 }}
@@ -934,7 +1125,7 @@ export function HeroSection() {
           </motion.div>
           {heroStats.length ? (
             <motion.div
-              className="fabric-liquid-glass-soft mt-8 hidden max-w-xl grid-cols-1 gap-2 rounded-2xl p-3 sm:grid-cols-3 md:grid"
+              className="fabric-liquid-glass-soft mt-8 hidden max-w-xl grid-cols-1 gap-2 rounded-2xl p-3 sm:grid-cols-3 lg:grid"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.35 }}
@@ -956,7 +1147,7 @@ export function HeroSection() {
           ) : null}
           {hasTrustBlock ? (
             <motion.div
-              className="mt-6 hidden space-y-3 md:block"
+              className="mt-6 hidden space-y-3 lg:block"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.4 }}
