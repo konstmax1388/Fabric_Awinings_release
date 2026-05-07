@@ -99,15 +99,6 @@ $remoteLines = @(
     "cd .."
 )
 
-if (-not $skipSystemd) {
-    $remoteLines += "sudo systemctl restart `"$service`""
-} else {
-    $remoteLines += "echo '(systemd restart skipped: DEPLOY_SKIP_SYSTEMD=1)'"
-}
-
-$remoteLines += 'echo "==> Nginx: one-time as root if /sitemap.xml is still proxied to Django:"'
-$remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
-
 $sb = New-Object System.Text.StringBuilder
 foreach ($line in $remoteLines) {
     $clean = ($line -replace "`r", "").TrimEnd()
@@ -127,5 +118,19 @@ $remoteScript | & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new $sshT
 if ($LASTEXITCODE -ne 0) {
     throw "Deploy failed with exit code $($LASTEXITCODE)."
 }
+
+$service = ($service -replace "`r", "").Trim()
+if (-not $skipSystemd) {
+    Write-Host "==> systemctl restart $service"
+    & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new $sshTarget "sudo systemctl restart $service"
+    if ($LASTEXITCODE -ne 0) {
+        throw "systemctl restart failed with exit code $($LASTEXITCODE)."
+    }
+} else {
+    Write-Host "==> (systemd restart skipped: DEPLOY_SKIP_SYSTEMD=1)"
+}
+
+Write-Host '==> Nginx: if /sitemap.xml is still proxied to Django, on server run:'
+Write-Host "    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh"
 
 Write-Host "==> Done."
