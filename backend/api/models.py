@@ -1771,7 +1771,7 @@ class HomePageContent(models.Model):
     hero_slide_1_mobile_image = models.FileField(
         "Hero, слайд 1: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Отдельный постер для узких экранов. Рекомендуемый кадр 430×430 px (до 430×448). Пусто — на телефоне используется картинка для ПК.",
@@ -1779,7 +1779,7 @@ class HomePageContent(models.Model):
     hero_slide_1_mobile_video = models.FileField(
         "Hero, слайд 1: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Отдельный ролик для узких экранов. Пусто — на телефоне то же видео, что и для ПК.",
@@ -1787,7 +1787,7 @@ class HomePageContent(models.Model):
     hero_slide_2_mobile_image = models.FileField(
         "Hero, слайд 2: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
@@ -1795,7 +1795,7 @@ class HomePageContent(models.Model):
     hero_slide_2_mobile_video = models.FileField(
         "Hero, слайд 2: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Пусто — видео для ПК.",
@@ -1803,7 +1803,7 @@ class HomePageContent(models.Model):
     hero_slide_3_mobile_image = models.FileField(
         "Hero, слайд 3: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
@@ -1811,7 +1811,7 @@ class HomePageContent(models.Model):
     hero_slide_3_mobile_video = models.FileField(
         "Hero, слайд 3: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Пусто — видео для ПК.",
@@ -1819,7 +1819,7 @@ class HomePageContent(models.Model):
     hero_slide_4_mobile_image = models.FileField(
         "Hero, слайд 4: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
@@ -1827,7 +1827,7 @@ class HomePageContent(models.Model):
     hero_slide_4_mobile_video = models.FileField(
         "Hero, слайд 4: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Пусто — видео для ПК.",
@@ -1835,7 +1835,7 @@ class HomePageContent(models.Model):
     hero_slide_5_mobile_image = models.FileField(
         "Hero, слайд 5: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
@@ -1843,7 +1843,7 @@ class HomePageContent(models.Model):
     hero_slide_5_mobile_video = models.FileField(
         "Hero, слайд 5: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Пусто — видео для ПК.",
@@ -1851,7 +1851,7 @@ class HomePageContent(models.Model):
     hero_slide_6_mobile_image = models.FileField(
         "Hero, слайд 6: изображение для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
@@ -1859,7 +1859,7 @@ class HomePageContent(models.Model):
     hero_slide_6_mobile_video = models.FileField(
         "Hero, слайд 6: видео для мобильных",
         upload_to="home/hero/slides/%Y/%m/",
-        max_length=512,
+        max_length=200,
         blank=True,
         null=True,
         help_text="Пусто — видео для ПК.",

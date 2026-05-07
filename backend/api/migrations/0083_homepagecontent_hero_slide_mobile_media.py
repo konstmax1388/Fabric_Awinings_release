@@ -27,7 +27,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
                     "Отдельный постер для узких экранов. Рекомендуемый кадр 430×430 px (до 430×448). "
                     "Пусто — на телефоне используется картинка для ПК."
                 ),
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 1: изображение для мобильных",
@@ -38,7 +38,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Отдельный ролик для узких экранов. Пусто — на телефоне то же видео, что и для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 1: видео для мобильных",
@@ -49,7 +49,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 2: изображение для мобильных",
@@ -60,7 +60,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 2: видео для мобильных",
@@ -71,7 +71,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 3: изображение для мобильных",
@@ -82,7 +82,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 3: видео для мобильных",
@@ -93,7 +93,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 4: изображение для мобильных",
@@ -104,7 +104,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 4: видео для мобильных",
@@ -115,7 +115,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 5: изображение для мобильных",
@@ -126,7 +126,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 5: видео для мобильных",
@@ -137,7 +137,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 6: изображение для мобильных",
@@ -148,7 +148,7 @@ def _add_homepage_hero_mobile_fields_if_missing(apps, schema_editor):
             models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to=_upload_slides(),
                 verbose_name="Hero, слайд 6: видео для мобильных",
@@ -179,7 +179,7 @@ class Migration(migrations.Migration):
                     "Отдельный постер для узких экранов. Рекомендуемый кадр 430×430 px (до 430×448). "
                     "Пусто — на телефоне используется картинка для ПК."
                 ),
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 1: изображение для мобильных",
@@ -191,7 +191,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Отдельный ролик для узких экранов. Пусто — на телефоне то же видео, что и для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 1: видео для мобильных",
@@ -203,7 +203,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 2: изображение для мобильных",
@@ -215,7 +215,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 2: видео для мобильных",
@@ -227,7 +227,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 3: изображение для мобильных",
@@ -239,7 +239,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 3: видео для мобильных",
@@ -251,7 +251,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 4: изображение для мобильных",
@@ -263,7 +263,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 4: видео для мобильных",
@@ -275,7 +275,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 5: изображение для мобильных",
@@ -287,7 +287,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 5: видео для мобильных",
@@ -299,7 +299,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 6: изображение для мобильных",
@@ -311,7 +311,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Пусто — видео для ПК.",
-                max_length=512,
+                max_length=200,
                 null=True,
                 upload_to="home/hero/slides/%Y/%m/",
                 verbose_name="Hero, слайд 6: видео для мобильных",
