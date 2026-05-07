@@ -107,31 +107,17 @@ $remoteLines += 'echo "==> Nginx: one-time as root if /sitemap.xml is still prox
 $remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
 
 $remoteScript = ($remoteLines -join "`n") + "`n"
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($remoteScript)
 
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = "ssh"
-$escapedTarget = $sshTarget.Replace('"', '\"')
-$psi.Arguments = "-o BatchMode=yes -o StrictHostKeyChecking=accept-new `"$escapedTarget`" bash"
-$psi.RedirectStandardInput = $true
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
-$psi.UseShellExecute = $false
+# Раньше: Process + ReadToEnd() по stdout/stderr — (1) весь лог виден только в конце,
+# (2) при медленном чтении stdout буфер stderr может заполниться → вечное зависание (npm пишет в stderr).
+Write-Host "==> Remote deploy (вывод в реальном времени; npm ci + build ×2 + backend — часто 10–20 мин, не прерывайте)."
+if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+    throw "ssh not found in PATH."
+}
+$remoteScript | & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new $sshTarget "bash -s"
 
-$proc = New-Object System.Diagnostics.Process
-$proc.StartInfo = $psi
-$null = $proc.Start()
-$proc.StandardInput.BaseStream.Write($bytes, 0, $bytes.Length)
-$proc.StandardInput.Close()
-$stdout = $proc.StandardOutput.ReadToEnd()
-$stderr = $proc.StandardError.ReadToEnd()
-$proc.WaitForExit()
-
-if ($stdout) { Write-Host $stdout }
-if ($stderr) { Write-Host $stderr }
-
-if ($proc.ExitCode -ne 0) {
-    throw "Deploy failed with exit code $($proc.ExitCode)."
+if ($LASTEXITCODE -ne 0) {
+    throw "Deploy failed with exit code $($LASTEXITCODE)."
 }
 
 Write-Host "==> Done."

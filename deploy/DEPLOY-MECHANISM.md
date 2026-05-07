@@ -34,9 +34,21 @@ bash deploy/sync-to-production.sh
 .\deploy\sync-to-production.ps1
 ```
 
-Скрипт по SSH выполнит: `git fetch/checkout/reset` → `npm ci && npm run build` в `frontend/` и `admin-ui/` → `migrate` / `collectstatic` в `backend/` → **`bash deploy/prune-production-tree.sh --drop-sqlite .`** (обрезка дерева: без `node_modules`, без `frontend/src` и `admin-ui/src` до следующего деплоя, без случайного SQLite) → `sudo systemctl restart fabrika-gunicorn`.
+**Лог в консоли:** `sync-to-production.ps1` передаёт удалённый bash через `ssh … bash -s` и показывает вывод **сразу** (долгие шаги `npm ci` / `npm run build` могут идти **10–20 минут** — это нормально). Раньше использовался буфер `ReadToEnd()` и отдельные потоки stdout/stderr, из‑за чего вывод не был виден до конца и теоретически возможно было **зависание** при заполнении буфера stderr.
 
-Если **sudo** с SSH запрещён хостингом — в `deploy/.env.deploy` задайте `DEPLOY_SKIP_SYSTEMD=1` и перезапускайте Gunicorn вручную из панели один раз после деплоя.
+Скрипт по SSH выполнит: `git fetch/checkout/reset` → `npm ci && npm run build` в `frontend/` и `admin-ui/` → `migrate` / `collectstatic` в `backend/` → **`bash deploy/prune-production-tree.sh --drop-sqlite .`** → `sudo systemctl restart fabrika-gunicorn` (обрезка дерева после деплоя см. [PRODUCTION-VPS.md](PRODUCTION-VPS.md)). в `deploy/.env.deploy` задайте `DEPLOY_SKIP_SYSTEMD=1` и перезапускайте Gunicorn вручную из панели один раз после деплоя.
+
+### `npm error EACCES` / `permission denied, unlink` в `node_modules`
+
+Деплой выполняется от пользователя SSH (например `kasatkin_da`). Если раньше **`npm`** или **`git`** в каталоге сайта запускали **от root**, часть файлов в `frontend/node_modules` или `admin-ui/node_modules` окажется с владельцем `root`, и `npm ci` не сможет их удалить.
+
+**Исправление один раз (на сервере под root):** выровнять владельца на пользователя деплоя, затем снова `sync-to-production`:
+
+```bash
+sudo chown -R kasatkin_da:kasatkin_da /var/www/kasatkin_da/data/www/fabrika-tentov.ru
+```
+
+(замените путь и пользователя на ваши из `DEPLOY_APP_PATH` / `DEPLOY_SSH_TARGET`.) В дальнейшем не запускайте `npm install` в этом дереве от root.
 
 **Windows:** используйте `deploy/sync-to-production.ps1` (предпочтительно) или Git Bash с `.sh`.
 
