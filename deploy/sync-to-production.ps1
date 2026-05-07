@@ -28,6 +28,9 @@ function Get-DeployEnv {
 }
 
 $cfg = Get-DeployEnv -Path $EnvFile
+foreach ($k in @($cfg.Keys)) {
+    $cfg[$k] = ($cfg[$k] -replace "`r", "").Trim()
+}
 $sshTarget = $cfg["DEPLOY_SSH_TARGET"]
 $appPath = $cfg["DEPLOY_APP_PATH"]
 $branch = if ($cfg.ContainsKey("DEPLOY_GIT_BRANCH") -and $cfg["DEPLOY_GIT_BRANCH"]) { $cfg["DEPLOY_GIT_BRANCH"] } else { "main" }
