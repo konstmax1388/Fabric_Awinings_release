@@ -134,7 +134,7 @@ def test_products_list_with_product(client):
         slug="truck",
         defaults={"title": "Транспорт", "sort_order": 0, "is_published": True},
     )
-    Product.objects.create(
+    p = Product.objects.create(
         slug="test-item",
         title="Test",
         excerpt="",
@@ -147,11 +147,12 @@ def test_products_list_with_product(client):
         is_published=True,
         sort_order=0,
     )
+    p.refresh_from_db()
     r = client.get("/api/products/")
     assert r.status_code == 200
     body = r.json()
     assert body["count"] == 1
-    assert body["results"][0]["slug"] == "test-item"
+    assert body["results"][0]["slug"] == p.slug
     assert body["results"][0]["priceFrom"] == 1000
     assert body["results"][0]["category"] == "truck"
     assert body["results"][0]["categoryTitle"] == cat.title

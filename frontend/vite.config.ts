@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
         interval: 200,
       },
       proxy: {
+        // Публичное API — тот же origin, что и Vite (любой FABRIC_FRONTEND_PORT без доп. CORS).
+        '/api': { target: proxyTarget, changeOrigin: true },
         // Django Admin и статика — с того же origin, что и сайт (иначе 17300 отдаёт SPA 404)
         '/admin': { target: proxyTarget, changeOrigin: true },
         // Картинка капчи на /admin/login (django-simple-captcha)

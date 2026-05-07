@@ -57,6 +57,8 @@ def hero_section_all_field_names(n: int) -> tuple[str, ...]:
         *hero_section_virtual_field_names(n),
         f"hero_slide_{n}_image",
         f"hero_slide_{n}_video",
+        f"hero_slide_{n}_mobile_image",
+        f"hero_slide_{n}_mobile_video",
     )
 
 

@@ -22,19 +22,56 @@ import type {
 
 /**
  * Базовый origin для запросов к API.
- * - Явный `VITE_API_URL` — для dev / отдельный домен API.
- * - Прод-сборка без переменной — пустая строка → относительные `/api/...` (тот же хост, что и витрина).
- * - Локальный dev без `.env` — `http://localhost:18000`.
+ * - Явный `VITE_API_URL` — кросс-origin dev (другой хост/порт API; нужен CORS на Django).
+ * - Прод без переменной — пустая строка → относительные `/api/...`.
+ * - Dev без переменной — пустая строка → тот же origin, что у Vite; в `vite.config.ts` прокси `/api` на Django.
  */
 export function apiBase(): string {
   const raw = import.meta.env.VITE_API_URL
   if (typeof raw === 'string' && raw.trim() !== '') {
     return raw.replace(/\/$/, '')
   }
-  if (import.meta.env.PROD) {
-    return ''
+  return ''
+}
+
+/**
+ * Когда `apiBase()` пустой, медиа должны грузиться с того же origin, что и Vite (прокси `/media`).
+ * Иначе абсолютные URL с порта API ломают: fetch у model-viewer (CORS), /api/image-variant/, иногда постер.
+ */
+export function storefrontMediaUrl(url: string): string {
+  const trimmed = typeof url === 'string' ? url.trim() : ''
+  if (!trimmed) return trimmed
+  const rawEnv = import.meta.env.VITE_API_URL
+  if (typeof rawEnv === 'string' && rawEnv.trim() !== '') {
+    return trimmed
   }
-  return 'http://localhost:18000'
+  if (trimmed.startsWith('/media/')) return trimmed
+  try {
+    const u = new URL(trimmed)
+    const idx = u.pathname.indexOf('/media/')
+    if (idx !== -1) {
+      return `${u.pathname.slice(idx)}${u.search}${u.hash}`
+    }
+  } catch {
+    /* относительный URL не для window.location */
+  }
+  return trimmed
+}
+
+/** URL-ы для галереи/карточки: только непустые строки, storefrontMediaUrl, без дубликатов. */
+function normalizeCatalogImageUrlList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const item of raw) {
+    if (typeof item !== 'string') continue
+    const u = storefrontMediaUrl(item).trim()
+    if (!u) continue
+    if (seen.has(u)) continue
+    seen.add(u)
+    out.push(u)
+  }
+  return out
 }
 
 async function parseJson<T>(r: Response): Promise<T | null> {
@@ -168,7 +205,7 @@ function parseVariantRow(row: unknown): ProductVariantRow | null {
   const id = typeof r.id === 'string' ? r.id : String(r.id ?? '')
   const label = typeof r.label === 'string' ? r.label : ''
   const priceFrom = typeof r.priceFrom === 'number' ? r.priceFrom : Number(r.priceFrom)
-  const images = Array.isArray(r.images) ? r.images.filter((u): u is string => typeof u === 'string') : []
+  const images = normalizeCatalogImageUrlList(r.images)
   const wbUrl = typeof r.wbUrl === 'string' && r.wbUrl.trim() ? r.wbUrl : undefined
   const isDefault = Boolean(r.isDefault)
   if (!id || !label.trim() || !Number.isFinite(priceFrom)) return null
@@ -204,7 +241,8 @@ function parseProductSeo(raw: unknown): ProductSeo | undefined {
   if (typeof o.pageTitle !== 'string' || typeof o.metaDescription !== 'string') return undefined
   const canonicalPath = typeof o.canonicalPath === 'string' ? o.canonicalPath : ''
   const canonicalUrl = typeof o.canonicalUrl === 'string' ? o.canonicalUrl : ''
-  const ogImage = typeof o.ogImage === 'string' ? o.ogImage : ''
+  const ogImageRaw = typeof o.ogImage === 'string' ? o.ogImage : ''
+  const ogImage = ogImageRaw ? storefrontMediaUrl(ogImageRaw) : ogImageRaw
   const robots = typeof o.robots === 'string' && o.robots.trim() ? o.robots : 'index, follow'
   return {
     pageTitle: o.pageTitle,
@@ -231,7 +269,8 @@ function parseMaterialMap(raw: unknown): ProductMaterialMap | undefined {
   const r = raw as Record<string, unknown>
   const title = typeof r.title === 'string' && r.title.trim() ? r.title.trim() : 'Карта материалов'
   const subtitle = typeof r.subtitle === 'string' && r.subtitle.trim() ? r.subtitle.trim() : undefined
-  const imageUrl = typeof r.imageUrl === 'string' && r.imageUrl.trim() ? r.imageUrl.trim() : undefined
+  const imageUrlRaw = typeof r.imageUrl === 'string' && r.imageUrl.trim() ? r.imageUrl.trim() : undefined
+  const imageUrl = imageUrlRaw ? storefrontMediaUrl(imageUrlRaw) : undefined
   const rows = Array.isArray(r.layers) ? r.layers : []
   const layers = rows
     .map((item, idx) => {
@@ -278,7 +317,6 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
   if (typeof category !== 'string' || !category.trim()) return null
   const categoryTitle =
     typeof raw.categoryTitle === 'string' && raw.categoryTitle.trim() ? raw.categoryTitle : undefined
-  const images = Array.isArray(raw.images) ? raw.images.filter((u): u is string => typeof u === 'string') : []
   const teasersRaw = Array.isArray(raw.teasers) ? raw.teasers : []
   const teasers = teasersRaw.filter((t): t is ProductTeaser => TEASER_SET.has(t as ProductTeaser))
   const mp = raw.marketplaceLinks
@@ -373,6 +411,20 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     const n = Number(rawOzonProduct)
     if (Number.isFinite(n) && n > 0) ozonSku = Math.floor(n)
   }
+  const m3 = raw.model3dUrl ?? raw.model_3d_url
+  const model3dUrlRaw = typeof m3 === 'string' && m3.trim() ? m3.trim() : undefined
+  const model3dUrl = model3dUrlRaw ? storefrontMediaUrl(model3dUrlRaw) : undefined
+  const images = normalizeCatalogImageUrlList(raw.images)
+  const rawAgg = raw.aggregateRating
+  let aggregateRating: { ratingValue: number; reviewCount: number } | undefined
+  if (rawAgg && typeof rawAgg === 'object' && !Array.isArray(rawAgg)) {
+    const a = rawAgg as Record<string, unknown>
+    const rv = typeof a.ratingValue === 'number' ? a.ratingValue : Number(a.ratingValue)
+    const rc = typeof a.reviewCount === 'number' ? a.reviewCount : Number(a.reviewCount)
+    if (Number.isFinite(rv) && Number.isFinite(rc) && rc >= 3) {
+      aggregateRating = { ratingValue: Math.round(rv * 10) / 10, reviewCount: Math.floor(rc) }
+    }
+  }
   return {
     id,
     slug: raw.slug,
@@ -404,6 +456,8 @@ export function parseProduct(raw: Record<string, unknown>): Product | null {
     warrantyMonths,
     returnDays,
     ...(ozonSku !== undefined ? { ozonSku } : {}),
+    ...(model3dUrl ? { model3dUrl } : {}),
+    ...(aggregateRating ? { aggregateRating } : {}),
   }
 }
 
@@ -982,6 +1036,8 @@ export type SeoDefaultsDto = {
   allowIndexing: boolean
   region: string
   defaultMetaDescription: string
+  /** Meta description только для /catalog (из админки). */
+  catalogListingMetaDescription?: string
   titleSuffix: string
   locale: string
   /** Склеенные с дефолтами на бэкенде. */
@@ -1047,6 +1103,8 @@ export type StaticPageDto = {
   footerLinkLabel: string
   sortOrder: number
   updatedAt: string
+  /** С бэкенда: index,follow / noindex,follow и т.д. */
+  robots?: string
 }
 
 function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
@@ -1377,6 +1435,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
           region: typeof s.region === 'string' && s.region.trim() ? s.region : 'RU',
           defaultMetaDescription:
             typeof s.defaultMetaDescription === 'string' ? s.defaultMetaDescription : '',
+          catalogListingMetaDescription:
+            typeof s.catalogListingMetaDescription === 'string' ? s.catalogListingMetaDescription : '',
           titleSuffix: typeof s.titleSuffix === 'string' ? s.titleSuffix : '',
           locale: typeof s.locale === 'string' && s.locale.trim() ? s.locale : 'ru_RU',
           titleTemplates,
@@ -1449,6 +1509,7 @@ function parseStaticPage(raw: unknown): StaticPageDto | null {
     footerLinkLabel: typeof r.footerLinkLabel === 'string' ? r.footerLinkLabel : '',
     sortOrder: typeof r.sortOrder === 'number' ? r.sortOrder : Number(r.sortOrder) || 0,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : '',
+    robots: typeof r.robots === 'string' && r.robots.trim() ? r.robots.trim() : undefined,
   }
 }
 

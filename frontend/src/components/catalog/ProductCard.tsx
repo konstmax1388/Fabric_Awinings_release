@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
@@ -31,8 +31,21 @@ export function ProductCard({ product }: Props) {
     (k) => Boolean(product.marketplaceLinks[k]),
   )
   const mpKeys = MARKETPLACES.map((m) => m.id).filter((id) => mpKeysRaw.includes(id))
-  const cover = product.images[0]
+  const model3dUrl = product.model3dUrl?.trim() ?? ''
+  const imageCandidates = useMemo(
+    () => product.images.filter((u) => typeof u === 'string' && u.trim().length > 0).map((u) => u.trim()),
+    [product.images],
+  )
+  const [coverIdx, setCoverIdx] = useState(0)
+  useEffect(() => {
+    setCoverIdx(0)
+  }, [product.slug, imageCandidates.join('\0')])
+  const coverSrc = imageCandidates[coverIdx] ?? ''
+  const show3dHint = Boolean(model3dUrl)
   const [imgFailed, setImgFailed] = useState(false)
+  useEffect(() => {
+    setImgFailed(false)
+  }, [product.slug])
   const [addedPromptOpen, setAddedPromptOpen] = useState(false)
   const [oneClickOpen, setOneClickOpen] = useState(false)
   const oneClickLine = useMemo(() => orderLineFromProduct(product, null, 1), [product])
@@ -54,13 +67,20 @@ export function ProductCard({ product }: Props) {
         <div
           className={`${frameClass} overflow-hidden bg-gradient-to-br from-bg-base to-primary/60`}
         >
-          {cover && !imgFailed ? (
+          {coverSrc && !imgFailed ? (
             <OptimizedImage
-              src={cover}
+              key={coverSrc}
+              src={coverSrc}
               alt={productCardPhotoAlt(product.title)}
               widths={[320, 480, 640]}
               sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
-              onError={() => setImgFailed(true)}
+              onError={() => {
+                if (coverIdx + 1 < imageCandidates.length) {
+                  setCoverIdx((i) => i + 1)
+                } else {
+                  setImgFailed(true)
+                }
+              }}
               className="h-full w-full object-contain p-2 transition-opacity duration-300 hover:opacity-95"
             />
           ) : (
@@ -70,6 +90,14 @@ export function ProductCard({ product }: Props) {
             </div>
           )}
         </div>
+        {show3dHint ? (
+          <span
+            className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center rounded-lg border border-accent/40 bg-[#0d121c]/88 px-2 py-1 font-body text-[11px] font-bold uppercase tracking-wide text-accent shadow-md backdrop-blur-sm"
+            aria-hidden
+          >
+            3D
+          </span>
+        ) : null}
         <ProductTeaserBadges teasers={product.teasers} className="absolute left-2 top-2 max-w-[calc(100%-1rem)]" />
       </Link>
       <div className="flex flex-1 flex-col p-4 md:p-5">

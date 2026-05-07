@@ -73,6 +73,9 @@ export type HeroSlide = {
   showStat2?: boolean
   imageUrl?: string
   videoUrl?: string
+  /** Отдельные медиа для узких экранов (загрузка в админке Hero, слайд N «мобильные»). */
+  mobileImageUrl?: string
+  mobileVideoUrl?: string
   textTone?: 'light' | 'dark'
   /** 0–100: сила вуали поверх фото/видео (линейный градиент + мягкий блик) */
   overlayStrength?: number

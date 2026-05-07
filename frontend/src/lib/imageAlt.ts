@@ -16,16 +16,16 @@ export function promotionCoverAlt(promotionTitle: string): string {
   return `${imageAltText(promotionTitle, 'Акция')}: изображение акции`
 }
 
-export function productCardPhotoAlt(productTitle: string): string {
-  return `${imageAltText(productTitle, 'Товар')}: фото`
+export function productCardPhotoAlt(productTitle: string, city: string = 'Иваново'): string {
+  return `${imageAltText(productTitle, 'Товар')} — купить в ${city}`
 }
 
-export function productGalleryMainAlt(productTitle: string): string {
-  return `${imageAltText(productTitle, 'Товар')}: фото`
+export function productGalleryMainAlt(productTitle: string, city: string = 'Иваново'): string {
+  return `${imageAltText(productTitle, 'Товар')} — купить в ${city}`
 }
 
-export function productGalleryThumbAlt(productTitle: string, indexOneBased: number): string {
-  return `${imageAltText(productTitle, 'Товар')}: миниатюра ${indexOneBased}`
+export function productGalleryThumbAlt(productTitle: string, indexOneBased: number, city: string = 'Иваново'): string {
+  return `${imageAltText(productTitle, 'Товар')} — фото ${indexOneBased}, купить в ${city}`
 }
 
 export function productMaterialMapAlt(mapTitle: string): string {

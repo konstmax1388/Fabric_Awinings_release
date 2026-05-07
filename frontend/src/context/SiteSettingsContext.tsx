@@ -99,6 +99,7 @@ const initialValue: SiteSettingsContextValue = {
     allowIndexing: true,
     region: 'RU',
     defaultMetaDescription: '',
+    catalogListingMetaDescription: '',
     titleSuffix: '',
     locale: 'ru_RU',
     titleTemplates: {
@@ -222,6 +223,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             allowIndexing: s.seoDefaults.allowIndexing !== false,
             region: s.seoDefaults.region?.trim() || 'RU',
             defaultMetaDescription: s.seoDefaults.defaultMetaDescription ?? '',
+            catalogListingMetaDescription: s.seoDefaults.catalogListingMetaDescription?.trim() ?? '',
             titleSuffix: s.seoDefaults.titleSuffix ?? '',
             locale: s.seoDefaults.locale?.trim() || 'ru_RU',
             titleTemplates: s.seoDefaults.titleTemplates,

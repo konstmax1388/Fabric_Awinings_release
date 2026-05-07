@@ -61,8 +61,10 @@ services:
     environment:
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:18000}
-      # Прокси Vite → Django внутри сети compose (браузер по-прежнему ходит на localhost:18000 к API)
+      # Пусто: браузер → тот же origin что витрина, Vite проксирует /api и /media на api:8000 (без CORS по портам).
+      # Задайте в .env только если нужен прямой запрос к API с другого origin: VITE_API_URL=http://localhost:18000
+      VITE_API_URL: ${VITE_API_URL:-}
+      # Прокси Vite → Django внутри сети compose
       VITE_PROXY_TARGET: http://api:8000
     depends_on:
       api:

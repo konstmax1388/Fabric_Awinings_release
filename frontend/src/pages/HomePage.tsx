@@ -37,23 +37,30 @@ export function HomePage() {
       meta?.orgDescription?.trim() ||
       seoDefaults.defaultMetaDescription?.trim() ||
       'Тенты, навесы, шатры и террасы под ключ.'
-    const region = seoDefaults.region || 'RU'
+    const street = address?.trim() || undefined
     return JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
-      name: meta?.orgName ?? siteName,
+      name: meta?.orgName?.trim() || siteName,
       url: site,
       description: desc,
       telephone: phone?.trim() || undefined,
-      address:
-        address?.trim() ?
-          {
+      address: street
+        ? {
             '@type': 'PostalAddress',
-            streetAddress: address.trim(),
+            streetAddress: street,
+            addressLocality: 'Кохма',
+            addressRegion: 'Ивановская область',
+            postalCode: '153550',
             addressCountry: 'RU',
-            addressRegion: region,
           }
         : undefined,
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '18:00',
+      },
     })
   }, [
     site,
@@ -135,6 +142,7 @@ export function HomePage() {
         <script type="application/ld+json">{orgJsonLd}</script>
       </Helmet>
       <SiteHeader />
+      <h1 className="sr-only">Производство тентов, навесов и чехлов в Иваново</h1>
       <main className="fabric-page min-w-0 overflow-x-clip">{sectionOrder.map(sectionById)}</main>
       <SiteFooter />
     </>

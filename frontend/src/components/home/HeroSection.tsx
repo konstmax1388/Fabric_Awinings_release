@@ -3,6 +3,8 @@ import { type CSSProperties, type SyntheticEvent, useEffect, useMemo, useRef, us
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import type { HeroAction, HeroCallbackModalTexts, HeroSlide } from '../../types/homePage'
+import { storefrontMediaUrl } from '../../lib/api'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { MagneticHover } from '../motion/MagneticHover'
 import { PulsingCTA } from '../motion/PulsingCTA'
 import { imageVariantUrl } from '../../lib/optimizedImage'
@@ -120,7 +122,9 @@ export function HeroSection() {
     return v2EnabledSlides.filter((s) => {
       const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
       const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
-      return Boolean(imageUrl || videoUrl)
+      const mobileImageUrl = typeof s.mobileImageUrl === 'string' ? s.mobileImageUrl.trim() : ''
+      const mobileVideoUrl = typeof s.mobileVideoUrl === 'string' ? s.mobileVideoUrl.trim() : ''
+      return Boolean(imageUrl || videoUrl || mobileImageUrl || mobileVideoUrl)
     })
   }, [v2EnabledSlides])
 
@@ -128,7 +132,9 @@ export function HeroSection() {
     ? hero
     : v2VisibleSlides && v2VisibleSlides.length > 0
       ? v2VisibleSlides[currentSlide % v2VisibleSlides.length]
-      : null
+      : v2EnabledSlides && v2EnabledSlides.length > 0
+        ? v2EnabledSlides[currentSlide % v2EnabledSlides.length]
+        : null
 
   const title = isHeroV2
     ? String((dataSrc as HeroSlide | null)?.title ?? '')
@@ -236,38 +242,108 @@ export function HeroSection() {
 
   const slides = useMemo(() => {
     const raw = Array.isArray(hero?.slides) ? hero.slides : []
+    type Bundle = {
+      imageUrl: string
+      videoUrl: string
+      mobileImageUrl: string
+      mobileVideoUrl: string
+      textTone: 'light' | 'dark'
+    }
+    const normUrl = (u: string) => (u ? storefrontMediaUrl(u) : '')
     if (isHeroV2) {
-      if (!v2VisibleSlides || !v2VisibleSlides.length) {
-        return [] as { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' }[]
+      if (v2VisibleSlides && v2VisibleSlides.length) {
+        return v2VisibleSlides.map((s) => {
+          const imageUrl = normUrl(typeof s.imageUrl === 'string' ? s.imageUrl.trim() : '')
+          const videoUrl = normUrl(typeof s.videoUrl === 'string' ? s.videoUrl.trim() : '')
+          const mobileImageUrl = normUrl(
+            typeof s.mobileImageUrl === 'string' ? s.mobileImageUrl.trim() : '',
+          )
+          const mobileVideoUrl = normUrl(
+            typeof s.mobileVideoUrl === 'string' ? s.mobileVideoUrl.trim() : '',
+          )
+          const textTone = s.textTone === 'dark' ? 'dark' : 'light'
+          return { imageUrl, videoUrl, mobileImageUrl, mobileVideoUrl, textTone }
+        })
       }
-      return v2VisibleSlides.map((s) => {
-        const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
-        const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
-        const textTone = s.textTone === 'dark' ? 'dark' : 'light'
-        return { imageUrl, videoUrl, textTone }
-      })
+      /** Слайды с медиа отфильтрованы, но есть общий фон (legacy или после смены полей) — не оставляем hero пустым. */
+      const hbRaw = heroBg.trim()
+      const hb = hbRaw ? normUrl(hbRaw) : ''
+      if (hb && v2EnabledSlides && v2EnabledSlides.length) {
+        return v2EnabledSlides.map((s) => {
+          const textTone = s.textTone === 'dark' ? 'dark' : 'light'
+          return {
+            imageUrl: hb,
+            videoUrl: '',
+            mobileImageUrl: hb,
+            mobileVideoUrl: '',
+            textTone,
+          }
+        })
+      }
+      if (hb) {
+        const heroTone = hero?.textTone === 'dark' ? 'dark' : 'light'
+        return [
+          {
+            imageUrl: hb,
+            videoUrl: '',
+            mobileImageUrl: hb,
+            mobileVideoUrl: '',
+            textTone: heroTone,
+          },
+        ]
+      }
+      return [] as Bundle[]
     }
     const heroTone = hero?.textTone === 'dark' ? 'dark' : 'light'
     const normalized = raw
       .map((s) => {
         if (!s || typeof s !== 'object') return null
-        const imageUrl = typeof s.imageUrl === 'string' ? s.imageUrl.trim() : ''
-        const videoUrl = typeof s.videoUrl === 'string' ? s.videoUrl.trim() : ''
-        const textTone = s.textTone === 'dark' ? 'dark' : heroTone
-        if (!imageUrl && !videoUrl) return null
-        return { imageUrl, videoUrl, textTone }
+        const slide = s as HeroSlide
+        const imageUrl = normUrl(typeof slide.imageUrl === 'string' ? slide.imageUrl.trim() : '')
+        const videoUrl = normUrl(typeof slide.videoUrl === 'string' ? slide.videoUrl.trim() : '')
+        const mobileImageUrl = normUrl(
+          typeof slide.mobileImageUrl === 'string' ? slide.mobileImageUrl.trim() : '',
+        )
+        const mobileVideoUrl = normUrl(
+          typeof slide.mobileVideoUrl === 'string' ? slide.mobileVideoUrl.trim() : '',
+        )
+        const textTone = slide.textTone === 'dark' ? 'dark' : heroTone
+        if (!imageUrl && !videoUrl && !mobileImageUrl && !mobileVideoUrl) return null
+        return { imageUrl, videoUrl, mobileImageUrl, mobileVideoUrl, textTone }
       })
-      .filter((s): s is { imageUrl: string; videoUrl: string; textTone: 'light' | 'dark' } => s !== null)
+      .filter((s): s is Bundle => s !== null)
     if (normalized.length) return normalized
     return heroBg
-      ? [{ imageUrl: heroBg, videoUrl: '', textTone: heroTone as 'light' | 'dark' }]
+      ? [
+          {
+            imageUrl: normUrl(heroBg.trim()),
+            videoUrl: '',
+            mobileImageUrl: '',
+            mobileVideoUrl: '',
+            textTone: heroTone as 'light' | 'dark',
+          },
+        ]
       : []
-  }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2VisibleSlides])
+  }, [hero?.slides, heroBg, hero?.textTone, isHeroV2, v2VisibleSlides, v2EnabledSlides])
+
+  const isNarrow = useMediaQuery('(max-width: 767px)')
 
   const hasSlides = slides.length > 0
   const activeSlide = hasSlides ? slides[currentSlide % slides.length] : null
-  const activeImageUrl = activeSlide?.imageUrl || ''
-  const activeVideoUrl = activeSlide?.videoUrl || ''
+  const activeImageUrl = (() => {
+    if (!activeSlide) return ''
+    if (isNarrow) {
+      return activeSlide.mobileImageUrl || activeSlide.imageUrl || ''
+    }
+    return activeSlide.imageUrl || activeSlide.mobileImageUrl || ''
+  })()
+  const activeVideoUrl = (() => {
+    if (!activeSlide) return ''
+    if (isNarrow) {
+      return activeSlide.mobileVideoUrl || activeSlide.videoUrl || ''
+    }
+    return activeSlide.videoUrl || activeSlide.mobileVideoUrl || ''
+  })()
   const heroVideoPosterUrl = useMemo(() => {
     if (!activeImageUrl) return undefined
     return imageVariantUrl(activeImageUrl, { w: 1600, format: 'webp' }) ?? activeImageUrl
@@ -527,7 +603,7 @@ export function HeroSection() {
 
   return (
     <section
-      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] ${heroHeightClass}`}
+      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] max-md:flex max-md:min-h-0 max-md:flex-col ${heroHeightClass}`}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <HeroCallbackModal
@@ -543,7 +619,12 @@ export function HeroSection() {
                 key={`hero-slide-bg-${currentSlide}`}
                 className="absolute inset-0 overflow-hidden"
                 initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 1.03 }}
-                animate={{ opacity: 1, x: depth.bgX, y: depth.bgY, scale: 1.04 }}
+                animate={{
+                  opacity: 1,
+                  x: isNarrow ? 0 : depth.bgX,
+                  y: isNarrow ? 0 : depth.bgY,
+                  scale: isNarrow ? 1 : 1.04,
+                }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99 }}
                 transition={
                   reduce
@@ -557,18 +638,29 @@ export function HeroSection() {
                 }
                 aria-hidden
               >
+                <div
+                  className={`absolute inset-0 ${isNarrow ? 'flex justify-center px-2 pt-3' : ''}`}
+                >
+                  <div
+                    className={
+                      isNarrow
+                        ? 'relative h-[448px] w-full max-w-[430px] overflow-hidden rounded-xl'
+                        : 'absolute inset-0'
+                    }
+                  >
                 {activeImageUrl ? (
                   <OptimizedImage
                     src={activeImageUrl}
                     alt=""
                     className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-center select-none"
                     widths={HERO_BACKGROUND_WIDTHS}
-                    sizes="100vw"
+                    sizes={isNarrow ? '(max-width:430px) 100vw, 430px' : '100vw'}
                     priority
                   />
                 ) : null}
                 {showVideoLayer ? (
                   <motion.video
+                    key={`${currentSlide}-${activeVideoUrl}`}
                     ref={bindHeroVideoRef}
                     className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover"
                     src={activeVideoUrl}
@@ -620,6 +712,8 @@ export function HeroSection() {
                     aria-hidden
                   />
                 ) : null}
+                  </div>
+                </div>
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -665,13 +759,13 @@ export function HeroSection() {
         aria-hidden
       />
       <motion.div
-        className="relative z-10 px-4 py-16 md:px-10 md:py-24 lg:py-28"
-        animate={{ x: depth.textX, y: depth.textY }}
+        className="relative z-10 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col px-4 py-8 max-md:pb-24 md:px-10 md:py-24 lg:py-28"
+        animate={{ x: isNarrow ? 0 : depth.textX, y: isNarrow ? 0 : depth.textY }}
         transition={{ type: 'spring', stiffness: 74, damping: 16 }}
       >
         <motion.div
           key={String(currentSlide)}
-          className={`max-w-2xl min-w-0 ${
+          className={`max-w-2xl min-w-0 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:items-stretch ${
             slides.length > 1 ? 'pb-4 sm:pb-6' : ''
           }`}
           initial={{ opacity: reduce ? 1 : 0 }}
@@ -680,7 +774,7 @@ export function HeroSection() {
         >
           {showEyebrowBlock && eyebrow ? (
             <motion.p
-              className="fabric-hero-badge"
+              className="fabric-hero-badge max-md:!hidden"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.03 }}
@@ -690,7 +784,7 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className={`fabric-hero-usp max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] md:text-sm md:tracking-[0.2em] ${
+              className={`fabric-hero-usp hidden max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] md:block md:text-sm md:tracking-[0.2em] ${
                 textClasses.uspLine
               } ${showEyebrowBlock && eyebrow ? 'mt-3' : 'mt-0'}`}
               initial={from}
@@ -701,7 +795,9 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 fabric-hero-title italic break-words ${textClasses.heading} ${usp ? 'mt-3' : 'mt-4'}`}
+            className={`fabric-h1 fabric-hero-title italic break-words max-md:max-w-[min(100%,22ch)] max-md:self-start max-md:text-left max-md:text-[clamp(1.5rem,4.6vw,1.75rem)] max-md:leading-snug sm:max-md:max-w-[min(100%,28ch)] ${textClasses.heading} ${
+              usp ? 'max-md:mt-2 md:mt-3' : 'mt-4 max-md:mt-2'
+            }`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.08 }}
@@ -709,15 +805,67 @@ export function HeroSection() {
             <TextWithBr>{title}</TextWithBr>
           </motion.h1>
           <motion.p
-            className={`fabric-body fabric-hero-subtitle mt-4 break-words font-normal uppercase tracking-[0.14em] ${textClasses.body}`}
+            className={`fabric-body fabric-hero-subtitle mt-4 hidden break-words font-normal uppercase tracking-[0.14em] md:block ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
           >
             <TextWithBr>{subtitle}</TextWithBr>
           </motion.p>
+          {subtitle.trim() && ctaSecondary.trim() ? (
+            <motion.div
+              className="mt-auto flex w-full flex-row items-end gap-2 pt-6 md:hidden"
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.22 }}
+            >
+              <div className="flex w-1/2 min-w-0 shrink-0 items-end justify-start">
+                <MagneticHover radius={120} strength={0.16}>
+                  <motion.span
+                    whileHover={reduce ? undefined : subtleButtonHover}
+                    whileTap={reduce ? undefined : { scale: 0.98 }}
+                    transition={cardHoverTransition}
+                    className="inline-flex max-w-full rounded-[40px]"
+                  >
+                    {secondaryIsCallback ? (
+                      <button
+                        type="button"
+                        onClick={openCallback}
+                        className={`inline-flex h-11 min-h-[44px] w-full max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-2 font-body text-[11px] font-medium sm:px-4 sm:text-sm ${textClasses.secondaryBtn}`}
+                        style={{ letterSpacing: '0.06em' }}
+                      >
+                        <TextWithBr>{ctaSecondary}</TextWithBr>
+                      </button>
+                    ) : (
+                      <HeroCtaLink
+                        href={secondaryHref}
+                        className={`inline-flex h-11 min-h-[44px] w-full max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-2 font-body text-[11px] font-medium sm:px-4 sm:text-sm ${textClasses.secondaryBtn}`}
+                        style={{ letterSpacing: '0.06em' }}
+                      >
+                        <TextWithBr>{ctaSecondary}</TextWithBr>
+                      </HeroCtaLink>
+                    )}
+                  </motion.span>
+                </MagneticHover>
+              </div>
+              <p
+                className={`w-1/2 min-w-0 shrink-0 text-right font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] sm:text-[11px] ${textClasses.body}`}
+              >
+                <TextWithBr>{subtitle}</TextWithBr>
+              </p>
+            </motion.div>
+          ) : subtitle.trim() ? (
+            <motion.p
+              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] md:hidden ${textClasses.body}`}
+              initial={from}
+              animate={to}
+              transition={{ ...easeOutSoft, delay: 0.22 }}
+            >
+              <TextWithBr>{subtitle}</TextWithBr>
+            </motion.p>
+          ) : null}
           <motion.div
-            className="mt-8 flex min-w-0 flex-wrap gap-3 sm:gap-4"
+            className="mt-8 hidden min-w-0 flex-wrap gap-3 sm:gap-4 md:flex"
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.28 }}
@@ -786,7 +934,7 @@ export function HeroSection() {
           </motion.div>
           {heroStats.length ? (
             <motion.div
-              className="fabric-liquid-glass-soft mt-8 grid max-w-xl grid-cols-1 gap-2 rounded-2xl p-3 sm:grid-cols-3"
+              className="fabric-liquid-glass-soft mt-8 hidden max-w-xl grid-cols-1 gap-2 rounded-2xl p-3 sm:grid-cols-3 md:grid"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.35 }}
@@ -808,7 +956,7 @@ export function HeroSection() {
           ) : null}
           {hasTrustBlock ? (
             <motion.div
-              className="mt-6 space-y-3"
+              className="mt-6 hidden space-y-3 md:block"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.4 }}

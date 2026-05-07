@@ -6,7 +6,7 @@ import re
 
 from django.utils.html import strip_tags
 
-from api.models import BlogPost, SiteSettings, default_seo_title_templates
+from api.models import BlogPost, Product, SiteSettings, default_seo_title_templates
 
 
 def _merged_title_templates(ss: SiteSettings) -> dict[str, str]:
@@ -73,12 +73,75 @@ def blog_post_public_seo_dict(post: BlogPost, request, ss: SiteSettings) -> dict
     og = _media_abs(request, post.cover_image) if post.cover_image else ""
     if not og:
         og = _media_abs(request, ss.seo_og_image) if getattr(ss, "seo_og_image", None) else ""
-
+    
     robots = "noindex, nofollow" if not ss.seo_allow_indexing else "index, follow"
 
     return {
         "pageTitle": build_blog_post_page_title(post, site_name, ss),
         "metaDescription": build_blog_post_meta_description(post, ss),
+        "canonicalPath": path,
+        "canonicalUrl": canonical_url,
+        "ogImage": og,
+        "robots": robots,
+    }
+
+
+def build_product_page_title(product: Product, site_name: str, ss: SiteSettings) -> str:
+    """Шаблон listing из настроек — для <title> карточки товара (как на фронте buildSeoTitle('listing', …))."""
+    suffix = (ss.seo_title_suffix or "").strip()
+    suffix_part = f" {suffix}" if suffix else ""
+    sep = (getattr(ss, "seo_title_separator", None) or " | ").strip() or " | "
+    tpl = (_merged_title_templates(ss).get("listing") or "{title}{suffix}").strip()
+    title = (product.title or "").strip() or "Товар"
+    return (
+        tpl.replace("{title}", title)
+        .replace("{siteName}", (site_name or "").strip() or "Сайт")
+        .replace("{suffix}", suffix_part)
+        .replace("{sep}", sep)
+    )
+
+
+def build_product_meta_description(product: Product, ss: SiteSettings) -> str:
+    from api.services.cart_line_unit_prices import effective_unit_price_rub
+
+    title = (product.title or "").strip() or "Товар"
+    price = int(effective_unit_price_rub(product=product, variant=None))
+    excerpt = strip_tags((product.excerpt or "").strip())
+    plain = strip_tags((product.description or "").strip())
+    base = excerpt or plain
+    phone = (ss.phone_display or "").strip()
+    utp = "Индивидуальный пошив, доставка по России, гарантия."
+    if base:
+        base_short = re.sub(r"\s+", " ", base).strip()
+        if len(base_short) > 90:
+            base_short = f"{base_short[:89]}…"
+        chunk = f"{title}. {base_short} Цена от {price} ₽. {utp}"
+    else:
+        chunk = f"{title}. Цена от {price} ₽. {utp}"
+    if phone:
+        chunk = f"{chunk} Тел.: {phone}."
+    m = int(getattr(ss, "seo_meta_description_max", None) or 160)
+    return truncate_meta_description(chunk, max(m, 40))
+
+
+def product_public_seo_dict(product: Product, request, ss: SiteSettings) -> dict[str, str]:
+    site_name = (ss.site_name or "").strip() or "Сайт"
+    slug = (product.slug or "").strip()
+    path = f"/catalog/{slug}" if slug else "/catalog"
+    canonical_url = request.build_absolute_uri(path) if request else path
+
+    og = ""
+    im0 = product.images_rel.order_by("sort_order", "id").first()
+    if im0 and im0.image:
+        og = _media_abs(request, im0.image)
+    if not og:
+        og = _media_abs(request, ss.seo_og_image) if getattr(ss, "seo_og_image", None) else ""
+
+    robots = "noindex, nofollow" if not ss.seo_allow_indexing else "index, follow"
+
+    return {
+        "pageTitle": build_product_page_title(product, site_name, ss),
+        "metaDescription": build_product_meta_description(product, ss),
         "canonicalPath": path,
         "canonicalUrl": canonical_url,
         "ogImage": og,

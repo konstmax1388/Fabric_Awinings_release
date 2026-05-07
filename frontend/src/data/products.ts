@@ -86,6 +86,8 @@ export type Product = {
   /** Действующие акции на товар (детали / ссылки). */
   promotions?: ProductPromotionSummary[]
   /** Индивидуальные витрины; пусто — в карточке МП не показываем или только общие из конфига */
+  /** Интерактивная 3D-модель (.glb); превью и карточка — только из «Фотографии товара». */
+  model3dUrl?: string
   marketplaceLinks: Partial<Record<MarketplaceId, string>>
   updatedAt: string
   /** Показывать в блоке на главной (поле в админке) */
@@ -99,6 +101,8 @@ export type Product = {
   defaultVariantId?: string | null
   materialMap?: ProductMaterialMap
   seo?: ProductSeo
+  /** Отзывы с бэкенда для Schema.org (≥3 опубликованных) */
+  aggregateRating?: { ratingValue: number; reviewCount: number }
   cdekWeightGrams?: number | null
   cdekLengthCm?: number | null
   cdekWidthCm?: number | null

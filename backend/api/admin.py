@@ -106,6 +106,7 @@ from .models import (
     SiteSettings,
     ConsentLog,
     CatalogFilterKey,
+    CatalogProductSlugRedirect,
 )
 
 
@@ -354,7 +355,8 @@ class ProductAdmin(ModelAdmin):
             {
                 "fields": ("title", "slug", "category", "excerpt", "description", "description_html"),
                 "description": _(
-                    "Слаг создаётся автоматически из названия при первом сохранении (импорт WB задаёт свой слаг). "
+                    "URL каталога формируется автоматически: транслит названия и id товара (например …-12345). "
+                    "Старые адреса (в т.ч. wb-r…) редиректятся на новый URL. "
                     "HTML-описание (если заполнено) показывается на витрине вместо обычного текста. "
                     "Фотографии привязывайте к варианту или оставьте вариант пустым для общих фото. "
                     "Формат рамки фото (портрет 3:4 или квадрат) задаётся в «Настройки сайта» — на витрине кадр без обрезки."
@@ -403,6 +405,16 @@ class ProductAdmin(ModelAdmin):
                 "fields": ("warranty_months", "return_days"),
                 "description": _(
                     "Сроки на карточке товара. Пусто — на сайте подставляется из «Настройки сайта» → «Каталог»."
+                ),
+            },
+        ),
+        (
+            _("3D-модель на витрине"),
+            {
+                "fields": ("model_3d",),
+                "description": _(
+                    "Файл .glb (glTF Binary). Просмотр — на странице товара. "
+                    "Фото в каталоге и галерее — только из блока «Фотографии товара» ниже."
                 ),
             },
         ),
@@ -993,6 +1005,22 @@ class ExcelBulkImportForm(forms.Form):
         initial=False,
         widget=forms.CheckboxInput(attrs={"class": _WB_CHECK_CLASSES}),
     )
+
+
+@admin.register(CatalogProductSlugRedirect)
+class CatalogProductSlugRedirectAdmin(ModelAdmin):
+    """Служебные 301: старый слаг → текущий товар (заполняет миграция и сохранение товара)."""
+
+    list_display = ("old_slug", "product", "created_at")
+    search_fields = ("old_slug", "product__title", "product__slug")
+    ordering = ("-created_at",)
+    readonly_fields = ("old_slug", "product", "created_at")
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False
 
 
 @admin.register(PortfolioProject)
@@ -2037,6 +2065,7 @@ class SiteSettingsAdmin(ModelAdmin):
                     "seo_allow_indexing",
                     "seo_region",
                     "seo_default_meta_description",
+                    "seo_catalog_listing_meta_description",
                     "seo_title_suffix",
                     "seo_locale",
                     "seo_og_image",

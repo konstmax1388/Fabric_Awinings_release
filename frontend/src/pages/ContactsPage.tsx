@@ -1,9 +1,11 @@
 import { Helmet } from 'react-helmet-async'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ContactsContentBlock } from '../components/contacts/ContactsContentBlock'
 import { MapFormSection } from '../components/home/MapFormSection'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
+import { publicSiteUrl } from '../config/publicSite'
 import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
@@ -12,11 +14,13 @@ export function ContactsPage() {
   const {
     siteName,
     address,
+    phone,
     contactsPageTitle,
     contactsMetaDescription,
     contactsBackLinkLabel,
     seoDefaults,
   } = useSiteSettings()
+  const site = publicSiteUrl()
   const canonicalForMeta = useCanonicalHrefForMeta()
 
   const metaDescription = truncateMetaDescription(
@@ -26,6 +30,34 @@ export function ContactsPage() {
   )
   const docTitle = buildSeoTitle('emdash', { title: contactsPageTitle, siteName }, seoDefaults)
   const tw = seoDefaults.twitterCard || 'summary_large_image'
+
+  const localBusinessJsonLd = useMemo(() => {
+    const street = address?.trim()
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: siteName,
+      url: `${site}/contacts`,
+      description: metaDescription,
+      telephone: phone?.trim() || undefined,
+      address: street
+        ? {
+            '@type': 'PostalAddress',
+            streetAddress: street,
+            addressLocality: 'Кохма',
+            addressRegion: 'Ивановская область',
+            postalCode: '153550',
+            addressCountry: 'RU',
+          }
+        : undefined,
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '18:00',
+      },
+    })
+  }, [siteName, site, metaDescription, phone, address])
 
   return (
     <>
@@ -41,6 +73,7 @@ export function ContactsPage() {
         <meta property="og:title" content={docTitle} />
         <meta property="og:description" content={metaDescription} />
         {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
+        <script type="application/ld+json">{localBusinessJsonLd}</script>
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

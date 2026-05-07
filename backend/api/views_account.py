@@ -95,13 +95,33 @@ class HomePageContentPublicView(APIView):
                             vid_url = media_url
                     else:
                         img_url = media_url
+                fmimg = getattr(h, f"hero_slide_{i + 1}_mobile_image", None)
+                fmvid = getattr(h, f"hero_slide_{i + 1}_mobile_video", None)
+                mobile_img_url = ""
+                mobile_vid_url = ""
+                if fmvid:
+                    mobile_vid_url = request.build_absolute_uri(fmvid.url)
+                if fmimg:
+                    media_m = request.build_absolute_uri(fmimg.url)
+                    name_m = (getattr(fmimg, "name", None) or "").lower()
+                    if name_m.endswith(_hero_video_ext):
+                        if not mobile_vid_url:
+                            mobile_vid_url = media_m
+                    else:
+                        mobile_img_url = media_m
                 if img_url:
                     s["imageUrl"] = img_url
                 if vid_url:
                     s["videoUrl"] = vid_url
+                if mobile_img_url:
+                    s["mobileImageUrl"] = mobile_img_url
+                if mobile_vid_url:
+                    s["mobileVideoUrl"] = mobile_vid_url
         s0 = slides[0] if isinstance(slides, list) and slides and isinstance(slides[0], dict) else None
         if s0 and (s0.get("imageUrl") or "").strip():
             hero["bgImageUrl"] = s0.get("imageUrl", "")
+        elif s0 and (s0.get("mobileImageUrl") or "").strip():
+            hero["bgImageUrl"] = s0.get("mobileImageUrl", "")
         elif h.hero_background:
             hero["bgImageUrl"] = request.build_absolute_uri(h.hero_background.url)
         else:
@@ -148,10 +168,12 @@ class StaticPageListPublicView(APIView):
 
     def get(self, request):
         rows = StaticPage.objects.filter(is_published=True).order_by("sort_order", "title")
+        ss = SiteSettings.get_solo()
+        ctx = {"request": request, "site_settings": ss}
         return Response(
             {
                 "results": StaticPagePublicSerializer(
-                    rows, many=True, context={"request": request}
+                    rows, many=True, context=ctx
                 ).data
             }
         )
@@ -164,7 +186,9 @@ class StaticPageDetailPublicView(APIView):
         page = StaticPage.objects.filter(is_published=True, slug=slug).first()
         if not page:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        out = Response(StaticPagePublicSerializer(page, context={"request": request}).data)
+        ss = SiteSettings.get_solo()
+        ctx = {"request": request, "site_settings": ss}
+        out = Response(StaticPagePublicSerializer(page, context=ctx).data)
         out["Cache-Control"] = "no-store, max-age=0, private"
         return out
 

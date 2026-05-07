@@ -12,6 +12,15 @@ from django.utils import timezone
 from .models import BlogPost, Product, StaticPage
 from .views_promotions import _public_promotions_catalog_queryset
 
+SITEMAP_EXCLUDE_STATIC_SLUGS = frozenset(
+    {
+        "politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh",
+        "polzovatelskoe-soglashenie",
+        "publichnaia-oferta",
+        "soglasie-na-obrabotku-personalnykh-dannykh",
+    }
+)
+
 
 def default_frontend_dist_dir() -> Path:
     """Каталог сборки витрины: <repo>/frontend/dist (BASE_DIR = backend/)."""
@@ -23,12 +32,10 @@ def default_site_docroot_dir() -> Path:
     return Path(settings.BASE_DIR).parent
 
 
-def _xml_url(loc: str, lastmod: date | None, changefreq: str, priority: str) -> str:
+def _xml_url(loc: str, lastmod: date | None) -> str:
     parts = [f"  <url>\n    <loc>{escape(loc)}</loc>\n"]
     if lastmod:
         parts.append(f"    <lastmod>{lastmod.isoformat()}</lastmod>\n")
-    parts.append(f"    <changefreq>{changefreq}</changefreq>\n")
-    parts.append(f"    <priority>{priority}</priority>\n")
     parts.append("  </url>\n")
     return "".join(parts)
 
@@ -46,17 +53,17 @@ def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
     urls_xml: list[str] = []
     today = timezone.now().date()
 
-    static_pages: list[tuple[str, str, str, date | None]] = [
-        (f"{base}/", "weekly", "1.0", today),
-        (f"{base}/catalog", "daily", "0.9", today),
-        (f"{base}/portfolio", "weekly", "0.7", today),
-        (f"{base}/contacts", "monthly", "0.8", today),
-        (f"{base}/blog", "weekly", "0.8", today),
-        (f"{base}/sales", "weekly", "0.82", today),
-        (f"{base}/reviews", "monthly", "0.75", today),
+    static_pages_list: list[tuple[str, date | None]] = [
+        (f"{base}/", today),
+        (f"{base}/catalog", today),
+        (f"{base}/portfolio", today),
+        (f"{base}/contacts", today),
+        (f"{base}/blog", today),
+        (f"{base}/sales", today),
+        (f"{base}/reviews", today),
     ]
-    for loc, cf, pr, lm in static_pages:
-        urls_xml.append(_xml_url(loc, lm, cf, pr))
+    for loc, lm in static_pages_list:
+        urls_xml.append(_xml_url(loc, lm))
 
     products = (
         Product.objects.filter(is_published=True, category__is_published=True)
@@ -65,19 +72,21 @@ def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
     )
     for p in products:
         lm = p.updated_at.date() if getattr(p, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/catalog/{p.slug}", lm, "weekly", "0.85"))
+        urls_xml.append(_xml_url(f"{base}/catalog/{p.slug}", lm))
 
     for post in BlogPost.objects.filter(is_published=True).order_by("slug"):
         d = post.published_at or post.updated_at.date()
-        urls_xml.append(_xml_url(f"{base}/blog/{post.slug}", d, "monthly", "0.75"))
+        urls_xml.append(_xml_url(f"{base}/blog/{post.slug}", d))
 
     for promo in _public_promotions_catalog_queryset().order_by("slug"):
         lm = promo.updated_at.date() if getattr(promo, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/sales/{promo.slug}", lm, "weekly", "0.78"))
+        urls_xml.append(_xml_url(f"{base}/sales/{promo.slug}", lm))
 
     for page in StaticPage.objects.filter(is_published=True).order_by("slug"):
+        if page.slug in SITEMAP_EXCLUDE_STATIC_SLUGS:
+            continue
         lm = page.updated_at.date() if getattr(page, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/{page.slug}", lm, "monthly", "0.7"))
+        urls_xml.append(_xml_url(f"{base}/{page.slug}", lm))
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -89,7 +98,8 @@ def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
 
 def build_robots_txt(site_base: str, *, allow_indexing: bool) -> str:
     """
-    robots.txt: общие правила для Google и Яндекса; Host и Clean-param — только для Яндекса.
+    robots.txt: общие правила для поисковых роботов (UTF-8).
+    Crawl-delay учитывается Яндексом; Google игнорирует.
     """
     base = site_base.rstrip("/")
     if not allow_indexing:
@@ -101,6 +111,7 @@ def build_robots_txt(site_base: str, *, allow_indexing: bool) -> str:
         "",
         "User-agent: *",
         "Allow: /",
+        "Crawl-delay: 1.5",
         "",
         "# Служебное и личный кабинет — не индексировать.",
         "Disallow: /api/",

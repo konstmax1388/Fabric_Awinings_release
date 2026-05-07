@@ -11,6 +11,8 @@ def test_sitemap_xml_ok(client):
     assert "application/xml" in r.headers.get("Content-Type", "")
     body = r.content.decode()
     assert "urlset" in body
+    assert "<priority>" not in body
+    assert "<changefreq>" not in body
     assert "http://" in body or "https://" in body
 
 
@@ -38,6 +40,7 @@ def test_robots_txt_ok(client, settings):
     assert "Disallow: /api/" in body
     assert "Host: https://example.test" in body
     assert "Clean-param:" in body
+    assert "Crawl-delay: 1.5" in body
 
 
 @pytest.mark.django_db

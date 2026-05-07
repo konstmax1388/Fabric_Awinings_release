@@ -71,6 +71,28 @@ class Product(models.Model):
         null=True,
         help_text="Фоновая схема для блока «Карта материалов» в карточке товара.",
     )
+    model_3d = models.FileField(
+        "3D-модель (glTF бинарный, .glb)",
+        upload_to="products/3d/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["glb"],
+                message="Загрузите файл в формате .glb (glTF Binary).",
+            )
+        ],
+        help_text="Интерактивный просмотр на странице товара (модалка). Форматы FBX/OBJ на сайт не подходят — экспортируйте в .glb.",
+    )
+    model_3d_poster = models.ImageField(
+        "Постер для 3D (устар., не на сайте)",
+        upload_to="products/3d/posters/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Не используется на витрине: фото — только «Фотографии товара». Поле оставлено в БД для старых записей.",
+    )
     marketplace_links = models.JSONField("Ссылки МП", default=dict, blank=True)
     is_published = models.BooleanField("Опубликован", default=True, db_index=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)
@@ -158,8 +180,35 @@ class Product(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        ensure_slug_from_title(self)
+        from .slug_utils import product_catalog_slug
+
+        # Уникальный черновой слаг до появления pk (Slug(unique) не допускает пустого значения).
+        if self._state.adding:
+            from uuid import uuid4
+
+            self.slug = f"new-{uuid4().hex[:18]}"
         super().save(*args, **kwargs)
+        desired = product_catalog_slug(title=self.title, pk=int(self.pk), max_length=120)
+        if self.slug != desired:
+            Product.objects.filter(pk=self.pk).update(slug=desired)
+            self.slug = desired
+
+
+class CatalogProductSlugRedirect(models.Model):
+    """Старые URL каталога (например wb-r…) → 301 на актуальный слаг товара."""
+
+    old_slug = models.SlugField("Прежний слаг в URL", max_length=120, unique=True, db_index=True)
+    product = models.ForeignKey(
+        "Product",
+        on_delete=models.CASCADE,
+        related_name="catalog_slug_redirects",
+        verbose_name="Товар",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Редирект URL товара (старый слаг)"
+        verbose_name_plural = "Редиректы URL товаров"
 
 
 class ProductVariant(models.Model):
@@ -947,6 +996,12 @@ class SiteSettings(models.Model):
         default="",
         help_text="Используется, если у конкретной страницы нет своего description.",
     )
+    seo_catalog_listing_meta_description = models.TextField(
+        "SEO: meta description листинга каталога (/catalog)",
+        blank=True,
+        default="",
+        help_text="Сниппет именно для страницы каталога. Пусто — на витрине используется «мета-описание по умолчанию».",
+    )
     seo_title_suffix = models.CharField(
         "SEO: суффикс title",
         max_length=120,
@@ -1712,6 +1767,102 @@ class HomePageContent(models.Model):
         blank=True,
         null=True,
         help_text="Опционально. Запускается поверх картинки, если ролик доступен в браузере.",
+    )
+    hero_slide_1_mobile_image = models.FileField(
+        "Hero, слайд 1: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Отдельный постер для узких экранов. Рекомендуемый кадр 430×430 px (до 430×448). Пусто — на телефоне используется картинка для ПК.",
+    )
+    hero_slide_1_mobile_video = models.FileField(
+        "Hero, слайд 1: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Отдельный ролик для узких экранов. Пусто — на телефоне то же видео, что и для ПК.",
+    )
+    hero_slide_2_mobile_image = models.FileField(
+        "Hero, слайд 2: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
+    )
+    hero_slide_2_mobile_video = models.FileField(
+        "Hero, слайд 2: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Пусто — видео для ПК.",
+    )
+    hero_slide_3_mobile_image = models.FileField(
+        "Hero, слайд 3: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
+    )
+    hero_slide_3_mobile_video = models.FileField(
+        "Hero, слайд 3: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Пусто — видео для ПК.",
+    )
+    hero_slide_4_mobile_image = models.FileField(
+        "Hero, слайд 4: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
+    )
+    hero_slide_4_mobile_video = models.FileField(
+        "Hero, слайд 4: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Пусто — видео для ПК.",
+    )
+    hero_slide_5_mobile_image = models.FileField(
+        "Hero, слайд 5: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
+    )
+    hero_slide_5_mobile_video = models.FileField(
+        "Hero, слайд 5: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Пусто — видео для ПК.",
+    )
+    hero_slide_6_mobile_image = models.FileField(
+        "Hero, слайд 6: изображение для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Рекомендуемый кадр 430×430 px (до 430×448). Пусто — картинка для ПК.",
+    )
+    hero_slide_6_mobile_video = models.FileField(
+        "Hero, слайд 6: видео для мобильных",
+        upload_to="home/hero/slides/%Y/%m/",
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Пусто — видео для ПК.",
     )
     ps0_icon_image = models.FileField(
         "Карточка «Проблема—решение» 1: файл иконки (PNG, WebP, JPEG, GIF или SVG)",

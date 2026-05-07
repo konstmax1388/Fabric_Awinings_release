@@ -55,10 +55,11 @@ def test_variant_match_key_xml_then_wb():
 def test_apply_bitrix_catalog_ids_variant_and_product():
     cat = ProductCategory.objects.create(title="C", slug="c")
     p = Product.objects.create(title="P", slug="prod-slug", category=cat)
+    p.refresh_from_db()
     v = ProductVariant.objects.create(
         product=p, label="V", wb_nm_id=999, bitrix_catalog_id=None
     )
-    m = {"999": 101, "prod-slug": 202}
+    m = {"999": 101, product_match_key(p): 202}
     r = apply_bitrix_catalog_ids(m, dry_run=False, force=False)
     assert r.variants_updated == 1
     assert r.products_updated == 1

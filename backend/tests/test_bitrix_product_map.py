@@ -58,10 +58,11 @@ def test_resolve_by_slug_if_product_id_missing():
     pr = Product.objects.create(
         title="P3", slug="only-slug", category=cat, price_from=1, is_published=True, bitrix_catalog_id=777
     )
+    pr.refresh_from_db()
     line = {
         "productId": "",
         "variantId": "",
-        "slug": "only-slug",
+        "slug": pr.slug,
         "title": "P3",
         "priceFrom": 1,
         "qty": 1,

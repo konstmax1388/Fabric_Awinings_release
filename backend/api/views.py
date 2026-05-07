@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db.models import Prefetch
 from django.conf import settings
+from django.http import Http404
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -19,6 +20,7 @@ from .models import (
     CalculatorLead,
     CallbackLead,
     CatalogFilterKey,
+    CatalogProductSlugRedirect,
     PortfolioProject,
     Product,
     ProductCategory,
@@ -125,6 +127,17 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == "retrieve":
             return ProductDetailSerializer
         return ProductListSerializer
+
+    def get_object(self):
+        slug = (self.kwargs.get(self.lookup_field) or "").strip()
+        qs = self.filter_queryset(self.get_queryset())
+        try:
+            return qs.get(slug=slug)
+        except Product.DoesNotExist:
+            row = CatalogProductSlugRedirect.objects.select_related("product").filter(old_slug=slug).first()
+            if row and qs.filter(pk=row.product_id).exists():
+                return row.product
+            raise Http404() from None
 
 
 @api_view(["GET"])

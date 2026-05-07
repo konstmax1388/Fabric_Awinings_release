@@ -19,6 +19,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from api.views_storefront_shell import storefront_shell_view
@@ -34,6 +35,11 @@ urlpatterns = [
 ]
 
 if getattr(settings, "DJANGO_ADMIN_ENABLED", True):
+    # Без завершающего «/» путь не попадает в admin.site.urls, а ловится catch-all
+    # витрины → 404 HTML «Страница не найдена». Редирект как у стандартного APPEND_SLASH.
+    urlpatterns.append(
+        path("admin", RedirectView.as_view(url="/admin/", permanent=True)),
+    )
     urlpatterns.append(path("admin/", admin.site.urls))
 
 urlpatterns += [

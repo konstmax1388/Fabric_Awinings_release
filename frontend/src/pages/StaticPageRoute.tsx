@@ -98,7 +98,11 @@ export function StaticPageRoute() {
       <Helmet>
         <title>{docTitle}</title>
         <meta name="description" content={desc} />
-        {!seoDefaults.allowIndexing ? <meta name="robots" content="noindex, nofollow" /> : null}
+        {!seoDefaults.allowIndexing ? (
+          <meta name="robots" content="noindex, nofollow" />
+        ) : page.robots && page.robots.trim() && page.robots !== 'index, follow' ? (
+          <meta name="robots" content={page.robots.trim()} />
+        ) : null}
         <meta name="twitter:card" content={tw} />
         {seoDefaults.ogImageUrl ? <meta name="twitter:image" content={seoDefaults.ogImageUrl} /> : null}
         <meta property="og:type" content="website" />

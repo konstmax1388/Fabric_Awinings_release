@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from django.db.models import Avg, Count, QuerySet
 import os
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -47,6 +48,11 @@ def product_image_absolute_url(request, img: ProductImage) -> str | None:
     if request:
         return request.build_absolute_uri(rel)
     return rel
+
+
+def product_storefront_images_queryset(product: Product) -> QuerySet[ProductImage]:
+    """Все фото из инлайна «Фотографии товара» (любой вариант / без варианта), порядок как в админке."""
+    return product.images_rel.all().order_by("sort_order", "id")
 
 
 def media_file_absolute(request, filef) -> str:
@@ -133,6 +139,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     promoEndsAt = serializers.SerializerMethodField()
     promotions = serializers.SerializerMethodField()
     bestPromotionDiscountPercent = serializers.SerializerMethodField()
+    model3dUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -161,6 +168,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "warrantyMonths",
             "returnDays",
             "ozonSku",
+            "model3dUrl",
         )
 
     def get_id(self, obj: Product) -> str:
@@ -194,19 +202,17 @@ class ProductListSerializer(serializers.ModelSerializer):
 
         return int(best_discount_percent_for_product(obj))
 
+    def get_model3dUrl(self, obj: Product) -> str:
+        f = getattr(obj, "model_3d", None)
+        if not f or not getattr(f, "name", ""):
+            return ""
+        request = self.context.get("request")
+        return media_file_absolute(request, f)
+
     def get_images(self, obj: Product) -> list[str]:
         request = self.context.get("request")
-        qs = obj.images_rel.all()
-        dv = obj.variants.filter(is_default=True).first()
-        if dv is None:
-            first_v = obj.variants.order_by("sort_order", "id").first()
-            dv = first_v
-        if dv is not None:
-            qs = qs.filter(variant=dv)
-        else:
-            qs = qs.filter(variant__isnull=True)
         out: list[str] = []
-        for im in qs.order_by("sort_order", "id"):
+        for im in product_storefront_images_queryset(obj):
             u = product_image_absolute_url(request, im)
             if u:
                 out.append(u)
@@ -277,6 +283,8 @@ class ProductDetailSerializer(ProductListSerializer):
     specifications = ProductSpecificationSerializer(many=True, read_only=True)
     defaultVariantId = serializers.SerializerMethodField()
     materialMap = serializers.SerializerMethodField()
+    seo = serializers.SerializerMethodField()
+    aggregateRating = serializers.SerializerMethodField()
 
     class Meta(ProductListSerializer.Meta):
         fields = ProductListSerializer.Meta.fields + (
@@ -285,10 +293,30 @@ class ProductDetailSerializer(ProductListSerializer):
             "specifications",
             "defaultVariantId",
             "materialMap",
+            "seo",
+            "aggregateRating",
         )
 
     def get_descriptionHtml(self, obj: Product) -> str:
         return sanitize_html_fragment(obj.description_html or "")
+
+    def get_seo(self, obj: Product) -> dict[str, str]:
+        from api.seo_public import product_public_seo_dict
+
+        ss = self.context.get("site_settings")
+        if ss is None:
+            ss = SiteSettings.get_solo()
+        request = self.context.get("request")
+        return product_public_seo_dict(obj, request, ss)
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_aggregateRating(self, obj: Product) -> dict[str, object] | None:
+        agg = Review.objects.filter(is_published=True).aggregate(c=Count("id"), avg=Avg("rating"))
+        c = int(agg["c"] or 0)
+        if c < 3:
+            return None
+        avg = float(agg["avg"] or 5)
+        return {"ratingValue": round(avg, 1), "reviewCount": c}
 
     def get_defaultVariantId(self, obj: Product) -> str | None:
         d = obj.variants.filter(is_default=True).first()
@@ -515,16 +543,8 @@ class PromotionDetailSerializer(PromotionListSerializer):
         for p in obj.products.filter(is_published=True, category__is_published=True).order_by("sort_order", "id")[:80]:
             eff = effective_unit_price_rub(product=p, variant=None)
             lst = list_unit_price_rub(product=p, variant=None)
-            qs = p.images_rel.all()
-            dv = p.variants.filter(is_default=True).first()
-            if dv is None:
-                dv = p.variants.order_by("sort_order", "id").first()
-            if dv is not None:
-                qs = qs.filter(variant=dv)
-            else:
-                qs = qs.filter(variant__isnull=True)
             img = ""
-            for im in qs.order_by("sort_order", "id")[:1]:
+            for im in product_storefront_images_queryset(p)[:1]:
                 u = product_image_absolute_url(request, im)
                 if u:
                     img = u
@@ -1272,6 +1292,7 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "allowIndexing": bool(obj.seo_allow_indexing),
             "region": (obj.seo_region or "RU").strip() or "RU",
             "defaultMetaDescription": (obj.seo_default_meta_description or "").strip(),
+            "catalogListingMetaDescription": (getattr(obj, "seo_catalog_listing_meta_description", None) or "").strip(),
             "titleSuffix": (obj.seo_title_suffix or "").strip(),
             "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
             "titleTemplates": templates,
@@ -1313,6 +1334,16 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
     footerLinkLabel = serializers.CharField(source="footer_link_label", read_only=True)
     sortOrder = serializers.IntegerField(source="sort_order", read_only=True)
     updatedAt = serializers.DateTimeField(source="updated_at", format="%Y-%m-%dT%H:%M:%S%z", read_only=True)
+    robots = serializers.SerializerMethodField()
+
+    STATIC_PAGE_NOINDEX_SLUGS = frozenset(
+        {
+            "politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh",
+            "polzovatelskoe-soglashenie",
+            "publichnaia-oferta",
+            "soglasie-na-obrabotku-personalnykh-dannykh",
+        }
+    )
 
     class Meta:
         model = StaticPage
@@ -1330,7 +1361,19 @@ class StaticPagePublicSerializer(serializers.ModelSerializer):
             "footerLinkLabel",
             "sortOrder",
             "updatedAt",
+            "robots",
         )
+
+    def get_robots(self, obj: StaticPage) -> str:
+        ss = self.context.get("site_settings")
+        if ss is None:
+            ss = SiteSettings.get_solo()
+        if not ss.seo_allow_indexing:
+            return "noindex, nofollow"
+        slug = (obj.slug or "").strip()
+        if slug in self.STATIC_PAGE_NOINDEX_SLUGS:
+            return "noindex, follow"
+        return "index, follow"
 
     def get_path(self, obj: StaticPage) -> str:
         return f"/{obj.slug}"

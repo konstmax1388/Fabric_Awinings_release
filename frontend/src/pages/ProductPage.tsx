@@ -8,6 +8,7 @@ import { productMaterialMapAlt } from '../lib/imageAlt'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { ProductDetailsDrawer } from '../components/catalog/ProductDetailsDrawer'
 import { ProductGallery } from '../components/catalog/ProductGallery'
+import { ProductModel3dModal } from '../components/catalog/ProductModel3dModal'
 import { ProductTeaserBadges } from '../components/catalog/ProductTeaserBadges'
 import { ProductTrustStrip } from '../components/catalog/ProductTrustStrip'
 import { MarketplaceLinks } from '../components/icons/MarketplaceLinks'
@@ -215,6 +216,7 @@ function MaterialLayersHint({
 
 export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const reduce = useReducedMotion()
   const { calculatorEnabled, productPhotoAspect, seoDefaults, home, siteName } = useSiteSettings()
   const ui = home?.ui
@@ -223,6 +225,7 @@ export function ProductPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [customOrderOpen, setCustomOrderOpen] = useState(false)
+  const [model3dOpen, setModel3dOpen] = useState(false)
   const site = publicSiteUrl()
 
   const canonicalOverride = useMemo(() => {
@@ -254,8 +257,9 @@ export function ProductPage() {
 
   const galleryImages = useMemo(() => {
     if (!product) return []
-    if (selectedVariant?.images?.length) return selectedVariant.images
-    return product.images
+    const variantUrls = (selectedVariant?.images ?? []).filter((u) => u.trim().length > 0)
+    if (variantUrls.length) return variantUrls
+    return product.images.filter((u) => u.trim().length > 0)
   }, [product, selectedVariant])
 
   const displayPrice = selectedVariant?.priceFrom ?? product?.priceFrom ?? 0
@@ -280,7 +284,8 @@ export function ProductPage() {
         url: u,
       }))
     const offerSku = selectedVariant?.id || product.id
-    return JSON.stringify({
+    const agg = product.aggregateRating
+    const out: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.title,
@@ -309,8 +314,39 @@ export function ProductPage() {
           : {}),
         availability: 'https://schema.org/InStock',
       },
+    }
+    if (agg && agg.reviewCount >= 3) {
+      out.aggregateRating = {
+        '@type': 'AggregateRating',
+        ratingValue: String(agg.ratingValue),
+        reviewCount: agg.reviewCount,
+      }
+    }
+    return JSON.stringify(out)
+  }, [
+    product,
+    galleryImages,
+    displayPrice,
+    displayPriceList,
+    seoDefaults.region,
+    selectedVariant?.id,
+  ])
+
+  const breadcrumbJsonLd = useMemo(() => {
+    if (product === undefined || product === null) return ''
+    const home = `${site}/`
+    const cat = `${site}/catalog`
+    const here = `${site}/catalog/${encodeURIComponent(product.slug)}`
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: home },
+        { '@type': 'ListItem', position: 2, name: 'Каталог', item: cat },
+        { '@type': 'ListItem', position: 3, name: product.title, item: here },
+      ],
     })
-  }, [product, galleryImages, displayPrice, displayPriceList, seoDefaults.region, selectedVariant?.id])
+  }, [product, site])
 
   const displayMpKeys = useMemo(() => {
     const merged = marketplaceMerged
@@ -363,6 +399,13 @@ export function ProductPage() {
       cancelled = true
     }
   }, [slug])
+
+  useEffect(() => {
+    if (!product || !slug) return
+    if (product.slug !== slug) {
+      navigate(`/catalog/${encodeURIComponent(product.slug)}`, { replace: true })
+    }
+  }, [product, slug, navigate])
 
   if (product === undefined) {
     const loadingDesc = resolveMetaDescription(undefined, seoDefaults, SITE.catalogIntro)
@@ -452,6 +495,7 @@ export function ProductPage() {
         <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
         {ogImage ? <meta property="og:image" content={ogImage} /> : null}
         <script type="application/ld+json">{productJsonLd}</script>
+        <script type="application/ld+json">{breadcrumbJsonLd}</script>
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">
@@ -481,11 +525,34 @@ export function ProductPage() {
           </nav>
 
           <div className={productPageGridClass(productPhotoAspect)}>
-            <ProductGallery
-              images={galleryImages}
-              title={product.title}
-              aspect={productPhotoAspect}
-            />
+            <div className="min-w-0 space-y-3">
+              <ProductGallery
+                images={galleryImages}
+                title={product.title}
+                aspect={productPhotoAspect}
+              />
+              {product.model3dUrl?.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => setModel3dOpen(true)}
+                  className="group flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border border-border-light bg-surface/80 px-4 py-3 font-body text-sm text-text shadow-sm backdrop-blur-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
+                >
+                  <span
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/10 text-accent transition group-hover:border-accent/50 group-hover:bg-accent/15"
+                    aria-hidden
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M12 2L21 7v10l-9 5-9-5V7l9-5z" strokeLinejoin="round" />
+                      <path d="M12 12l9-5M12 12v10M12 12L3 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block font-medium text-text group-hover:text-accent">Интерактивная 3D-модель</span>
+                    <span className="mt-0.5 block text-xs text-text-muted">Поверните и рассмотрите со всех сторон</span>
+                  </span>
+                </button>
+              ) : null}
+            </div>
 
             <div className="min-w-0 space-y-8 lg:sticky lg:top-[calc(var(--site-header-height)+1.25rem)]">
               <div>
@@ -674,6 +741,14 @@ export function ProductPage() {
         onClose={() => setCustomOrderOpen(false)}
         modal={home?.hero?.callbackModal ?? {}}
       />
+      {product.model3dUrl?.trim() ? (
+        <ProductModel3dModal
+          open={model3dOpen}
+          onClose={() => setModel3dOpen(false)}
+          modelSrc={product.model3dUrl.trim()}
+          title={product.title}
+        />
+      ) : null}
 
       <SiteFooter />
     </>

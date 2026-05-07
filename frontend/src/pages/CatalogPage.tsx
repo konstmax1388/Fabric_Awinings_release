@@ -6,6 +6,7 @@ import { CatalogSpecFilters } from '../components/catalog/CatalogSpecFilters'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
 import { catalogCategoryFilterAlt } from '../lib/imageAlt'
+import { publicSiteUrl } from '../config/publicSite'
 import { SiteFooter } from '../components/layout/SiteFooter'
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { useCanonicalHrefForMeta } from '../context/CanonicalUrlContext'
@@ -86,6 +87,19 @@ export function CatalogPage() {
   const reduce = useReducedMotion()
   const { catalogIntro, seoDefaults, siteName } = useSiteSettings()
   const canonicalForMeta = useCanonicalHrefForMeta()
+  const site = publicSiteUrl()
+  const catalogBreadcrumbJsonLd = useMemo(
+    () =>
+      JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Главная', item: `${site}/` },
+          { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${site}/catalog` },
+        ],
+      }),
+    [site],
+  )
 
   const category = parseCategory(search.get('category'))
   const sort = parseSort(search.get('sort'))
@@ -248,7 +262,8 @@ export function CatalogPage() {
 
   const catPageTitle = buildSeoTitle('listing', { title: 'Каталог', siteName }, seoDefaults)
   const catPageDesc = truncateMetaDescription(
-    seoDefaults.defaultMetaDescription?.trim() ||
+    seoDefaults.catalogListingMetaDescription?.trim() ||
+      seoDefaults.defaultMetaDescription?.trim() ||
       'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».',
     undefined,
     seoDefaults,
@@ -270,6 +285,7 @@ export function CatalogPage() {
         <meta property="og:description" content={catPageDesc} />
         <meta property="og:locale" content={seoDefaults.locale.replace('_', '-')} />
         {seoDefaults.ogImageUrl ? <meta property="og:image" content={seoDefaults.ogImageUrl} /> : null}
+        <script type="application/ld+json">{catalogBreadcrumbJsonLd}</script>
       </Helmet>
       <SiteHeader />
       <main className="fabric-page">

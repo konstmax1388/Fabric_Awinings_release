@@ -277,6 +277,7 @@ class ProductStaffSerializer(serializers.ModelSerializer):
             "updatedAt": instance.updated_at.isoformat() if instance.updated_at else None,
             "capabilities": {"fullEdit": True},
             "coverImageUrl": self._cover_image_url(instance),
+            "model3dUrl": _abs_media(self.context.get("request"), getattr(instance, "model_3d", None)),
         }
 
     def to_representation(self, instance: Product) -> dict[str, Any]:

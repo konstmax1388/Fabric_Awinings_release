@@ -118,6 +118,8 @@ def default_hero_v2_slide() -> dict[str, Any]:
         },
         "imageUrl": "",
         "videoUrl": "",
+        "mobileImageUrl": "",
+        "mobileVideoUrl": "",
         "overlayStrength": 85,
         "enabled": True,
         "showEyebrow": True,
@@ -251,6 +253,14 @@ def iter_hero_slide_model_image_names() -> tuple[str, ...]:
 
 def iter_hero_slide_model_video_names() -> tuple[str, ...]:
     return tuple(f"hero_slide_{i}_video" for i in range(1, HERO_SLIDE_COUNT + 1))
+
+
+def iter_hero_slide_model_mobile_image_names() -> tuple[str, ...]:
+    return tuple(f"hero_slide_{i}_mobile_image" for i in range(1, HERO_SLIDE_COUNT + 1))
+
+
+def iter_hero_slide_model_mobile_video_names() -> tuple[str, ...]:
+    return tuple(f"hero_slide_{i}_mobile_video" for i in range(1, HERO_SLIDE_COUNT + 1))
 
 
 def _overlay_strength_0_100(cd: dict[str, Any], p: str) -> int:

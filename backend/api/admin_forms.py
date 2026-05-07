@@ -3,7 +3,7 @@
 from django import forms
 from django.db import DatabaseError, transaction
 from django.utils.translation import gettext_lazy as _
-from unfold.widgets import UnfoldAdminPasswordWidget
+from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminPasswordWidget
 
 from .models import OzonSellerApiSettings, Product, Promotion, SiteSettings
 
@@ -204,6 +204,13 @@ class ProductAdminForm(forms.ModelForm):
     class Meta:
         model = Product
         exclude = ("marketplace_links", "teasers", "material_map")
+        widgets = {
+            "model_3d": UnfoldAdminFileFieldWidget(
+                attrs={
+                    "accept": ".glb,model/gltf-binary,application/octet-stream,application/gltf-buffer",
+                }
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

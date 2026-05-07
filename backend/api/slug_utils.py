@@ -48,6 +48,17 @@ def unique_slug_for_instance(
     return slug
 
 
+def product_catalog_slug(*, title: str, pk: int, max_length: int = 120) -> str:
+    """Стабильный URL товара: транслит названия + «-» + id (уникально, без wb-r…)."""
+    id_part = str(int(pk))
+    max_base = max_length - 1 - len(id_part)
+    if max_base < 3:
+        max_base = 3
+    base = latin_slug_from_text((title or "").strip() or "item", max_base)
+    out = f"{base}-{id_part}"
+    return out[:max_length]
+
+
 def ensure_slug_from_title(
     instance: models.Model,
     *,
