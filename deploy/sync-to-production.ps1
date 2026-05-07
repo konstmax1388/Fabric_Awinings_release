@@ -107,16 +107,28 @@ foreach ($line in $remoteLines) {
 }
 $remoteScript = $sb.ToString()
 
-# Old: Process + ReadToEnd() hid output until the end and could deadlock when npm filled stderr.
-
+# Do not pipe $remoteScript to ssh: PowerShell may inject CRLF line endings so bash sees
+# stray `$'\r'` and fails with "command not found" (exit 127). Feed Unix-LF bytes via a temp file.
 Write-Host "==> Remote deploy: live server log (npm ci, two builds, backend - often 10-20 min). Do not interrupt."
-if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+if (-not (Get-Command ssh -CommandType Application -ErrorAction SilentlyContinue)) {
     throw "ssh not found in PATH."
 }
-$remoteScript | & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new $sshTarget "bash -s"
-
-if ($LASTEXITCODE -ne 0) {
-    throw "Deploy failed with exit code $($LASTEXITCODE)."
+$remoteUtf8 = New-Object System.Text.UTF8Encoding $false
+$remoteBytes = $remoteUtf8.GetBytes($remoteScript)
+$remoteScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) ("fabrika-deploy-" + [Guid]::NewGuid().ToString() + ".sh")
+try {
+    [System.IO.File]::WriteAllBytes($remoteScriptPath, $remoteBytes)
+    $proc = Start-Process -FilePath "ssh" -ArgumentList @(
+        "-o", "BatchMode=yes",
+        "-o", "StrictHostKeyChecking=accept-new",
+        $sshTarget,
+        "bash", "-s"
+    ) -RedirectStandardInput $remoteScriptPath -NoNewWindow -Wait -PassThru
+    if ($proc.ExitCode -ne 0) {
+        throw "Deploy failed with exit code $($proc.ExitCode)."
+    }
+} finally {
+    Remove-Item -LiteralPath $remoteScriptPath -Force -ErrorAction SilentlyContinue
 }
 
 $service = ($service -replace "`r", "").Trim()
