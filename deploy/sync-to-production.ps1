@@ -108,9 +108,9 @@ $remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy
 
 $remoteScript = ($remoteLines -join "`n") + "`n"
 
-# Раньше: Process + ReadToEnd() по stdout/stderr — (1) весь лог виден только в конце,
-# (2) при медленном чтении stdout буфер stderr может заполниться → вечное зависание (npm пишет в stderr).
-Write-Host "==> Remote deploy (вывод в реальном времени; npm ci + build ×2 + backend — часто 10–20 мин, не прерывайте)."
+# Old: Process + ReadToEnd() hid output until the end and could deadlock when npm filled stderr.
+
+Write-Host "==> Remote deploy: live server log (npm ci, two builds, backend - often 10-20 min). Do not interrupt."
 if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
     throw "ssh not found in PATH."
 }
