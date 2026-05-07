@@ -21,7 +21,7 @@ function Get-DeployEnv {
         $parts = $line.Split("=", 2)
         if ($parts.Count -ne 2) { continue }
         $k = $parts[0].Trim()
-        $v = $parts[1].Trim()
+        $v = $parts[1].Trim().TrimEnd("`r", "`n")
         if ($k) { $result[$k] = $v }
     }
     return $result
@@ -106,7 +106,7 @@ $remoteLines += ""
 $remoteLines += 'echo "==> Nginx: one-time as root if /sitemap.xml is still proxied to Django:"'
 $remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
 
-$remoteScript = ($remoteLines -join "`n") + "`n"
+$remoteScript = (($remoteLines | ForEach-Object { $_ -replace "`r", "" }) -join "`n") + "`n"
 
 # Old: Process + ReadToEnd() hid output until the end and could deadlock when npm filled stderr.
 
