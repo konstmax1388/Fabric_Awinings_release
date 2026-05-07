@@ -34,9 +34,11 @@ bash deploy/sync-to-production.sh
 .\deploy\sync-to-production.ps1
 ```
 
-**Лог в консоли:** `sync-to-production.ps1` передаёт удалённый bash через `ssh … bash -s` и показывает вывод **сразу** (долгие шаги `npm ci` / `npm run build` могут идти **10–20 минут** — это нормально). Раньше использовался буфер `ReadToEnd()` и отдельные потоки stdout/stderr, из‑за чего вывод не был виден до конца и теоретически возможно было **зависание** при заполнении буфера stderr.
+**Лог в консоли:** `sync-to-production.ps1` собирает удалённый bash-скрипт с переводами строк **LF**, записывает во **временный файл** и подаёт в `ssh … bash -s` через **`Start-Process -RedirectStandardInput`** (не через конвейер строки в `ssh`: иначе PowerShell может добавить **CRLF** и удалённый bash падает с `$'\r': command not found`, exit **127**). Вывод **сразу** в консоль; шаги `npm ci` / `npm run build` могут занять **10–20 минут**.
 
-Скрипт по SSH выполнит: `git fetch/checkout/reset` → `npm ci && npm run build` в `frontend/` и `admin-ui/` → `migrate` / `collectstatic` в `backend/` → **`bash deploy/prune-production-tree.sh --drop-sqlite .`** → `sudo systemctl restart fabrika-gunicorn` (обрезка дерева после деплоя см. [PRODUCTION-VPS.md](PRODUCTION-VPS.md)). в `deploy/.env.deploy` задайте `DEPLOY_SKIP_SYSTEMD=1` и перезапускайте Gunicorn вручную из панели один раз после деплоя.
+После успешного удалённого сценария тот же скрипт выполняет **отдельный** `ssh` с `sudo systemctl restart …` (обход тех же проблем с концом stdin и явный перезапуск сервиса).
+
+Скрипт по SSH выполнит: `git fetch/checkout/reset` → `npm ci && npm run build` в `frontend/` и `admin-ui/` → `migrate` / `collectstatic` в `backend/` → **`bash deploy/prune-production-tree.sh --drop-sqlite .`** → затем **`systemctl restart`** отдельной командой (обрезка дерева после деплоя см. [PRODUCTION-VPS.md](PRODUCTION-VPS.md)). В `deploy/.env.deploy` задайте `DEPLOY_SKIP_SYSTEMD=1`, если перезапуск Gunicorn делаете вручную из панели.
 
 ### `npm error EACCES` / `permission denied, unlink` в `node_modules`
 
