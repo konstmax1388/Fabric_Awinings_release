@@ -956,7 +956,7 @@ export function HeroSection() {
       >
         <motion.div
           key={String(currentSlide)}
-          className={`max-w-2xl min-w-0 max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col max-lg:items-stretch ${
+          className={`max-w-2xl min-w-0 max-lg:flex max-lg:min-h-0 max-lg:flex-1 max-lg:flex-col max-lg:items-stretch lg:max-w-[min(48vw,36rem)] ${
             slides.length > 1 ? 'pb-4 sm:pb-6' : ''
           }`}
           initial={{ opacity: reduce ? 1 : 0 }}
@@ -975,7 +975,7 @@ export function HeroSection() {
           ) : null}
           {usp ? (
             <motion.p
-              className={`fabric-hero-usp hidden max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] lg:block lg:text-sm lg:tracking-[0.2em] ${
+              className={`fabric-hero-usp hidden max-w-2xl break-words text-[11px] uppercase leading-snug tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] lg:block lg:max-w-none lg:text-sm lg:tracking-[0.2em] ${
                 textClasses.uspLine
               } ${showEyebrowBlock && eyebrow ? 'mt-3' : 'mt-0'}`}
               initial={from}
@@ -986,8 +986,8 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.h1
-            className={`fabric-h1 fabric-hero-title italic break-words max-lg:max-w-[min(100%,22ch)] max-lg:self-start max-lg:text-left max-lg:text-[clamp(1.5rem,4.6vw,1.75rem)] max-lg:leading-snug sm:max-lg:max-w-[min(100%,28ch)] ${textClasses.heading} ${
-              usp ? 'max-lg:mt-2 lg:mt-3' : 'mt-4 max-lg:mt-2'
+            className={`fabric-h1 fabric-hero-title italic break-words max-lg:max-w-[min(100%,34ch)] max-lg:self-start max-lg:text-left max-lg:text-[clamp(1.875rem,5.8vw,2.35rem)] max-lg:leading-[1.1] max-lg:tracking-[0.04em] sm:max-lg:max-w-[min(100%,40ch)] sm:max-lg:text-[clamp(2rem,5.2vw,2.55rem)] lg:max-w-[min(100%,30ch)] lg:leading-[1.08] lg:tracking-[0.055em] xl:max-w-[min(100%,34ch)] xl:tracking-[0.065em] ${textClasses.heading} ${
+              usp ? 'max-lg:mt-2 lg:mt-3' : 'mt-4 max-lg:mt-3'
             }`}
             initial={from}
             animate={to}
@@ -996,21 +996,21 @@ export function HeroSection() {
             <TextWithBr>{title}</TextWithBr>
           </motion.h1>
           <motion.p
-            className={`fabric-body fabric-hero-subtitle mt-4 hidden break-words font-normal uppercase tracking-[0.14em] lg:block ${textClasses.body}`}
+            className={`fabric-body fabric-hero-subtitle mt-4 hidden w-full max-w-2xl text-pretty break-words font-normal uppercase tracking-[0.14em] lg:mt-6 lg:max-w-none lg:block lg:tracking-[0.13em] xl:mt-7 ${textClasses.body}`}
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.18 }}
           >
             <TextWithBr>{subtitle}</TextWithBr>
           </motion.p>
-          {subtitle.trim() && ctaSecondary.trim() ? (
+          {subtitle.trim() && (ctaSecondary.trim() || ctaPrimary.trim()) ? (
             <motion.div
-              className="mt-auto flex w-full flex-row items-end gap-2 pt-6 lg:hidden"
+              className="mt-auto flex w-full flex-row items-center gap-3 pt-5 sm:gap-4 sm:pt-6 lg:hidden"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
             >
-              <div className="flex w-1/2 min-w-0 shrink-0 items-end justify-start">
+              <div className="shrink-0">
                 <MagneticHover radius={120} strength={0.16}>
                   <motion.span
                     whileHover={reduce ? undefined : subtleButtonHover}
@@ -1018,36 +1018,55 @@ export function HeroSection() {
                     transition={cardHoverTransition}
                     className="inline-flex max-w-full rounded-[40px]"
                   >
-                    {secondaryIsCallback ? (
+                    {ctaSecondary.trim() ? (
+                      secondaryIsCallback ? (
+                        <button
+                          type="button"
+                          onClick={openCallback}
+                          className={`inline-flex h-11 min-h-[44px] items-center justify-center rounded-[40px] border bg-transparent px-3.5 font-body text-xs font-medium normal-case sm:px-5 sm:text-sm ${textClasses.secondaryBtn}`}
+                          style={{ letterSpacing: '0.02em' }}
+                        >
+                          <TextWithBr>{ctaSecondary}</TextWithBr>
+                        </button>
+                      ) : (
+                        <HeroCtaLink
+                          href={secondaryHref}
+                          className={`inline-flex h-11 min-h-[44px] items-center justify-center rounded-[40px] border bg-transparent px-3.5 font-body text-xs font-medium normal-case sm:px-5 sm:text-sm ${textClasses.secondaryBtn}`}
+                          style={{ letterSpacing: '0.02em' }}
+                        >
+                          <TextWithBr>{ctaSecondary}</TextWithBr>
+                        </HeroCtaLink>
+                      )
+                    ) : primaryIsCallback ? (
                       <button
                         type="button"
                         onClick={openCallback}
-                        className={`inline-flex h-11 min-h-[44px] w-full max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-2 font-body text-[11px] font-medium sm:px-4 sm:text-sm ${textClasses.secondaryBtn}`}
-                        style={{ letterSpacing: '0.06em' }}
+                        className={`inline-flex h-11 min-h-[44px] items-center justify-center rounded-[40px] bg-accent px-3.5 font-body text-xs font-medium shadow-[0_3px_6px_0_rgba(232,122,0,0.3)] sm:px-5 sm:text-sm ${textClasses.primaryBtn}`}
+                        style={{ letterSpacing: '0.02em' }}
                       >
-                        <TextWithBr>{ctaSecondary}</TextWithBr>
+                        <TextWithBr>{ctaPrimary}</TextWithBr>
                       </button>
                     ) : (
                       <HeroCtaLink
-                        href={secondaryHref}
-                        className={`inline-flex h-11 min-h-[44px] w-full max-w-full items-center justify-center rounded-[40px] border-2 bg-transparent px-2 font-body text-[11px] font-medium sm:px-4 sm:text-sm ${textClasses.secondaryBtn}`}
-                        style={{ letterSpacing: '0.06em' }}
+                        href={primaryHref}
+                        className={`inline-flex h-11 min-h-[44px] items-center justify-center rounded-[40px] bg-accent px-3.5 font-body text-xs font-medium shadow-[0_3px_6px_0_rgba(232,122,0,0.3)] sm:px-5 sm:text-sm ${textClasses.primaryBtn}`}
+                        style={{ letterSpacing: '0.02em' }}
                       >
-                        <TextWithBr>{ctaSecondary}</TextWithBr>
+                        <TextWithBr>{ctaPrimary}</TextWithBr>
                       </HeroCtaLink>
                     )}
                   </motion.span>
                 </MagneticHover>
               </div>
               <p
-                className={`w-1/2 min-w-0 shrink-0 text-right font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] sm:text-[11px] ${textClasses.body}`}
+                className={`min-w-0 flex-1 text-left font-body text-[10px] font-medium uppercase leading-[1.35] tracking-[0.14em] sm:text-[11px] sm:leading-snug sm:tracking-[0.12em] ${textClasses.body}`}
               >
                 <TextWithBr>{subtitle}</TextWithBr>
               </p>
             </motion.div>
           ) : subtitle.trim() ? (
             <motion.p
-              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] lg:hidden ${textClasses.body}`}
+              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] sm:pt-6 lg:hidden ${textClasses.body}`}
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
@@ -1056,7 +1075,7 @@ export function HeroSection() {
             </motion.p>
           ) : null}
           <motion.div
-            className="mt-8 hidden min-w-0 flex-wrap gap-3 sm:gap-4 lg:flex"
+            className="mt-8 hidden min-w-0 flex-wrap items-center gap-4 sm:gap-5 lg:mt-10 lg:flex lg:flex-nowrap xl:mt-12 xl:gap-6"
             initial={from}
             animate={to}
             transition={{ ...easeOutSoft, delay: 0.28 }}
@@ -1105,7 +1124,7 @@ export function HeroSection() {
                     <button
                       type="button"
                       onClick={openCallback}
-                      className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
+                      className={`${secondaryBtnClass} lg:border ${textClasses.secondaryBtn}`}
                       style={{ letterSpacing: '0.02em' }}
                     >
                       <TextWithBr>{ctaSecondary}</TextWithBr>
@@ -1113,7 +1132,7 @@ export function HeroSection() {
                   ) : (
                     <HeroCtaLink
                       href={secondaryHref}
-                      className={`${secondaryBtnClass} ${textClasses.secondaryBtn}`}
+                      className={`${secondaryBtnClass} lg:border ${textClasses.secondaryBtn}`}
                       style={{ letterSpacing: '0.02em' }}
                     >
                       <TextWithBr>{ctaSecondary}</TextWithBr>
