@@ -105,11 +105,16 @@ if (-not $skipSystemd) {
     $remoteLines += "echo '(systemd restart skipped: DEPLOY_SKIP_SYSTEMD=1)'"
 }
 
-$remoteLines += ""
 $remoteLines += 'echo "==> Nginx: one-time as root if /sitemap.xml is still proxied to Django:"'
 $remoteLines += "echo `"    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh`""
 
-$remoteScript = (($remoteLines | ForEach-Object { $_ -replace "`r", "" }) -join "`n") + "`n"
+$sb = New-Object System.Text.StringBuilder
+foreach ($line in $remoteLines) {
+    $clean = ($line -replace "`r", "").TrimEnd()
+    [void]$sb.Append($clean)
+    [void]$sb.Append([char]10)
+}
+$remoteScript = $sb.ToString()
 
 # Old: Process + ReadToEnd() hid output until the end and could deadlock when npm filled stderr.
 
