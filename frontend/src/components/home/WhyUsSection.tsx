@@ -72,15 +72,15 @@ function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
   if (col.iconKind === 'image' && url) {
     return (
       <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center text-current [&_img]:max-h-9 [&_img]:max-w-9 [&_img]:object-contain"
+        className="flex h-12 w-12 shrink-0 items-center justify-center text-current [&_img]:max-h-12 [&_img]:max-w-12 [&_img]:object-contain"
         aria-hidden
       >
         <OptimizedImage
           src={url}
           alt={whyUsColumnIconAlt(col.title)}
-          widths={[64, 96, 128]}
-          sizes="36px"
-          className="max-h-9 max-w-9 object-contain"
+          widths={[64, 96, 128, 160]}
+          sizes="48px"
+          className="max-h-12 max-w-12 object-contain"
         />
       </span>
     )
@@ -91,12 +91,12 @@ function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
   if (fa && isSafeFontAwesomeClass(fa)) {
     const useFa = col.iconKind === 'fontawesome' || (!col.iconKind && (Boolean(fromClass) || /\bfa-/.test(fromIcon)))
     if (useFa) {
-      return <i className={`${fa} text-xl text-current`} aria-hidden />
+      return <i className={`${fa} text-3xl text-current`} aria-hidden />
     }
   }
   const emoji = fromIcon && !/\bfa-/.test(fromIcon) ? fromIcon : '•'
   return (
-    <span className="font-heading text-2xl leading-none text-current" aria-hidden>
+    <span className="font-heading text-3xl leading-none text-current" aria-hidden>
       {col.iconKind === 'fontawesome' && !fa ? '•' : emoji}
     </span>
   )
@@ -276,10 +276,7 @@ export function WhyUsSection() {
                       }}
                     />
                   ) : null}
-                  <span
-                    className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg bg-bg-base text-2xl"
-                    aria-hidden
-                  >
+                  <span className="relative z-10 flex h-14 w-14 items-center justify-center text-2xl" aria-hidden>
                     <WhyUsColumnIcon col={c} />
                   </span>
                   <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">

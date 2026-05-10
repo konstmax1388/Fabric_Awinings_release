@@ -27,6 +27,15 @@ class ProductCategory(models.Model):
         null=True,
         help_text="Карточка «Виды тентов» на главной и боковое меню каталога. Рекомендуется горизонтальное фото.",
     )
+    list_icon = models.FileField(
+        "Иконка в блоке «Виды тентов»",
+        upload_to="categories/list-icons/%Y/%m/",
+        max_length=200,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+        help_text="Слева от названия на главной (под фото категории). PNG, WebP, JPEG, GIF или SVG. Если пусто — символ по умолчанию на сайте.",
+    )
     sort_order = models.PositiveIntegerField("Порядок в списках", default=0)
     is_published = models.BooleanField("На сайте", default=True, db_index=True)
 
@@ -863,6 +872,24 @@ class SiteSettings(models.Model):
         "Каталог: возврат по умолчанию, дн.",
         default=14,
         help_text="Показ в карточках товара, если у товара не задан свой срок возврата.",
+    )
+    catalog_trust_warranty_icon = models.FileField(
+        "Каталог: иконка «Гарантия» в карточке товара",
+        upload_to="catalog/trust-icons/%Y/%m/",
+        max_length=200,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
+    )
+    catalog_trust_return_icon = models.FileField(
+        "Каталог: иконка «Возврат» в карточке товара",
+        upload_to="catalog/trust-icons/%Y/%m/",
+        max_length=200,
+        blank=True,
+        null=True,
+        validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
+        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
     )
 
     global_url_wb = models.URLField("URL витрины WB (общий)", max_length=512, blank=True)

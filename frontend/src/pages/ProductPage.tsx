@@ -218,7 +218,8 @@ export function ProductPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const reduce = useReducedMotion()
-  const { calculatorEnabled, productPhotoAspect, seoDefaults, home, siteName } = useSiteSettings()
+  const { calculatorEnabled, productPhotoAspect, seoDefaults, home, siteName, catalogTrustWarrantyIconUrl, catalogTrustReturnIconUrl } =
+    useSiteSettings()
   const ui = home?.ui
   const [product, setProduct] = useState<Product | null | undefined>(undefined)
   const [related, setRelated] = useState<Product[]>([])
@@ -608,6 +609,8 @@ export function ProductPage() {
                   className="mt-4 max-w-lg"
                   warrantyMonths={product.warrantyMonths}
                   returnDays={product.returnDays}
+                  warrantyIconUrl={catalogTrustWarrantyIconUrl}
+                  returnIconUrl={catalogTrustReturnIconUrl}
                 />
               </div>
 

@@ -17,6 +17,7 @@ ALLOWED_TEASERS = {k for k, _ in TEASER_FORM_FIELDS}
 
 class ProductCategoryStaffSerializer(serializers.ModelSerializer):
     imageRelativePath = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    listIconRelativePath = serializers.CharField(write_only=True, required=False, allow_blank=True)
     isPublished = serializers.BooleanField(source="is_published")
     sortOrder = serializers.IntegerField(source="sort_order", min_value=0)
     slug = serializers.SlugField(required=False, allow_blank=True, max_length=64)
@@ -28,6 +29,7 @@ class ProductCategoryStaffSerializer(serializers.ModelSerializer):
             "slug",
             "title",
             "imageRelativePath",
+            "listIconRelativePath",
             "sortOrder",
             "isPublished",
         )
@@ -40,15 +42,18 @@ class ProductCategoryStaffSerializer(serializers.ModelSerializer):
             "slug": instance.slug,
             "title": instance.title,
             "imageUrl": _abs_media(req, instance.image),
+            "listIconUrl": _abs_media(req, getattr(instance, "list_icon", None)),
             "sortOrder": instance.sort_order,
             "isPublished": instance.is_published,
         }
 
     def create(self, validated_data: dict) -> ProductCategory:
-        rel = validated_data.pop("imageRelativePath", None)
+        rel_img = validated_data.pop("imageRelativePath", None)
+        rel_list = validated_data.pop("listIconRelativePath", None)
         instance = ProductCategory.objects.create(**validated_data)
         try:
-            _apply_image_relative_path(instance, "image", rel, "imageRelativePath")
+            _apply_image_relative_path(instance, "image", rel_img, "imageRelativePath")
+            _apply_image_relative_path(instance, "list_icon", rel_list, "listIconRelativePath")
         except serializers.ValidationError:
             instance.delete()
             raise
@@ -56,9 +61,11 @@ class ProductCategoryStaffSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance: ProductCategory, validated_data: dict) -> ProductCategory:
-        rel = validated_data.pop("imageRelativePath", None)
+        rel_img = validated_data.pop("imageRelativePath", None)
+        rel_list = validated_data.pop("listIconRelativePath", None)
         instance = super().update(instance, validated_data)
-        _apply_image_relative_path(instance, "image", rel, "imageRelativePath")
+        _apply_image_relative_path(instance, "image", rel_img, "imageRelativePath")
+        _apply_image_relative_path(instance, "list_icon", rel_list, "listIconRelativePath")
         instance.save()
         return instance
 

@@ -61,6 +61,8 @@ export type SiteSettingsContextValue = {
   reviewsMarket: { goodsFeedbackActive: boolean }
   catalogWarrantyMonths: number
   catalogReturnDays: number
+  catalogTrustWarrantyIconUrl?: string
+  catalogTrustReturnIconUrl?: string
 }
 
 const defaultEnabled: MarketplaceId[] = ['wb', 'ozon']
@@ -172,6 +174,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   })
   const [catalogWarrantyMonths, setCatalogWarrantyMonths] = useState(3)
   const [catalogReturnDays, setCatalogReturnDays] = useState(14)
+  const [catalogTrustWarrantyIconUrl, setCatalogTrustWarrantyIconUrl] = useState<string | undefined>(undefined)
+  const [catalogTrustReturnIconUrl, setCatalogTrustReturnIconUrl] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -247,6 +251,16 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         }
         if (s.catalogWarrantyMonths !== undefined) setCatalogWarrantyMonths(s.catalogWarrantyMonths)
         if (s.catalogReturnDays !== undefined) setCatalogReturnDays(s.catalogReturnDays)
+        setCatalogTrustWarrantyIconUrl(
+          s.catalogTrustWarrantyIconUrl == null || !String(s.catalogTrustWarrantyIconUrl).trim()
+            ? undefined
+            : String(s.catalogTrustWarrantyIconUrl).trim(),
+        )
+        setCatalogTrustReturnIconUrl(
+          s.catalogTrustReturnIconUrl == null || !String(s.catalogTrustReturnIconUrl).trim()
+            ? undefined
+            : String(s.catalogTrustReturnIconUrl).trim(),
+        )
       }
       setHome(h)
       setStaticPages(Array.isArray(pages) ? pages : [])
@@ -295,6 +309,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       reviewsMarket,
       catalogWarrantyMonths,
       catalogReturnDays,
+      catalogTrustWarrantyIconUrl,
+      catalogTrustReturnIconUrl,
     }),
     [
       enabledMarketplaces,
@@ -333,6 +349,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
       reviewsMarket,
       catalogWarrantyMonths,
       catalogReturnDays,
+      catalogTrustWarrantyIconUrl,
+      catalogTrustReturnIconUrl,
     ],
   )
 

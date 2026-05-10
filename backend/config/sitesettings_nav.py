@@ -118,7 +118,14 @@ SECTION_FIELDS: dict[str, tuple[str, ...]] = {
         "seo_locale",
     ),
     "calculator": ("show_calculator", "show_portfolio"),
-    "catalog": ("catalog_intro", "product_photo_aspect", "catalog_warranty_months", "catalog_return_days"),
+    "catalog": (
+        "catalog_intro",
+        "product_photo_aspect",
+        "catalog_warranty_months",
+        "catalog_return_days",
+        "catalog_trust_warranty_icon",
+        "catalog_trust_return_icon",
+    ),
     "checkout_limits": (
         "checkout_minimum_order_rub",
         "checkout_free_delivery_from_rub",

@@ -104,16 +104,27 @@ def merge_static_page_about_file_urls(
 class ProductCategoryPublicSerializer(serializers.ModelSerializer):
     sortOrder = serializers.IntegerField(source="sort_order", read_only=True)
     imageUrl = serializers.SerializerMethodField()
+    listIconUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductCategory
-        fields = ("slug", "title", "sortOrder", "imageUrl")
+        fields = ("slug", "title", "sortOrder", "imageUrl", "listIconUrl")
 
     def get_imageUrl(self, obj: ProductCategory) -> str | None:
         if not obj.image:
             return None
         request = self.context.get("request")
         rel = obj.image.url
+        if request:
+            return request.build_absolute_uri(rel)
+        return rel
+
+    def get_listIconUrl(self, obj: ProductCategory) -> str | None:
+        f = getattr(obj, "list_icon", None)
+        if not f or not getattr(f, "name", ""):
+            return None
+        request = self.context.get("request")
+        rel = f.url
         if request:
             return request.build_absolute_uri(rel)
         return rel
@@ -1075,6 +1086,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
     catalogIntro = serializers.CharField(source="catalog_intro", read_only=True)
     catalogWarrantyMonths = serializers.IntegerField(source="catalog_warranty_months", read_only=True)
     catalogReturnDays = serializers.IntegerField(source="catalog_return_days", read_only=True)
+    catalogTrustWarrantyIconUrl = serializers.SerializerMethodField()
+    catalogTrustReturnIconUrl = serializers.SerializerMethodField()
     checkout = serializers.SerializerMethodField()
     mapForm = serializers.SerializerMethodField()
     analyticsYandex = serializers.SerializerMethodField()
@@ -1112,6 +1125,8 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "catalogIntro",
             "catalogWarrantyMonths",
             "catalogReturnDays",
+            "catalogTrustWarrantyIconUrl",
+            "catalogTrustReturnIconUrl",
             "checkout",
             "mapForm",
             "analyticsYandex",
@@ -1134,6 +1149,16 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
 
     def get_faviconUrl(self, obj: SiteSettings) -> str | None:
         return self._absolute_media(self.context.get("request"), obj.favicon)
+
+    def get_catalogTrustWarrantyIconUrl(self, obj: SiteSettings) -> str | None:
+        return self._absolute_media(
+            self.context.get("request"), getattr(obj, "catalog_trust_warranty_icon", None)
+        )
+
+    def get_catalogTrustReturnIconUrl(self, obj: SiteSettings) -> str | None:
+        return self._absolute_media(
+            self.context.get("request"), getattr(obj, "catalog_trust_return_icon", None)
+        )
 
     def get_enabledMarketplaces(self, obj: SiteSettings) -> list[str]:
         out: list[str] = []

@@ -494,6 +494,7 @@ export type ProductCategoryRow = {
   title: string
   sortOrder: number
   imageUrl?: string | null
+  listIconUrl?: string | null
 }
 
 function parseCategoryRow(o: Record<string, unknown>): ProductCategoryRow | null {
@@ -503,7 +504,9 @@ function parseCategoryRow(o: Record<string, unknown>): ProductCategoryRow | null
   const sortOrder = typeof o.sortOrder === 'number' ? o.sortOrder : Number(o.sortOrder) || 0
   const imageUrl =
     typeof o.imageUrl === 'string' && o.imageUrl.trim() ? o.imageUrl.trim() : null
-  return { slug, title, sortOrder, imageUrl }
+  const listIconUrl =
+    typeof o.listIconUrl === 'string' && o.listIconUrl.trim() ? o.listIconUrl.trim() : null
+  return { slug, title, sortOrder, imageUrl, listIconUrl }
 }
 
 export async function fetchProductCategories(): Promise<ProductCategoryRow[] | null> {
@@ -1077,6 +1080,8 @@ export type SiteSettingsDto = {
   /** Дефолты каталога (если в товаре не задано своё). */
   catalogWarrantyMonths?: number
   catalogReturnDays?: number
+  catalogTrustWarrantyIconUrl?: string | null
+  catalogTrustReturnIconUrl?: string | null
   checkout?: CheckoutPublicConfig
   mapForm?: MapFormSiteOverlay
   analyticsYandex?: AnalyticsYandexDto
@@ -1401,6 +1406,14 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
         typeof data.catalogReturnDays === 'number' && Number.isFinite(data.catalogReturnDays)
           ? Math.max(0, Math.floor(data.catalogReturnDays))
           : undefined,
+      catalogTrustWarrantyIconUrl: (() => {
+        const u = data.catalogTrustWarrantyIconUrl
+        return typeof u === 'string' && u.trim() ? u.trim() : undefined
+      })(),
+      catalogTrustReturnIconUrl: (() => {
+        const u = data.catalogTrustReturnIconUrl
+        return typeof u === 'string' && u.trim() ? u.trim() : undefined
+      })(),
       checkout: parseCheckoutPublic(data.checkout),
       mapForm: parseMapFormOverlay(data.mapForm),
       analyticsYandex: (() => {

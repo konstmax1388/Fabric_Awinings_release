@@ -24,7 +24,7 @@ export function ProductCard({ product }: Props) {
   const reduce = useReducedMotion()
   const navigate = useNavigate()
   const { addProduct } = useCart()
-  const { productPhotoAspect, home } = useSiteSettings()
+  const { productPhotoAspect, home, catalogTrustWarrantyIconUrl, catalogTrustReturnIconUrl } = useSiteSettings()
   const ui = home?.ui
   const frameClass = productCardImageFrameClass(productPhotoAspect)
   const mpKeysRaw = (Object.keys(product.marketplaceLinks) as MarketplaceId[]).filter(
@@ -132,6 +132,8 @@ export function ProductCard({ product }: Props) {
           className="mt-4"
           warrantyMonths={product.warrantyMonths}
           returnDays={product.returnDays}
+          warrantyIconUrl={catalogTrustWarrantyIconUrl}
+          returnIconUrl={catalogTrustReturnIconUrl}
         />
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <motion.button

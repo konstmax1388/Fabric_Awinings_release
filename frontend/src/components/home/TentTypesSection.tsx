@@ -20,7 +20,9 @@ export function TentTypesSection() {
   const tt = home?.tentTypes
   const heading = tt?.heading ?? ''
   const subheading = tt?.subheading ?? ''
-  const [cards, setCards] = useState<Array<{ title: string; slug: string; img: string }>>([])
+  const [cards, setCards] = useState<Array<{ title: string; slug: string; img: string; listIconUrl?: string | null }>>(
+    [],
+  )
 
   useEffect(() => {
     fetchProductCategories().then((list) => {
@@ -29,6 +31,7 @@ export function TentTypesSection() {
           title: c.title,
           slug: c.slug,
           img: categoryCardImage(c.slug, c.imageUrl),
+          listIconUrl: c.listIconUrl,
         })),
       )
     })
@@ -87,11 +90,18 @@ export function TentTypesSection() {
                     <FabricDriftOverlay className="opacity-35 mix-blend-soft-light" />
                   </div>
                   <div className="flex items-center gap-3 p-4">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-base font-heading text-lg text-secondary"
-                      aria-hidden
-                    >
-                      ◆
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center text-secondary" aria-hidden>
+                      {c.listIconUrl?.trim() ? (
+                        <OptimizedImage
+                          src={c.listIconUrl.trim()}
+                          alt=""
+                          widths={[48, 64, 96, 128]}
+                          sizes="48px"
+                          className="h-11 w-11 object-contain"
+                        />
+                      ) : (
+                        <span className="font-heading text-2xl leading-none">◆</span>
+                      )}
                     </span>
                     <span className="font-heading text-lg font-semibold text-text group-hover:text-accent">
                       <TextWithBr text={c.title} />
