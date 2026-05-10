@@ -38,7 +38,7 @@ def test_robots_txt_ok(client, settings):
     assert "User-agent:" in body
     assert "Sitemap: https://example.test/sitemap.xml" in body
     assert "Disallow: /api/" in body
-    assert "Host: https://example.test" in body
+    assert "Host: example.test" in body
     assert "Clean-param:" in body
     assert "Crawl-delay: 1.5" in body
 

@@ -103,8 +103,8 @@ source .venv/bin/activate
 python manage.py generate_public_seo_files
 cd ..
 echo ""
-echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"
-echo "    sudo bash $APP/deploy/vps-nginx-remove-seo-proxy-once.sh"
+echo "==> Nginx (robots/sitemap): при необходимости на сервере: sudo bash $APP/deploy/vps-nginx-inject-seo-exact-once.sh"
+echo "    Или на ПК в deploy/.env.deploy: DEPLOY_NGINX_SEO_INJECT=1 (нужен sudo -n на VPS)"
 EOF
 else
   "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 "$DEPLOY_SSH_TARGET" bash <<EOF
@@ -159,9 +159,20 @@ python manage.py generate_public_seo_files
 cd ..
 sudo systemctl restart $SERVICE
 echo ""
-echo "==> Nginx (один раз от root): если /sitemap.xml ещё проксируется на Django, выполните:"
-echo "    sudo bash $APP/deploy/vps-nginx-remove-seo-proxy-once.sh"
+echo "==> Nginx (robots/sitemap): при необходимости на сервере: sudo bash $APP/deploy/vps-nginx-inject-seo-exact-once.sh"
+echo "    Или на ПК в deploy/.env.deploy: DEPLOY_NGINX_SEO_INJECT=1 (нужен sudo -n на VPS)"
 EOF
+fi
+
+if [[ "${DEPLOY_NGINX_SEO_INJECT:-0}" == "1" ]]; then
+  echo "==> Nginx: вставка proxy для /robots.txt и /sitemap.xml (sudo -n)"
+  _INJECT_SCRIPT="${DEPLOY_APP_PATH%/}/deploy/vps-nginx-inject-seo-exact-once.sh"
+  _REMOTE_INJECT=$(printf 'sudo -n bash %q' "$_INJECT_SCRIPT")
+  if ! "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 \
+    "$DEPLOY_SSH_TARGET" "$_REMOTE_INJECT"; then
+    echo "WARN: nginx SEO inject не выполнен (нужен passwordless sudo). Вручную на сервере:"
+    echo "    sudo bash $_INJECT_SCRIPT"
+  fi
 fi
 
 echo "==> Готово."

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlparse
 from xml.sax.saxutils import escape
 
 from django.conf import settings
@@ -41,6 +42,17 @@ def _xml_url(loc: str, lastmod: date | None) -> str:
         parts.append(f"    <lastmod>{lastmod.isoformat()}</lastmod>\n")
     parts.append("  </url>\n")
     return "".join(parts)
+
+
+def _yandex_robots_host(site_base: str) -> str:
+    """Директива Host для Яндекса: только имя хоста, без схемы (https://)."""
+    s = (site_base or "").strip().rstrip("/")
+    if not s:
+        return ""
+    if "://" in s:
+        host = urlparse(s).hostname
+        return (host or "").strip()
+    return s.split("/")[0].strip().split(":")[0]
 
 
 def iter_sitemap_path_lastmod_pairs() -> Iterator[tuple[str, date | None]]:
@@ -140,9 +152,9 @@ def build_robots_txt(site_base: str, *, allow_indexing: bool) -> str:
         "Disallow: /*?*sort=",
         "Disallow: /*?*search=",
         "",
-        "# Яндекс: главное зеркало (HTTPS).",
+        "# Яндекс: главное зеркало (только имя хоста, без https:// — см. справку Яндекса).",
         "User-agent: Yandex",
-        f"Host: {base}",
+        f"Host: {_yandex_robots_host(base)}",
         "",
         "# Яндекс: не учитывать метки в URL как отдельные страницы (дубли).",
         "Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&utm_id"

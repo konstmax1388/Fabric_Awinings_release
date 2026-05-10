@@ -37,6 +37,7 @@ $branch = if ($cfg.ContainsKey("DEPLOY_GIT_BRANCH") -and $cfg["DEPLOY_GIT_BRANCH
 $gitRemote = if ($cfg.ContainsKey("DEPLOY_GIT_REMOTE") -and $cfg["DEPLOY_GIT_REMOTE"]) { $cfg["DEPLOY_GIT_REMOTE"].Trim() } else { "origin" }
 $service = if ($cfg.ContainsKey("DEPLOY_SYSTEMD_SERVICE") -and $cfg["DEPLOY_SYSTEMD_SERVICE"]) { $cfg["DEPLOY_SYSTEMD_SERVICE"] } else { "fabrika-gunicorn" }
 $skipSystemd = ($cfg.ContainsKey("DEPLOY_SKIP_SYSTEMD") -and $cfg["DEPLOY_SKIP_SYSTEMD"] -eq "1")
+$nginxSeoInject = ($cfg.ContainsKey("DEPLOY_NGINX_SEO_INJECT") -and ($cfg["DEPLOY_NGINX_SEO_INJECT"] -replace "`r", "").Trim() -eq "1")
 
 if (-not $sshTarget) { throw "DEPLOY_SSH_TARGET is missing in $EnvFile" }
 if (-not $appPath) { throw "DEPLOY_APP_PATH is missing in $EnvFile" }
@@ -148,7 +149,17 @@ if (-not $skipSystemd) {
     Write-Host "==> (systemd restart skipped: DEPLOY_SKIP_SYSTEMD=1)"
 }
 
-Write-Host '==> Nginx: if /sitemap.xml is still proxied to Django, on server run:'
-Write-Host "    sudo bash $appPath/deploy/vps-nginx-remove-seo-proxy-once.sh"
+if ($nginxSeoInject) {
+    $injectPath = ($appPath.TrimEnd("/", "\")) + "/deploy/vps-nginx-inject-seo-exact-once.sh"
+    Write-Host "==> Nginx: inject robots/sitemap proxy (sudo -n)"
+    & ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new $sshTarget "sudo -n bash `"$injectPath`""
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "WARN: nginx SEO inject failed (need passwordless sudo). Run on server: sudo bash $injectPath"
+    }
+} else {
+    $injectHintPath = ($appPath.TrimEnd("/", "\")) + "/deploy/vps-nginx-inject-seo-exact-once.sh"
+    Write-Host "==> Nginx (robots/sitemap): if needed on server: sudo bash $injectHintPath"
+    Write-Host "    Or set DEPLOY_NGINX_SEO_INJECT=1 in deploy/.env.deploy (requires sudo -n on VPS)"
+}
 
 Write-Host "==> Done."

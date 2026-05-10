@@ -6,7 +6,22 @@ import re
 
 from django.utils.html import strip_tags
 
-from api.models import BlogPost, Product, SiteSettings, default_seo_title_templates
+from api.models import BlogPost, Product, SiteSettings, StaticPage, default_seo_title_templates
+
+# Как frontend/src/lib/seoVitrine.ts PUBLIC_SITE_META_DESCRIPTION_FALLBACK
+PUBLIC_SITE_META_DESCRIPTION_FALLBACK = (
+    "Изготовление и монтаж тентов для транспорта, складов, кафе и мероприятий. "
+    "Каталог, конструктор тента, заявка онлайн."
+)
+
+STATIC_PAGE_NOINDEX_SLUGS = frozenset(
+    {
+        "politika-konfidentsialnosti-i-soglasie-na-obrabotku-personalnykh-dannykh",
+        "polzovatelskoe-soglashenie",
+        "publichnaia-oferta",
+        "soglasie-na-obrabotku-personalnykh-dannykh",
+    }
+)
 
 
 def _merged_title_templates(ss: SiteSettings) -> dict[str, str]:
@@ -18,6 +33,78 @@ def _merged_title_templates(ss: SiteSettings) -> dict[str, str]:
             if ks in out and isinstance(v, str) and v.strip():
                 out[ks] = v.strip()
     return out
+
+
+def apply_title_template_key(key: str, title: str, site_name: str, ss: SiteSettings) -> str:
+    """Плейсхолдеры {title}, {siteName}, {suffix}, {sep} — как на фронте buildSeoTitle для ключа."""
+    suffix = (ss.seo_title_suffix or "").strip()
+    suffix_part = f" {suffix}" if suffix else ""
+    sep = (getattr(ss, "seo_title_separator", None) or " | ").strip() or " | "
+    tpl = (_merged_title_templates(ss).get(key) or "{title}{suffix}").strip()
+    t = (title or "").strip() or "Страница"
+    sn = (site_name or "").strip() or "Сайт"
+    return (
+        tpl.replace("{title}", t)
+        .replace("{siteName}", sn)
+        .replace("{suffix}", suffix_part)
+        .replace("{sep}", sep)
+    )
+
+
+def build_home_document_title(base_title: str, site_name: str, ss: SiteSettings) -> str:
+    """Аналог buildSeoTitle('home', …) на фронте (HomePage.tsx)."""
+    suffix = (ss.seo_title_suffix or "").strip()
+    suffix_part = f" {suffix}" if suffix else ""
+    sep = (getattr(ss, "seo_title_separator", None) or " | ").strip() or " | "
+    custom = (_merged_title_templates(ss).get("home") or "").strip()
+    sn = (site_name or "").strip() or "Сайт"
+    t = (base_title or "").strip() or "Фабрика Тентов — тенты, навесы, шатры"
+    if not custom:
+        return f"{t}{suffix_part}"
+    return (
+        custom.replace("{title}", t)
+        .replace("{siteName}", sn)
+        .replace("{suffix}", suffix_part)
+        .replace("{sep}", sep)
+    )
+
+
+def resolve_meta_description_server(
+    primary: str | None,
+    ss: SiteSettings,
+    contextual_fallback: str | None = None,
+) -> str:
+    """Аналог resolveMetaDescription в seoVitrine (без поля primary у модели страницы)."""
+    primary_norm = re.sub(r"\s+", " ", (primary or "").strip())
+    settings_norm = re.sub(r"\s+", " ", (ss.seo_default_meta_description or "").strip())
+    ctx_norm = re.sub(r"\s+", " ", (contextual_fallback or "").strip())
+    base = primary_norm or settings_norm or ctx_norm or PUBLIC_SITE_META_DESCRIPTION_FALLBACK
+    m = int(getattr(ss, "seo_meta_description_max", None) or 160)
+    return truncate_meta_description(base, max(m, 40))
+
+
+def static_page_document_title(page: StaticPage, site_name: str, ss: SiteSettings) -> str:
+    """Как resolveStaticPageDocumentTitle на фронте."""
+    doc = (page.meta_title or "").strip()
+    if doc:
+        return doc
+    return apply_title_template_key("static", (page.title or "").strip() or "Страница", site_name, ss)
+
+
+def static_page_meta_description(page: StaticPage, ss: SiteSettings) -> str:
+    raw = (page.meta_description or "").strip()
+    plain = strip_tags((page.body or "").strip())
+    plain_short = re.sub(r"\s+", " ", plain).strip()
+    return resolve_meta_description_server(raw or None, ss, plain_short or (page.title or "").strip())
+
+
+def static_page_robots_value(page: StaticPage, ss: SiteSettings) -> str:
+    if not ss.seo_allow_indexing:
+        return "noindex, nofollow"
+    slug = (page.slug or "").strip()
+    if slug in STATIC_PAGE_NOINDEX_SLUGS:
+        return "noindex, follow"
+    return "index, follow"
 
 
 def build_blog_post_page_title(post: BlogPost, site_name: str, ss: SiteSettings) -> str:

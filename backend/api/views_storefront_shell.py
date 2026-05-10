@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_http_methods
@@ -152,7 +152,7 @@ def _html_404(request) -> str:
 @never_cache
 @xframe_options_sameorigin
 @require_http_methods(["GET", "HEAD"])
-def storefront_shell_view(request, _path: str = "") -> FileResponse | HttpResponse:
+def storefront_shell_view(request, _path: str = "") -> HttpResponse:
     valid = _storefront_path_is_valid(request.path)
     if not valid:
         if request.method == "HEAD":
@@ -176,4 +176,11 @@ def storefront_shell_view(request, _path: str = "") -> FileResponse | HttpRespon
     if request.method == "HEAD":
         return HttpResponse(status=200, content_type="text/html; charset=utf-8")
 
-    return FileResponse(open(serve_path, "rb"), content_type="text/html; charset=utf-8")
+    from .storefront_shell_meta import maybe_inject_shell_head_meta
+
+    try:
+        body = serve_path.read_text(encoding="utf-8")
+    except OSError:
+        body = serve_path.read_bytes().decode("utf-8", errors="replace")
+    body = maybe_inject_shell_head_meta(body, request)
+    return HttpResponse(body, content_type="text/html; charset=utf-8")
