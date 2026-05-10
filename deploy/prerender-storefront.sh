@@ -7,11 +7,23 @@
 set -euo pipefail
 
 REPO_ROOT="${1:?укажите абсолютный путь к корню репозитория}"
+
+# Снять зависший runserver/vite с прошлого деплоя (иначе «port already in use»).
+prerender_free_tcp() {
+  local p="$1"
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k "${p}/tcp" 2>/dev/null || true
+  fi
+}
+
 cd "$REPO_ROOT/backend"
 if [[ -f ../.env ]]; then set -a; source ../.env; set +a; fi
 source .venv/bin/activate
 
 python manage.py export_prerender_paths
+
+prerender_free_tcp 19999
+sleep 1
 
 # Выключаем редирект HTTP→HTTPS только для этого runserver: иначе SECURE_SSL_REDIRECT в прод-настройках
 # даёт 301 на localhost и Playwright/node fetch не могут ходить в API по HTTP.
@@ -33,6 +45,19 @@ done
 
 cd "$REPO_ROOT/frontend"
 export PRERENDER_UPSTREAM="${PRERENDER_UPSTREAM:-http://127.0.0.1:19999}"
+# 4182 по умолчанию: реже конфликтует с залипшим vite preview после прерванных деплоев.
+export PRERENDER_PREVIEW_PORT="${PRERENDER_PREVIEW_PORT:-4182}"
+prerender_free_tcp "$PRERENDER_PREVIEW_PORT"
+sleep 1
+
+# Библиотеки GTK/ATK для bundled Chromium (на минимальном VPS их часто нет).
+if [[ "${SKIP_PLAYWRIGHT_SYSTEM_DEPS:-0}" != "1" ]] && command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  echo "[prerender-storefront] sudo: npx playwright install-deps chromium"
+  sudo "$(command -v npx)" playwright install-deps chromium || true
+else
+  echo "[prerender-storefront] Подсказка: при ошибке libatk на сервере один раз: sudo npx playwright install-deps chromium (из frontend/ после npm ci)."
+fi
+
 npx playwright install chromium || true
 
 set +e
