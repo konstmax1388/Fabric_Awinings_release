@@ -90,6 +90,7 @@ $remoteLines = @(
     "python manage.py migrate --noinput"
     "python manage.py collectstatic --noinput"
     "cd .."
+    'bash deploy/vps-remove-placeholder-seo-files-once.sh "$(pwd)"'
     'bash deploy/prerender-storefront.sh "$(pwd)" || true'
     "cd backend"
     "python manage.py generate_public_seo_files"

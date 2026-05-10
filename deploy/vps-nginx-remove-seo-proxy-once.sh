@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# УСТАРЕЛО для текущей схемы SEO: этот скрипт удалял отдельный location = /sitemap.xml с proxy_pass,
+# чтобы отдавался файл из frontend/dist. Сейчас надёжнее всегда отдавать sitemap через Django
+# или явные location = /sitemap.xml / /robots.txt с proxy_pass — см. nginx-fabrika-tentov.ru.full.conf
+# и deploy/vps-nginx-inject-seo-exact-once.sh.
+#
+# Оставлено для редких случаев отката к статическому файлу после generate_public_seo_files.
+#
 # Однократно на VPS от root: убрать location = /sitemap.xml с proxy_pass,
 # чтобы /sitemap.xml отдавался из frontend/dist (файл после generate_public_seo_files).
 #

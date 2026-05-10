@@ -87,6 +87,21 @@ sudo chown -R kasatkin_da:kasatkin_da /var/www/kasatkin_da/data/www/fabrika-tent
 
 ---
 
+## Nginx: `robots.txt` и `sitemap.xml` (SEO)
+
+Если снаружи **404** на `/robots.txt` или в `/sitemap.xml` виден **чужой домен** (например placeholder), а в репозитории уже есть `path("robots.txt", …)` и `path("sitemap.xml", …)` в Django:
+
+1. В основном HTTPS vhost добавьте **exact** `location = /robots.txt` и `location = /sitemap.xml` с `proxy_pass` на Gunicorn — готовый текст: `deploy/nginx-seo-robots-sitemap-snippet.conf`; эталонный полный vhost: `deploy/nginx-fabrika-tentov.ru.full.conf`.
+2. Однократно на VPS от root (пути при необходимости через `VPS_NGINX_VHOST`, `VPS_GUNICORN_PROXY`):  
+   `sudo bash deploy/vps-nginx-inject-seo-exact-once.sh`
+3. Плейсхолдеры в корне репо на сервере:  
+   `bash deploy/vps-remove-placeholder-seo-files-once.sh "$DEPLOY_APP_PATH"`
+4. Перегенерация файлов в `dist` и корне: в backend после деплоя уже вызывается `manage.py generate_public_seo_files`.
+
+**Soft 404:** витрина должна идти через `location / { proxy_pass … }` на Django (корректные **404** для несуществующих путей), а не через `try_files … /index.html` на SPA.
+
+---
+
 ## Проверка после выкладки
 
 - `https://ваш-домен/api/health/`
