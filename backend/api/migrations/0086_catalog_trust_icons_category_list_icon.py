@@ -35,7 +35,8 @@ class Migration(migrations.Migration):
             name="catalog_trust_return_icon",
             field=models.FileField(
                 blank=True,
-                help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
+                help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка. "
+                "Короткое имя файла (путь в БД до 64 символов — лимит MySQL для широкой строки настроек).",
                 max_length=64,
                 null=True,
                 upload_to="catalog/trust-icons/%Y/%m/",
@@ -48,7 +49,8 @@ class Migration(migrations.Migration):
             name="catalog_trust_warranty_icon",
             field=models.FileField(
                 blank=True,
-                help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
+                help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка. "
+                "Короткое имя файла (путь в БД до 64 символов — лимит MySQL для широкой строки настроек).",
                 max_length=64,
                 null=True,
                 upload_to="catalog/trust-icons/%Y/%m/",
