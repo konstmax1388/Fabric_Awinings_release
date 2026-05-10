@@ -91,7 +91,7 @@ export function HomePage() {
     switch (id) {
       case 'hero':
         return (
-          <div key="hero" className="pt-4 lg:pt-6">
+          <div key="hero" className="pt-0">
             <HeroSection />
           </div>
         )

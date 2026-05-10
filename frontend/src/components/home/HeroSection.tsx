@@ -670,7 +670,10 @@ export function HeroSection() {
         onClose={() => setCallbackOpen(false)}
         modal={callbackModal}
       />
-      <div className="absolute inset-0 z-0 overflow-hidden rounded-[24px] isolate" aria-hidden>
+      <div
+        className="absolute inset-x-0 bottom-0 top-[-1px] z-0 overflow-hidden rounded-[24px] isolate"
+        aria-hidden
+      >
         <div className="absolute inset-0 overflow-hidden">
           <AnimatePresence initial={false} mode="wait">
             {hasAnyBgMedia ? (

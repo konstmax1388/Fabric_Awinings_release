@@ -90,17 +90,20 @@ export function TentTypesSection() {
                     <FabricDriftOverlay className="opacity-35 mix-blend-soft-light" />
                   </div>
                   <div className="flex items-center gap-3 p-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center text-secondary" aria-hidden>
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
+                      aria-hidden
+                    >
                       {c.listIconUrl?.trim() ? (
                         <OptimizedImage
                           src={c.listIconUrl.trim()}
                           alt=""
                           widths={[48, 64, 96, 128]}
-                          sizes="48px"
-                          className="h-11 w-11 object-contain"
+                          sizes="44px"
+                          className="h-10 w-10 object-contain sm:h-11 sm:w-11"
                         />
                       ) : (
-                        <span className="font-heading text-2xl leading-none">◆</span>
+                        <span className="font-heading text-[2.5rem] leading-none sm:text-[2.75rem]">◆</span>
                       )}
                     </span>
                     <span className="font-heading text-lg font-semibold text-text group-hover:text-accent">

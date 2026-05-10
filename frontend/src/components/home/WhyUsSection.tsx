@@ -72,15 +72,15 @@ function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
   if (col.iconKind === 'image' && url) {
     return (
       <span
-        className="flex h-12 w-12 shrink-0 items-center justify-center text-current [&_img]:max-h-12 [&_img]:max-w-12 [&_img]:object-contain"
+        className="flex h-10 w-10 shrink-0 items-center justify-center text-current sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
         aria-hidden
       >
         <OptimizedImage
           src={url}
           alt={whyUsColumnIconAlt(col.title)}
-          widths={[64, 96, 128, 160]}
-          sizes="48px"
-          className="max-h-12 max-w-12 object-contain"
+          widths={[48, 64, 96, 128]}
+          sizes="44px"
+          className="h-10 w-10 object-contain sm:h-11 sm:w-11"
         />
       </span>
     )
@@ -91,12 +91,12 @@ function WhyUsColumnIcon({ col }: { col: WhyColumn }) {
   if (fa && isSafeFontAwesomeClass(fa)) {
     const useFa = col.iconKind === 'fontawesome' || (!col.iconKind && (Boolean(fromClass) || /\bfa-/.test(fromIcon)))
     if (useFa) {
-      return <i className={`${fa} text-3xl text-current`} aria-hidden />
+      return <i className={`${fa} text-[2.5rem] leading-none text-current sm:text-[2.75rem]`} aria-hidden />
     }
   }
   const emoji = fromIcon && !/\bfa-/.test(fromIcon) ? fromIcon : '•'
   return (
-    <span className="font-heading text-3xl leading-none text-current" aria-hidden>
+    <span className="font-heading text-[2.5rem] leading-none text-current sm:text-[2.75rem]" aria-hidden>
       {col.iconKind === 'fontawesome' && !fa ? '•' : emoji}
     </span>
   )
@@ -276,7 +276,10 @@ export function WhyUsSection() {
                       }}
                     />
                   ) : null}
-                  <span className="relative z-10 flex h-14 w-14 items-center justify-center text-2xl" aria-hidden>
+                  <span
+                    className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11"
+                    aria-hidden
+                  >
                     <WhyUsColumnIcon col={c} />
                   </span>
                   <h3 className="relative z-10 mt-4 font-heading text-xl font-semibold text-text">

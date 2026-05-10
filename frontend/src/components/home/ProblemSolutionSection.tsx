@@ -35,20 +35,20 @@ function ProblemSolutionIcon({ card }: { card: ProblemCard }) {
       <OptimizedImage
         src={url}
         alt={problemCardIconAlt(card.problem)}
-        widths={[64, 128]}
-        sizes="32px"
-        className="h-8 w-8 object-contain"
+        widths={[48, 64, 96, 128]}
+        sizes="44px"
+        className="h-10 w-10 object-contain sm:h-11 sm:w-11"
       />
     )
   }
 
   const fa = (card.fontawesomeClass || '').trim()
   if (kind === 'fontawesome' && fa && isSafeFontAwesomeClass(fa)) {
-    return <i className={`${fa} text-xl text-current`} aria-hidden />
+    return <i className={`${fa} text-[2.5rem] leading-none text-current sm:text-[2.75rem]`} aria-hidden />
   }
 
   return (
-    <span className="font-heading text-xl text-current" aria-hidden>
+    <span className="font-heading text-[2.5rem] leading-none text-current sm:text-[2.75rem]" aria-hidden>
       {card.icon?.trim() || '•'}
     </span>
   )
@@ -155,7 +155,7 @@ export function ProblemSolutionSection() {
               />
             ) : null}
             <span
-              className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl border border-border-light bg-[#F5F0E8] text-secondary shadow-inner transition duration-300 ease-out group-hover:scale-110 group-hover:-rotate-2 group-hover:border-accent/40 group-hover:bg-accent/15 group-hover:text-accent group-hover:shadow-[0_8px_20px_-10px_rgba(200,155,83,0.55)] motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-hover:rotate-0"
+              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary transition duration-300 ease-out group-hover:scale-110 group-hover:text-accent sm:h-11 sm:w-11 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
               aria-hidden
             >
               <ProblemSolutionIcon card={card} />
