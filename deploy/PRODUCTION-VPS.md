@@ -54,7 +54,11 @@ bash deploy/prune-production-tree.sh --drop-sqlite "$(pwd)"
 - Либо один раз под root добавить исключение только для этого пути:  
   `git config --global --add safe.directory /var/www/kasatkin_da/data/www/fabrika-tentov.ru`
 
-Пока `git pull`/`reset` не прошли, на сервере **нет** новых файлов в `deploy/` (в том числе `vps-nginx-inject-seo-exact-once.sh` из релиза 3.4.32).
+Пока `git pull`/`reset` не прошли, на сервере **нет** новых файлов в `deploy/` (в том числе `vps-nginx-inject-seo-exact-once.sh`).
+
+**Если зашли как root и `git fetch` пишет `Permission denied (publickey)`:** remote обычно `git@github.com:…` — ключи лежат у пользователя деплоя (`kasatkin_da`), не у root. Делайте `git fetch`/`reset` только так:  
+`sudo -u kasatkin_da git -C /path/to/repo fetch …`  
+Либо добавьте root в `safe.directory` **и** настройте отдельный SSH-ключ для root (обычно не нужно).
 
 ### Вариант B: `rsync` с дев-машины
 
