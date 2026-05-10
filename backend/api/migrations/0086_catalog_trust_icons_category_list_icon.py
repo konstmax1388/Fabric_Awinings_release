@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Слева от названия на главной (под фото категории). PNG, WebP, JPEG, GIF или SVG. Если пусто — символ по умолчанию на сайте.",
-                max_length=200,
+                max_length=96,
                 null=True,
                 upload_to="categories/list-icons/%Y/%m/",
                 validators=[_home_icon_validator()],
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
-                max_length=200,
+                max_length=64,
                 null=True,
                 upload_to="catalog/trust-icons/%Y/%m/",
                 validators=[_home_icon_validator()],
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
             field=models.FileField(
                 blank=True,
                 help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
-                max_length=200,
+                max_length=64,
                 null=True,
                 upload_to="catalog/trust-icons/%Y/%m/",
                 validators=[_home_icon_validator()],

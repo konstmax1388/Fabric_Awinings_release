@@ -30,7 +30,7 @@ class ProductCategory(models.Model):
     list_icon = models.FileField(
         "Иконка в блоке «Виды тентов»",
         upload_to="categories/list-icons/%Y/%m/",
-        max_length=200,
+        max_length=96,
         blank=True,
         null=True,
         validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
@@ -876,20 +876,22 @@ class SiteSettings(models.Model):
     catalog_trust_warranty_icon = models.FileField(
         "Каталог: иконка «Гарантия» в карточке товара",
         upload_to="catalog/trust-icons/%Y/%m/",
-        max_length=200,
+        max_length=64,
         blank=True,
         null=True,
         validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
-        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
+        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка. "
+        "Короткое имя файла (путь в БД до 64 символов — лимит MySQL для широкой строки настроек).",
     )
     catalog_trust_return_icon = models.FileField(
         "Каталог: иконка «Возврат» в карточке товара",
         upload_to="catalog/trust-icons/%Y/%m/",
-        max_length=200,
+        max_length=64,
         blank=True,
         null=True,
         validators=[HOME_SECTION_ICON_FILE_VALIDATOR],
-        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка.",
+        help_text="Полоска гарантия/возврат на витрине. PNG, WebP, JPEG, GIF или SVG. Пусто — встроенная иконка. "
+        "Короткое имя файла (путь в БД до 64 символов — лимит MySQL для широкой строки настроек).",
     )
 
     global_url_wb = models.URLField("URL витрины WB (общий)", max_length=512, blank=True)
