@@ -13,7 +13,9 @@ source .venv/bin/activate
 
 python manage.py export_prerender_paths
 
-python manage.py runserver 127.0.0.1:19999 --noreload &
+# Выключаем редирект HTTP→HTTPS только для этого runserver: иначе SECURE_SSL_REDIRECT в прод-настройках
+# даёт 301 на localhost и Playwright/node fetch не могут ходить в API по HTTP.
+DJANGO_SECURE_SSL_REDIRECT=false python manage.py runserver 127.0.0.1:19999 --noreload &
 PID=$!
 
 cleanup() {
