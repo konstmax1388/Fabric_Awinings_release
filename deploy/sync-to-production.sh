@@ -52,7 +52,7 @@ if [[ "${DEPLOY_RUN_PREFLIGHT:-0}" == "1" ]]; then
 fi
 
 if [[ "${DEPLOY_SKIP_SYSTEMD:-0}" == "1" ]]; then
-  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
+  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
 git fetch "$GIT_REMOTE" "$BRANCH"
@@ -91,7 +91,7 @@ pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 cd ..
-bash deploy/prerender-storefront.sh "$(pwd)"
+bash deploy/prerender-storefront.sh "$(pwd)" || true
 cd backend
 python manage.py generate_public_seo_files
 cd ..
@@ -106,7 +106,7 @@ echo "==> Nginx (один раз от root): если /sitemap.xml ещё про
 echo "    sudo bash $APP/deploy/vps-nginx-remove-seo-proxy-once.sh"
 EOF
 else
-  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_TARGET" bash <<EOF
+  "$SSH_BIN" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 "$DEPLOY_SSH_TARGET" bash <<EOF
 set -euo pipefail
 cd $APP
 git fetch "$GIT_REMOTE" "$BRANCH"
@@ -145,7 +145,7 @@ pip install -q -r requirements-prod.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 cd ..
-bash deploy/prerender-storefront.sh "$(pwd)"
+bash deploy/prerender-storefront.sh "$(pwd)" || true
 cd backend
 python manage.py generate_public_seo_files
 cd ..

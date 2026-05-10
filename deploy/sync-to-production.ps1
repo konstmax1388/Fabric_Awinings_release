@@ -90,7 +90,7 @@ $remoteLines = @(
     "python manage.py migrate --noinput"
     "python manage.py collectstatic --noinput"
     "cd .."
-    'bash deploy/prerender-storefront.sh "$(pwd)"'
+    'bash deploy/prerender-storefront.sh "$(pwd)" || true'
     "cd backend"
     "python manage.py generate_public_seo_files"
     "cd .."
@@ -124,6 +124,8 @@ try {
     $proc = Start-Process -FilePath "ssh" -ArgumentList @(
         "-o", "BatchMode=yes",
         "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "ServerAliveInterval=30",
+        "-o", "ServerAliveCountMax=240",
         $sshTarget,
         "bash", "-s"
     ) -RedirectStandardInput $remoteScriptPath -NoNewWindow -Wait -PassThru

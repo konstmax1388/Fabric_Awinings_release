@@ -55,7 +55,7 @@ if [[ "${SKIP_PLAYWRIGHT_SYSTEM_DEPS:-0}" != "1" ]] && command -v sudo >/dev/nul
   echo "[prerender-storefront] sudo: npx playwright install-deps chromium"
   sudo "$(command -v npx)" playwright install-deps chromium || true
 else
-  echo "[prerender-storefront] Подсказка: при ошибке libatk на сервере один раз: sudo npx playwright install-deps chromium (из frontend/ после npm ci)."
+  echo "[prerender-storefront] Подсказка: libatk и др. — один раз на VPS: sudo bash deploy/vps-playwright-chromium-deps-once.sh или cd frontend && sudo npx playwright install-deps chromium"
 fi
 
 npx playwright install chromium || true
