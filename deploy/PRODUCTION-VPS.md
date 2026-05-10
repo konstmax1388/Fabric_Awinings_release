@@ -38,6 +38,24 @@ bash deploy/prune-production-tree.sh --drop-sqlite "$(pwd)"
 
 Историю Git при этом **не** удаляем (удобно `git pull`). Если принципиально без `.git` — `bash deploy/prune-production-tree.sh --with-git "$(pwd)"` (дальше обновления только через rsync/архив).
 
+### `git pull` и `detected dubious ownership`
+
+Если команды выполняются **от root**, а каталог репозитория принадлежит пользователю сайта (`kasatkin_da`), Git 2.35+ может отказать в работе.
+
+- Предпочтительно обновлять код **от владельца каталога**:
+
+  ```bash
+  sudo -u kasatkin_da git config --global --add safe.directory /var/www/kasatkin_da/data/www/fabrika-tentov.ru
+  sudo -u kasatkin_da git -C /var/www/kasatkin_da/data/www/fabrika-tentov.ru fetch origin main
+  sudo -u kasatkin_da git -C /var/www/kasatkin_da/data/www/fabrika-tentov.ru checkout main
+  sudo -u kasatkin_da git -C /var/www/kasatkin_da/data/www/fabrika-tentov.ru reset --hard origin/main
+  ```
+
+- Либо один раз под root добавить исключение только для этого пути:  
+  `git config --global --add safe.directory /var/www/kasatkin_da/data/www/fabrika-tentov.ru`
+
+Пока `git pull`/`reset` не прошли, на сервере **нет** новых файлов в `deploy/` (в том числе `vps-nginx-inject-seo-exact-once.sh` из релиза 3.4.32).
+
 ### Вариант B: `rsync` с дев-машины
 
 Не копировать лишнее сразу — файл исключений [`rsync-exclude.txt`](rsync-exclude.txt) (в т.ч. **`.git/`**, документация, офисные файлы):
