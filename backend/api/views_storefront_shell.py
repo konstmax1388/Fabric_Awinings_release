@@ -16,7 +16,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_http_methods
 
-from .models import BlogPost, Product, StaticPage
+from .models import BlogPost, Product, ProductCategory, StaticPage
 from .views_promotions import _public_promotions_catalog_queryset
 
 # Совпадает с зарезервированными сегментами в React Router до ``/:slug``.
@@ -80,6 +80,8 @@ def _storefront_path_is_valid(request_path: str) -> bool:
         if a == "catalog":
             if not _SLUG_RE.match(b):
                 return False
+            if b == "category":
+                return False
             return Product.objects.filter(
                 slug=b,
                 is_published=True,
@@ -100,6 +102,11 @@ def _storefront_path_is_valid(request_path: str) -> bool:
         return False
 
     if len(segments) == 3:
+        a, b, c = segments[0], segments[1], segments[2]
+        if a == "catalog" and b == "category":
+            if not _SLUG_RE.match(c):
+                return False
+            return ProductCategory.objects.filter(slug=c, is_published=True).exists()
         if segments == ["checkout", "payment", "success"]:
             return True
         if segments == ["checkout", "payment", "failed"]:

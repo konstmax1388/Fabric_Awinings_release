@@ -55,6 +55,7 @@ from .serializers import (
 def health(request):
     from config.version import get_app_version
 
+    allow_indexing = bool(SiteSettings.get_solo().seo_allow_indexing)
     return Response(
         {
             "status": "ok",
@@ -63,6 +64,9 @@ def health(request):
             "gitSha": str(getattr(settings, "GIT_SHA", "") or ""),
             "builtAt": str(getattr(settings, "BUILD_TIME", "") or ""),
             "time": timezone.now().isoformat(),
+            "seo": {
+                "allowIndexing": allow_indexing,
+            },
         }
     )
 

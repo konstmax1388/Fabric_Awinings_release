@@ -119,3 +119,40 @@ def test_image_variant_unknown_file(client, settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path
     r = client.get("/api/image-variant/", {"path": "nope/missing.jpg", "w": 640, "f": "webp"})
     assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_health_includes_seo_allow_indexing(client):
+    r = client.get("/api/health/")
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("seo", {}).get("allowIndexing") is True
+    s = SiteSettings.get_solo()
+    s.seo_allow_indexing = False
+    s.save(update_fields=["seo_allow_indexing"])
+    r2 = client.get("/api/health/")
+    assert r2.json().get("seo", {}).get("allowIndexing") is False
+
+
+@pytest.mark.django_db
+def test_sitemap_includes_catalog_category_urls(client):
+    from api.models import ProductCategory
+
+    ProductCategory.objects.create(slug="seo-test-cat", title="SEO test cat", is_published=True)
+    r = client.get("/sitemap.xml")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "/catalog/category/seo-test-cat" in body
+
+
+@pytest.mark.django_db
+def test_storefront_path_catalog_category_validation():
+    from api.models import ProductCategory
+    from api.views_storefront_shell import _storefront_path_is_valid
+
+    ProductCategory.objects.create(slug="shell-cat", title="Shell", is_published=True)
+    assert _storefront_path_is_valid("/catalog/category/shell-cat")
+    assert not _storefront_path_is_valid("/catalog/category/no-such-slug")
+    assert not _storefront_path_is_valid("/catalog/category")
+    ProductCategory.objects.create(slug="hidden", title="H", is_published=False)
+    assert not _storefront_path_is_valid("/catalog/category/hidden")

@@ -9,7 +9,9 @@ from xml.sax.saxutils import escape
 from django.conf import settings
 from django.utils import timezone
 
-from .models import BlogPost, Product, StaticPage
+from django.db.models import Max
+
+from .models import BlogPost, Product, ProductCategory, StaticPage
 from .views_promotions import _public_promotions_catalog_queryset
 
 SITEMAP_EXCLUDE_STATIC_SLUGS = frozenset(
@@ -64,6 +66,15 @@ def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
     ]
     for loc, lm in static_pages_list:
         urls_xml.append(_xml_url(loc, lm))
+
+    for cat in ProductCategory.objects.filter(is_published=True).order_by("slug"):
+        latest = (
+            Product.objects.filter(category=cat, is_published=True, category__is_published=True).aggregate(
+                m=Max("updated_at")
+            )["m"]
+        )
+        lm = latest.date() if latest else today
+        urls_xml.append(_xml_url(f"{base}/catalog/category/{cat.slug}", lm))
 
     products = (
         Product.objects.filter(is_published=True, category__is_published=True)

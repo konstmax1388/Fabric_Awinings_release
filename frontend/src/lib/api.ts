@@ -146,6 +146,7 @@ export async function fetchHealth(): Promise<{
   gitSha?: string
   builtAt?: string
   time: string
+  seo?: { allowIndexing: boolean }
 } | null> {
   try {
     const r = await fetch(`${apiBase()}/api/health/`)

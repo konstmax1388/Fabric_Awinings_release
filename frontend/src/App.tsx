@@ -141,6 +141,7 @@ const router = createBrowserRouter([
           },
         ],
       },
+      { path: '/catalog/category/:categorySlug', element: <CatalogPage /> },
       { path: '/catalog/:slug', element: <ProductPage /> },
       { path: '/catalog', element: <CatalogPage /> },
       { path: '/search', element: <SearchPage /> },

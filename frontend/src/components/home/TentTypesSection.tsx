@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '../../context/SiteSettingsContext'
 import { fetchProductCategories } from '../../lib/api'
+import { catalogCategoryPath } from '../../lib/catalogPaths'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../../lib/motion-presets'
 import { FabricDriftOverlay } from '../ui/FabricDriftOverlay'
 import { tentTypeSectionCardAlt } from '../../lib/imageAlt'
@@ -78,7 +79,7 @@ export function TentTypesSection() {
                 }
                 transition={{ type: 'spring', stiffness: 400, damping: 26 }}
               >
-                <Link to={`/catalog?category=${encodeURIComponent(c.slug)}`} className="group block h-full">
+                <Link to={catalogCategoryPath(c.slug)} className="group block h-full">
                   <div className="relative aspect-[288/200] overflow-hidden">
                     <OptimizedImage
                       src={c.img}

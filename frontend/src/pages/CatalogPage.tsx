@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { motion, useReducedMotion } from 'framer-motion'
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CatalogSpecFilters } from '../components/catalog/CatalogSpecFilters'
 import { ProductCard } from '../components/catalog/ProductCard'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
@@ -27,6 +27,7 @@ import {
   type ProductCategoryRow,
 } from '../lib/api'
 import { easeOutSoft, fadeUpHidden, fadeUpVisible, staggerContainer, staggerItem } from '../lib/motion-presets'
+import { catalogCategoryPath } from '../lib/catalogPaths'
 import { buildSeoTitle, truncateMetaDescription } from '../lib/seoVitrine'
 
 /** Слаг категории с API: только латиница, цифры, `_` и `-` (без кириллицы в URL). */
@@ -83,33 +84,39 @@ function CatalogSkeletonGrid() {
 }
 
 export function CatalogPage() {
+  const { categorySlug: categorySlugParam } = useParams<{ categorySlug?: string }>()
+  const categoryFromPath = useMemo(() => parseCategory(categorySlugParam ?? null), [categorySlugParam])
   const [search, setSearch] = useSearchParams()
+  const navigate = useNavigate()
+  const location = useLocation()
   const reduce = useReducedMotion()
   const { catalogIntro, seoDefaults, siteName } = useSiteSettings()
   const canonicalForMeta = useCanonicalHrefForMeta()
   const site = publicSiteUrl()
-  const catalogBreadcrumbJsonLd = useMemo(
-    () =>
-      JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Главная', item: `${site}/` },
-          { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${site}/catalog` },
-        ],
-      }),
-    [site],
-  )
 
-  const category = parseCategory(search.get('category'))
-  const sort = parseSort(search.get('sort'))
-  const page = parsePage(search.get('page'))
-  const searchTerm = parseSearch(search.get('search'))
-  const specFilterMap = useMemo(
-    () => parseCatalogSpecFiltersFromSearchParams(search),
-    [search],
+  /** Редирект /catalog?category= → /catalog/category/:slug (канонический path). */
+  useEffect(() => {
+    if (categoryFromPath) return
+    const qCat = parseCategory(search.get('category'))
+    if (!qCat) return
+    const next = new URLSearchParams(search)
+    next.delete('category')
+    const tail = next.toString()
+    navigate(`${catalogCategoryPath(qCat)}${tail ? `?${tail}` : ''}`, { replace: true })
+  }, [categoryFromPath, search, navigate])
+
+  useEffect(() => {
+    if (!categoryFromPath) return
+    if (!search.get('category')) return
+    const next = new URLSearchParams(search)
+    next.delete('category')
+    setSearch(next, { replace: true })
+  }, [categoryFromPath, search, setSearch])
+
+  const activeCategory = useMemo(
+    () => categoryFromPath ?? parseCategory(search.get('category')),
+    [categoryFromPath, search],
   )
-  const searchKey = useMemo(() => search.toString(), [search])
 
   /** Убираем из адреса устаревший `?category=` с кириллицей после смены слагов на латиницу. */
   useEffect(() => {
@@ -119,6 +126,18 @@ export function CatalogPage() {
     next.delete('category')
     setSearch(next, { replace: true })
   }, [search, setSearch])
+
+  const sort = parseSort(search.get('sort'))
+  const page = parsePage(search.get('page'))
+  const searchTerm = parseSearch(search.get('search'))
+  const specFilterMap = useMemo(
+    () => parseCatalogSpecFiltersFromSearchParams(search),
+    [search],
+  )
+  const searchKey = useMemo(
+    () => [location.pathname, search.toString()].join('\0'),
+    [location.pathname, search],
+  )
 
   const [data, setData] = useState<Paginated<Product> | null>(null)
   const [loading, setLoading] = useState(true)
@@ -139,13 +158,13 @@ export function CatalogPage() {
   useEffect(() => {
     let cancelled = false
     setFilterFacets(null)
-    fetchCatalogFilterFacets({ category: category ?? undefined }).then((rows) => {
+    fetchCatalogFilterFacets({ category: activeCategory ?? undefined }).then((rows) => {
       if (!cancelled) setFilterFacets(rows)
     })
     return () => {
       cancelled = true
     }
-  }, [category])
+  }, [activeCategory])
 
   useEffect(() => {
     let cancelled = false
@@ -155,7 +174,7 @@ export function CatalogPage() {
     })
     fetchProductsPage({
       page,
-      category,
+      category: activeCategory,
       sort,
       search: searchTerm,
       pageSize: PAGE_SIZE,
@@ -185,12 +204,10 @@ export function CatalogPage() {
       specFilters?: Map<number, string[]>
     }) => {
       const next = new URLSearchParams(search)
+      let nextCat: ProductCategory | null = activeCategory
+
       if (patch.category !== undefined) {
-        if (patch.category === null) {
-          next.delete('category')
-        } else {
-          next.set('category', patch.category)
-        }
+        nextCat = patch.category
         for (const k of [...next.keys()]) {
           if (k.startsWith('f_')) next.delete(k)
         }
@@ -218,9 +235,13 @@ export function CatalogPage() {
       } else if (patch.specFilters !== undefined || patch.category !== undefined) {
         next.delete('page')
       }
-      setSearch(next, { replace: true })
+
+      next.delete('category')
+      const path = nextCat ? catalogCategoryPath(nextCat) : '/catalog'
+      const q = next.toString()
+      navigate({ pathname: path, search: q ? `?${q}` : '' }, { replace: true })
     },
-    [search, setSearch],
+    [search, navigate, activeCategory],
   )
 
   const onSpecFilterToggle = useCallback(
@@ -260,11 +281,39 @@ export function CatalogPage() {
 
   const showPager = useMemo(() => totalPages > 1 && !loading && !error, [totalPages, loading, error])
 
-  const catPageTitle = buildSeoTitle('listing', { title: 'Каталог', siteName }, seoDefaults)
-  const catPageDesc = truncateMetaDescription(
+  const activeCategoryTitle = useMemo(() => {
+    if (!activeCategory || !categoryRows) return null
+    return categoryRows.find((c) => c.slug === activeCategory)?.title ?? null
+  }, [activeCategory, categoryRows])
+
+  const catalogBreadcrumbJsonLd = useMemo(() => {
+    const items: Record<string, unknown>[] = [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: `${site}/` },
+      { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${site}/catalog` },
+    ]
+    if (activeCategory && activeCategoryTitle) {
+      items.push({
+        '@type': 'ListItem',
+        position: 3,
+        name: activeCategoryTitle,
+        item: `${site}${catalogCategoryPath(activeCategory)}`,
+      })
+    }
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: items,
+    })
+  }, [site, activeCategory, activeCategoryTitle])
+
+  const listTitleBase = activeCategoryTitle ? `${activeCategoryTitle} — каталог` : 'Каталог'
+  const catPageTitle = buildSeoTitle('listing', { title: listTitleBase, siteName }, seoDefaults)
+  const baseListingDesc =
     seoDefaults.catalogListingMetaDescription?.trim() ||
-      seoDefaults.defaultMetaDescription?.trim() ||
-      'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».',
+    seoDefaults.defaultMetaDescription?.trim() ||
+    'Каталог тентов, навесов и шатров: фильтр по категории, сортировка, цены «от».'
+  const catPageDesc = truncateMetaDescription(
+    activeCategoryTitle ? `${activeCategoryTitle}. ${baseListingDesc}` : baseListingDesc,
     undefined,
     seoDefaults,
   )
@@ -301,10 +350,14 @@ export function CatalogPage() {
             </Link>
             <span className="mx-2">/</span>
             <span className="text-text">Каталог</span>
+            {activeCategoryTitle ? (
+              <>
+                <span className="mx-2">/</span>
+                <span className="text-text">{activeCategoryTitle}</span>
+              </>
+            ) : null}
           </nav>
-          <h1 className="fabric-section-title mt-4">
-            Каталог
-          </h1>
+          <h1 className="fabric-section-title mt-4">{listTitleBase}</h1>
           <p className="mt-3 max-w-2xl font-body text-text-muted md:text-lg">{catalogIntro}</p>
         </motion.div>
 
@@ -326,7 +379,7 @@ export function CatalogPage() {
                   type="button"
                   onClick={() => setParams({ category: null, page: 1 })}
                   className={`max-lg:whitespace-nowrap max-lg:rounded-lg max-lg:px-2.5 max-lg:py-1 max-lg:text-xs lg:w-full lg:rounded-xl lg:px-3 lg:py-2 lg:text-left lg:text-sm ${
-                    !category ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
+                    !activeCategory ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
                   } w-full text-left transition hover:bg-primary/80`}
                 >
                   Все
@@ -339,11 +392,10 @@ export function CatalogPage() {
               ) : (
                 categoryRows.map((c) => (
                   <li key={c.slug} className="max-lg:shrink-0 lg:w-full">
-                    <button
-                      type="button"
-                      onClick={() => setParams({ category: c.slug, page: 1 })}
+                    <Link
+                      to={catalogCategoryPath(c.slug)}
                       className={`flex max-lg:max-w-[min(100vw-4rem,22rem)] max-lg:items-center max-lg:gap-1.5 max-lg:rounded-lg max-lg:px-2 max-lg:py-1 max-lg:text-left max-lg:text-xs lg:w-full lg:gap-2 lg:rounded-xl lg:px-3 lg:py-2 lg:text-sm ${
-                        category === c.slug ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
+                        activeCategory === c.slug ? 'bg-primary/80 font-medium text-text' : 'text-text-muted'
                       } w-full items-center text-left transition hover:bg-primary/80`}
                     >
                       {c.imageUrl ? (
@@ -356,7 +408,7 @@ export function CatalogPage() {
                         />
                       ) : null}
                       <span className="min-w-0 flex-1 max-lg:truncate">{c.title}</span>
-                    </button>
+                    </Link>
                   </li>
                 ))
               )}
