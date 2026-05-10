@@ -176,6 +176,7 @@ def storefront_shell_view(request, _path: str = "") -> HttpResponse:
     if request.method == "HEAD":
         return HttpResponse(status=200, content_type="text/html; charset=utf-8")
 
+    from .storefront_shell_body import maybe_inject_shell_root_content
     from .storefront_shell_meta import maybe_inject_shell_head_meta
 
     try:
@@ -183,4 +184,5 @@ def storefront_shell_view(request, _path: str = "") -> HttpResponse:
     except OSError:
         body = serve_path.read_bytes().decode("utf-8", errors="replace")
     body = maybe_inject_shell_head_meta(body, request)
+    body = maybe_inject_shell_root_content(body, request)
     return HttpResponse(body, content_type="text/html; charset=utf-8")
