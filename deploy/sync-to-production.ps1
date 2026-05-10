@@ -89,6 +89,9 @@ $remoteLines = @(
     "pip install -q -r requirements-prod.txt"
     "python manage.py migrate --noinput"
     "python manage.py collectstatic --noinput"
+    "cd .."
+    'bash deploy/prerender-storefront.sh "$(pwd)"'
+    "cd backend"
     "python manage.py generate_public_seo_files"
     "cd .."
     "bash deploy/prune-production-tree.sh --drop-sqlite ."

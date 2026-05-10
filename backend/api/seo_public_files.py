@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -42,6 +43,49 @@ def _xml_url(loc: str, lastmod: date | None) -> str:
     return "".join(parts)
 
 
+def iter_sitemap_path_lastmod_pairs() -> Iterator[tuple[str, date | None]]:
+    """
+    Относительные пути витрины (как в React Router) и lastmod для sitemap / prerender.
+    Путь всегда начинается с «/»; главная — «/» (без дублирования логики в других командах).
+    """
+    today = timezone.now().date()
+
+    for p in ("/", "/catalog", "/portfolio", "/contacts", "/blog", "/sales", "/reviews"):
+        yield p, today
+
+    for cat in ProductCategory.objects.filter(is_published=True).order_by("slug"):
+        latest = (
+            Product.objects.filter(category=cat, is_published=True, category__is_published=True).aggregate(
+                m=Max("updated_at")
+            )["m"]
+        )
+        lm = latest.date() if latest else today
+        yield f"/catalog/category/{cat.slug}", lm
+
+    products = (
+        Product.objects.filter(is_published=True, category__is_published=True)
+        .select_related("category")
+        .order_by("slug")
+    )
+    for p in products:
+        lm = p.updated_at.date() if getattr(p, "updated_at", None) else today
+        yield f"/catalog/{p.slug}", lm
+
+    for post in BlogPost.objects.filter(is_published=True).order_by("slug"):
+        d = post.published_at or post.updated_at.date()
+        yield f"/blog/{post.slug}", d
+
+    for promo in _public_promotions_catalog_queryset().order_by("slug"):
+        lm = promo.updated_at.date() if getattr(promo, "updated_at", None) else today
+        yield f"/sales/{promo.slug}", lm
+
+    for page in StaticPage.objects.filter(is_published=True).order_by("slug"):
+        if page.slug in SITEMAP_EXCLUDE_STATIC_SLUGS:
+            continue
+        lm = page.updated_at.date() if getattr(page, "updated_at", None) else today
+        yield f"/{page.slug}", lm
+
+
 def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
     """Полный документ sitemap (URL с префиксом site_base без завершающего /)."""
     base = site_base.rstrip("/")
@@ -53,51 +97,9 @@ def build_sitemap_xml(site_base: str, *, allow_indexing: bool) -> str:
         )
 
     urls_xml: list[str] = []
-    today = timezone.now().date()
-
-    static_pages_list: list[tuple[str, date | None]] = [
-        (f"{base}/", today),
-        (f"{base}/catalog", today),
-        (f"{base}/portfolio", today),
-        (f"{base}/contacts", today),
-        (f"{base}/blog", today),
-        (f"{base}/sales", today),
-        (f"{base}/reviews", today),
-    ]
-    for loc, lm in static_pages_list:
+    for path, lm in iter_sitemap_path_lastmod_pairs():
+        loc = f"{base}{path}"
         urls_xml.append(_xml_url(loc, lm))
-
-    for cat in ProductCategory.objects.filter(is_published=True).order_by("slug"):
-        latest = (
-            Product.objects.filter(category=cat, is_published=True, category__is_published=True).aggregate(
-                m=Max("updated_at")
-            )["m"]
-        )
-        lm = latest.date() if latest else today
-        urls_xml.append(_xml_url(f"{base}/catalog/category/{cat.slug}", lm))
-
-    products = (
-        Product.objects.filter(is_published=True, category__is_published=True)
-        .select_related("category")
-        .order_by("slug")
-    )
-    for p in products:
-        lm = p.updated_at.date() if getattr(p, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/catalog/{p.slug}", lm))
-
-    for post in BlogPost.objects.filter(is_published=True).order_by("slug"):
-        d = post.published_at or post.updated_at.date()
-        urls_xml.append(_xml_url(f"{base}/blog/{post.slug}", d))
-
-    for promo in _public_promotions_catalog_queryset().order_by("slug"):
-        lm = promo.updated_at.date() if getattr(promo, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/sales/{promo.slug}", lm))
-
-    for page in StaticPage.objects.filter(is_published=True).order_by("slug"):
-        if page.slug in SITEMAP_EXCLUDE_STATIC_SLUGS:
-            continue
-        lm = page.updated_at.date() if getattr(page, "updated_at", None) else today
-        urls_xml.append(_xml_url(f"{base}/{page.slug}", lm))
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'

@@ -61,6 +61,19 @@ def _dist_index_path() -> Path:
     return Path(settings.BASE_DIR).parent / "frontend" / "dist" / "index.html"
 
 
+def _dist_prerender_file_for_path(dist_root: Path, request_path: str) -> Path | None:
+    """Если для пути есть prerender (dist/path/index.html), отдать его; иначе None."""
+    raw = (request_path or "/").split("?")[0].rstrip("/")
+    if raw == "":
+        candidate = dist_root / "index.html"
+    else:
+        rel = raw.lstrip("/")
+        if ".." in rel.split("/"):
+            return None
+        candidate = dist_root / rel.replace("\\", "/") / "index.html"
+    return candidate if candidate.is_file() else None
+
+
 def _storefront_path_is_valid(request_path: str) -> bool:
     raw = (request_path or "/").split("?")[0]
     path = raw.rstrip("/") or "/"
@@ -147,7 +160,9 @@ def storefront_shell_view(request, _path: str = "") -> FileResponse | HttpRespon
         return HttpResponse(_html_404(request), status=404, content_type="text/html; charset=utf-8")
 
     index_path = _dist_index_path()
-    if not index_path.is_file():
+    dist_root = index_path.parent
+    serve_path = _dist_prerender_file_for_path(dist_root, request.path) or index_path
+    if not serve_path.is_file():
         if settings.DEBUG:
             return HttpResponse(
                 "Соберите витрину: npm run build в frontend/",
@@ -161,4 +176,4 @@ def storefront_shell_view(request, _path: str = "") -> FileResponse | HttpRespon
     if request.method == "HEAD":
         return HttpResponse(status=200, content_type="text/html; charset=utf-8")
 
-    return FileResponse(open(index_path, "rb"), content_type="text/html; charset=utf-8")
+    return FileResponse(open(serve_path, "rb"), content_type="text/html; charset=utf-8")

@@ -33,6 +33,8 @@ cursor-talk-to-figma-mcp/node_modules/
 deploy/.env.deploy
 
 # Build / IDE
+# Список URL для prerender на VPS (manage.py export_prerender_paths)
+frontend/prerender-paths.json
 frontend/dist/
 dist-ssr/
 *.local
