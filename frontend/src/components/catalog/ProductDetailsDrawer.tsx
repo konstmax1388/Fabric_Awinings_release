@@ -73,11 +73,13 @@ export function ProductDetailsDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-border-light text-text-muted transition hover:border-accent hover:bg-bg-base hover:text-text"
+            className="group flex h-11 w-11 items-center justify-center rounded-xl border border-border-light text-text-muted transition hover:border-accent hover:bg-bg-base hover:text-text"
             aria-label="Закрыть панель"
           >
-            <span className="text-2xl leading-none" aria-hidden>
-              ×
+            <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+              <span className="text-2xl leading-none" aria-hidden>
+                ×
+              </span>
             </span>
           </button>
         </div>

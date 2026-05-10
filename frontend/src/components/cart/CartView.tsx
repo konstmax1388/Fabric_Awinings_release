@@ -46,9 +46,9 @@ export function CartView() {
 
       <div className="mt-8 flex min-h-0 flex-1 flex-col">
         {items.length === 0 ? (
-          <div className="fabric-card flex flex-col items-center border-dashed px-6 py-16 text-center">
+          <div className="fabric-card group flex flex-col items-center border-dashed px-6 py-16 text-center">
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-border-light/60 text-text-muted"
+              className="fabric-icon-glow fabric-icon-glow--round flex h-16 w-16 items-center justify-center rounded-full bg-border-light/60 text-text-muted"
               aria-hidden
             >
               <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

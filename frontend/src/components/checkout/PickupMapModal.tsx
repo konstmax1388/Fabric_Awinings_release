@@ -127,12 +127,14 @@ export function PickupMapModal({ open, onClose, title, address, lat: latIn, lng:
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-light text-text-muted transition hover:bg-bg-base hover:text-text"
+                className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-light text-text-muted transition hover:bg-bg-base hover:text-text"
                 aria-label="Закрыть окно"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                </svg>
+                <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </span>
               </button>
             </div>
 

@@ -26,9 +26,9 @@ export function ProductTrustStrip({
       role="group"
       aria-label="Условия гарантии и возврата"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
+      <div className="group flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-emerald-600 dark:text-emerald-400 sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
+          className="fabric-icon-glow flex h-10 w-10 shrink-0 items-center justify-center text-emerald-600 dark:text-emerald-400 sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
           aria-hidden
         >
           {wUrl ? (
@@ -59,9 +59,9 @@ export function ProductTrustStrip({
           </p>
         </div>
       </div>
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-sky-500/25 bg-sky-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
+      <div className="group flex min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-sky-500/25 bg-sky-500/8 px-2 py-1.5 text-left sm:gap-2 sm:px-2.5 sm:py-2">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-sky-600 dark:text-sky-400 sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
+          className="fabric-icon-glow flex h-10 w-10 shrink-0 items-center justify-center text-sky-600 dark:text-sky-400 sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
           aria-hidden
         >
           {rUrl ? (

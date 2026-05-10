@@ -91,7 +91,7 @@ export function TentTypesSection() {
                   </div>
                   <div className="flex items-center gap-3 p-4">
                     <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
+                      className="fabric-icon-glow flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11 [&_img]:max-h-10 [&_img]:max-w-10 sm:[&_img]:max-h-11 sm:[&_img]:max-w-11"
                       aria-hidden
                     >
                       {c.listIconUrl?.trim() ? (

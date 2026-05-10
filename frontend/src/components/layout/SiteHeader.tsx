@@ -59,13 +59,15 @@ function CartHeaderLink({ className = '' }: { className?: string }) {
     <NavLink
       to="/cart"
       className={({ isActive }) =>
-        `${headerIconBtn} ${isActive ? headerIconNavActive : ''} ${className}`.trim()
+        `group ${headerIconBtn} ${isActive ? headerIconNavActive : ''} ${className}`.trim()
       }
       aria-label={`Корзина${totalQty ? `, ${totalQty} поз.` : ''}`}
     >
-      <FontAwesomeIcon icon={faCartShopping} className="h-[22px] w-[22px]" aria-hidden />
+      <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+        <FontAwesomeIcon icon={faCartShopping} className="h-[22px] w-[22px]" aria-hidden />
+      </span>
       {totalQty > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 font-body text-[10px] font-bold text-surface">
+        <span className="absolute -right-0.5 -top-0.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 font-body text-[10px] font-bold text-surface">
           {totalQty > 99 ? '99+' : totalQty}
         </span>
       )}
@@ -338,45 +340,51 @@ export function SiteHeader() {
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
           <button
             type="button"
-            className={`${headerIconBtn} hidden md:inline-flex`}
+            className={`${headerIconBtn} group hidden md:inline-flex`}
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
             aria-label={theme === 'dark' ? themeToLightAria : themeToDarkAria}
             title={theme === 'dark' ? themeLightTitle : themeDarkTitle}
           >
-            <FontAwesomeIcon
-              icon={theme === 'dark' ? faSun : faMoon}
-              className="h-[22px] w-[22px] text-current"
-              aria-hidden
-            />
+            <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+              <FontAwesomeIcon
+                icon={theme === 'dark' ? faSun : faMoon}
+                className="h-[22px] w-[22px] text-current"
+                aria-hidden
+              />
+            </span>
           </button>
           <NavLink
             to="/account"
             className={({ isActive }) =>
-              `${headerIconBtn} hidden md:inline-flex ${isActive ? headerIconNavActive : ''}`.trim()
+              `${headerIconBtn} group hidden md:inline-flex ${isActive ? headerIconNavActive : ''}`.trim()
             }
             title={navAccountLabel}
             aria-label={navAccountLabel}
           >
-            <FontAwesomeIcon
-              icon={faCircleUser}
-              className="h-[22px] w-[22px] text-current"
-              aria-hidden
-            />
+            <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+              <FontAwesomeIcon
+                icon={faCircleUser}
+                className="h-[22px] w-[22px] text-current"
+                aria-hidden
+              />
+            </span>
           </NavLink>
           <button
             type="button"
-            className={headerIconBtn}
+            className={`${headerIconBtn} group`}
             onClick={openHeaderSearch}
             aria-label="Поиск по каталогу"
             aria-haspopup="dialog"
             aria-expanded={searchOpen}
             title="Поиск"
           >
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              className="h-[22px] w-[22px] text-current"
-              aria-hidden
-            />
+            <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className="h-[22px] w-[22px] text-current"
+                aria-hidden
+              />
+            </span>
           </button>
           <CartHeaderLink />
           <div className="hidden min-w-0 items-center gap-2 lg:flex">
@@ -538,24 +546,29 @@ export function SiteHeader() {
                   </NavLink>
                   <button
                     type="button"
-                    className="fabric-theme-toggle mt-1 justify-start rounded-2xl px-4"
+                    className="fabric-theme-toggle group mt-1 justify-start rounded-2xl px-4"
                     onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
                   >
-                    <FontAwesomeIcon
-                      icon={theme === 'dark' ? faSun : faMoon}
-                      className="h-5 w-5 shrink-0 text-current"
-                      aria-hidden
-                    />
+                    <span className="fabric-icon-glow fabric-icon-glow--round inline-flex shrink-0 items-center justify-center">
+                      <FontAwesomeIcon
+                        icon={theme === 'dark' ? faSun : faMoon}
+                        className="h-5 w-5 shrink-0 text-current"
+                        aria-hidden
+                      />
+                    </span>
                     <span className="font-body text-sm font-semibold">
                       {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
                     </span>
                   </button>
                   <a
                     href={phoneHref}
-                    className="fabric-liquid-glass-soft mt-1 flex items-center gap-3 rounded-2xl border border-border px-4 py-4 font-body text-lg font-semibold text-accent shadow-sm ring-1 ring-border/70"
+                    className="fabric-liquid-glass-soft group mt-1 flex items-center gap-3 rounded-2xl border border-border px-4 py-4 font-body text-lg font-semibold text-accent shadow-sm ring-1 ring-border/70"
                     onClick={() => setOpen(false)}
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent" aria-hidden>
+                    <span
+                      className="fabric-icon-glow fabric-icon-glow--round flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent"
+                      aria-hidden
+                    >
                       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path
                           strokeLinecap="round"
@@ -600,11 +613,13 @@ export function SiteHeader() {
             {({ isActive }) => (
               <div
                 className={[
-                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  'group flex w-full max-w-[92px] flex-col items-center justify-end text-center',
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <MobileBarHomeIcon className={mobileBarIcon} />
+                <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                  <MobileBarHomeIcon className={mobileBarIcon} />
+                </span>
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navHomeLabel}</span>
               </div>
             )}
@@ -616,11 +631,13 @@ export function SiteHeader() {
             {({ isActive }) => (
               <div
                 className={[
-                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  'group flex w-full max-w-[92px] flex-col items-center justify-end text-center',
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <MobileBarBagIcon className={mobileBarIcon} />
+                <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                  <MobileBarBagIcon className={mobileBarIcon} />
+                </span>
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navCatalogLabel}</span>
               </div>
             )}
@@ -629,11 +646,13 @@ export function SiteHeader() {
             {({ isActive }) => (
               <div
                 className={[
-                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  'group flex w-full max-w-[92px] flex-col items-center justify-end text-center',
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <FontAwesomeIcon icon={faPercent} className={`${mobileBarIcon} text-current`} aria-hidden />
+                <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                  <FontAwesomeIcon icon={faPercent} className={`${mobileBarIcon} text-current`} aria-hidden />
+                </span>
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{navPromotionsLabel}</span>
               </div>
             )}
@@ -645,19 +664,21 @@ export function SiteHeader() {
             {({ isActive }) => (
               <div
                 className={[
-                  'relative flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  'group relative flex w-full max-w-[92px] flex-col items-center justify-end text-center',
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
                 <span className="relative inline-flex">
-                  <FontAwesomeIcon
-                    icon={faCartShopping}
-                    className={`${mobileBarIcon} text-current`}
-                    aria-hidden
-                  />
+                  <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                    <FontAwesomeIcon
+                      icon={faCartShopping}
+                      className={`${mobileBarIcon} text-current`}
+                      aria-hidden
+                    />
+                  </span>
                   {totalQty > 0 ? (
                     <span
-                      className="absolute -right-2 -top-0.5 min-w-[1.1rem] rounded-full bg-accent px-0.5 text-center font-body text-[9px] font-bold text-surface ring-1 ring-border/30"
+                      className="absolute -right-2 -top-0.5 z-10 min-w-[1.1rem] rounded-full bg-accent px-0.5 text-center font-body text-[9px] font-bold text-surface ring-1 ring-border/30"
                     >
                       {totalQty > 99 ? '99+' : totalQty}
                     </span>
@@ -674,15 +695,17 @@ export function SiteHeader() {
             {({ isActive }) => (
               <div
                 className={[
-                  'flex w-full max-w-[92px] flex-col items-center justify-end text-center',
+                  'group flex w-full max-w-[92px] flex-col items-center justify-end text-center',
                   isActive ? mobileBarTabActive : mobileBarTabIdle,
                 ].join(' ')}
               >
-                <FontAwesomeIcon
-                  icon={faCircleUser}
-                  className={`${mobileBarIcon} text-current`}
-                  aria-hidden
-                />
+                <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                  <FontAwesomeIcon
+                    icon={faCircleUser}
+                    className={`${mobileBarIcon} text-current`}
+                    aria-hidden
+                  />
+                </span>
                 <span className="mt-0.5 text-[10px] font-semibold leading-tight tracking-tight">{mobileBarProfileLabel}</span>
               </div>
             )}

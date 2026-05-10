@@ -71,23 +71,23 @@ export function MarketplaceLinks({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+              className="group inline-flex shrink-0 items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
               title={`${m.label} — откроется в новой вкладке`}
               aria-label={`${m.label}, внешняя ссылка`}
-              whileHover={reduce ? undefined : { scale: 1.06 }}
               whileTap={reduce ? undefined : { scale: 0.96 }}
-              whileFocus={reduce ? undefined : { scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 520, damping: 28, mass: 0.6 }}
             >
-              <img
-                src={'iconSrc' in m && m.iconSrc ? m.iconSrc : m.logoSrc}
-                alt={marketplaceLogoAlt(m.label)}
-                width={32}
-                height={32}
-                className={imgClassCompact}
-                loading="lazy"
-                decoding="async"
-              />
+              <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+                <img
+                  src={'iconSrc' in m && m.iconSrc ? m.iconSrc : m.logoSrc}
+                  alt={marketplaceLogoAlt(m.label)}
+                  width={32}
+                  height={32}
+                  className={imgClassCompact}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
             </motion.a>
           )
         })}
@@ -105,22 +105,23 @@ export function MarketplaceLinks({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={linkClassDefault}
+            className={`group ${linkClassDefault}`}
             title={m.label}
             aria-label={m.label}
-            whileHover={reduce ? undefined : { scale: 1.05 }}
             whileTap={reduce ? undefined : { scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           >
-            <img
-              src={m.logoSrc}
-              alt={marketplaceLogoAlt(m.label)}
-              width={120}
-              height={32}
-              className={imgClassById[m.id]}
-              loading="lazy"
-              decoding="async"
-            />
+            <span className="fabric-icon-glow inline-flex h-full min-h-9 w-full items-center justify-center rounded-[inherit]">
+              <img
+                src={m.logoSrc}
+                alt={marketplaceLogoAlt(m.label)}
+                width={120}
+                height={32}
+                className={imgClassById[m.id]}
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
           </motion.a>
         )
       })}

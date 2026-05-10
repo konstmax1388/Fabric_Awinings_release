@@ -240,7 +240,7 @@ export function WhyUsSection() {
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
                 <div
-                  className="relative overflow-hidden rounded-2xl border border-transparent bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] transition-colors duration-300 hover:border-accent/40 hover:shadow-[0_18px_36px_-18px_rgba(200,155,83,0.45)] lg:h-full"
+                  className="group relative overflow-hidden rounded-2xl border border-transparent bg-surface p-6 shadow-[0_12px_24px_-8px_rgba(0,0,0,0.06)] transition-colors duration-300 hover:border-accent/40 hover:shadow-[0_18px_36px_-18px_rgba(200,155,83,0.45)] lg:h-full"
                   onMouseMove={
                     reduce
                       ? undefined
@@ -277,7 +277,7 @@ export function WhyUsSection() {
                     />
                   ) : null}
                   <span
-                    className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11"
+                    className="fabric-icon-glow relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary sm:h-11 sm:w-11"
                     aria-hidden
                   >
                     <WhyUsColumnIcon col={c} />

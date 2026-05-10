@@ -539,7 +539,7 @@ export function ProductPage() {
                   className="group flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border border-border-light bg-surface/80 px-4 py-3 font-body text-sm text-text shadow-sm backdrop-blur-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
                 >
                   <span
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/10 text-accent transition group-hover:border-accent/50 group-hover:bg-accent/15"
+                    className="fabric-icon-glow inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/25 bg-accent/10 text-accent transition group-hover:border-accent/50 group-hover:bg-accent/15"
                     aria-hidden
                   >
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -657,7 +657,7 @@ export function ProductPage() {
                     {ui?.productDetailsButton || 'Характеристики и описание'}
                   </span>
                   <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent transition group-hover:bg-accent/20"
+                    className="fabric-icon-glow flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent transition group-hover:bg-accent/20"
                     aria-hidden
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

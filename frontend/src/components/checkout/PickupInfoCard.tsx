@@ -74,17 +74,21 @@ export function PickupInfoCard({ pickup, variant = 'default' }: { pickup: Pickup
           <button
             type="button"
             onClick={() => setMapOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 font-body text-xs font-medium text-accent transition hover:bg-accent/15"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 font-body text-xs font-medium text-accent transition hover:bg-accent/15"
           >
-            <MapArrowIcon className="h-3.5 w-3.5" />
+            <span className="fabric-icon-glow fabric-icon-glow--round inline-flex items-center justify-center">
+              <MapArrowIcon className="h-3.5 w-3.5" />
+            </span>
             На карте
           </button>
         ) : null}
       </div>
 
       {address ? (
-        <div className={`mt-4 flex gap-3 ${isCompact ? 'mt-3' : ''}`}>
-          <PinIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+        <div className={`group mt-4 flex gap-3 ${isCompact ? 'mt-3' : ''}`}>
+          <span className="fabric-icon-glow inline-flex shrink-0 items-center justify-center self-start rounded-lg">
+            <PinIcon className="h-5 w-5 text-accent" />
+          </span>
           <div>
             <p className="font-body text-xs font-medium uppercase tracking-wide text-text-muted">Адрес склада</p>
             <p className="mt-1 font-body text-sm leading-relaxed text-text">{address}</p>
@@ -93,8 +97,10 @@ export function PickupInfoCard({ pickup, variant = 'default' }: { pickup: Pickup
       ) : null}
 
       {hours ? (
-        <div className={`flex gap-3 ${address ? 'mt-4' : 'mt-4'}`}>
-          <ClockIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+        <div className={`group flex gap-3 ${address ? 'mt-4' : 'mt-4'}`}>
+          <span className="fabric-icon-glow inline-flex shrink-0 items-center justify-center self-start rounded-lg">
+            <ClockIcon className="h-5 w-5 text-accent" />
+          </span>
           <div>
             <p className="font-body text-xs font-medium uppercase tracking-wide text-text-muted">Режим работы выдачи</p>
             <p className="mt-1 font-body text-sm text-text">{hours}</p>

@@ -155,7 +155,7 @@ export function ProblemSolutionSection() {
               />
             ) : null}
             <span
-              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary transition duration-300 ease-out group-hover:scale-110 group-hover:text-accent sm:h-11 sm:w-11 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+              className="fabric-icon-glow relative z-10 flex h-10 w-10 shrink-0 items-center justify-center text-secondary transition duration-300 ease-out group-hover:text-accent sm:h-11 sm:w-11 motion-reduce:transition-none"
               aria-hidden
             >
               <ProblemSolutionIcon card={card} />

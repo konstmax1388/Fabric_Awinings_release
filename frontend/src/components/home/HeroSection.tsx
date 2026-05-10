@@ -628,7 +628,7 @@ export function HeroSection() {
       : null
 
   const carouselArrowBtnClass =
-    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition enabled:hover:border-accent/45 enabled:hover:bg-white/12 enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9'
+    'fabric-icon-glow fabric-icon-glow--round inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-white/88 shadow-sm transition enabled:hover:border-accent/45 enabled:hover:bg-white/12 enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9'
 
   const mediaCrossfadeD = reduce ? 0.14 : 0.55
   const textSlideD = reduce ? 0.12 : 0.45
