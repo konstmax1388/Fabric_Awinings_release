@@ -1008,7 +1008,7 @@ export function HeroSection() {
           </motion.p>
           {subtitle.trim() && (ctaSecondary.trim() || ctaPrimary.trim()) ? (
             <motion.div
-              className="mt-auto flex w-full flex-row items-center gap-3 pt-5 sm:gap-4 sm:pt-6 lg:hidden"
+              className="mt-auto flex w-full flex-row items-center gap-3 pt-10 sm:gap-4 sm:pt-12 lg:hidden"
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
@@ -1069,7 +1069,7 @@ export function HeroSection() {
             </motion.div>
           ) : subtitle.trim() ? (
             <motion.p
-              className={`fabric-body mt-auto pt-5 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] sm:pt-6 lg:hidden ${textClasses.body}`}
+              className={`fabric-body mt-auto pt-10 font-body text-[10px] font-normal uppercase leading-snug tracking-[0.1em] sm:pt-12 lg:hidden ${textClasses.body}`}
               initial={from}
               animate={to}
               transition={{ ...easeOutSoft, delay: 0.22 }}
