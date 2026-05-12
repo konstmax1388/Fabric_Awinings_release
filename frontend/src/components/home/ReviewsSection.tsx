@@ -20,7 +20,7 @@ const REVIEW_PREVIEW_TEASER = 100
 /** На витрине показываем только опубликованные отзывы с этой оценки и выше (см. API `min_rating`). */
 const SITE_REVIEWS_MIN_RATING = 4
 
-/** Статика из `frontend/public/images/` — если в отзыве нет фото автора или оно не загрузилось. */
+/** Статика из `frontend/public/images/review-author-placeholder.png` (в nginx нужен `location ^~ /images/` → dist). */
 const REVIEW_AUTHOR_PLACEHOLDER = '/images/review-author-placeholder.png'
 
 function reviewAuthorPhotoSrc(photo: string): string {

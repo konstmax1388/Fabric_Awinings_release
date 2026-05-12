@@ -2,7 +2,9 @@
 
 Nginx раньше делал ``try_files … /index.html`` для любого пути → всегда 200.
 Здесь путь сверяется с маршрутами витрины (как в ``frontend/src/App.tsx``); при
-несоответствии — ответ 404 и HTML с ссылкой на главную (краулеры и аудиты).
+несоответствии — **HTTP 404**, но тело ответа — тот же SPA shell (корневой
+``dist/index.html``), чтобы React показал оформленную страницу «не найдено»;
+краулеры по-прежнему видят код 404.
 """
 
 from __future__ import annotations
@@ -131,37 +133,19 @@ def _storefront_path_is_valid(request_path: str) -> bool:
     return False
 
 
-def _html_404(request) -> str:
-    home = request.build_absolute_uri("/")
-    return f"""<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex, nofollow" />
-  <title>Страница не найдена</title>
-</head>
-<body>
-  <p>Страница не найдена.</p>
-  <p><a href="{home}">Перейти на главную</a></p>
-</body>
-</html>
-"""
-
-
 @never_cache
 @xframe_options_sameorigin
 @require_http_methods(["GET", "HEAD"])
 def storefront_shell_view(request, _path: str = "") -> HttpResponse:
     valid = _storefront_path_is_valid(request.path)
-    if not valid:
-        if request.method == "HEAD":
-            return HttpResponse(status=404)
-        return HttpResponse(_html_404(request), status=404, content_type="text/html; charset=utf-8")
-
     index_path = _dist_index_path()
     dist_root = index_path.parent
-    serve_path = _dist_prerender_file_for_path(dist_root, request.path) or index_path
+    # Несуществующий путь: не подставляем prerender чужого URL — только корневой shell.
+    serve_path = (
+        index_path if not valid else (_dist_prerender_file_for_path(dist_root, request.path) or index_path)
+    )
+    status = 404 if not valid else 200
+
     if not serve_path.is_file():
         if settings.DEBUG:
             return HttpResponse(
@@ -174,7 +158,7 @@ def storefront_shell_view(request, _path: str = "") -> HttpResponse:
         return HttpResponse("Service Unavailable", status=503, content_type="text/plain; charset=utf-8")
 
     if request.method == "HEAD":
-        return HttpResponse(status=200, content_type="text/html; charset=utf-8")
+        return HttpResponse(status=status, content_type="text/html; charset=utf-8")
 
     from .storefront_shell_body import maybe_inject_shell_root_content
     from .storefront_shell_meta import maybe_inject_shell_head_meta, rewrite_local_preview_urls_in_html
@@ -186,4 +170,4 @@ def storefront_shell_view(request, _path: str = "") -> HttpResponse:
     body = rewrite_local_preview_urls_in_html(body, request)
     body = maybe_inject_shell_head_meta(body, request)
     body = maybe_inject_shell_root_content(body, request)
-    return HttpResponse(body, content_type="text/html; charset=utf-8")
+    return HttpResponse(body, status=status, content_type="text/html; charset=utf-8")

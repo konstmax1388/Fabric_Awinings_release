@@ -7,6 +7,30 @@ INDEX_EMPTY_ROOT = """<!doctype html><html lang="ru"><head></head><body>
 
 
 @pytest.mark.django_db
+def test_storefront_unknown_path_returns_spa_shell_404(client, settings, tmp_path, monkeypatch):
+    backend_dir = tmp_path / "backend"
+    backend_dir.mkdir(parents=True)
+    dist = tmp_path / "frontend" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text(
+        '<!doctype html><html lang="ru"><head><title>x</title></head><body>'
+        '<div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "BASE_DIR", backend_dir)
+
+    r = client.get("/this-route-does-not-exist-abc123")
+    assert r.status_code == 404
+    body = r.content.decode("utf-8")
+    assert 'id="root"' in body
+    assert "/assets/index.js" in body
+    assert "Перейти на главную" not in body
+
+    rh = client.head("/this-route-does-not-exist-abc123")
+    assert rh.status_code == 404
+
+
+@pytest.mark.django_db
 def test_storefront_shell_injects_product_into_root(client, settings, tmp_path, monkeypatch):
     from api.models import Product, ProductCategory
 
