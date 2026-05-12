@@ -71,6 +71,47 @@ def html_needs_shell_meta_inject(html: str) -> bool:
     return not (m.group(1) or "").strip()
 
 
+def rewrite_local_preview_urls_in_html(html: str, request) -> str:
+    """Меняет в href/content URL с origin vite preview (127.0.0.1:4182) на публичный URL запроса.
+
+    Prerender и React Helmet кладут canonical/og:url с localhost; для выдачи и Ctrl+U нужен боевой домен.
+    """
+
+    def public_url(raw: str) -> str:
+        from urllib.parse import urlparse, unquote
+
+        u = (raw or "").strip()
+        if not u:
+            return raw
+        try:
+            parsed = urlparse(unquote(u))
+        except Exception:
+            return raw
+        if (parsed.hostname or "").lower() not in ("127.0.0.1", "localhost"):
+            return raw
+        path = parsed.path or "/"
+        if not path.startswith("/"):
+            path = "/" + path
+        tail = path
+        if parsed.query:
+            tail = f"{path}?{parsed.query}"
+        return request.build_absolute_uri(tail)
+
+    def replace_in_quoted_attr(attr_name: str, m: re.Match) -> str:
+        quote = m.group(1)
+        url = m.group(2)
+        return f'{attr_name}={quote}{public_url(url)}{quote}'
+
+    out = html
+    for attr in ("href", "content"):
+        pattern = re.compile(
+            rf"\b{attr}=(['\"])(https?://(?:127\.0\.0\.1|localhost):\d+[^'\"]*)\1",
+            re.IGNORECASE,
+        )
+        out = pattern.sub(lambda m, a=attr: replace_in_quoted_attr(a, m), out)
+    return out
+
+
 def _inject_after_head_open(html: str, fragment: str) -> str:
     m = re.search(r"<head([^>]*)>", html, re.IGNORECASE)
     if not m:

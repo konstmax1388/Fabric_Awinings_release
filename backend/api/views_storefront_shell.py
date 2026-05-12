@@ -177,12 +177,13 @@ def storefront_shell_view(request, _path: str = "") -> HttpResponse:
         return HttpResponse(status=200, content_type="text/html; charset=utf-8")
 
     from .storefront_shell_body import maybe_inject_shell_root_content
-    from .storefront_shell_meta import maybe_inject_shell_head_meta
+    from .storefront_shell_meta import maybe_inject_shell_head_meta, rewrite_local_preview_urls_in_html
 
     try:
         body = serve_path.read_text(encoding="utf-8")
     except OSError:
         body = serve_path.read_bytes().decode("utf-8", errors="replace")
+    body = rewrite_local_preview_urls_in_html(body, request)
     body = maybe_inject_shell_head_meta(body, request)
     body = maybe_inject_shell_root_content(body, request)
     return HttpResponse(body, content_type="text/html; charset=utf-8")

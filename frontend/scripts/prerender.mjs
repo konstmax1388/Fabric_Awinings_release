@@ -141,8 +141,15 @@ async function main() {
         () => (document.getElementById('root')?.textContent?.length ?? 0) > 40,
         { timeout: Math.min(perPageTimeoutMs, 60000) },
       )
+      // Главную не записываем в dist/index.html: иначе в #root оказывается снимок Playwright
+      // («Загрузка…», баннер), Django не вставляет storefront-shell-body (Ctrl+U / роботы).
+      if (p === '/') {
+        log('→', url, '(без записи index.html — пустой #root для Django shell SEO)')
+        ok += 1
+        continue
+      }
       const html = await page.content()
-      const rel = p === '/' ? 'index.html' : path.join(...p.split('/').filter(Boolean), 'index.html')
+      const rel = path.join(...p.split('/').filter(Boolean), 'index.html')
       const out = path.join(distDir, rel)
       fs.mkdirSync(path.dirname(out), { recursive: true })
       fs.writeFileSync(out, html, 'utf8')

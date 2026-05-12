@@ -118,6 +118,21 @@ def test_maybe_inject_meta_description_when_only_title_in_head(rf):
     assert m, "meta description with non-trivial content expected"
 
 
+def test_rewrite_local_preview_canonical_and_og_url(rf):
+    from api.storefront_shell_meta import rewrite_local_preview_urls_in_html
+
+    req = rf.get("/catalog")
+    html = (
+        "<head>"
+        '<link rel="canonical" href="http://127.0.0.1:4182/catalog" />'
+        '<meta property="og:url" content="http://127.0.0.1:4182/catalog" />'
+        "</head>"
+    )
+    out = rewrite_local_preview_urls_in_html(html, req)
+    assert "127.0.0.1" not in out
+    assert "http://testserver/catalog" in out
+
+
 @pytest.mark.django_db
 def test_home_shell_body_word_count_and_single_h1(client, settings, tmp_path, monkeypatch):
     import re
