@@ -662,7 +662,7 @@ export function HeroSection() {
 
   return (
     <section
-      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] max-lg:flex max-lg:min-h-0 max-lg:flex-col ${heroHeightClass}`}
+      className={`fabric-container relative min-w-0 overflow-hidden rounded-[24px] max-lg:flex max-lg:flex-col ${heroHeightClass}`}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <HeroCallbackModal
