@@ -255,8 +255,8 @@ def _first_enabled_hero_heading(payload: dict[str, Any]) -> tuple[str, str]:
             continue
         if s.get("enabled") is False:
             continue
-        t = (s.get("title") or "").strip()
-        sub = (s.get("subtitle") or "").strip()
+        t = _collapse(strip_tags((s.get("title") or "").strip()))
+        sub = _collapse(strip_tags((s.get("subtitle") or "").strip()))
         if t or sub:
             return t, sub
     return "", ""
@@ -307,9 +307,13 @@ def build_shell_root_fragment_for_request(request) -> str | None:
             lead_parts.append(str(meta_block.get("description") or "").strip())
         lead_short = _collapse(". ".join(lead_parts)) if lead_parts else ""
 
-        display_h1 = (h1 or "").strip() or (meta_block.get("title") or "").strip()
+        display_h1 = _collapse(strip_tags((h1 or "").strip()))
+        if not display_h1:
+            display_h1 = _collapse(
+                strip_tags((meta_block.get("title") or "").strip()),
+            )
         if not display_h1 and meta:
-            display_h1 = (meta.title or "").strip()
+            display_h1 = _collapse(strip_tags((meta.title or "").strip()))
         if not display_h1:
             display_h1 = f"{site_name} — тенты, навесы и монтаж"
 
