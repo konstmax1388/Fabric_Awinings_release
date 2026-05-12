@@ -36,7 +36,7 @@ urlpatterns = [
 
 if getattr(settings, "DJANGO_ADMIN_ENABLED", True):
     # Без завершающего «/» путь не попадает в admin.site.urls, а ловится catch-all
-    # витрины → 404 HTML «Страница не найдена». Редирект как у стандартного APPEND_SLASH.
+    # витрины → storefront_shell_view (404 + SPA shell для неизвестных путей). Редирект как у APPEND_SLASH.
     urlpatterns.append(
         path("admin", RedirectView.as_view(url="/admin/", permanent=True)),
     )
