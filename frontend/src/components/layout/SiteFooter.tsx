@@ -192,7 +192,19 @@ export function SiteFooter() {
             </div>
             <div className="mt-4">
               <p className="font-body text-sm font-semibold text-text">{footerDeliveryTitle}</p>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <a
+                  href="https://logo-teka.com/ozon/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex max-w-[200px] shrink-0"
+                >
+                  <img
+                    src="https://logo-teka.com/wp-content/uploads/2025/06/ozon-icon-logo.svg"
+                    alt="SVG logo Озон"
+                    className="h-7 w-full max-w-[200px] object-contain object-left"
+                  />
+                </a>
                 <img src="/delivery/cdek-logo.svg" alt="СДЭК" className="h-7 w-auto object-contain" />
               </div>
             </div>

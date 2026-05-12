@@ -1283,6 +1283,16 @@ function parseCheckoutPublic(raw: unknown): CheckoutPublicConfig {
   if (ozonLogistics.enabled) ensureDeliveryRow('ozon_logistics')
   if (cdek.enabled) ensureDeliveryRow('cdek')
 
+  /** Логистика Ozon — первая среди курьерских: сразу после самовывоза, если он есть, иначе в начале списка. */
+  const ozonRow = deliveryOptions.find((x) => x.id === 'ozon_logistics')
+  if (ozonRow) {
+    const withoutOzon = deliveryOptions.filter((x) => x.id !== 'ozon_logistics')
+    const pickupIdx = withoutOzon.findIndex((x) => x.id === 'pickup')
+    const insertAt = pickupIdx < 0 ? 0 : pickupIdx + 1
+    deliveryOptions.length = 0
+    deliveryOptions.push(...withoutOzon.slice(0, insertAt), ozonRow, ...withoutOzon.slice(insertAt))
+  }
+
   const ensurePaymentRow = (deliveryId: string) => {
     let methods = paymentMatrix[deliveryId]
     if (methods && methods.length) return
