@@ -98,3 +98,48 @@ def test_storefront_shell_skips_inject_when_root_not_empty(client, settings, tmp
     assert r.status_code == 200
     assert b"PRERENDERED" in r.content
     assert b"storefront-shell-body" not in r.content
+
+
+@pytest.mark.django_db
+def test_maybe_inject_meta_description_when_only_title_in_head(rf):
+    import re
+
+    from api.storefront_shell_meta import maybe_inject_shell_head_meta
+
+    req = rf.get("/")
+    html = (
+        '<!doctype html><html><head><meta charset="utf-8"/>'
+        "<title>Главная из prerender</title></head><body></body></html>"
+    )
+    out = maybe_inject_shell_head_meta(html, req)
+    assert "storefront_shell_meta_description" in out
+
+    m = re.search(r'name=["\']description["\'][^>]*content=["\']([^"\']{40,})', out)
+    assert m, "meta description with non-trivial content expected"
+
+
+@pytest.mark.django_db
+def test_home_shell_body_word_count_and_single_h1(client, settings, tmp_path, monkeypatch):
+    import re
+
+    backend_dir = tmp_path / "backend"
+    backend_dir.mkdir(parents=True)
+    dist = tmp_path / "frontend" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text(INDEX_EMPTY_ROOT, encoding="utf-8")
+    monkeypatch.setattr(settings, "BASE_DIR", backend_dir)
+
+    r = client.get("/")
+    assert r.status_code == 200
+    html = r.content.decode("utf-8")
+    assert html.count("<h1") == 1
+    start = html.find("storefront-shell-body")
+    end = html.find("</main>", start)
+    assert start != -1 and end != -1
+    blob = html[start:end]
+    n_words = len(
+        re.findall(r"[0-9A-Za-zА-Яа-яЁёІіЇїЄєҐґ\-]+", blob),
+    )
+    assert n_words >= 300
+
+

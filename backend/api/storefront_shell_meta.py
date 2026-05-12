@@ -2,7 +2,8 @@
 Серверная вставка <title>, meta description и Open Graph в HTML витрины (shell / prerender).
 
 Нужна для краулеров и превью ссылок: в «голом» frontend/dist/index.html от Vite нет <title>.
-Если в HTML уже есть непустой <title> (например после Playwright prerender), вставка пропускается.
+Если в HTML уже есть непустой <title> (например после Playwright prerender), полный блок не
+дублируется; при отсутствии непустого meta name=description описание всё равно добавляется.
 """
 
 from __future__ import annotations
@@ -51,6 +52,18 @@ class ShellHeadMeta:
 _HEAD_TITLE_RE = re.compile(r"<title>\s*([^<]*?)\s*</title>", re.IGNORECASE | re.DOTALL)
 
 
+def _head_meta_description_nonempty(html: str) -> bool:
+    """Есть ли в HTML непустой атрибут content у meta name=description."""
+    for m in re.finditer(r"<meta\s[^>]+>", html, re.IGNORECASE):
+        tag = m.group(0)
+        if not re.search(r'\bname\s*=\s*["\']description["\']', tag, re.I):
+            continue
+        cm = re.search(r"\bcontent\s*=\s*([\"'])(.*?)\1", tag, re.I | re.DOTALL)
+        if cm and (cm.group(2) or "").strip():
+            return True
+    return False
+
+
 def html_needs_shell_meta_inject(html: str) -> bool:
     m = _HEAD_TITLE_RE.search(html)
     if not m:
@@ -92,6 +105,19 @@ def render_shell_head_fragment(meta: ShellHeadMeta) -> str:
     if meta.og_image:
         lines.append(f'<meta property="og:image" content="{escape(meta.og_image)}" />')
     return "\n    ".join(["    <!-- storefront_shell_meta (Django) -->"] + lines)
+
+
+def render_shell_description_fragment(meta: ShellHeadMeta) -> str:
+    """Только description + og:description (если в HTML уже есть title от prerender)."""
+    desc = (meta.description or "").strip()
+    if not desc:
+        return ""
+    lines = [
+        "<!-- storefront_shell_meta_description (Django) -->",
+        f'<meta name="description" content="{escape(desc)}" />',
+        f'<meta property="og:description" content="{escape(desc)}" />',
+    ]
+    return "\n    ".join(["    " + lines[0], lines[1], lines[2]])
 
 
 def _site_name(ss: SiteSettings) -> str:
@@ -524,10 +550,14 @@ def build_shell_head_meta_for_request(request) -> ShellHeadMeta | None:
 
 
 def maybe_inject_shell_head_meta(html: str, request) -> str:
-    if not html_needs_shell_meta_inject(html):
-        return html
     meta = build_shell_head_meta_for_request(request)
     if not meta:
         return html
-    frag = render_shell_head_fragment(meta)
-    return _inject_after_head_open(html, frag)
+    if html_needs_shell_meta_inject(html):
+        frag = render_shell_head_fragment(meta)
+        return _inject_after_head_open(html, frag)
+    if not _head_meta_description_nonempty(html) and (meta.description or "").strip():
+        frag = render_shell_description_fragment(meta)
+        if frag:
+            return _inject_after_head_open(html, frag)
+    return html
