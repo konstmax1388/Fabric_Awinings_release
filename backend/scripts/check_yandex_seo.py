@@ -79,11 +79,18 @@ def has_shell_body(html: str) -> bool:
 
 
 def has_loading_in_root(html: str) -> bool:
-    m = re.search(r'<div[^>]*id\s*=\s*["\']root["\'][^>]*>(.*?)</div>\s*<aside', html, re.I | re.S)
-    if not m:
-        m = re.search(r'<motion id="root"[^>]*>(.*?)</motion.div>', html, re.I | re.S)
+    m = re.search(
+        r'<div[^>]*id\s*=\s*["\']root["\'][^>]*>(.*?)(?:<aside\b|</motion.div>\s*<noscript)',
+        html,
+        re.I | re.S,
+    )
     inner = m.group(1) if m else ""
-    return bool(re.search(r"загрузка|loading", inner, re.I))
+    plain = re.sub(r"<[^>]+>", " ", inner).strip()
+    return bool(re.search(r"^загрузка|^loading", plain[:40], re.I))
+
+
+def has_dev_origin_urls(html: str) -> bool:
+    return bool(re.search(r"https?://(?:127\.0\.0\.1|localhost):\d+", html, re.I))
 
 
 def h1_text(html: str) -> str:
@@ -115,18 +122,28 @@ def audit(path: str) -> dict[str, object]:
     rob = robots_meta(html)
     if rob and "noindex" in rob.lower():
         issues.append(f"robots: {rob}")
+    if has_dev_origin_urls(html):
+        issues.append("в HTML есть localhost/127.0.0.1 (prerender)")
     if has_loading_in_root(html):
         issues.append("в #root «Загрузка»")
-    if not has_shell_body(html) and path in {"/", "/catalog", "/blog", "/portfolio", "/contacts", "/reviews", "/sales"}:
-        if has_loading_in_root(html) or not h1_text(html):
-            issues.append("нет storefront-shell-body для робота")
-    if not has_shell_meta(html) and "storefront_shell_meta_description" not in html:
-        if path != "/":  # главная может быть только body
-            issues.append("нет полного Django SEO-блока (нужен деплой?)")
-    elif has_shell_meta(html):
-        pass  # ok
-    elif "storefront_shell_meta_description" in html and not title.startswith("Каталог") and path == "/catalog":
-        issues.append("только description-фрагмент, title не исправлен (старый деплой?)")
+    prerender_ok = (
+        len(desc) >= 40
+        and title
+        and title.strip() not in ("Фабрика Тентов", "Сайт")
+        and bool(h1_text(html))
+        and not has_loading_in_root(html)
+    )
+    if not prerender_ok and not has_shell_body(html):
+        issues.append("мало контента для робота (нет h1/текста)")
+    if not prerender_ok and not has_shell_meta(html) and "storefront_shell_meta_description" not in html:
+        issues.append("нет SEO meta (title/description)")
+    if (
+        not prerender_ok
+        and "storefront_shell_meta_description" in html
+        and path == "/catalog"
+        and "каталог" not in title.lower()
+    ):
+        issues.append("старый деплой: description есть, title не исправлен")
 
     return {
         "path": path,

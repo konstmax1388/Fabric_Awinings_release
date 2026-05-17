@@ -268,16 +268,18 @@ def test_maybe_inject_full_meta_when_prerender_title_is_only_site_name(rf):
 def test_rewrite_local_preview_canonical_and_og_url(rf):
     from api.storefront_shell_meta import rewrite_local_preview_urls_in_html
 
-    req = rf.get("/catalog")
+    req = rf.get("/catalog", HTTP_HOST="localhost")
     html = (
         "<head>"
         '<link rel="canonical" href="http://127.0.0.1:4182/catalog" />'
         '<meta property="og:url" content="http://127.0.0.1:4182/catalog" />'
+        '<script type="application/ld+json">{"item":"http://127.0.0.1:4182/"}</script>'
         "</head>"
     )
     out = rewrite_local_preview_urls_in_html(html, req)
     assert "127.0.0.1" not in out
-    assert "http://testserver/catalog" in out
+    assert "http://localhost/catalog" in out
+    assert "http://localhost/" in out
 
 
 @pytest.mark.django_db

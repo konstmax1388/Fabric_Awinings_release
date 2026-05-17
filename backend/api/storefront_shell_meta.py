@@ -158,23 +158,25 @@ def _strip_head_seo_tags(html: str) -> str:
     return out
 
 
-def rewrite_local_preview_urls_in_html(html: str, request) -> str:
-    """Меняет в href/content URL с origin vite preview (127.0.0.1:4182) на публичный URL запроса.
+_LOCAL_DEV_ORIGIN_RE = re.compile(
+    r"https?://(?:127\.0\.0\.1|localhost):\d+(/[^\s\"'<>\\]*)?",
+    re.IGNORECASE,
+)
 
-    Prerender и React Helmet кладут canonical/og:url с localhost; для выдачи и Ctrl+U нужен боевой домен.
+
+def rewrite_local_preview_urls_in_html(html: str, request) -> str:
+    """Меняет URL vite preview / prerender upstream (127.0.0.1:4182, :19999) на публичный домен запроса.
+
+    Prerender и React Helmet кладут localhost в canonical, og:url и JSON-LD; роботу нужен боевой хост.
     """
 
-    def public_url(raw: str) -> str:
+    def replace_dev_origin(m: re.Match[str]) -> str:
         from urllib.parse import urlparse, unquote
 
-        u = (raw or "").strip()
-        if not u:
-            return raw
+        raw = (m.group(0) or "").strip()
         try:
-            parsed = urlparse(unquote(u))
+            parsed = urlparse(unquote(raw))
         except Exception:
-            return raw
-        if (parsed.hostname or "").lower() not in ("127.0.0.1", "localhost"):
             return raw
         path = parsed.path or "/"
         if not path.startswith("/"):
@@ -184,19 +186,7 @@ def rewrite_local_preview_urls_in_html(html: str, request) -> str:
             tail = f"{path}?{parsed.query}"
         return request.build_absolute_uri(tail)
 
-    def replace_in_quoted_attr(attr_name: str, m: re.Match) -> str:
-        quote = m.group(1)
-        url = m.group(2)
-        return f'{attr_name}={quote}{public_url(url)}{quote}'
-
-    out = html
-    for attr in ("href", "content"):
-        pattern = re.compile(
-            rf"\b{attr}=(['\"])(https?://(?:127\.0\.0\.1|localhost):\d+[^'\"]*)\1",
-            re.IGNORECASE,
-        )
-        out = pattern.sub(lambda m, a=attr: replace_in_quoted_attr(a, m), out)
-    return out
+    return _LOCAL_DEV_ORIGIN_RE.sub(replace_dev_origin, html)
 
 
 def _inject_after_head_open(html: str, fragment: str) -> str:
