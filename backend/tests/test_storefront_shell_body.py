@@ -103,7 +103,8 @@ def test_storefront_shell_skips_inject_when_root_not_empty(client, settings, tmp
     )
     (dist / "catalog").mkdir(parents=True)
     (dist / "catalog" / "index.html").write_text(
-        '<!doctype html><html><body><div id="root"><div>PRERENDERED</div></div></body></html>',
+        '<!doctype html><html><body><div id="root"><main>'
+        f'<h1>Каталог</h1><p>{"Тенты и навесы. " * 50}</p></main></div></body></html>',
         encoding="utf-8",
     )
     monkeypatch.setattr(settings, "BASE_DIR", backend_dir)
@@ -120,8 +121,35 @@ def test_storefront_shell_skips_inject_when_root_not_empty(client, settings, tmp
 
     r = client.get("/catalog")
     assert r.status_code == 200
-    assert b"PRERENDERED" in r.content
+    assert "Каталог".encode() in r.content
     assert b"storefront-shell-body" not in r.content
+
+
+@pytest.mark.django_db
+def test_storefront_shell_replaces_loading_prerender_for_catalog(client, settings, tmp_path, monkeypatch):
+    backend_dir = tmp_path / "backend"
+    backend_dir.mkdir(parents=True)
+    dist = tmp_path / "frontend" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text(INDEX_EMPTY_ROOT, encoding="utf-8")
+    (dist / "catalog").mkdir(parents=True)
+    (dist / "catalog" / "index.html").write_text(
+        '<!doctype html><html><head><title>Фабрика Тентов</title>'
+        '<link rel="canonical" href="https://example.test/catalog" /></head><body>'
+        '<div id="root"><div>Загрузка…</div></div><aside>cookies</aside></body></html>',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "BASE_DIR", backend_dir)
+
+    r = client.get("/catalog")
+    html = r.content.decode("utf-8")
+    assert r.status_code == 200
+    assert "storefront-shell-body" in html
+    assert "Каталог" in html
+    assert "Загрузка" not in html
+    assert "storefront_shell_meta (Django)" in html
+    assert "каталог" in html.lower()
+    assert html.count("<title>") == 1
 
 
 @pytest.mark.django_db
@@ -136,10 +164,105 @@ def test_maybe_inject_meta_description_when_only_title_in_head(rf):
         "<title>Главная из prerender</title></head><body></body></html>"
     )
     out = maybe_inject_shell_head_meta(html, req)
-    assert "storefront_shell_meta_description" in out
+    assert "storefront_shell_meta" in out
 
     m = re.search(r'name=["\']description["\'][^>]*content=["\']([^"\']{40,})', out)
     assert m, "meta description with non-trivial content expected"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "path,weak_title",
+    [
+        ("/catalog", "Фабрика Тентов"),
+        ("/blog", "Фабрика Тентов"),
+        ("/portfolio", "Фабрика Тентов"),
+        ("/contacts", "Фабрика Тентов"),
+        ("/reviews", "Фабрика Тентов"),
+    ],
+)
+def test_maybe_inject_full_meta_for_weak_prerender_titles(rf, path, weak_title):
+    from api.storefront_shell_meta import maybe_inject_shell_head_meta
+
+    req = rf.get(path)
+    html = (
+        f"<!doctype html><html><head><title>{weak_title}</title>"
+        f'<link rel="canonical" href="https://example.test{path}" />'
+        "</head><body></body></html>"
+    )
+    out = maybe_inject_shell_head_meta(html, req)
+    assert "storefront_shell_meta (Django)" in out
+    assert out.count("<title>") == 1
+    assert weak_title not in out or out.index("<title>") < out.index(weak_title)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("path", ["/", "/catalog", "/blog", "/portfolio", "/contacts", "/reviews", "/sales"])
+def test_shell_seo_injects_for_weak_prerender_on_main_paths(rf, path):
+    """Слабый prerender (site_name + Загрузка) на всех ключевых разделах."""
+    from api.storefront_shell_body import maybe_inject_shell_root_content
+    from api.storefront_shell_meta import build_shell_head_meta_for_request, maybe_inject_shell_head_meta
+
+    req = rf.get(path, HTTP_HOST="localhost")
+    meta = build_shell_head_meta_for_request(req)
+    assert meta and meta.title and meta.description and meta.canonical_url
+
+    weak = (
+        f"<!doctype html><html><head><title>Фабрика Тентов</title>"
+        f'<link rel="canonical" href="{meta.canonical_url}" />'
+        f"</head><body><div id=\"root\"><div>Загрузка…</div><aside></aside></body></html>"
+    )
+    html = maybe_inject_shell_head_meta(weak, req)
+    html = maybe_inject_shell_root_content(html, req)
+    assert "storefront_shell_meta (Django)" in html
+    assert "storefront-shell-body" in html
+    assert meta.title in html
+    assert "Загрузка" not in html
+    assert html.count("<title>") == 1
+
+
+@pytest.mark.django_db
+def test_skips_full_inject_when_prerender_head_already_complete(rf):
+    from api.storefront_shell_meta import (
+        build_shell_head_meta_for_request,
+        maybe_inject_shell_head_meta,
+        render_shell_head_fragment,
+    )
+
+    req = rf.get("/catalog", HTTP_HOST="localhost")
+    meta = build_shell_head_meta_for_request(req)
+    assert meta
+    frag = render_shell_head_fragment(meta)
+    html = f"<!doctype html><html><head>{frag}</head><body></body></html>"
+    out = maybe_inject_shell_head_meta(html, req)
+    assert out.count("storefront_shell_meta (Django)") == 1
+    assert out.count("<title>") == 1
+    assert meta.title in out
+
+
+@pytest.mark.django_db
+def test_maybe_inject_full_meta_when_prerender_title_is_only_site_name(rf):
+    from api.models import SiteSettings
+
+    from api.storefront_shell_meta import maybe_inject_shell_head_meta
+
+    ss = SiteSettings.get_solo()
+    ss.site_name = "Фабрика Тентов"
+    ss.seo_catalog_listing_meta_description = "Каталог тентов для роботов."
+    ss.save()
+
+    req = rf.get("/catalog")
+    html = (
+        "<!doctype html><html><head>"
+        "<title>Фабрика Тентов</title>"
+        '<link rel="canonical" href="https://example.test/catalog" />'
+        "</head><body></body></html>"
+    )
+    out = maybe_inject_shell_head_meta(html, req)
+    assert "storefront_shell_meta (Django)" in out
+    assert out.count("<title>") == 1
+    assert "Каталог" in out
+    assert "Каталог тентов для роботов" in out
 
 
 def test_rewrite_local_preview_canonical_and_og_url(rf):

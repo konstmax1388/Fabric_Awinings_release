@@ -141,6 +141,37 @@ async function main() {
         () => (document.getElementById('root')?.textContent?.length ?? 0) > 40,
         { timeout: Math.min(perPageTimeoutMs, 60000) },
       )
+      try {
+        await page.waitForFunction(
+          () => {
+            const desc = document.querySelector('meta[name="description"]')
+            const descText = (desc?.getAttribute('content') || '').trim()
+            const title = (document.title || '').trim()
+            const siteName = (
+              document.querySelector('meta[property="og:site_name"]')?.getAttribute('content') || ''
+            ).trim()
+            const rootText = (document.getElementById('root')?.innerText || '').trim()
+            const h1 = document.querySelector('main h1, .fabric-page h1, h1.fabric-section-title, h1')
+            const h1Text = (h1?.textContent || '').trim()
+            const loadingRe = /загрузка|loading|подождите|please wait/i
+            const titleBeyondSite =
+              title.length >= 12 &&
+              (!siteName || title !== siteName) &&
+              (title.includes('|') || title.includes('—') || title.includes(' - ') || title.length >= 18)
+            return (
+              descText.length >= 30 &&
+              titleBeyondSite &&
+              !loadingRe.test(rootText.slice(0, 40)) &&
+              !loadingRe.test(h1Text) &&
+              rootText.length >= 80 &&
+              h1Text.length >= 2
+            )
+          },
+          { timeout: Math.min(perPageTimeoutMs, 45000) },
+        )
+      } catch {
+        warn('Не дождались title/description/h1 для', p, '— Django shell допишет SEO при отдаче.')
+      }
       // Главную не записываем в dist/index.html: иначе в #root оказывается снимок Playwright
       // («Загрузка…», баннер), Django не вставляет storefront-shell-body (Ctrl+U / роботы).
       if (p === '/') {

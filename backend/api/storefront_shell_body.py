@@ -2,7 +2,7 @@
 Серверный HTML внутри #root для SPA-shell (пустой корень в dist/index.html).
 
 Нужен поисковикам и клиентам без JS: реальные заголовки, абзацы текста и ссылки.
-Если для пути есть prerender-файл с непустым #root — вставка не выполняется.
+Если для пути есть prerender-файл с осмысленным #root (не «Загрузка…») — вставка не выполняется.
 Корневой dist/index.html для «/» при prerender не перезаписывается (см. frontend/scripts/prerender.mjs),
 чтобы главная оставалась с пустым #root и получала этот фрагмент.
 """
@@ -40,9 +40,91 @@ _EMPTY_ROOT_RE = re.compile(
     re.IGNORECASE,
 )
 
+_ROOT_BEFORE_ASIDE_RE = re.compile(
+    r'(<div\b[^>]*\bid\s*=\s*["\']root["\'][^>]*>)(.*?)(<aside\b)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_ROOT_BEFORE_NOSCRIPT_RE = re.compile(
+    r'(<div\b[^>]*\bid\s*=\s*["\']root["\'][^>]*>)(.*?)(</div>\s*<noscript\b)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_ROOT_BEFORE_SCRIPT_RE = re.compile(
+    r'(<div\b[^>]*\bid\s*=\s*["\']root["\'][^>]*>)(.*?)(</div>\s*<script\b)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_ROOT_BEFORE_BODY_CLOSE_RE = re.compile(
+    r'(<div\b[^>]*\bid\s*=\s*["\']root["\'][^>]*>)(.*?)(</div>\s*(?:</div>\s*)?</body>)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_LOADING_PLAIN_RE = re.compile(
+    r"загрузка|loading|подождите|please wait|spinner",
+    re.IGNORECASE,
+)
+
 
 def shell_root_is_empty_markup(html: str) -> bool:
     return bool(_EMPTY_ROOT_RE.search(html))
+
+
+_ROOT_INNER_PATTERNS = (
+    _ROOT_BEFORE_ASIDE_RE,
+    _ROOT_BEFORE_NOSCRIPT_RE,
+    _ROOT_BEFORE_SCRIPT_RE,
+    _ROOT_BEFORE_BODY_CLOSE_RE,
+)
+
+
+def _root_inner_match(html: str) -> re.Match[str] | None:
+    for pattern in _ROOT_INNER_PATTERNS:
+        m = pattern.search(html)
+        if m:
+            return m
+    return None
+
+
+def _root_inner_plain_text(html: str) -> str:
+    m = _root_inner_match(html)
+    if m:
+        return re.sub(r"<[^>]+>", " ", m.group(2))
+    if _EMPTY_ROOT_RE.search(html):
+        return ""
+    return ""
+
+
+def shell_root_has_real_content(html: str) -> bool:
+    if shell_root_is_empty_markup(html):
+        return False
+    if "storefront-shell-body" in html:
+        return True
+    m = _root_inner_match(html)
+    if not m:
+        return False
+    inner_html = m.group(2)
+    plain = _collapse(re.sub(r"<[^>]+>", " ", inner_html))
+    if not plain:
+        return False
+    if _LOADING_PLAIN_RE.search(plain):
+        return False
+    if re.search(r"<h1\b", inner_html, re.IGNORECASE):
+        return _word_count(plain) >= 12
+    return _word_count(plain) >= 60
+
+
+def shell_root_needs_shell_body_inject(html: str) -> bool:
+    return not shell_root_has_real_content(html)
+
+
+def _replace_root_inner(html: str, fragment: str) -> str:
+    if shell_root_is_empty_markup(html):
+        return _EMPTY_ROOT_RE.sub(r"\1" + fragment + r"\2", html, count=1)
+    m = _root_inner_match(html)
+    if m:
+        return html[: m.start(2)] + fragment + html[m.start(3) :]
+    return html
 
 
 def _collapse(text: str) -> str:
@@ -564,9 +646,9 @@ def build_shell_root_fragment_for_request(request) -> str | None:
 
 
 def maybe_inject_shell_root_content(html: str, request) -> str:
-    if not shell_root_is_empty_markup(html):
+    if not shell_root_needs_shell_body_inject(html):
         return html
     fragment = build_shell_root_fragment_for_request(request)
     if not fragment:
         return html
-    return _EMPTY_ROOT_RE.sub(r"\1" + fragment + r"\2", html, count=1)
+    return _replace_root_inner(html, fragment)

@@ -3,7 +3,8 @@
 
 Нужна для краулеров и превью ссылок: в «голом» frontend/dist/index.html от Vite нет <title>.
 Если в HTML уже есть непустой <title> (например после Playwright prerender), полный блок не
-дублируется; при отсутствии непустого meta name=description описание всё равно добавляется.
+дублируется, пока title/description/canonical совпадают с эталоном для URL. Иначе слабый prerender
+(только site_name, «Загрузка…», пустой description) заменяется целиком.
 """
 
 from __future__ import annotations
@@ -69,6 +70,92 @@ def html_needs_shell_meta_inject(html: str) -> bool:
     if not m:
         return True
     return not (m.group(1) or "").strip()
+
+
+def _head_title_text(html: str) -> str:
+    m = _HEAD_TITLE_RE.search(html)
+    return (m.group(1) or "").strip() if m else ""
+
+
+_CANONICAL_HREF_RE = re.compile(
+    r'<link\s[^>]*\brel\s*=\s*["\']canonical["\'][^>]*\bhref\s*=\s*["\']([^"\']+)["\']',
+    re.IGNORECASE,
+)
+_CANONICAL_HREF_RE_ALT = re.compile(
+    r'<link\s[^>]*\bhref\s*=\s*["\']([^"\']+)["\'][^>]*\brel\s*=\s*["\']canonical["\']',
+    re.IGNORECASE,
+)
+
+_TITLE_LEAD_SEPARATORS = (" | ", " — ", " – ", " - ")
+
+
+def _canonical_href_from_html(html: str) -> str:
+    for pattern in (_CANONICAL_HREF_RE, _CANONICAL_HREF_RE_ALT):
+        m = pattern.search(html)
+        if m:
+            return (m.group(1) or "").strip()
+    return ""
+
+
+def _title_lead_part(title: str) -> str:
+    t = (title or "").strip()
+    for sep in _TITLE_LEAD_SEPARATORS:
+        if sep in t:
+            return t.split(sep, 1)[0].strip().lower()
+    return t.lower()
+
+
+def _titles_match_for_seo(actual: str, expected: str, site_name: str) -> bool:
+    a = (actual or "").strip()
+    e = (expected or "").strip()
+    site = (site_name or "").strip()
+    if not e:
+        return bool(a)
+    if not a:
+        return False
+    if a == e:
+        return True
+    if site and a == site:
+        return False
+    if len(a) < max(8, int(len(e) * 0.45)):
+        return False
+    la, le = _title_lead_part(a), _title_lead_part(e)
+    if la and le and (la == le or la in le or le in la):
+        return True
+    return a.lower() in e.lower() or e.lower() in a.lower()
+
+
+def head_meta_is_incomplete(html: str, meta: ShellHeadMeta, ss: SiteSettings) -> bool:
+    """Prerender часто отдаёт site_name в <title> без description — сверяем с эталоном Django для любого URL."""
+    if html_needs_shell_meta_inject(html):
+        return True
+    if not _head_meta_description_nonempty(html):
+        return True
+    actual_title = _head_title_text(html)
+    if not _titles_match_for_seo(actual_title, meta.title, _site_name(ss)):
+        return True
+    expected_canon = (meta.canonical_url or "").strip()
+    if expected_canon:
+        actual_canon = _canonical_href_from_html(html)
+        if actual_canon and actual_canon.rstrip("/") != expected_canon.rstrip("/"):
+            return True
+    return False
+
+
+def _strip_head_seo_tags(html: str) -> str:
+    """Убирает SEO из prerender перед вставкой storefront_shell_meta (избегаем дублей title/description)."""
+    patterns = (
+        r"<title>\s*[^<]*\s*</title>\s*",
+        r"<meta\s[^>]*\bname\s*=\s*[\"']description[\"'][^>]*>\s*",
+        r"<meta\s[^>]*\bproperty\s*=\s*[\"']og:[^\"']+[\"'][^>]*>\s*",
+        r"<meta\s[^>]*\bname\s*=\s*[\"']twitter:[^\"']+[\"'][^>]*>\s*",
+        r"<link\s[^>]*\brel\s*=\s*[\"']canonical[\"'][^>]*>\s*",
+        r"<!--\s*storefront_shell_meta(?:_description)?\s*\(Django\)\s*-->\s*",
+    )
+    out = html
+    for pattern in patterns:
+        out = re.sub(pattern, "", out, flags=re.IGNORECASE)
+    return out
 
 
 def rewrite_local_preview_urls_in_html(html: str, request) -> str:
@@ -594,7 +681,10 @@ def maybe_inject_shell_head_meta(html: str, request) -> str:
     meta = build_shell_head_meta_for_request(request)
     if not meta:
         return html
-    if html_needs_shell_meta_inject(html):
+    ss = SiteSettings.get_solo()
+    needs_full = head_meta_is_incomplete(html, meta, ss)
+    if needs_full:
+        html = _strip_head_seo_tags(html)
         frag = render_shell_head_fragment(meta)
         return _inject_after_head_open(html, frag)
     if not _head_meta_description_nonempty(html) and (meta.description or "").strip():
