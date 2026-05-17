@@ -153,6 +153,7 @@ def _chunk_paragraphs(text: str, max_len: int = 900) -> list[str]:
 
 
 MIN_SHELL_WORDS_MAIN = 320
+MIN_SHELL_WORDS_LISTING = 90
 
 
 def _fallback_seo_narrative_site(ss: SiteSettings, site_name: str) -> str:
@@ -188,12 +189,36 @@ def _fallback_seo_narrative_site(ss: SiteSettings, site_name: str) -> str:
     return " ".join(bits)
 
 
-def _ensure_min_words(text: str, ss: SiteSettings, site_name: str, min_words: int = MIN_SHELL_WORDS_MAIN) -> str:
+def _ensure_min_words(
+    text: str,
+    ss: SiteSettings,
+    site_name: str,
+    min_words: int = MIN_SHELL_WORDS_MAIN,
+    *,
+    padding: str | None = None,
+) -> str:
     base = _collapse(text)
     if _word_count(base) >= min_words:
         return base
-    extra = _fallback_seo_narrative_site(ss, site_name)
+    extra = (padding or "").strip() or _fallback_seo_narrative_site(ss, site_name)
     return _collapse(f"{base} {extra}".strip()) if base else extra
+
+
+def _blog_listing_shell_extra(site_name: str) -> str:
+    return (
+        f"Раздел «Блог» на сайте {site_name} — публикации для заказчиков и монтажников: выбор ткани, "
+        "подготовка к установке, уход за изделиями и ответы на частые вопросы. Откройте статью из списка, "
+        "чтобы прочитать материал целиком; новые материалы появляются по мере обновления раздела."
+    )
+
+
+def _portfolio_listing_shell_extra(site_name: str, heading: str) -> str:
+    h = (heading or "Портфолио").strip() or "Портфолио"
+    return (
+        f"Раздел «{h}» на сайте {site_name} показывает выполненные объекты: фотографии до и после, "
+        "краткое описание задачи и итогового решения. Так можно оценить типовые форматы навесов и тентов "
+        "в реальных условиях. Для расчёта похожего проекта свяжитесь с менеджером через страницу контактов."
+    )
 
 
 def _collect_strings_from_payload(payload: dict[str, Any]) -> list[str]:
@@ -301,6 +326,8 @@ def _fragment_listing(
     lead: str | None = None,
     *,
     extra_body: str | None = None,
+    min_words: int = MIN_SHELL_WORDS_MAIN,
+    listing_padding: str | None = None,
 ) -> str | None:
     meta = build_shell_head_meta_for_request(request)
     if not meta:
@@ -313,7 +340,13 @@ def _fragment_listing(
     combined = f"{desc} {filler}".strip() if filler else desc
     if not combined:
         combined = (h1 or meta.title or "").strip()
-    combined = _ensure_min_words(combined, ss, site_name)
+    combined = _ensure_min_words(
+        combined,
+        ss,
+        site_name,
+        min_words=min_words,
+        padding=listing_padding,
+    )
 
     h1_esc = escape((h1 or meta.title or "").strip() or "Страница")
     parts = [
@@ -523,7 +556,28 @@ def build_shell_root_fragment_for_request(request) -> str | None:
         return "".join(chunks)
 
     if segments == ["blog"]:
-        return _fragment_listing(request, "Блог")
+        site_name = (ss.site_name or "").strip() or "Сайт"
+        return _fragment_listing(
+            request,
+            "Блог",
+            extra_body=_blog_listing_shell_extra(site_name),
+            min_words=MIN_SHELL_WORDS_LISTING,
+            listing_padding="Новые материалы публикуются по мере обновления раздела.",
+        )
+
+    if segments == ["portfolio"]:
+        home = HomePageContent.get_solo()
+        payload_pf = home.payload if isinstance(home.payload, dict) else {}
+        port = payload_pf.get("portfolio") if isinstance(payload_pf.get("portfolio"), dict) else {}
+        heading = (port.get("pageHeading") or "Портфолио").strip() or "Портфолио"
+        site_name = (ss.site_name or "").strip() or "Сайт"
+        return _fragment_listing(
+            request,
+            heading,
+            extra_body=_portfolio_listing_shell_extra(site_name, heading),
+            min_words=MIN_SHELL_WORDS_LISTING,
+            listing_padding="Для расчёта похожего проекта свяжитесь с менеджером на странице контактов.",
+        )
 
     if len(segments) == 2 and segments[0] == "blog":
         post = BlogPost.objects.filter(slug=segments[1], is_published=True).first()

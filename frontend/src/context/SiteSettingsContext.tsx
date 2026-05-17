@@ -102,6 +102,8 @@ const initialValue: SiteSettingsContextValue = {
     region: 'RU',
     defaultMetaDescription: '',
     catalogListingMetaDescription: '',
+    blogListingMetaDescription: '',
+    portfolioListingMetaDescription: '',
     titleSuffix: '',
     locale: 'ru_RU',
     titleTemplates: {
@@ -228,6 +230,8 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
             region: s.seoDefaults.region?.trim() || 'RU',
             defaultMetaDescription: s.seoDefaults.defaultMetaDescription ?? '',
             catalogListingMetaDescription: s.seoDefaults.catalogListingMetaDescription?.trim() ?? '',
+            blogListingMetaDescription: s.seoDefaults.blogListingMetaDescription?.trim() ?? '',
+            portfolioListingMetaDescription: s.seoDefaults.portfolioListingMetaDescription?.trim() ?? '',
             titleSuffix: s.seoDefaults.titleSuffix ?? '',
             locale: s.seoDefaults.locale?.trim() || 'ru_RU',
             titleTemplates: s.seoDefaults.titleTemplates,

@@ -1031,6 +1031,18 @@ class SiteSettings(models.Model):
         default="",
         help_text="Сниппет именно для страницы каталога. Пусто — на витрине используется «мета-описание по умолчанию».",
     )
+    seo_blog_listing_meta_description = models.TextField(
+        "SEO: meta description листинга блога (/blog)",
+        blank=True,
+        default="",
+        help_text="Сниппет для страницы списка статей. Пусто — «мета-описание по умолчанию».",
+    )
+    seo_portfolio_listing_meta_description = models.TextField(
+        "SEO: meta description листинга портфолио (/portfolio)",
+        blank=True,
+        default="",
+        help_text="Сниппет для страницы портфолио. Пусто — «мета-описание по умолчанию».",
+    )
     seo_title_suffix = models.CharField(
         "SEO: суффикс title",
         max_length=120,

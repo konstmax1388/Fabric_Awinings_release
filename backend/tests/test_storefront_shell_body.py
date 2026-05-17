@@ -283,6 +283,55 @@ def test_rewrite_local_preview_canonical_and_og_url(rf):
 
 
 @pytest.mark.django_db
+def test_blog_listing_uses_dedicated_meta_and_shell_text(rf):
+    from api.models import SiteSettings
+
+    from api.storefront_shell_meta import build_shell_head_meta_for_request
+    from api.storefront_shell_body import build_shell_root_fragment_for_request
+
+    ss = SiteSettings.get_solo()
+    ss.seo_blog_listing_meta_description = "Уникальное описание блога для сниппета."
+    ss.seo_default_meta_description = "Общее описание сайта."
+    ss.save()
+
+    req = rf.get("/blog")
+    meta = build_shell_head_meta_for_request(req)
+    assert meta
+    assert "Уникальное описание блога" in meta.description
+    assert "Общее описание сайта" not in meta.description
+
+    frag = build_shell_root_fragment_for_request(req)
+    assert frag
+    assert "storefront-shell-body" in frag
+    assert "публикации для заказчиков" in frag
+    assert "собственном производстве" not in frag.lower()
+
+
+@pytest.mark.django_db
+def test_portfolio_listing_uses_dedicated_meta_and_shell_text(rf):
+    from api.models import SiteSettings
+
+    from api.storefront_shell_meta import build_shell_head_meta_for_request
+    from api.storefront_shell_body import build_shell_root_fragment_for_request
+
+    ss = SiteSettings.get_solo()
+    ss.seo_portfolio_listing_meta_description = "Уникальное описание портфолио для сниппета."
+    ss.seo_default_meta_description = "Общее описание сайта."
+    ss.save()
+
+    req = rf.get("/portfolio")
+    meta = build_shell_head_meta_for_request(req)
+    assert meta
+    assert "Уникальное описание портфолио" in meta.description
+    assert "Общее описание сайта" not in meta.description
+
+    frag = build_shell_root_fragment_for_request(req)
+    assert frag
+    assert "выполненные объекты" in frag
+    assert "собственном производстве" not in frag.lower()
+
+
+@pytest.mark.django_db
 def test_home_shell_body_word_count_and_single_h1(client, settings, tmp_path, monkeypatch):
     import re
 

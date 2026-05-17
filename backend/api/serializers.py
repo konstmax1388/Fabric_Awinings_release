@@ -1318,6 +1318,10 @@ class SiteSettingsPublicSerializer(serializers.ModelSerializer):
             "region": (obj.seo_region or "RU").strip() or "RU",
             "defaultMetaDescription": (obj.seo_default_meta_description or "").strip(),
             "catalogListingMetaDescription": (getattr(obj, "seo_catalog_listing_meta_description", None) or "").strip(),
+            "blogListingMetaDescription": (getattr(obj, "seo_blog_listing_meta_description", None) or "").strip(),
+            "portfolioListingMetaDescription": (
+                getattr(obj, "seo_portfolio_listing_meta_description", None) or ""
+            ).strip(),
             "titleSuffix": (obj.seo_title_suffix or "").strip(),
             "locale": (obj.seo_locale or "ru_RU").strip() or "ru_RU",
             "titleTemplates": templates,

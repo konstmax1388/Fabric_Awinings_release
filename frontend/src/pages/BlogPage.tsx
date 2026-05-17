@@ -14,7 +14,8 @@ export function BlogPage() {
   const canonicalForMeta = useCanonicalHrefForMeta()
   const blogTitle = buildSeoTitle('listing', { title: 'Блог', siteName }, seoDefaults)
   const blogDesc = truncateMetaDescription(
-    seoDefaults.defaultMetaDescription?.trim() ||
+    seoDefaults.blogListingMetaDescription?.trim() ||
+      seoDefaults.defaultMetaDescription?.trim() ||
       'Статьи о материалах, замере и монтаже тентов и навесов.',
     undefined,
     seoDefaults,

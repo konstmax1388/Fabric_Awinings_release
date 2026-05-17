@@ -2067,6 +2067,8 @@ class SiteSettingsAdmin(ModelAdmin):
                     "seo_region",
                     "seo_default_meta_description",
                     "seo_catalog_listing_meta_description",
+                    "seo_blog_listing_meta_description",
+                    "seo_portfolio_listing_meta_description",
                     "seo_title_suffix",
                     "seo_locale",
                     "seo_og_image",

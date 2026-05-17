@@ -21,7 +21,9 @@ export function PortfolioPage() {
   const pageSubheading = portfolio.pageSubheading?.trim() || 'Реализованные проекты'
   const portTitle = buildSeoTitle('listing', { title: pageHeading, siteName }, seoDefaults)
   const portDesc = truncateMetaDescription(
-    seoDefaults.defaultMetaDescription?.trim() || 'Реализованные проекты: тенты, навесы, террасы.',
+    seoDefaults.portfolioListingMetaDescription?.trim() ||
+      seoDefaults.defaultMetaDescription?.trim() ||
+      'Реализованные проекты: тенты, навесы, террасы.',
     undefined,
     seoDefaults,
   )

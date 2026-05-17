@@ -1042,6 +1042,10 @@ export type SeoDefaultsDto = {
   defaultMetaDescription: string
   /** Meta description только для /catalog (из админки). */
   catalogListingMetaDescription?: string
+  /** Meta description только для /blog. */
+  blogListingMetaDescription?: string
+  /** Meta description только для /portfolio. */
+  portfolioListingMetaDescription?: string
   titleSuffix: string
   locale: string
   /** Склеенные с дефолтами на бэкенде. */
@@ -1461,6 +1465,10 @@ export async function fetchSiteSettings(): Promise<SiteSettingsDto | null> {
             typeof s.defaultMetaDescription === 'string' ? s.defaultMetaDescription : '',
           catalogListingMetaDescription:
             typeof s.catalogListingMetaDescription === 'string' ? s.catalogListingMetaDescription : '',
+          blogListingMetaDescription:
+            typeof s.blogListingMetaDescription === 'string' ? s.blogListingMetaDescription : '',
+          portfolioListingMetaDescription:
+            typeof s.portfolioListingMetaDescription === 'string' ? s.portfolioListingMetaDescription : '',
           titleSuffix: typeof s.titleSuffix === 'string' ? s.titleSuffix : '',
           locale: typeof s.locale === 'string' && s.locale.trim() ? s.locale : 'ru_RU',
           titleTemplates,

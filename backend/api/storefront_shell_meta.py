@@ -390,11 +390,11 @@ def build_shell_head_meta_for_request(request) -> ShellHeadMeta | None:
         port = payload.get("portfolio") if isinstance(payload.get("portfolio"), dict) else {}
         heading = (port.get("pageHeading") or "Портфолио").strip() or "Портфолио"
         title = apply_title_template_key("listing", heading, site_name, ss)
-        fallback_desc = (ss.seo_default_meta_description or "").strip() or (
-            "Реализованные проекты: тенты, навесы, террасы."
-        )
+        base_listing = (ss.seo_portfolio_listing_meta_description or "").strip() or (
+            ss.seo_default_meta_description or ""
+        ).strip() or ("Реализованные проекты: тенты, навесы, террасы и сезонные укрытия.")
         max_m = max(int(getattr(ss, "seo_meta_description_max", None) or 160), 40)
-        desc = truncate_meta_description(fallback_desc, max_m)
+        desc = truncate_meta_description(base_listing, max_m)
         canonical = request.build_absolute_uri("/portfolio")
         return ShellHeadMeta(
             title=title,
@@ -431,11 +431,11 @@ def build_shell_head_meta_for_request(request) -> ShellHeadMeta | None:
 
     if segments == ["blog"]:
         title = apply_title_template_key("listing", "Блог", site_name, ss)
-        base = (ss.seo_default_meta_description or "").strip() or (
-            "Статьи о материалах, замере и монтаже тентов и навесов."
-        )
+        base_listing = (ss.seo_blog_listing_meta_description or "").strip() or (
+            ss.seo_default_meta_description or ""
+        ).strip() or ("Статьи о материалах, замере и монтаже тентов и навесов.")
         max_m = max(int(getattr(ss, "seo_meta_description_max", None) or 160), 40)
-        desc = truncate_meta_description(base, max_m)
+        desc = truncate_meta_description(base_listing, max_m)
         return ShellHeadMeta(
             title=title,
             description=desc,
